@@ -56,7 +56,25 @@ library(see)          # For better diagnostic plots
 ```{.r .cell-code}
 # Load the forest npp data
 forest_df <- read_csv("data/michaletz_etal_2014_clean.csv")
+```
 
+::: {.cell-output .cell-output-stderr}
+
+```
+Rows: 1220 Columns: 8
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (1): leaf
+dbl (7): npp, age, biomass, season, temp, precip, teb
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+```
+
+
+:::
+
+```{.r .cell-code}
 # Display top lines
 head(forest_df)
 ```
@@ -508,6 +526,15 @@ ggplot(residuals_data, aes(x = Fitted, y = Residuals)) +
   ) +
   theme_minimal()
 ```
+
+::: {.cell-output .cell-output-stderr}
+
+```
+`geom_smooth()` using formula = 'y ~ x'
+```
+
+
+:::
 
 ::: {.cell-output-display}
 ![](10_02_class_activity_files/figure-docx/unnamed-chunk-4-1.jpeg)
