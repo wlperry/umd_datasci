@@ -4,10 +4,8 @@ author: "Bill Perry"
 metadata-files:
   - ../../_templates/activities.yml
 format:
-  html:
-    output-file: "02_02_class_activity.html"
-  docx:
-    output-file: "02_02_class_activity.docx"
+  html: default
+  docx: default
 ---
 
 # In-class Activity 2: Data Visualization
@@ -91,7 +89,6 @@ format:
   html:
     freeze: false
     toc: false
-    output-file: "02_02_class_activity.html"
     default: true
     embed-resources: true
     self-contained: true

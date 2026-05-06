@@ -2,10 +2,8 @@
 metadata-files:
   - ../../_templates/activities.yml
 format:
-  html:
-    output-file: "01_2_class_activity_html.html"
-  docx:
-    output-file: "01_02_class_activity.docx"
+  html: default
+  docx: default
 ---
 
 # In class activity 1:

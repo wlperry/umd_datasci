@@ -4,10 +4,8 @@ author: "Bill Perry"
 metadata-files:
   - ../../_templates/activities.yml
 format:
-  html:
-    output-file: "08_02_class_activity_html.html"
-  docx:
-    output-file: "08_02_class_activity.docx"
+  html: default
+  docx: default
 ---
 
 # In class activity 8: Study Design and Power Analysis

@@ -4,10 +4,8 @@ author: "bill perry"
 metadata-files:
   - ../../_templates/activities.yml
 format:
-  html:
-    output-file: "09_02_class_activity.html"
-  docx:
-    output-file: "09_02_class_activity.docx"
+  html: default
+  docx: default
 ---
 
 # In class activity 9: Correlation and Linear Regression

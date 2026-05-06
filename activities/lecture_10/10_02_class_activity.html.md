@@ -4,10 +4,8 @@ author: "Bill Perry"
 metadata-files:
   - ../../_templates/activities.yml
 format:
-  html:
-    output-file: "10_02_class_activity.html"
-  docx:
-    output-file: "10_02_class_activity.docx"
+  html: default
+  docx: default
 ---
 
 # Analysis of Net Primary Production in Forests: A Modern Tidyverse Approach
@@ -752,27 +750,6 @@ F-statistic: 513.9 on 5 and 1214 DF,  p-value: < 2.2e-16
 
 ```{.r .cell-code}
 library(sensemakr)
-```
-
-::: {.cell-output .cell-output-stderr}
-
-```
-See details in:
-```
-
-
-:::
-
-::: {.cell-output .cell-output-stderr}
-
-```
-Carlos Cinelli and Chad Hazlett (2020). Making Sense of Sensitivity: Extending Omitted Variable Bias. Journal of the Royal Statistical Society, Series B (Statistical Methodology).
-```
-
-
-:::
-
-```{.r .cell-code}
 # Calculate partial R-squared for all variables at once
 partial_r2_sensemakr <- partial_r2(model_5)
 partial_r2_sensemakr

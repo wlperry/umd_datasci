@@ -4,10 +4,8 @@ author: "Bill Perry"
 metadata-files:
   - ../../_templates/activities.yml
 format:
-  html:
-    output-file: "06_02_class_activity.html"
-  docx:
-    output-file: "06_02_class_activity.docx"
+  html: default
+  docx: default
 ---
 
 # In class activity 6:
