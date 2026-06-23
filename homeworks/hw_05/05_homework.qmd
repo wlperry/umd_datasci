@@ -1,0 +1,32 @@
+---
+title: "05_homeowork"
+author: "Bill Perry"
+---
+
+# Assignment Overview
+
+This homework assignment focuses on 
+
+## Learning Objectives
+
+By completing this assignment, you will be able to:
+
+1.  **asdfasdf**
+2.  **adsfafdsa**
+
+## Data Description
+
+
+## Goals to accomplish
+1. 324543
+2. 45345
+3. 4534
+-----------------------------------------------------------------------
+
+
+
+::: callout-note
+## Important Background
+
+Stuff to know
+:::
