@@ -1,8 +1,6 @@
 ---
-title: "Lecture 09 - Class Activity - Correlation Linear Regression"
+title: "Lecture 09"
 author: "bill perry"
-metadata-files:
-  - ../../_templates/activities.yml
 format:
   html: default
   docx: default
@@ -22,4 +20,3 @@ This document demonstrates key concepts in correlation and regression analysis u
 6.  **Interpreting regression output and ANOVA tables**
 
 We'll work with real ecological datasets to practice these concepts.
-

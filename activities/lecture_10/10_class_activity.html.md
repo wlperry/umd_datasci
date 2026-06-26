@@ -1,8 +1,6 @@
 ---
-title: "Lecture 10 - Class Activity: Multiple Regression"
+title: "Lecture 10"
 author: "Bill Perry"
-metadata-files:
-  - ../../_templates/activities.yml
 format:
   html: default
   docx: default
@@ -14,14 +12,11 @@ format:
 
 ## Introduction
 
-This analysis examines the relationships between Net Primary Production
-(npp) and various climate and forest characteristics across global
-forest sites. We'll explore multicollinearity, model selection, and
-variable transformations.
+This analysis examines the relationships between Net Primary Production (npp) and various climate and forest characteristics across global forest sites. We'll explore multicollinearity, model selection, and variable transformations.
 
 **Key Learning Objectives:**
 
--   Understand multicollinearity in multiple regression
--   Learn model diagnostics and assumption checking
--   Practice variable selection techniques
--   Apply data transformations appropriately
+- Understand multicollinearity in multiple regression
+- Learn model diagnostics and assumption checking
+- Practice variable selection techniques
+- Apply data transformations appropriately
