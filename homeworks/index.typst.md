@@ -4,7 +4,7 @@ title-block-banner: true
 page-layout: full
 listing:
   contents: "*/*.qmd" 
-  type: grid
+  type: table
   sort: "title asc"
   categories: true
   sort-ui: false

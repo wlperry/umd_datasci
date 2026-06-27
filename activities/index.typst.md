@@ -4,7 +4,7 @@ title-block-banner: true
 page-layout: full
 listing:
   contents: "*/*.qmd" 
-  type: grid
+  type: table
   fields: [title, description, date]  # ADD THIS LINE: This explicitly tells Quarto to only show text and hide the image box!
   sort: "title asc"
   categories: true

@@ -1,13 +1,21 @@
 ---
-title: "Activities"
+title: "Activities"       # change per folder
+author: "Bill Perry"
 title-block-banner: true
 page-layout: full
+
+format:
+  html:
+    toc: false
+    downloads: []
+    embed-resources: false
+    self-contained: false
+
 listing:
-  contents: "*/*.qmd" 
-  type: grid
-  fields: [title, description, date]  # ADD THIS LINE: This explicitly tells Quarto to only show text and hide the image box!
+  contents: "*/**.qmd"
+  type: table
   sort: "title asc"
-  categories: true
+  categories: false
   sort-ui: false
   filter-ui: true
 ---

@@ -5,7 +5,7 @@ author: "Bill Perry"
 
 # Assignment Overview
 
-This homework assignment focuses on 
+This homework assignment focuses on
 
 ## Learning Objectives
 
@@ -16,14 +16,15 @@ By completing this assignment, you will be able to:
 
 ## Data Description
 
-
 ## Goals to accomplish
-1. 324543
-2. 45345
-3. 4534
------------------------------------------------------------------------
 
+1.  324543
 
+2.  45345
+
+3.  
+
+    ## 4534
 
 ::: callout-note
 ## Important Background
