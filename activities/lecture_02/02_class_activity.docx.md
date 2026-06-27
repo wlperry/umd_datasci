@@ -168,7 +168,6 @@ Look at the **Variables** pane on the right — `x` should appear there.
 
 ``` r
 # Write your code here:
-
 ```
 
 ```         
@@ -239,7 +238,6 @@ args(round)     # list what arguments it takes
 
 ``` r
 # Write your code here:
-
 ```
 
 ```         
@@ -269,7 +267,6 @@ str(weight_g)       # structure overview
 
 ``` r
 # Write your code here:
-
 ```
 
 ------------------------------------------------------------------------
@@ -408,7 +405,7 @@ What is the maximum height_cm?
 
 ------------------------------------------------------------------------
 
-### The pipe `|>` — read it as "then"
+### The pipe `|>` also as `%>%`— read it as "then"
 
 The pipe operator sends a result straight into the next function. Read it as the word **"then"**:
 
@@ -476,7 +473,6 @@ ggplot(tree_df, aes(x = side, y = weight_g)) +
 
 ``` r
 # Write your modified code here:
-
 ```
 
 What pattern do you see — do sunny or shady leaves tend to be taller?

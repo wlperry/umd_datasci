@@ -1,0 +1,357 @@
+---
+title: "Common Code 09 — Two-Sample t-Test"
+subtitle: "Comparing two group means with slimy sculpin fish"
+author: "Bill Perry"
+date: today
+format:
+  html: default
+  docx: default
+execute:
+  echo: true
+  eval: false
+---
+
+# Two-sample t-test
+
+The two-sample t-test answers one question: **do two groups have different means?** We will work through the complete workflow — descriptive stats, assumption checks, the test itself, and how to report the result — using total length measurements from slimy sculpin (*Cottus cognatus*) collected from two Arctic lakes.
+
+> ⬇️ **Download the companion R script:** [`10_ttest.R`](09_ttest.R)
+
+------------------------------------------------------------------------
+
+### Packages needed
+
+``` r
+library(tidyverse)
+library(skimr)
+library(car)      # leveneTest()
+library(broom)    # tidy() — clean model output
+
+source("themes/r_themes_for_3_sizes.R")
+```
+
+------------------------------------------------------------------------
+
+### Load the data
+
+``` r
+sculpin_df <- read_csv("data/t_test_sculpin_s07_ne14.csv")
+
+glimpse(sculpin_df)
+sculpin_df |> count(lake)
+```
+
+The data frame has 110 fish from two lakes: **S 07** (n = 73) and **NE 14** (n = 37), with columns for `lake`, `length_mm`, and `mass_g`.
+
+------------------------------------------------------------------------
+
+# 1 · What the t-test does
+
+The two-sample t-test compares the means of two independent groups. It tests whether any observed difference is large enough — relative to the variation in the data — to be unlikely by chance alone.
+
+$$H_0: \mu_1 = \mu_2 \qquad \text{(the two lakes have the same mean length)}$$ $$H_A: \mu_1 \neq \mu_2 \qquad \text{(the means differ)}$$
+
+The test produces a **t-statistic** and a **p-value**. If p \< 0.05, we reject the null hypothesis and conclude that the group means are significantly different.
+
+::: callout-note
+## Standard vs. Welch's t-test
+
+R's `t.test()` runs **Welch's t-test by default** (`var.equal = FALSE`). Welch's version does not assume the two groups have equal variance — it is more conservative but much safer in practice. Use it unless you have a strong reason to assume equal variances.
+:::
+
+------------------------------------------------------------------------
+
+# 2 · Descriptive statistics first
+
+Always summarise the data before running any test. A surprising p-value is much easier to interpret if you already know the group means and sample sizes.
+
+### Quick look with skimr
+
+``` r
+sculpin_df |> group_by(lake) |> skim()
+```
+
+### Manual summary table
+
+``` r
+stats_df <- sculpin_df |>
+  group_by(lake) |>
+  summarise(
+    n      = sum(!is.na(length_mm)),
+    mean   = round(mean(length_mm,   na.rm = TRUE), 2),
+    median = round(median(length_mm, na.rm = TRUE), 2),
+    sd     = round(sd(length_mm,     na.rm = TRUE), 2),
+    se     = round(sd(length_mm,     na.rm = TRUE) /
+                     sqrt(sum(!is.na(length_mm))), 2),
+    .groups = "drop"
+  )
+stats_df
+```
+
+::: callout-warning
+## Always use `sum(!is.na())` for your n
+
+`n()` counts every row including rows where the measurement is `NA`. `sum(!is.na(length_mm))` counts only rows with a real value — which is the correct denominator for SD, SE, and any other formula involving sample size. See Common Code 08 for the full explanation.
+:::
+
+------------------------------------------------------------------------
+
+# 3 · Visualise before you test
+
+::: callout-tip
+## Plot first, always
+
+A t-test gives you a p-value. A plot tells you *why*. Always look at the data before running the test — you will catch outliers, see whether the groups overlap, and have something to show in your results section.
+:::
+
+### Boxplot with raw points
+
+``` r
+sculpin_df |>
+  ggplot(aes(x = lake, y = length_mm, fill = lake)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.4, size = 1.5) +
+  labs(x = "Lake", y = "Total length (mm)",
+       title = "Slimy sculpin total length by lake") +
+  theme_regular() +
+  theme(legend.position = "none")
+```
+
+### Mean ± SE
+
+``` r
+sculpin_df |>
+  ggplot(aes(x = lake, y = length_mm, color = lake)) +
+  geom_jitter(width = 0.15, alpha = 0.3, size = 1.5) +
+  stat_summary(fun.data = mean_se, geom = "pointrange",
+               size = 0.9, linewidth = 1) +
+  labs(x = "Lake", y = "Total length (mm)",
+       title = "Mean ± 1 SE total length by lake") +
+  theme_regular() +
+  theme(legend.position = "none")
+```
+
+------------------------------------------------------------------------
+
+# 4 · Check the assumptions
+
+The t-test has three assumptions. You need to check two of them; the third is a design issue.
+
+| Assumption | How to check | What you want to see |
+|------------------------|------------------------|------------------------|
+| **Independence** | Study design — not testable | Samples collected independently |
+| **Normality** | Q-Q plot + Shapiro-Wilk test | Points on the line; p \> 0.05 |
+| **Equal variances** | Levene's test | p \> 0.05 |
+
+::: callout-note
+## Normality matters less with larger samples
+
+The Central Limit Theorem means that with n ≥ 30 per group, the t-test is robust to moderate non-normality — the sampling distribution of the mean will be approximately normal even if the raw data are not. Always check, but do not panic over small departures from normality in a reasonably large dataset.
+:::
+
+### Normality — Q-Q plots
+
+A Q-Q plot compares your data to what a perfectly normal distribution would look like. Points should fall close to the diagonal line.
+
+``` r
+sculpin_df |>
+  ggplot(aes(sample = length_mm, color = lake)) +
+  stat_qq() +
+  stat_qq_line() +
+  facet_wrap(~ lake) +
+  labs(title = "Q-Q plots by lake",
+       x = "Theoretical quantiles",
+       y = "Sample quantiles") +
+  theme_regular() +
+  theme(legend.position = "none")
+```
+
+### Normality — Shapiro-Wilk test
+
+``` r
+sculpin_df |>
+  group_by(lake) |>
+  group_modify(~ broom::tidy(shapiro.test(.x$length_mm)))
+```
+
+::: callout-note
+## Reading the Shapiro-Wilk result
+
+- **p \> 0.05** → do not reject normality — the data are consistent with a normal distribution
+- **p \< 0.05** → evidence of non-normality — consider Welch's t-test (already the default) or a non-parametric alternative
+
+The Shapiro-Wilk test is sensitive to sample size. With n \> 50, even tiny meaningless deviations from normality can produce p \< 0.05. Trust the Q-Q plot over the p-value in large samples.
+:::
+
+### Equal variances — Levene's test
+
+``` r
+leveneTest(length_mm ~ lake, data = sculpin_df)
+```
+
+::: callout-note
+## Reading Levene's test
+
+- **p \> 0.05** → variances are not significantly different → standard t-test is fine
+- **p \< 0.05** → variances differ → use Welch's t-test (`var.equal = FALSE`)
+
+Since `var.equal = FALSE` is the default in R anyway, Levene's test mostly tells you which result to quote. As a rule of thumb, if one group's SD is more than twice the other's, prefer Welch's.
+:::
+
+------------------------------------------------------------------------
+
+# 5 · Run the t-test
+
+### Welch's t-test (recommended default)
+
+``` r
+t_welch <- t.test(length_mm ~ lake, data = sculpin_df, var.equal = FALSE)
+t_welch
+```
+
+### Standard t-test (equal variances assumed)
+
+``` r
+t_equal <- t.test(length_mm ~ lake, data = sculpin_df, var.equal = TRUE)
+t_equal
+```
+
+### Clean output with `broom::tidy()`
+
+``` r
+library(broom)
+tidy(t_welch)
+```
+
+`tidy()` turns the test output into a one-row tibble with named columns — much easier to extract values from than the raw output.
+
+::: callout-tip
+## Reading the t-test output
+
+```         
+t = 3.46,  df = 67.8,  p-value = 0.00091
+95% CI: [4.1, 15.6]
+mean of S 07: 57.2    mean of NE 14: 47.8
+```
+
+Line by line:
+
+- **t** — the t-statistic; larger absolute values = stronger evidence against H₀
+- **df** — degrees of freedom; Welch's df is not a whole number (that is normal)
+- **p-value** — the probability of seeing a difference this large by chance if H₀ were true
+- **95% CI** — the plausible range for the true difference in means (S 07 − NE 14)
+- **means** — the estimated mean for each group
+:::
+
+------------------------------------------------------------------------
+
+# 6 · Extract values for reporting
+
+Avoid copy-pasting numbers from the output by pulling them directly from the test object. If your data change, the reported values update automatically.
+
+``` r
+t_val  <- round(t_welch$statistic, 2)   # t-statistic
+df_val <- round(t_welch$parameter, 1)   # degrees of freedom
+p_val  <- round(t_welch$p.value,   4)   # p-value
+
+t_val; df_val; p_val
+```
+
+Or use `broom`:
+
+``` r
+result <- tidy(t_welch)
+result$statistic   # t
+result$parameter   # df
+result$p.value     # p
+```
+
+------------------------------------------------------------------------
+
+# 7 · Final publication plot
+
+``` r
+final_stats <- sculpin_df |>
+  group_by(lake) |>
+  summarise(
+    n  = sum(!is.na(length_mm)),
+    .groups = "drop"
+  )
+
+final_plot <- sculpin_df |>
+  ggplot(aes(x = lake, y = length_mm, fill = lake)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA, width = 0.5) +
+  geom_jitter(width = 0.12, alpha = 0.35, size = 1.5) +
+  geom_text(data = final_stats,
+            aes(label = paste0("n = ", n), y = 20),
+            size = 3.5, color = "grey30") +
+  labs(
+    x       = "Lake",
+    y       = "Total length (mm)",
+    title   = "Slimy sculpin total length by lake",
+    caption = paste0("Welch's t-test: t(", df_val, ") = ", t_val,
+                     ", p = ", p_val)
+  ) +
+  theme_regular() +
+  theme(legend.position = "none")
+
+final_plot
+
+ggsave("figures/sculpin_ttest.pdf",
+       plot = final_plot, width = 5, height = 5, units = "in")
+```
+
+------------------------------------------------------------------------
+
+# 8 · How to report the result
+
+::: callout-tip
+## In-text reporting format
+
+Report the test type, t-statistic, degrees of freedom, and p-value in parentheses after the biological statement:
+
+> "Slimy sculpin from lake S 07 were significantly longer than those from lake NE 14 (mean ± SE: 57.2 ± 1.6 mm vs. 47.8 ± 2.1 mm; Welch's t-test: t(67.8) = 3.46, p \< 0.001)."
+
+Always state the biological result first, then the statistics in support. Never lead with "p \< 0.05" — lead with what the biology shows.
+:::
+
+::: callout-note
+## Figure caption format
+
+> **Figure X.** Total length (mm) of slimy sculpin (*Cottus cognatus*) from two Arctic lakes. Boxplots show median and IQR; points show individual fish. Lake S 07 fish were significantly longer than lake NE 14 fish (Welch's t-test: t(67.8) = 3.46, p \< 0.001). Sample sizes shown at the bottom of each panel.
+:::
+
+::: callout-warning
+## What p \< 0.05 does and does not mean
+
+- ✅ p \< 0.05 means the difference is unlikely to be due to chance alone
+- ✅ It tells you something about the **reliability** of the finding
+- ❌ It does not tell you the difference is **biologically important**
+- ❌ p = 0.049 is not "more significant" than p = 0.051 — the cutoff is arbitrary
+
+Always report the **effect size** (here, the difference in means and its 95% CI) alongside the p-value so readers can judge biological significance for themselves.
+:::
+
+------------------------------------------------------------------------
+
+# Quick reference
+
+| Task | Code |
+|------------------------------------|------------------------------------|
+| Descriptive summary | `group_by(lake) \|> summarise(n = sum(!is.na(x)), mean = mean(x, na.rm=TRUE), ...)` |
+| Quick skim by group | `df \|> group_by(lake) \|> skim()` |
+| Boxplot + raw points | `geom_boxplot() + geom_jitter(width = 0.15, alpha = 0.4)` |
+| Mean ± SE plot | `stat_summary(fun.data = mean_se, geom = "pointrange")` |
+| Q-Q plot | `stat_qq() + stat_qq_line()` faceted by group |
+| Shapiro-Wilk (tidy) | `group_modify(~ broom::tidy(shapiro.test(.x$var)))` |
+| Levene's test | `leveneTest(y ~ group, data = df)` |
+| Welch's t-test | `t.test(y ~ group, data = df, var.equal = FALSE)` |
+| Standard t-test | `t.test(y ~ group, data = df, var.equal = TRUE)` |
+| Clean output | `broom::tidy(t_result)` |
+| Extract t, df, p | `t_result$statistic`, `$parameter`, `$p.value` |
+| Add n to plot | `geom_text(data = summary_df, aes(label = paste0("n = ", n), y = 20))` |
+| Add test to caption | `labs(caption = paste0("t(", df, ") = ", t, ", p = ", p))` |
+
+------------------------------------------------------------------------
+
+*End of Common Code 09 — Two-Sample t-Test.* *Next: Common Code 10 — Correlation and regression.*
