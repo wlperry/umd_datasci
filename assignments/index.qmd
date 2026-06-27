@@ -12,5 +12,4 @@ listing:
   filter-ui: true
 ---
 
-
 Details, rubrics, and instructions for the major course projects and exams.

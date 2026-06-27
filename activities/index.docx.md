@@ -3,9 +3,9 @@ title: "Activities"
 title-block-banner: true
 page-layout: full
 listing:
-  contents: 
-    - "lecture_*/*.qmd"
+  contents: "*/*.qmd" 
   type: grid
+  fields: [title, description, date]  # ADD THIS LINE: This explicitly tells Quarto to only show text and hide the image box!
   sort: "title asc"
   categories: true
   sort-ui: false
