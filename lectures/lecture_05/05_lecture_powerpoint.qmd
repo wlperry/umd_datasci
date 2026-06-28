@@ -1,5 +1,5 @@
 ---
-title: "Lecture 05: Probability and Statistical Inference"
+title: "Lecture 05: Regression Analysis"
 author: "Bill Perry"
 
 format:
@@ -11,5 +11,707 @@ format:
   pptx: default
 ---
 
-# **Lecture 4: Review**
 
+```{r setup}
+#| echo: false
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Where we left off (Lecture 04)
+
+- **Welch's two-sample t-test** — compared mean leaf weight between sunny and shady sides (`var.equal = FALSE`, two-tailed)
+- **Five-step framework** — hypotheses → normality → variance → run test → report
+  - Normality: histogram, QQ plot, Shapiro-Wilk on each group
+  - Variance: Levene's test; Welch's is safe regardless of the result
+- **Reading `t.test()` output** — t-statistic, Welch-Satterthwaite df, *p*-value, 95% CI, group means
+- **Result** — shady leaves were significantly *heavier* than sunny leaves (Welch's t-test, *p* < 0.001)
+
+::: {.callout-note}
+**✅ Transition**
+
+We confirmed that shady and sunny leaves *differ in weight*.
+Today we go further — we build a **calibration curve** to convert that weight into a
+more biologically meaningful measurement: **leaf surface area** (cm²).
+:::
+
+# Goals for Today
+
+:::: {.columns}
+::: {.column width="60%"}
+- Understand what linear regression does and when to use it
+- Learn the equation: $\hat{Y} = a + bX$
+  - slope *b*, intercept *a*, residuals, R²
+- Understand **least squares** — what the line minimizes
+- Fit a model in R with `lm()` and read every line of `summary()`
+- **Apply it:** build a calibration curve to predict leaf area from paper tracing mass
+- Check all four assumptions of regression
+- Use `predict()` to make predictions with intervals
+
+::: {.callout-tip}
+**🖐 Try it yourself**
+
+By the end you will predict leaf area from a tracing weight.
+:::
+:::
+::: {.column width="40%"}
+**Tools today:**
+
+- `readxl`, `tidyverse`
+
+**Textbook:**
+
+- 📖 Whitlock & Schluter *Analysis of Biological Data* 2nd ed.
+- **Chapter 17 — Regression** (pp. 539–575)
+  - §17.1 Linear regression
+  - §17.3 Testing slope hypotheses
+  - §17.4 R²
+  - §17.5 Assumptions
+
+**Naming conventions:**
+
+- models → `_model` (e.g., `paper_lm_model`)
+- plots → `_plot`
+:::
+::::
+
+# Our Calibration Idea
+
+:::: {.columns}
+::: {.column width="60%"}
+**The problem:** measuring leaf surface area without a leaf area meter.
+
+**The solution — a calibration curve:**
+
+1. Cut paper squares of **known area** (1, 4, 16 … 567 cm²)
+2. **Weigh** each square on a precision balance
+3. Fit a **regression line**: area ~ mass
+4. Trace a leaf on the *same paper*, weigh the tracing
+5. **Plug the tracing mass into the equation** → predicted leaf area
+
+**Why does this work?**
+
+Paper of uniform stock has constant *area density* (cm² per gram). Mass and area are therefore **perfectly linearly related** within a sheet.
+:::
+::: {.column width="40%"}
+| Known area (cm²) | n replicates |
+|---|---|
+| 1 | 25 |
+| 4 | 32 |
+| 16 | 24 |
+| 36 | 3 |
+| 64 | 7 |
+| 100 | 14 |
+| 225–567 | 12 |
+
+**Total:** 118 paper squares weighed
+
+📖 W&S §17.1, Example 17.1 (lion nose pigmentation as age predictor uses the same logic: measure X, predict Y)
+:::
+::::
+
+# What Is Linear Regression?
+
+:::: {.columns}
+::: {.column width="60%"}
+**Linear regression** draws the *best straight line* through a scatter of points to **predict** a response variable (Y) from an explanatory variable (X).
+
+**Two key roles:**
+
+| Role | Variable | Our example |
+|---|---|---|
+| Explanatory (X) | on the x-axis; what you measure | `mass_g` |
+| Response (Y) | on the y-axis; what you want to predict | `area_cm2` |
+
+X is often something easy to measure; Y is what you actually want to know. Regression gives you the equation to convert X → Y.
+
+📖 W&S §17.1 p. 540–541
+:::
+::: {.column width="40%"}
+**When to use regression:**
+
+- You have **two numeric variables**
+- One variable can reasonably **predict or cause** the other
+- You want an **equation** to make predictions for new observations
+
+**Regression vs. our t-test (Lecture 04):**
+
+| Test | Question |
+|---|---|
+| t-test | Do two group *means* differ? |
+| Regression | Does X *predict* Y numerically? |
+
+Regression produces a **predictive equation**. The t-test produces a decision about group means.
+:::
+::::
+
+# The Regression Equation
+
+:::: {.columns}
+::: {.column width="60%"}
+**Population model** (W&S §17.1):
+
+$$Y = \alpha + \beta X + \varepsilon$$
+
+**Sample estimate** (what R calculates):
+
+$$\hat{Y} = a + bX$$
+
+| Symbol | Name | Meaning |
+|---|---|---|
+| $\hat{Y}$ | predicted Y | estimated mean area at a given mass |
+| *a* | intercept | predicted Y when X = 0 |
+| *b* | slope | change in Y per 1-unit increase in X |
+| $\varepsilon$ | residual | observed − predicted |
+
+**Our equation will be:**
+$$\widehat{\text{area}} = a + b \times \text{mass\_g}$$
+:::
+::: {.column width="40%"}
+**Interpreting the slope:**
+
+> *b* = the change in area (cm²) for every additional 1 gram of paper
+
+Since 1 g ≈ 130 cm² of paper, the slope is the **area density** of the paper stock.
+
+**Interpreting the intercept:**
+
+> *a* = predicted area when mass = 0
+
+Physically this should be 0 (no paper, no area). Small non-zero values reflect measurement error.
+
+📖 W&S §17.1 pp. 543–545
+:::
+::::
+
+# Residuals and Least Squares
+
+:::: {.columns}
+::: {.column width="60%"}
+**Residual** for observation *i*:
+
+$$e_i = Y_i - \hat{Y}_i = \text{observed} - \text{predicted}$$
+
+The **least-squares line** minimizes the sum of *squared* residuals:
+
+$$\text{minimize} \sum_{i=1}^{n}(Y_i - \hat{Y}_i)^2$$
+
+Squaring serves two purposes:
+- Makes all deviations **positive** (no cancellation)
+- Penalizes **large** deviations more than small ones
+
+There is only one line that achieves this minimum — it is unique.
+
+📖 W&S §17.1 p. 542 (Figure 17.1-2)
+:::
+::: {.column width="40%"}
+**Visual intuition:**
+
+Each data point has a **vertical residual** — the distance from the point to the regression line.
+
+```
+observed Y │ ●  ← residual (positive)
+           │    \
+predicted Ŷ│-----●--- regression line
+           │
+           └──────────── X
+```
+
+A point *above* the line has a **positive** residual.
+A point *below* has a **negative** residual.
+The sum of all residuals = 0.
+:::
+::::
+
+# R² — How Much Does X Explain?
+
+:::: {.columns}
+::: {.column width="60%"}
+$$R^2 = \frac{SS_\text{regression}}{SS_\text{total}} = 1 - \frac{SS_\text{residual}}{SS_\text{total}}$$
+
+- **SS_total** = total variation in Y around its mean
+- **SS_regression** = variation explained by X
+- **SS_residual** = variation *not* explained (scatter around the line)
+
+R² ranges from 0 to 1:
+
+| R² | Interpretation |
+|---|---|
+| 1.00 | X explains all variation in Y |
+| 0.85 | X explains 85% of variation |
+| 0.00 | X explains nothing |
+
+📖 W&S §17.4 p. 555
+:::
+::: {.column width="40%"}
+**Our calibration data:**
+
+Because paper has uniform density, mass and area are nearly perfectly linearly related.
+
+We expect R² ≈ 1.00.
+
+**Important:** R² tells you *how well the line fits* the data you have. It does not by itself tell you whether the relationship is statistically significant — that requires a test of the slope.
+
+A significant slope with a low R² is possible (weak but real relationship). A high R² with a non-significant slope is not possible with large n.
+:::
+::::
+
+# Assumptions of Regression
+
+:::: {.columns}
+::: {.column width="60%"}
+Four assumptions must hold for the p-value and confidence intervals to be valid (W&S §17.5):
+
+| # | Assumption | How to check |
+|---|---|---|
+| 1 | **Linearity** — Y changes linearly with X | Residual vs. fitted plot |
+| 2 | **Independence** — observations are independent | Study design |
+| 3 | **Equal variance** (homoscedasticity) — spread of residuals is constant across fitted values | Residual vs. fitted plot |
+| 4 | **Normality** — residuals are normally distributed | QQ plot + Shapiro-Wilk |
+:::
+::: {.column width="40%"}
+::: {.callout-important}
+**Check residuals, not raw data.**
+
+The normality assumption is about the **residuals** (observed − predicted), not the original Y values.
+
+A well-fitted residual plot looks like a random horizontal cloud of points centered at zero — no curves, no funnel shapes.
+:::
+
+📖 W&S §17.5 pp. 557–560 (Figures 17.5-1, 17.5-4)
+:::
+::::
+
+# Load Libraries and Data
+
+```{r load-libs-09}
+# Load packages — always at the top of the script ----------
+library(readxl)      # reading Excel files
+library(tidyverse)   # data manipulation + ggplot2
+library(skimr)       # fast data overview
+```
+
+```{r load-data-09}
+# Load the paper calibration data -------------------------
+paper_df <- read_excel("data/paper_area_weights.xlsx")
+```
+
+::: {.callout-note}
+The file `paper_area_weights.xlsx` contains 118 paper squares of **known area** (1–567 cm²) with their measured masses. This is the calibration dataset we use to predict leaf area from a tracing weight.
+:::
+
+# Inspect the Data
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r skim-data-09}
+# Quick overview of the calibration data ------------------
+skim(paper_df)
+```
+:::
+::: {.column width="40%"}
+```{r scatter-summary}
+#| echo: true
+# How many squares per area group? -----------------------
+paper_df %>%
+  group_by(area_cm2) %>%
+  summarize(
+    n        = n(),
+    mean_wt  = round(mean(mass_g), 5)
+  )
+```
+:::
+::::
+
+# First Plot — Scatter
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r scatter-raw}
+#| fig-format: png
+# Scatter plot of area vs mass to check linearity --------
+scatter_09_plot <- paper_df %>%
+  ggplot(aes(x = mass_g, y = area_cm2)) +
+  geom_point(alpha = 0.5, size = 2) +
+  labs(
+    title = "Paper Mass vs. Known Area",
+    x     = "Mass (g)",
+    y     = "Area (cm²)"
+  ) +
+  theme_minimal()
+
+scatter_09_plot
+```
+:::
+::: {.column width="40%"}
+**What to look for before fitting:**
+
+- Is the relationship **linear**? → points should follow a straight line
+- Is the variance **constant**? → spread around the trend should look similar at all X values
+- Any obvious **outliers**?
+
+Both variables are continuous and numeric → linear regression is appropriate.
+
+📖 W&S §17.1 p. 541
+:::
+::::
+
+# Fit the Model with `lm()`
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r fit-lm-09}
+# Fit the least-squares regression line ------------------
+# formula: response ~ predictor
+paper_lm_model <- lm(area_cm2 ~ mass_g, data = paper_df)
+```
+
+```{r summary-lm-09}
+# Full model summary — every number matters --------------
+summary(paper_lm_model)
+```
+:::
+::: {.column width="40%"}
+**The `lm()` formula syntax:**
+
+`lm(Y ~ X, data = df)`
+
+- `Y` goes on the **left** of `~`
+- `X` goes on the **right**
+- `~` reads as "is predicted by"
+
+So `area_cm2 ~ mass_g` means:
+"area is predicted by mass"
+
+The result is a **model object** — we can extract everything from it.
+
+📖 W&S §17.1 p. 543
+:::
+::::
+
+# Reading the `summary()` Output
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r coef-extract}
+# Extract the key numbers from the model -----------------
+a_intercept <- coef(paper_lm_model)[1]   # intercept
+b_slope     <- coef(paper_lm_model)[2]   # slope
+
+cat("Intercept (a) =", round(a_intercept, 4), "cm²\n")
+cat("Slope (b)     =", round(b_slope, 2),    "cm²/g\n")
+```
+:::
+::: {.column width="40%"}
+**Decode the Coefficients table:**
+
+| Row | What it is |
+|---|---|
+| `(Intercept)` | *a* — predicted area when mass = 0 |
+| `mass_g` | *b* — cm² per gram of paper |
+| `Std. Error` | uncertainty in each estimate |
+| `t value` | *b* / SE — tests if slope ≠ 0 |
+| `Pr(>|t|)` | *p*-value for that t-test |
+
+**H₀:** β = 0 (mass does not predict area)
+
+**Hₐ:** β ≠ 0 — our slope tests this hypothesis
+
+📖 W&S §17.3 p. 551–553
+:::
+::::
+
+# The Calibration Equation and R²
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r r2-compute}
+# Extract R-squared and build the equation label ---------
+r2_val <- summary(paper_lm_model)$r.squared
+
+cat("R² =", round(r2_val, 6), "\n\n")
+cat("Calibration equation:\n")
+cat("  area (cm²) =", round(b_slope, 2), "× mass (g) +",
+    round(a_intercept, 4), "\n\n")
+cat("Interpretation of slope:\n")
+cat("  Every 1 g of paper =", round(b_slope, 1), "cm² of area\n")
+```
+:::
+::: {.column width="40%"}
+**What R² = 0.9999 means:**
+
+99.99% of the variation in paper area is explained by mass. The remaining 0.01% is measurement noise from the balance.
+
+This is expected — the relationship between mass and area in uniform paper is essentially perfect.
+
+In biological data, R² values of 0.3–0.7 are common and meaningful.
+
+📖 W&S §17.4 p. 555
+
+> *"R² is a measure of the fit of the line to data."*
+:::
+::::
+
+# Plot the Calibration Curve
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r calibration-line-plot}
+#| fig-format: png
+# Calibration curve with regression line and 95% CI band -
+calibration_plot <- paper_df %>%
+  ggplot(aes(x = mass_g, y = area_cm2)) +
+  geom_point(alpha = 0.5, size = 1.8) +
+  geom_smooth(method = "lm", se = TRUE,
+              color = "steelblue", fill = "lightblue") +
+  labs(
+    title    = "Paper Calibration Curve",
+    subtitle = paste0("area = ", round(b_slope, 2),
+                      " × mass + ", round(a_intercept, 3),
+                      "  |  R² = ", round(r2_val, 4)),
+    x        = "Paper Mass (g)",
+    y        = "Area (cm²)"
+  ) +
+  theme_minimal()
+
+calibration_plot
+```
+:::
+::: {.column width="40%"}
+**The shaded band** = 95% confidence band for the *mean* predicted area at each mass value.
+
+**Key observation:** the band is narrowest in the middle of the data range and widens at the extremes — predictions are most precise near $\bar{X}$.
+
+This is exactly Figure 17.2-1 from W&S (p. 549).
+
+📖 W&S §17.2 p. 548–550
+:::
+::::
+
+# Check Assumptions — Residual Plot
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r add-resid-df}
+# Add fitted values and residuals to the data frame ------
+paper_resid_df <- paper_df %>%
+  mutate(
+    fitted    = fitted(paper_lm_model),
+    residuals = residuals(paper_lm_model)
+  )
+```
+
+```{r resid-vs-fitted}
+#| fig-format: png
+# Residuals vs Fitted — checks linearity & equal variance
+resid_plot <- paper_resid_df %>%
+  ggplot(aes(x = fitted, y = residuals)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(x = "Fitted Values (cm²)", y = "Residuals (cm²)") +
+  theme_minimal()
+
+resid_plot
+```
+:::
+::: {.column width="40%"}
+**What to look for:**
+
+✅ **Good:** random cloud of points centered at zero; constant spread across all fitted values
+
+❌ **Bad:**
+- Curved pattern → linearity violated
+- Fan shape (funnel) → unequal variance
+
+📖 W&S §17.5 p. 559 (Figure 17.5-4)
+
+::: {.callout-tip}
+The residual plot is the most important diagnostic. Always check it before interpreting your results.
+:::
+:::
+::::
+
+# Check Assumptions — QQ Plot and Shapiro-Wilk
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r qq-resid-09}
+#| fig-format: png
+# QQ plot of residuals — checks normality assumption -----
+qq_resid_plot <- paper_resid_df %>%
+  ggplot(aes(sample = residuals)) +
+  stat_qq() +
+  stat_qq_line(color = "red", linewidth = 0.8) +
+  labs(
+    title = "Normal QQ Plot of Residuals",
+    x     = "Theoretical Quantiles",
+    y     = "Sample Quantiles (residuals)"
+  ) +
+  theme_minimal()
+
+qq_resid_plot
+```
+:::
+::: {.column width="40%"}
+```{r shapiro-resid-09}
+# Shapiro-Wilk test on residuals — formal normality test -
+shapiro.test(residuals(paper_lm_model))
+```
+
+**Remember:**
+
+- The normality assumption is about **residuals**, not raw data
+- H₀ (Shapiro-Wilk): residuals are normally distributed
+- *p* > 0.05 → proceed with confidence intervals and *p*-values
+
+📖 W&S §17.5 p. 559
+:::
+::::
+
+# Predict Leaf Area from Tracing Mass
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r predict-point-09}
+# Plug tracing masses directly into the calibration line -
+# Suppose sunny leaf tracing weighs 0.092 g
+# and shady leaf tracing weighs 0.138 g
+
+mass_sunny <- 0.092
+mass_shady <- 0.138
+
+area_sunny <- b_slope * mass_sunny + a_intercept
+area_shady <- b_slope * mass_shady + a_intercept
+
+cat("Sunny tracing mass:", mass_sunny, "g\n")
+cat("Predicted area:    ", round(area_sunny, 2), "cm²\n\n")
+cat("Shady tracing mass:", mass_shady, "g\n")
+cat("Predicted area:    ", round(area_shady, 2), "cm²\n")
+```
+:::
+::: {.column width="40%"}
+**The equation in action:**
+
+$$\widehat{\text{area}} = 130.5 \times \text{mass} + 0.28$$
+
+For a sunny tracing at 0.092 g:
+
+$130.5 \times 0.092 + 0.28 = 12.3$ cm²
+
+For a shady tracing at 0.138 g:
+
+$130.5 \times 0.138 + 0.28 = 18.3$ cm²
+
+This matches our observation from Lecture 03 — shady leaves are larger!
+:::
+::::
+
+# Using `predict()` — with Prediction Intervals
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r predict-interval-09}
+# predict() gives uncertainty around each prediction -----
+new_masses <- tibble(mass_g = c(0.092, 0.138))
+
+# Confidence interval: for the MEAN area at this mass
+predict(paper_lm_model,
+        newdata  = new_masses,
+        interval = "confidence") %>%
+  round(3)
+
+# Prediction interval: for a SINGLE new observation
+predict(paper_lm_model,
+        newdata  = new_masses,
+        interval = "prediction") %>%
+  round(3)
+```
+:::
+::: {.column width="40%"}
+**Two types of interval (W&S §17.2 p. 549):**
+
+| Type | Predicts | Width |
+|---|---|---|
+| **Confidence** | mean area for *all* leaves this mass | narrower |
+| **Prediction** | area of *one specific* leaf | wider |
+
+For predicting a single leaf, use the **prediction interval** — it captures individual-to-individual variation within the same mass class.
+
+📖 W&S §17.2 pp. 548–550
+:::
+::::
+
+# How to Report Regression Results
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r report-values-09}
+# Pull reporting values from the model -------------------
+f_stat   <- summary(paper_lm_model)$fstatistic
+f_val    <- round(f_stat[1], 1)
+df1      <- f_stat[2]
+df2      <- f_stat[3]
+p_val    <- pf(f_stat[1], df1, df2, lower.tail = FALSE)
+
+cat("--- Results paragraph ---\n")
+cat("Paper mass was a strong predictor of paper area\n")
+cat("(linear regression: F(", df1, ",", df2, ") =", f_val, ",\n")
+cat("p <", signif(p_val, 1), ", R² =", round(r2_val, 4), ").\n")
+cat("The calibration equation is:\n")
+cat("  area =", round(b_slope, 2), "× mass +", round(a_intercept, 3), "cm²\n")
+cat("(slope 95% CI: ", round(confint(paper_lm_model)[2,1], 2),
+    "to", round(confint(paper_lm_model)[2,2], 2), "cm²/g)\n")
+```
+:::
+::: {.column width="40%"}
+**Standard report format:**
+
+> *"Paper area was accurately predicted from paper mass (linear regression: F(df₁, df₂) = F, p < 0.001, R² = 0.9999). The regression equation was area = 130.5 × mass + 0.28 (slope 95% CI: X to Y cm²/g)."*
+
+**Always include:**
+- F-statistic and both df (or t and df for slope test)
+- *p*-value (never "p = 0.000" — write "p < 0.001")
+- R²
+- The actual equation with slope and intercept
+- 95% CI for the slope
+
+📖 W&S §17.3 p. 553
+:::
+::::
+
+# What We Learned Today
+
+:::: {.columns}
+::: {.column width="60%"}
+**Concepts:**
+
+- **Regression** predicts Y from X using a straight line equation
+- Equation: $\hat{Y} = a + bX$ — slope *b*, intercept *a*
+- **Least squares** — minimizes sum of squared residuals
+- **R²** — fraction of Y variation explained by X
+- **Four assumptions** — linearity, independence, equal variance, normality of residuals
+- **Two prediction types** — confidence vs. prediction intervals
+
+**R skills:**
+
+- `lm(Y ~ X, data)` — fits the model
+- `summary()` — extracts slope, intercept, R², p-values
+- `coef()`, `fitted()`, `residuals()` — pull model components
+- `predict(model, newdata, interval = "prediction")` — predictions with uncertainty
+- `geom_smooth(method = "lm", se = TRUE)` — plot the line with CI band
+:::
+::: {.column width="40%"}
+**Chapter references:**
+
+- 📖 W&S §17.1 — Linear regression
+- 📖 W&S §17.2 — Confidence in predictions
+- 📖 W&S §17.3 — Testing slope hypotheses
+- 📖 W&S §17.4 — R²
+- 📖 W&S §17.5 — Assumptions
+
+**Up next — Lecture 06:**
+
+- Applying the calibration: predicting and comparing leaf area between sides
+- Revisiting the t-test on *predicted area* (cm²) rather than raw weight (g)
+- Discussion: which measurement is more biologically meaningful?
+:::
+::::
