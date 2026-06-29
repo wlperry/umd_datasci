@@ -1,18 +1,12 @@
 ---
-title: "05_Class_Activity Regressions"
+title: "Worksheet 05 — Linear Regression"
+subtitle: "Building a calibration curve to predict leaf area from paper tracing mass"
 author: "Bill Perry"
 date: today
-
 format:
   html: default
   docx: default
 ---
-
-
-::: {.cell}
-
-:::
-
 
 # In-class Activity 5: Regression — Predicting Leaf Area
 
@@ -23,19 +17,19 @@ format:
 - **Checked variance** — Levene's test; used Welch's (`var.equal = FALSE`) regardless of result
 - **Ran the t-test** — `t.test(weight_g ~ side, data = tree_df, var.equal = FALSE, alternative = "two.sided")`
 - **Read output** — t-statistic, Welch-Satterthwaite df, *p*-value, 95% CI, group means
-- **Result** — shady leaves were significantly **heavier** than sunny leaves (*p* \< 0.001)
+- **Result** — shady leaves were significantly **heavier** than sunny leaves (*p* < 0.001)
 - **But:** weight in grams tells us about *mass* — not directly about *leaf surface area*
 
 ### Today's Objectives
 
-1.  Load and inspect the paper calibration data
-2.  Make a scatter plot and visually assess linearity
-3.  Fit a linear regression with `lm()` and read every line of `summary()`
-4.  Extract slope, intercept, and R² from the model
-5.  Check all four regression assumptions (linearity, equal variance, normality of residuals)
-6.  Use the calibration equation to **predict leaf area** from a tracing mass
-7.  Use `predict()` with confidence and prediction intervals
-8.  Write a complete results paragraph following W&S Chapter 17 conventions
+1. Load and inspect the paper calibration data
+2. Make a scatter plot and visually assess linearity
+3. Fit a linear regression with `lm()` and read every line of `summary()`
+4. Extract slope, intercept, and R² from the model
+5. Check all four regression assumptions (linearity, equal variance, normality of residuals)
+6. Use the calibration equation to **predict leaf area** from a tracing mass
+7. Use `predict()` with confidence and prediction intervals
+8. Write a complete results paragraph following W&S Chapter 17 conventions
 
 > # **How to use this worksheet**
 >
@@ -474,7 +468,13 @@ Your answer:
 
 ✏️ **Your turn:** Write a complete results paragraph using the information below. Follow the format from Lecture 05.
 
-**Information to include:** - What the regression tested - F-statistic, df₁, df₂, and p-value (from the F-statistic line in `summary()`) - R² - The calibration equation (slope and intercept) - 95% confidence interval for the slope (use `confint(paper_lm_model)`) - Brief mention of assumption checks
+**Information to include:**
+- What the regression tested
+- F-statistic, df₁, df₂, and p-value (from the F-statistic line in `summary()`)
+- R²
+- The calibration equation (slope and intercept)
+- 95% confidence interval for the slope (use `confint(paper_lm_model)`)
+- Brief mention of assumption checks
 
 ``` r
 # Get the 95% CI for the slope -------------------------
@@ -485,7 +485,7 @@ confint(paper_lm_model)
 Write your results paragraph here:
 ```
 
-------------------------------------------------------------------------
+---
 
 # Part 13 · Review and checkpoint
 
@@ -582,7 +582,7 @@ Why:
 
 ### Connect to Worksheet 04
 
-In Worksheet 04 you ran a Welch's t-test comparing leaf **weight** (grams) between sunny and shady sides and found a significant difference (*p* \< 0.001). Now you have a calibration curve that converts tracing weight to **area** (cm²) — a more biologically meaningful measurement. You could use the regression equation as a `mutate()` step to add predicted area to a leaf data frame, then redo the t-test on *area* rather than weight.
+In Worksheet 04 you ran a Welch's t-test comparing leaf **weight** (grams) between sunny and shady sides and found a significant difference (*p* < 0.001). Now you have a calibration curve that converts tracing weight to **area** (cm²) — a more biologically meaningful measurement. You could use the regression equation as a `mutate()` step to add predicted area to a leaf data frame, then redo the t-test on *area* rather than weight.
 
 **▶ Sketch the code (do not necessarily run it — you would need actual tracing masses):**
 
@@ -616,12 +616,12 @@ figures/
 
 # Getting unstuck
 
-1.  **`lm()` error:** the formula must be `lm(Y ~ X, data)` — response on the left, predictor on the right. Check column names with `names(paper_df)`.
-2.  **`coef()` gives two values:** `coef(model)[1]` is the intercept, `coef(model)[2]` is the slope for the first predictor.
-3.  **`residuals()` vs raw data:** always apply `shapiro.test()` and `ggplot(aes(sample = residuals))` to `residuals(model)`, not to the raw Y column.
-4.  **`predict()` needs a tibble:** `newdata` must be a data frame or tibble with the exact same column name as the predictor (`mass_g`). A typo here is the most common error.
-5.  **`geom_smooth(se = TRUE)` shows confidence band, not prediction interval.** For prediction intervals, use `predict()` manually.
-6.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
+1. **`lm()` error:** the formula must be `lm(Y ~ X, data)` — response on the left, predictor on the right. Check column names with `names(paper_df)`.
+2. **`coef()` gives two values:** `coef(model)[1]` is the intercept, `coef(model)[2]` is the slope for the first predictor.
+3. **`residuals()` vs raw data:** always apply `shapiro.test()` and `ggplot(aes(sample = residuals))` to `residuals(model)`, not to the raw Y column.
+4. **`predict()` needs a tibble:** `newdata` must be a data frame or tibble with the exact same column name as the predictor (`mass_g`). A typo here is the most common error.
+5. **`geom_smooth(se = TRUE)` shows confidence band, not prediction interval.** For prediction intervals, use `predict()` manually.
+6. **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
 
 > 💡 **Key idea:** The five-step logic of regression (plot → fit → check assumptions → interpret → predict) is the same framework you'll use for multiple regression, ANOVA, and every other linear model in your career.
 

@@ -1,16 +1,25 @@
 ---
-title: "Lecture 05: Regression Analysis"
+title: "Lecture 05 — Linear Regression"
+subtitle: "Predicting leaf area from paper tracing mass (Whitlock & Schluter Ch. 17)"
 author: "Bill Perry"
-
+date: today
 format:
-  html:
-    downloads: [docx, pptx, typst]  # This creates download links for all three
   revealjs:
     output-ext: "slides.html"
+    theme: simple
+    slide-number: true
+    fig-format: png
+    fig-width: 5
+    fig-height: 3.8
+    code-overflow: wrap
+    highlight-style: github
   docx: default
   pptx: default
+execute:
+  echo: true
+  warning: false
+  message: false
 ---
-
 
 ```{r setup}
 #| echo: false
@@ -46,6 +55,7 @@ more biologically meaningful measurement: **leaf surface area** (cm²).
 - **Apply it:** build a calibration curve to predict leaf area from paper tracing mass
 - Check all four assumptions of regression
 - Use `predict()` to make predictions with intervals
+- Use `mutate()` to add model results to a data frame
 
 ::: {.callout-tip}
 **🖐 Try it yourself**
@@ -69,7 +79,7 @@ By the end you will predict leaf area from a tracing weight.
 
 **Naming conventions:**
 
-- models → `_model` (e.g., `paper_lm_model`)
+- models → `_model`
 - plots → `_plot`
 :::
 ::::
@@ -105,7 +115,7 @@ Paper of uniform stock has constant *area density* (cm² per gram). Mass and are
 
 **Total:** 118 paper squares weighed
 
-📖 W&S §17.1, Example 17.1 (lion nose pigmentation as age predictor uses the same logic: measure X, predict Y)
+📖 W&S §17.1, Example 17.1 (the same logic: measure X to predict Y)
 :::
 ::::
 
@@ -251,7 +261,7 @@ We expect R² ≈ 1.00.
 
 **Important:** R² tells you *how well the line fits* the data you have. It does not by itself tell you whether the relationship is statistically significant — that requires a test of the slope.
 
-A significant slope with a low R² is possible (weak but real relationship). A high R² with a non-significant slope is not possible with large n.
+A significant slope with a low R² is possible (weak but real relationship). In biology, R² values of 0.3–0.7 are common and meaningful.
 :::
 ::::
 
@@ -265,7 +275,7 @@ Four assumptions must hold for the p-value and confidence intervals to be valid 
 |---|---|---|
 | 1 | **Linearity** — Y changes linearly with X | Residual vs. fitted plot |
 | 2 | **Independence** — observations are independent | Study design |
-| 3 | **Equal variance** (homoscedasticity) — spread of residuals is constant across fitted values | Residual vs. fitted plot |
+| 3 | **Equal variance** — spread of residuals is constant | Residual vs. fitted plot |
 | 4 | **Normality** — residuals are normally distributed | QQ plot + Shapiro-Wilk |
 :::
 ::: {.column width="40%"}
@@ -283,15 +293,15 @@ A well-fitted residual plot looks like a random horizontal cloud of points cente
 
 # Load Libraries and Data
 
-```{r load-libs-09}
-# Load packages — always at the top of the script ----------
+```{r load-libs-05}
+# Load packages at the top of the script ---------------
 library(readxl)      # reading Excel files
 library(tidyverse)   # data manipulation + ggplot2
 library(skimr)       # fast data overview
 ```
 
-```{r load-data-09}
-# Load the paper calibration data -------------------------
+```{r load-data-05}
+# Load the paper calibration data ----------------------
 paper_df <- read_excel("data/paper_area_weights.xlsx")
 ```
 
@@ -303,20 +313,19 @@ The file `paper_area_weights.xlsx` contains 118 paper squares of **known area** 
 
 :::: {.columns}
 ::: {.column width="60%"}
-```{r skim-data-09}
-# Quick overview of the calibration data ------------------
+```{r skim-data-05}
+# Quick overview of the calibration data ---------------
 skim(paper_df)
 ```
 :::
 ::: {.column width="40%"}
-```{r scatter-summary}
-#| echo: true
-# How many squares per area group? -----------------------
+```{r scatter-summary-05}
+# How many squares per area group? --------------------
 paper_df %>%
   group_by(area_cm2) %>%
   summarize(
-    n        = n(),
-    mean_wt  = round(mean(mass_g), 5)
+    n       = n(),
+    mean_wt = round(mean(mass_g), 5)
   )
 ```
 :::
@@ -326,10 +335,10 @@ paper_df %>%
 
 :::: {.columns}
 ::: {.column width="60%"}
-```{r scatter-raw}
+```{r scatter-raw-05}
 #| fig-format: png
-# Scatter plot of area vs mass to check linearity --------
-scatter_09_plot <- paper_df %>%
+# Scatter plot of area vs mass to check linearity -----
+scatter_05_plot <- paper_df %>%
   ggplot(aes(x = mass_g, y = area_cm2)) +
   geom_point(alpha = 0.5, size = 2) +
   labs(
@@ -339,7 +348,7 @@ scatter_09_plot <- paper_df %>%
   ) +
   theme_minimal()
 
-scatter_09_plot
+scatter_05_plot
 ```
 :::
 ::: {.column width="40%"}
@@ -359,14 +368,14 @@ Both variables are continuous and numeric → linear regression is appropriate.
 
 :::: {.columns}
 ::: {.column width="60%"}
-```{r fit-lm-09}
-# Fit the least-squares regression line ------------------
+```{r fit-lm-05}
+# Fit the least-squares regression line ---------------
 # formula: response ~ predictor
 paper_lm_model <- lm(area_cm2 ~ mass_g, data = paper_df)
 ```
 
-```{r summary-lm-09}
-# Full model summary — every number matters --------------
+```{r summary-lm-05}
+# Full model summary — every number matters -----------
 summary(paper_lm_model)
 ```
 :::
@@ -392,8 +401,8 @@ The result is a **model object** — we can extract everything from it.
 
 :::: {.columns}
 ::: {.column width="60%"}
-```{r coef-extract}
-# Extract the key numbers from the model -----------------
+```{r coef-extract-05}
+# Extract the key numbers from the model --------------
 a_intercept <- coef(paper_lm_model)[1]   # intercept
 b_slope     <- coef(paper_lm_model)[2]   # slope
 
@@ -424,8 +433,8 @@ cat("Slope (b)     =", round(b_slope, 2),    "cm²/g\n")
 
 :::: {.columns}
 ::: {.column width="60%"}
-```{r r2-compute}
-# Extract R-squared and build the equation label ---------
+```{r r2-compute-05}
+# Extract R-squared and build the equation label ------
 r2_val <- summary(paper_lm_model)$r.squared
 
 cat("R² =", round(r2_val, 6), "\n\n")
@@ -446,8 +455,6 @@ This is expected — the relationship between mass and area in uniform paper is 
 In biological data, R² values of 0.3–0.7 are common and meaningful.
 
 📖 W&S §17.4 p. 555
-
-> *"R² is a measure of the fit of the line to data."*
 :::
 ::::
 
@@ -455,9 +462,9 @@ In biological data, R² values of 0.3–0.7 are common and meaningful.
 
 :::: {.columns}
 ::: {.column width="60%"}
-```{r calibration-line-plot}
+```{r calibration-line-plot-05}
 #| fig-format: png
-# Calibration curve with regression line and 95% CI band -
+# Calibration curve with regression line + 95% CI band
 calibration_plot <- paper_df %>%
   ggplot(aes(x = mass_g, y = area_cm2)) +
   geom_point(alpha = 0.5, size = 1.8) +
@@ -491,8 +498,10 @@ This is exactly Figure 17.2-1 from W&S (p. 549).
 
 :::: {.columns}
 ::: {.column width="60%"}
-```{r add-resid-df}
-# Add fitted values and residuals to the data frame ------
+```{r add-resid-df-05}
+# mutate() adds new columns to the data frame ----------
+# Here we add the model's fitted values and residuals
+# so we can plot them — recall mutate() from Lecture 03!
 paper_resid_df <- paper_df %>%
   mutate(
     fitted    = fitted(paper_lm_model),
@@ -500,7 +509,7 @@ paper_resid_df <- paper_df %>%
   )
 ```
 
-```{r resid-vs-fitted}
+```{r resid-vs-fitted-05}
 #| fig-format: png
 # Residuals vs Fitted — checks linearity & equal variance
 resid_plot <- paper_resid_df %>%
@@ -534,9 +543,9 @@ The residual plot is the most important diagnostic. Always check it before inter
 
 :::: {.columns}
 ::: {.column width="60%"}
-```{r qq-resid-09}
+```{r qq-resid-05}
 #| fig-format: png
-# QQ plot of residuals — checks normality assumption -----
+# QQ plot of residuals — checks normality assumption --
 qq_resid_plot <- paper_resid_df %>%
   ggplot(aes(sample = residuals)) +
   stat_qq() +
@@ -552,8 +561,8 @@ qq_resid_plot
 ```
 :::
 ::: {.column width="40%"}
-```{r shapiro-resid-09}
-# Shapiro-Wilk test on residuals — formal normality test -
+```{r shapiro-resid-05}
+# Shapiro-Wilk test on residuals — NOT on raw data ---
 shapiro.test(residuals(paper_lm_model))
 ```
 
@@ -571,8 +580,8 @@ shapiro.test(residuals(paper_lm_model))
 
 :::: {.columns}
 ::: {.column width="60%"}
-```{r predict-point-09}
-# Plug tracing masses directly into the calibration line -
+```{r predict-point-05}
+# Plug tracing masses into the calibration line -------
 # Suppose sunny leaf tracing weighs 0.092 g
 # and shady leaf tracing weighs 0.138 g
 
@@ -609,8 +618,8 @@ This matches our observation from Lecture 03 — shady leaves are larger!
 
 :::: {.columns}
 ::: {.column width="60%"}
-```{r predict-interval-09}
-# predict() gives uncertainty around each prediction -----
+```{r predict-interval-05}
+# predict() gives uncertainty around predictions ------
 new_masses <- tibble(mass_g = c(0.092, 0.138))
 
 # Confidence interval: for the MEAN area at this mass
@@ -644,8 +653,8 @@ For predicting a single leaf, use the **prediction interval** — it captures in
 
 :::: {.columns}
 ::: {.column width="60%"}
-```{r report-values-09}
-# Pull reporting values from the model -------------------
+```{r report-values-05}
+# Pull reporting values from the model ----------------
 f_stat   <- summary(paper_lm_model)$fstatistic
 f_val    <- round(f_stat[1], 1)
 df1      <- f_stat[2]
@@ -657,8 +666,9 @@ cat("Paper mass was a strong predictor of paper area\n")
 cat("(linear regression: F(", df1, ",", df2, ") =", f_val, ",\n")
 cat("p <", signif(p_val, 1), ", R² =", round(r2_val, 4), ").\n")
 cat("The calibration equation is:\n")
-cat("  area =", round(b_slope, 2), "× mass +", round(a_intercept, 3), "cm²\n")
-cat("(slope 95% CI: ", round(confint(paper_lm_model)[2,1], 2),
+cat("  area =", round(b_slope, 2), "× mass +",
+    round(a_intercept, 3), "cm²\n")
+cat("(slope 95% CI:", round(confint(paper_lm_model)[2,1], 2),
     "to", round(confint(paper_lm_model)[2,2], 2), "cm²/g)\n")
 ```
 :::
@@ -668,10 +678,10 @@ cat("(slope 95% CI: ", round(confint(paper_lm_model)[2,1], 2),
 > *"Paper area was accurately predicted from paper mass (linear regression: F(df₁, df₂) = F, p < 0.001, R² = 0.9999). The regression equation was area = 130.5 × mass + 0.28 (slope 95% CI: X to Y cm²/g)."*
 
 **Always include:**
-- F-statistic and both df (or t and df for slope test)
+- F-statistic and both df
 - *p*-value (never "p = 0.000" — write "p < 0.001")
 - R²
-- The actual equation with slope and intercept
+- The actual equation
 - 95% CI for the slope
 
 📖 W&S §17.3 p. 553
@@ -696,6 +706,7 @@ cat("(slope 95% CI: ", round(confint(paper_lm_model)[2,1], 2),
 - `lm(Y ~ X, data)` — fits the model
 - `summary()` — extracts slope, intercept, R², p-values
 - `coef()`, `fitted()`, `residuals()` — pull model components
+- `mutate()` with `fitted()` and `residuals()` — add model output to a data frame
 - `predict(model, newdata, interval = "prediction")` — predictions with uncertainty
 - `geom_smooth(method = "lm", se = TRUE)` — plot the line with CI band
 :::

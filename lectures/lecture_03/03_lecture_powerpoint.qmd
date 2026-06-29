@@ -1,16 +1,24 @@
 ---
 title: "Lecture 03 — Describing Our Data"
-subtitle: "Summaries, statistics, and our first real comparisons"
+subtitle: "Wrangling, summaries, statistics, and our first real comparisons"
 author: "Bill Perry"
 date: today
-
 format:
-  html:
-    downloads: [docx, pptx, typst]  # This creates download links for all three
   revealjs:
     output-ext: "slides.html"
+    theme: simple
+    slide-number: true
+    fig-format: png
+    fig-width: 5
+    fig-height: 3.8
+    code-overflow: wrap
+    highlight-style: github
   docx: default
   pptx: default
+execute:
+  echo: true
+  warning: false
+  message: false
 ---
 
 ```{r setup}
@@ -20,40 +28,47 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 # Where we left off (Lecture 02)
 
-- **Setup** — R and Positron installed; project folders created (`documents/`, `data/`, `output/`, `figures/`, `scripts/`)
-- **R as a calculator** — arithmetic, order of operations
-- **Assignment** — storing values with `<-`
-- **Vectors** — `c()`, indexing, data types (`numeric`, `character`, `logical`)
-- **Functions** — calling built-in functions, passing arguments
-- **First look** — loaded our leaf data with `read_excel()` and made a first `ggplot`
+- **Setup** — R and Positron installed; project folders created (`data/`, `figures/`, `scripts/`)
+- **R as a calculator** — arithmetic, order of operations, assignment with `<-`
+- **Vectors** — `c()`, data types (`numeric`, `character`, `logical`)
+- **Functions** — calling built-in functions, reading help with `?`
+- **Loading data** — `read_excel()` and `read_csv()`; inspecting with `glimpse()`, `head()`, `dim()`
+- **Pipe** — `%>%` reads as "then"; chains steps together
+- **First ggplot** — boxplot + `geom_jitter()`, saved as PNG
 
-::: callout-note
+::: {.callout-note}
 **✅ Key idea from Lecture 02**
 
-You can get data into R and make a plot. Today we learn to *describe* and *summarize* what we actually have.
+You can get data into R and make a plot.
+Today we learn to *wrangle* and *describe* what we actually have.
 :::
 
 # Goals for Today
 
-:::::: columns
-:::: {.column width="60%"}
-- **Review** what descriptive statistics really mean
-  - mean, median, variance, SD, SE
-  - a first look at *p*-values
-- **Count observations** correctly — the NA problem
-- **Compute stats** three ways:
-  - base R, `tidyverse`, and `skimr`
-- **Visualize** distributions:
-  - boxplots with individual points overlaid
-  - mean ± SE summary plots
+:::: {.columns}
+::: {.column width="60%"}
+**Part 1 — Tidyverse wrangling:**
 
-::: callout-tip
+- `filter()` — pick rows by a condition
+- `select()` — pick columns by name
+- `mutate()` — create new columns
+- `arrange()` — sort rows
+- Chain them all into a **pipeline**
+
+**Part 2 — Descriptive statistics:**
+
+- mean, median, variance, SD, SE
+- NA handling — `sum(!is.na())`
+- `group_by()` + `summarize()`
+- `skimr` for a fast full overview
+- Boxplot + mean ± SE plots
+
+::: {.callout-tip}
 **🖐 Try it yourself**
 
-By the end you will compute and plot descriptive stats on our own leaf data.
+By the end you will wrangle and describe our leaf data in one connected pipeline.
 :::
-::::
-
+:::
 ::: {.column width="40%"}
 **Our tools today:**
 
@@ -63,7 +78,9 @@ By the end you will compute and plot descriptive stats on our own leaf data.
 
 **References:**
 
-- 📖 [R4DS Ch 3, 13, 18, 27](https://r4ds.hadley.nz/)
+- 📖 [R4DS Ch 3](https://r4ds.hadley.nz/data-transform) — Data Transformation
+- 📖 [R4DS Ch 13](https://r4ds.hadley.nz/numbers) — Numbers
+- 📖 [R4DS Ch 18](https://r4ds.hadley.nz/missing-values) — Missing Values
 - 🌐 [Data Carpentry](https://datacarpentry.github.io/R-ecology-lesson/)
 
 **Naming conventions:**
@@ -72,146 +89,296 @@ By the end you will compute and plot descriptive stats on our own leaf data.
 - plots → `_plot`
 - models → `_model`
 :::
-::::::
-
-# Our Scientific Question
-
-::::: columns
-::: {.column width="60%"}
-**Biological prediction:** Leaves on the *shady* side of a tree will be **larger and heavier** to capture more of the limited light.
-
-|   | Hypothesis |
-|------------------------------------|------------------------------------|
-| **H₀ — null** | No difference in leaf size between sunny and shady sides |
-| **Hₐ — alternate** | Leaf size differs between sunny and shady sides |
-:::
-
-::: {.column width="40%"}
-**Plan for this unit:**
-
-1.  **Today** — *describe* the data
-2.  **Lecture 04** — formally *test* the hypotheses with a t-test
-
-Statistics helps us decide which hypothesis is better supported by the data.
-:::
-:::::
-
-# Our Data — Long Format
-
-::::: columns
-::: {.column width="60%"}
-**Each row = one leaf**
-
-| Column      | Description            |
-|-------------|------------------------|
-| `index`     | leaf number (1–20)     |
-| `side`      | `"sunny"` or `"shady"` |
-| `weight_g`  | leaf weight (g)        |
-| `width_cm`  | leaf width (cm)        |
-| `height_cm` | leaf height (cm)       |
-
-This is called **long format** — one measurement per row, group label in a column.
-:::
-
-::: {.column width="40%"}
-**Long vs Wide format:**
-
-| Shape | Layout |
-|------------------------------------|------------------------------------|
-| **Long** | one row per leaf; `side` in a column |
-| **Wide** | one row per leaf *pair*; `sunny_wt`, `shady_wt` as separate columns |
-
-R and `ggplot2` work best with **long** format. We will convert between the two in a later lecture.
-
-📖 [R4DS §5 — Data Tidying](https://r4ds.hadley.nz/data-tidy)
-:::
-:::::
-
-# Load Libraries
-
-```{r load-libraries}
-# Load all packages — always at the top of every script --------
-library(readxl)      # reading Excel files (.xlsx)
-library(tidyverse)   # data manipulation + ggplot2
-library(skimr)       # fast descriptive column summaries
-```
-
-:::::: columns
-:::: {.column width="60%"}
-::: callout-note
-**Install once — load every session**
-
-Run in the Console **one time only:**
-
-``` r
-install.packages("readxl")
-install.packages("skimr")
-```
-
-Then every session: `library(readxl)` activates it.
-:::
 ::::
 
-::: {.column width="40%"}
-**Why `readxl`?**
+# Load Libraries and Data
 
-`read_csv()` reads `.csv` files. `read_excel()` reads `.xlsx` files. Both land the data in an R data frame.
-
-📖 [R4DS §7 — Data Import](https://r4ds.hadley.nz/data-import)
-:::
-::::::
-
-# Load Our Leaf Data
-
-::::: columns
-::: {.column width="60%"}
-```{r load-data}
-# Read the Excel file from the data folder -----------
-tree_df <- read_excel(
-  "data/2026_06_25_tree_experiment_raw_data.xlsx"
-)
+```{r load-libs-03}
+# Load all packages at the top of every script ----------
+library(readxl)      # reading Excel files
+library(tidyverse)   # data wrangling + ggplot2
+library(skimr)       # fast descriptive summaries
 ```
 
-```{r inspect-head}
-# Preview the first rows of the data -----------------
-head(tree_df)
+```{r load-data-03}
+# Read the leaf data from the data folder ---------------
+tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
 ```
-:::
 
-::: {.column width="40%"}
-- Path is **relative** to your project folder
-- `"data/..."` means: look in the `data/` sub-folder
-- This path works on **any** computer, not just yours
-- The file stays untouched — R reads; it does not edit
+::: {.callout-note}
+**Install once — load every session**
+
+Run in the Console one time only:
+`install.packages("skimr")`
+
+Then every session: `library(skimr)` activates it.
 :::
-:::::
 
 # Inspect the Data
 
-::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
-```{r inspect-glimpse}
-# Column names, types, and first values --------------
-glimpse(tree_df)
+```{r inspect-head-03}
+# Preview the first rows ----------------------------
+head(tree_df)
 ```
 :::
-
 ::: {.column width="40%"}
-```{r inspect-dim}
+```{r inspect-glimpse-03}
+# Column names, types, first values -----------------
+glimpse(tree_df)
+```
+
+```{r inspect-dim-03}
 # Rows × columns
 dim(tree_df)
 ```
 
-- `<chr>` = character (text)
-- `<dbl>` = numeric (decimal)
+- `<chr>` = character
+- `<dbl>` = numeric
 
-**10 sunny leaves, 10 shady leaves** — we have a **balanced** design.
+10 sunny + 10 shady = **balanced design**
 :::
-:::::
+::::
+
+# Part 1 · The Core Tidyverse Verbs
+
+:::: {.columns}
+::: {.column width="60%"}
+Five functions do most of the work in data wrangling:
+
+| Function | What it does |
+|---|---|
+| `filter()` | keep **rows** matching a condition |
+| `select()` | keep **columns** by name |
+| `mutate()` | **add or change** a column |
+| `arrange()` | **sort** rows |
+| `summarize()` | **collapse** rows to a summary |
+
+All take a data frame as first input (via `%>%`) and return a data frame.
+
+📖 [R4DS §3 — Data Transformation](https://r4ds.hadley.nz/data-transform)
+:::
+::: {.column width="40%"}
+::: {.callout-note}
+**✅ Key idea**
+
+These five verbs are the tidyverse grammar for data. Learn them once and you can wrangle almost any dataset.
+:::
+
+Think of them as building blocks:
+
+```
+filter()   → rows you want
+select()   → columns you want
+mutate()   → new columns you need
+arrange()  → order the rows
+summarize()→ collapse to summaries
+```
+:::
+::::
+
+# `filter()` — Picking Rows
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r filter-demo}
+# filter() keeps rows where the condition is TRUE -------
+
+# Keep only sunny leaves
+tree_df %>% filter(side == "sunny")
+
+# Keep only leaves heavier than 5 g
+tree_df %>% filter(weight_g > 5)
+
+# Combine two conditions with & (AND)
+tree_df %>% filter(side == "shady", weight_g > 7)
+```
+:::
+::: {.column width="40%"}
+**Common comparison operators:**
+
+| Symbol | Meaning |
+|---|---|
+| `==` | exactly equal |
+| `!=` | not equal |
+| `>` `<` | greater / less than |
+| `>=` `<=` | greater / less than or equal |
+
+::: {.callout-warning}
+**⚠️ Watch out!**
+
+`=` assigns a value. `==` tests equality.
+`filter(side = "sunny")` → error.
+`filter(side == "sunny")` → correct.
+:::
+:::
+::::
+
+# `select()` — Picking Columns
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r select-demo}
+# select() keeps the columns you name ------------------
+
+# Keep only side and weight
+tree_df %>% select(side, weight_g)
+
+# Drop the index column (use minus sign)
+tree_df %>% select(-index)
+
+# Keep columns that start with a word
+tree_df %>% select(starts_with("weight"))
+```
+:::
+::: {.column width="40%"}
+**Why `select()` matters:**
+
+- Real datasets often have 50–100+ columns
+- You rarely need all of them
+- `select()` keeps your workspace clean
+
+**Useful helpers:**
+
+- `starts_with("x")` — columns starting with "x"
+- `ends_with("_g")` — columns ending with "_g"
+- `contains("cm")` — columns containing "cm"
+
+📖 [R4DS §3.3](https://r4ds.hadley.nz/data-transform#select)
+:::
+::::
+
+# `mutate()` — Creating New Columns
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r mutate-demo}
+# mutate() adds a new column to the data frame ---------
+
+# Convert grams to milligrams
+tree_df %>%
+  mutate(weight_mg = weight_g * 1000)
+
+# Add a size category based on weight
+tree_df %>%
+  mutate(size_class = if_else(weight_g > 5, "large", "small"))
+
+# mutate() can reference multiple existing columns
+tree_df %>%
+  mutate(
+    weight_mg  = weight_g * 1000,
+    area_approx = width_cm * height_cm   # rough area estimate
+  )
+```
+:::
+::: {.column width="40%"}
+- `mutate()` keeps **all existing columns** and adds new ones
+- Use `if_else(condition, value_if_true, value_if_false)` to create categories
+
+::: {.callout-note}
+**✅ Key idea**
+
+`mutate()` never removes columns — it adds to the right of your data frame.
+
+To overwrite a column, just use the same name on the left:
+`mutate(weight_g = round(weight_g, 1))`
+:::
+
+📖 [R4DS §3.3](https://r4ds.hadley.nz/data-transform#sec-mutate)
+:::
+::::
+
+# `arrange()` — Sorting Rows
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r arrange-demo}
+# arrange() sorts rows by one or more columns ----------
+
+# Lightest leaves first
+tree_df %>% arrange(weight_g)
+
+# Heaviest leaves first (use desc() to reverse)
+tree_df %>% arrange(desc(weight_g))
+
+# Sort by side, then by weight within each side
+tree_df %>% arrange(side, desc(weight_g))
+```
+:::
+::: {.column width="40%"}
+- Default: **ascending** order (smallest first)
+- `desc(column)` → **descending** order (largest first)
+- Very useful before printing a table or checking outliers
+
+::: {.callout-tip}
+`arrange()` is rarely used in the middle of an analysis pipeline — it is most useful at the **end** when you want to inspect your results in a specific order.
+:::
+:::
+::::
+
+# The Full Pipeline
+
+:::: {.columns}
+::: {.column width="60%"}
+```{r full-pipeline}
+# Chain all the verbs together -------------------------
+# Read it top to bottom like a recipe
+
+wrangled_df <- tree_df %>%
+  filter(weight_g > 0) %>%             # remove any zeros
+  select(side, weight_g, height_cm) %>% # keep only needed cols
+  mutate(
+    weight_mg    = weight_g * 1000,
+    size_class   = if_else(weight_g > 5, "large", "small")
+  ) %>%
+  arrange(side, desc(weight_g))        # sort by side, then weight
+
+head(wrangled_df)
+```
+:::
+::: {.column width="40%"}
+**Read the pipeline out loud:**
+
+> Take `tree_df`,
+> **then** filter to non-zero weights,
+> **then** select three columns,
+> **then** add two new columns,
+> **then** sort by side and weight.
+
+::: {.callout-note}
+**✅ Key idea**
+
+The pipeline `%>%` is what makes tidyverse readable. You can see every step in order — unlike nested function calls that read inside-out.
+:::
+:::
+::::
+
+# Part 2 · Our Scientific Question
+
+:::: {.columns}
+::: {.column width="60%"}
+**Biological prediction:**
+Leaves on the *shady* side of a tree will be **larger and heavier** to capture more of the limited light.
+
+|   | Hypothesis |
+|---|---|
+| **H₀ — null** | No difference in leaf size between sunny and shady sides |
+| **Hₐ — alternate** | Leaf size differs between sunny and shady sides |
+:::
+::: {.column width="40%"}
+**Plan for this unit:**
+
+1. **Today** — *describe* the data
+2. **Lecture 04** — formally *test* the hypotheses with a t-test
+
+Statistics helps us decide which hypothesis is better supported by the data.
+:::
+::::
 
 # What Is the Mean?
 
-::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 $$\bar{x} = \frac{\sum_{i=1}^{n} x_i}{n}$$
 
@@ -225,7 +392,6 @@ Values: 5, 6, 7, 8, **50** → mean = 15.2
 
 *Is 15.2 a fair summary? Not really — the outlier dominates!*
 :::
-
 ::: {.column width="40%"}
 **Why it matters:**
 
@@ -235,14 +401,14 @@ Values: 5, 6, 7, 8, **50** → mean = 15.2
 
 📖 [R4DS §13 — Numbers](https://r4ds.hadley.nz/numbers)
 :::
-:::::
+::::
 
 # Calculating the Mean — filter() and pull()
 
-::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 ```{r filter-pull-sunny}
-# Extract sunny leaf weights as a plain vector --------
+# Use filter() + pull() to extract one group's values --
 sunny_wt <- tree_df %>%
   filter(side == "sunny") %>%
   pull(weight_g)
@@ -251,12 +417,11 @@ sunny_wt   # look at the raw values
 ```
 
 ```{r mean-sunny}
-# Now calculate the mean of that vector --------------
+# Calculate the mean -----------------------------------
 mean_sunny <- mean(sunny_wt, na.rm = TRUE)
 cat("Mean sunny weight:", round(mean_sunny, 2), "g\n")
 ```
 :::
-
 ::: {.column width="40%"}
 - `filter(side == "sunny")` — keeps only sunny rows
 - `pull(weight_g)` — extracts that column as a **vector**
@@ -270,27 +435,26 @@ cat("Mean sunny weight:", round(mean_sunny, 2), "g\n")
 
 📖 [R4DS §3 — Data Transformation](https://r4ds.hadley.nz/data-transform)
 :::
-:::::
+::::
 
 # What Is the Median?
 
-::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 **The middle value when data are sorted**
 
-| Sorted data            | Median                |
-|------------------------|-----------------------|
-| 5, 6, **7**, 8, 50     | **7**                 |
+| Sorted data | Median |
+|---|---|
+| 5, 6, **7**, 8, 50 | **7** |
 | 5, 6, **7, 8**, 50, 51 | **(7 + 8) / 2 = 7.5** |
 
 - Not pulled by outliers → **robust**
 - If **mean ≫ median** → right-skewed
 - If **mean ≈ median** → roughly symmetric
 :::
-
 ::: {.column width="40%"}
 ```{r median-calc}
-# Median for each side via filter + pull -------------
+# Median for each side ---------------------------------
 shady_wt <- tree_df %>%
   filter(side == "shady") %>%
   pull(weight_g)
@@ -302,26 +466,25 @@ cat("Median sunny:", round(med_sunny, 2), "\n")
 cat("Median shady:", round(med_shady, 2), "\n")
 ```
 :::
-:::::
+::::
 
 # What Is Variance?
 
-:::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 $$s^2 = \frac{\sum_{i=1}^{n}(x_i - \bar{x})^2}{n - 1}$$
 
-1.  For each value, compute distance from mean: $(x_i - \bar{x})$
-2.  **Square** those distances → all positive
-3.  Sum them up, divide by $n - 1$
+1. For each value, compute distance from mean: $(x_i - \bar{x})$
+2. **Square** those distances → all positive
+3. Sum them up, divide by $n - 1$
 
 Dividing by $n - 1$ gives an **unbiased** estimate of population variance.
 
 **Larger variance = more spread = more uncertainty**
 :::
-
-:::: {.column width="40%"}
+::: {.column width="40%"}
 ```{r variance-calc}
-# Variance for each side ----------------------------
+# Variance for each side ------------------------------
 var_sunny <- var(sunny_wt, na.rm = TRUE)
 var_shady <- var(shady_wt, na.rm = TRUE)
 
@@ -329,44 +492,41 @@ cat("Variance sunny:", round(var_sunny, 2), "\n")
 cat("Variance shady:", round(var_shady, 2), "\n")
 ```
 
-::: callout-note
+::: {.callout-note}
 Variance is in **squared units** (g²) — hard to interpret. That is why we use SD.
 :::
 
 📖 [R4DS §13.3](https://r4ds.hadley.nz/numbers#numeric-summaries)
+:::
 ::::
-::::::
 
 # What Is Standard Deviation?
 
-::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 $$s = \sqrt{s^2} = \sqrt{\frac{\sum(x_i - \bar{x})^2}{n-1}}$$
 
 - The **square root of variance** → back in original units (g) ✓
 - For a normal distribution:
-  - \~**68%** of values fall within mean ± 1 SD
-  - \~**95%** fall within mean ± 2 SD
+  - ~**68%** of values fall within mean ± 1 SD
+  - ~**95%** fall within mean ± 2 SD
 - Reports how spread out *individual* data points are
 :::
-
 ::: {.column width="40%"}
 ```{r sd-calc}
-# Standard deviation for each side ------------------
+# Standard deviation for each side -------------------
 sd_sunny <- sd(sunny_wt, na.rm = TRUE)
 sd_shady <- sd(shady_wt, na.rm = TRUE)
 
 cat("SD sunny:", round(sd_sunny, 2), "g\n")
 cat("SD shady:", round(sd_shady, 2), "g\n")
 ```
-
-Most sunny leaves are within ±`r round(sd_sunny, 2)` g of the mean.
 :::
-:::::
+::::
 
 # What Is Standard Error?
 
-::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 $$SE = \frac{s}{\sqrt{n}}$$
 
@@ -374,17 +534,16 @@ $$SE = \frac{s}{\sqrt{n}}$$
 - Not the spread of raw data — the **uncertainty of the mean itself**
 - Gets **smaller** as *n* increases → more data = more precise estimate
 
-|        | Describes                          |
-|--------|------------------------------------|
+| | Describes |
+|---|---|
 | **SD** | spread of *individual* data points |
-| **SE** | precision of the *sample mean*     |
+| **SE** | precision of the *sample mean* |
 
 We report SE when making claims about group means.
 :::
-
 ::: {.column width="40%"}
 ```{r se-calc}
-# SE = SD / sqrt(n) — need correct n ----------------
+# SE = SD / sqrt(n) — need correct n -----------------
 n_sunny <- sum(!is.na(sunny_wt))
 n_shady <- sum(!is.na(shady_wt))
 
@@ -397,45 +556,14 @@ cat("n shady  =", n_shady, "\n")
 cat("SE shady =", round(se_shady, 2), "g\n")
 ```
 :::
-:::::
-
-# A First Look at the *p*-value
-
-:::::: columns
-::: {.column width="60%"}
-**The key question:** Could the difference in means be due to *random chance alone?*
-
-A ***p*****-value** answers:
-
-> *"If H₀ were true (no real difference), how likely is it that we would see a difference this large, just by chance?"*
-
-- ***p*** **\< 0.05** → data are **unlikely** under H₀ → **reject H₀**
-- ***p*** **≥ 0.05** → data are consistent with H₀ → **fail to reject H₀**
-
-We will **calculate** a *p*-value in Lecture 04.
-:::
-
-:::: {.column width="40%"}
-::: callout-important
-**Common misconception**
-
-A *p*-value is **not** the probability that H₀ is true.
-
-It is the probability of observing *this data (or more extreme)* **given** that H₀ is true.
-:::
-
-Our shady leaves weigh \~`r round(mean(shady_wt),1)` g vs sunny at \~`r round(mean(sunny_wt),1)` g.
-
-Could that gap be random chance? We will find out next lecture.
 ::::
-::::::
 
 # The Problem with `length()`
 
-::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 ```{r length-problem-demo}
-# length() counts ALL positions — including NAs ------
+# length() counts ALL positions — including NAs -------
 x <- c(4, 3, NA, 7, NA)   # a vector with missing values
 
 length(x)              # returns 5 — but 2 are NA!
@@ -443,7 +571,7 @@ sum(is.na(x))          # how many NAs are there?
 ```
 
 ```{r length-wrong-mean}
-# Using length() in SE gives the WRONG n and SE ------
+# Using length() in SE gives the WRONG answer ---------
 wrong_n  <- length(x)
 wrong_se <- sd(x, na.rm = TRUE) / sqrt(wrong_n)
 
@@ -451,7 +579,6 @@ cat("Wrong n  =", wrong_n,              "\n")
 cat("Wrong SE =", round(wrong_se, 3),   "\n")
 ```
 :::
-
 ::: {.column width="40%"}
 - `length(x)` counts **all positions** in the vector — including `NA`
 - This is a **silent error** — R will not warn you!
@@ -459,14 +586,14 @@ cat("Wrong SE =", round(wrong_se, 3),   "\n")
 
 📖 [R4DS §18 — Missing Values](https://r4ds.hadley.nz/missing-values)
 :::
-:::::
+::::
 
 # Fix — `sum(!is.na())`
 
-:::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 ```{r na-fix-step-by-step}
-# Break it down step by step --------------------------
+# Break it down step by step -------------------------
 x <- c(4, 3, NA, 7, NA)
 
 is.na(x)          # TRUE where NA, FALSE where real
@@ -476,31 +603,29 @@ sum(!is.na(x))    # count the TRUEs = number of real values
 
 ```{r na-fix-real}
 # Apply to our real leaf data ------------------------
-# (Our data has no NAs — but always use this pattern!)
 n_sun_check <- sum(!is.na(sunny_wt))
 cat("Non-missing sunny weights =", n_sun_check, "\n")
 ```
 :::
-
-:::: {.column width="40%"}
+::: {.column width="40%"}
 **How it works step by step:**
 
-1.  `is.na(x)` → `TRUE` for each `NA`
-2.  `!is.na(x)` → flips it: `TRUE` for **real** values
-3.  `sum(...)` → counts `TRUE`s
+1. `is.na(x)` → `TRUE` for each `NA`
+2. `!is.na(x)` → flips it: `TRUE` for **real** values
+3. `sum(...)` → counts `TRUE`s
 
-::: callout-tip
+::: {.callout-tip}
 **Best practice:** always use `sum(!is.na(x))` when you need *n* — even when you think there are no NAs.
 :::
+:::
 ::::
-::::::
 
 # All Stats — Base R, One Group at a Time
 
-::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 ```{r basestats-manual}
-# All stats for the sunny side using our vectors ------
+# All stats for the sunny side -----------------------
 n_s    <- sum(!is.na(sunny_wt))
 mean_s <- mean(sunny_wt,   na.rm = TRUE)
 med_s  <- median(sunny_wt, na.rm = TRUE)
@@ -515,20 +640,19 @@ cat("SD     =", round(sd_s, 2),   "\n")
 cat("SE     =", round(se_s, 2),   "\n")
 ```
 :::
-
 ::: {.column width="40%"}
 - Every function takes `na.rm = TRUE`
 - `cat()` prints clean labelled output
 - This is **clear** but repetitive for many groups → that is why we use `group_by()` next
 :::
-:::::
+::::
 
 # Stats the Tidy Way — `group_by()` + `summarize()`
 
-::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 ```{r groupby-stats}
-# Calculate all stats for both sides at once ---------
+# Calculate all stats for both sides at once ----------
 stats_df <- tree_df %>%
   group_by(side) %>%
   summarize(
@@ -542,198 +666,72 @@ stats_df <- tree_df %>%
 stats_df
 ```
 :::
-
 ::: {.column width="40%"}
 - `group_by(side)` — splits the data by the `side` column
 - `summarize()` — collapses each group to one row of stats
 - You get **both groups in one clean table**
-- You can reference a column you just created (`sd_wt` → `se_wt`)
+- You can reference a column just created (`sd_wt` → `se_wt`)
 
 📖 [R4DS §3.5 — `summarize()`](https://r4ds.hadley.nz/data-transform#sec-summarize)
 :::
-:::::
+::::
 
 # Multiple Variables at Once
 
-::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 ```{r groupby-multi}
-# group_by() works on any numeric column you choose --
+# One group_by() pipe summarizes all measurements -----
 size_stats_df <- tree_df %>%
   group_by(side) %>%
   summarize(
-    n          = sum(!is.na(weight_g)),
-    mean_wt    = round(mean(weight_g,   na.rm = TRUE), 2),
-    mean_ht    = round(mean(height_cm,  na.rm = TRUE), 2),
-    mean_wd    = round(mean(width_cm,   na.rm = TRUE), 2)
+    n       = sum(!is.na(weight_g)),
+    mean_wt = round(mean(weight_g,  na.rm = TRUE), 2),
+    mean_ht = round(mean(height_cm, na.rm = TRUE), 2),
+    mean_wd = round(mean(width_cm,  na.rm = TRUE), 2)
   )
 
 size_stats_df
 ```
 :::
-
 ::: {.column width="40%"}
-**With one `group_by()` pipe** you can summarize **all three measurements** across both sides.
+**With one `group_by()` pipe** you summarize **all three measurements** across both sides.
 
 **Do the numbers support our hypothesis?**
 
 - Shady heavier? → check `mean_wt`
-- Shady taller? → check `mean_ht`
-- Shady wider? → check `mean_wd`
-
-📖 [R4DS §3.3 — `mutate()`](https://r4ds.hadley.nz/data-transform#sec-mutate)
+- Shady taller?  → check `mean_ht`
+- Shady wider?   → check `mean_wd`
 :::
-:::::
+::::
 
 # Fast Summaries with `skimr`
 
 ```{r skimr-skim}
-#| echo: true
 # skim() grouped by side — full column summaries ------
 tree_df %>%
   group_by(side) %>%
   skim()
 ```
 
-:::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 Per column and per group: `n_missing`, `mean`, `sd`, percentiles (`p0` to `p100`), and a mini histogram.
 :::
-
-:::: {.column width="40%"}
-::: callout-tip
+::: {.column width="40%"}
+::: {.callout-tip}
 `skim()` is your fastest **first look** at any dataset. Pair it with `group_by()` to compare groups instantly.
 :::
+:::
 ::::
-::::::
-
-# The `[[ ]]` Notation
-
-::::: columns
-::: {.column width="60%"}
-```{r bracket-demo}
-# Three ways to extract the same column as a vector --
-
-# 1. Dollar sign notation
-tree_df$weight_g
-
-# 2. Double bracket with name in quotes
-tree_df[["weight_g"]]
-
-# 3. Double bracket with a variable holding the name
-col_name <- "weight_g"
-tree_df[[col_name]]      # works!
-# tree_df$col_name        # does NOT work
-```
-:::
-
-::: {.column width="40%"}
-- All three return an identical **vector** of all 20 weights
-- `$` is great for interactive typing
-- `[[ ]]` is more **flexible** — accepts names stored in variables
-- Essential for writing functions and loops later
-
-📖 [R4DS §27 — A Field Guide to Base R](https://r4ds.hadley.nz/base-r)
-:::
-:::::
-
-# Using `[[ ]]` with `filter()`
-
-::::: columns
-::: {.column width="60%"}
-```{r bracket-stats-sunny}
-# Combine filter() and [[ ]] to get one group --------
-sunny_df <- tree_df %>% filter(side == "sunny")
-sun_wt   <- sunny_df[["weight_g"]]
-
-n_sun  <- sum(!is.na(sun_wt))
-m_sun  <- mean(sun_wt, na.rm = TRUE)
-se_sun <- sd(sun_wt,   na.rm = TRUE) / sqrt(n_sun)
-
-cat("Sunny — n:", n_sun,
-    "| mean:", round(m_sun, 2),
-    "| SE:",   round(se_sun, 2), "g\n")
-```
-
-```{r bracket-stats-shady}
-shady_df <- tree_df %>% filter(side == "shady")
-sha_wt   <- shady_df[["weight_g"]]
-
-n_sha  <- sum(!is.na(sha_wt))
-m_sha  <- mean(sha_wt, na.rm = TRUE)
-se_sha <- sd(sha_wt,   na.rm = TRUE) / sqrt(n_sha)
-
-cat("Shady — n:", n_sha,
-    "| mean:", round(m_sha, 2),
-    "| SE:",   round(se_sha, 2), "g\n")
-```
-:::
-
-::: {.column width="40%"}
-**Pattern:**
-
-1.  `filter()` → subset to one group
-2.  `[[ ]]` → extract the column as a vector
-3.  Apply `mean()`, `sd()`, `sum(!is.na())`
-
-**Do the means match your prediction?**
-
-- Sunny: \~`r round(m_sun, 1)` g
-- Shady: \~`r round(m_sha, 1)` g
-
-Shady leaves appear heavier — but is the difference *statistically significant?*
-:::
-:::::
-
-# Extension: A Simple Stats Function
-
-::::: columns
-::: {.column width="60%"}
-```{r describe-function}
-# A reusable function using filter() + [[ ]] --------
-# We will build functions properly in a later lecture!
-
-describe_side <- function(data, grp, col_name) {
-  x  <- data %>% filter(side == grp) %>% pull(col_name)
-  n  <- sum(!is.na(x))
-  m  <- mean(x, na.rm = TRUE)
-  s  <- sd(x,   na.rm = TRUE)
-  cat(grp, "|", col_name,
-      "→ n:", n,
-      "| mean:", round(m, 2),
-      "| SE:",  round(s/sqrt(n), 2), "\n")
-}
-
-describe_side(tree_df, "sunny", "weight_g")
-describe_side(tree_df, "shady", "weight_g")
-describe_side(tree_df, "sunny", "height_cm")
-describe_side(tree_df, "shady", "height_cm")
-```
-:::
-
-::: {.column width="40%"}
-**What this function does:**
-
-1.  Accepts data frame, group name, and column name
-2.  Filters to that group with `filter()`
-3.  Extracts the column with `pull()`
-4.  Computes n, mean, SE
-5.  Prints a compact labelled summary
-
-**For grins 🎉** — we will build these properly in Lecture 08!
-
-📖 [R4DS §25 — Functions](https://r4ds.hadley.nz/functions)
-:::
-:::::
 
 # Boxplot — Basic Structure
 
-::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 ```{r boxplot-basic}
 #| fig-format: png
-# Basic boxplot — data is ALREADY long format --------
-# No reshaping needed!
+# Basic boxplot — data is already long format ---------
 tree_box_plot <- tree_df %>%
   ggplot(aes(x = side, y = weight_g, fill = side)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
@@ -749,7 +747,6 @@ tree_box_plot <- tree_df %>%
 tree_box_plot
 ```
 :::
-
 ::: {.column width="40%"}
 **Boxplot anatomy:**
 
@@ -758,19 +755,19 @@ tree_box_plot
 - Whiskers = 1.5 × IQR
 - Dots beyond whiskers = **outliers**
 
-Because our data is already in **long format**, we skip the `pivot_longer()` step entirely — `ggplot2` reads `side` straight off the x-axis.
+Because our data is in **long format**, `ggplot2` reads `side` straight off the x-axis — no reshaping needed.
 
 📖 [R4DS §9 — Layers](https://r4ds.hadley.nz/layers)
 :::
-:::::
+::::
 
 # Boxplot — Overlay Individual Points
 
-:::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 ```{r boxplot-jitter}
 #| fig-format: png
-# Add raw data points over the boxplot ---------------
+# Add raw data points over the boxplot ----------------
 tree_jitter_plot <- tree_df %>%
   ggplot(aes(x = side, y = weight_g, fill = side)) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +
@@ -791,67 +788,27 @@ tree_jitter_plot <- tree_df %>%
 tree_jitter_plot
 ```
 :::
-
-:::: {.column width="40%"}
+::: {.column width="40%"}
 **Key arguments:**
 
-- `position_jitter(width = 0.15)` — spreads points a little left and right
+- `position_jitter(width = 0.15)` — spreads points left and right
 - `seed = 42` — same jitter layout every render
 - `alpha = 0.6` — semi-transparent to show overlap
 - `size = 2.5` — point size
 
-::: callout-tip
+::: {.callout-tip}
 Always show raw points with a boxplot — with only 10 leaves per group, every point matters!
 :::
+:::
 ::::
-::::::
-
-# Boxplot — Using `position_dodge()`
-
-::::: columns
-::: {.column width="60%"}
-```{r boxplot-dodge}
-#| fig-format: png
-# position_dodge() spreads groups apart horizontally -
-tree_dodge_plot <- tree_df %>%
-  ggplot(aes(x = side, y = weight_g,
-             color = side, fill = side)) +
-  geom_boxplot(alpha = 0.4, outlier.shape = NA) +
-  geom_point(
-    position = position_dodge(width = 0.3),
-    alpha    = 0.7,
-    size     = 2.5
-  ) +
-  labs(
-    title = "Leaf Weight by Tree Side",
-    x     = "Side of Tree",
-    y     = "Leaf Weight (g)"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-tree_dodge_plot
-```
-:::
-
-::: {.column width="40%"}
-**`position_dodge(width = 0.3)`**
-
-- Spreads overlapping geoms **horizontally**
-- Most useful when you have **two grouping variables** (e.g., `x = species`, `fill = treatment`)
-- `width` controls how far apart groups are spread
-
-We will use `position_dodge()` extensively in future lectures when we have **factorial designs**.
-:::
-:::::
 
 # Mean ± SE Plot — `stat_summary()`
 
-::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
 ```{r mean-se-plot}
 #| fig-format: png
-# stat_summary() computes and plots mean and SE ------
+# stat_summary() computes and plots mean and SE -------
 tree_mean_se_plot <- tree_df %>%
   ggplot(aes(x = side, y = weight_g, color = side)) +
   geom_point(
@@ -874,83 +831,52 @@ tree_mean_se_plot <- tree_df %>%
 tree_mean_se_plot
 ```
 :::
-
 ::: {.column width="40%"}
 **Two `stat_summary()` layers:**
 
-| call                 | what it draws           |
-|----------------------|-------------------------|
-| `fun = mean`         | large point at the mean |
-| `fun.data = mean_se` | error bars for ± 1 SE   |
+| call | what it draws |
+|---|---|
+| `fun = mean` | large point at the mean |
+| `fun.data = mean_se` | error bars for ± 1 SE |
 
 - Individual points in the **background** (`alpha = 0.35`)
 - Mean shown as a **larger foreground point**
 - Error bars = **± 1 SE**
-
-This is the standard comparison figure in biology.
 :::
-:::::
-
-# Comparing the Two Plot Types
-
-::::: columns
-::: {.column width="60%"}
-```{r side-by-side-plots}
-#| fig-format: png
-#| fig-width: 8
-#| fig-height: 3.5
-# Arrange both plots side by side --------------------
-library(patchwork)
-
-tree_jitter_plot + tree_mean_se_plot
-```
-:::
-
-::: {.column width="40%"}
-**When to use each:**
-
-| Plot type        | Use when                      |
-|------------------|-------------------------------|
-| Boxplot + points | showing full **distribution** |
-| Mean ± SE        | making **group comparisons**  |
-
-With only n = 10 per group, showing every point is essential — the reader needs to see the raw data.
-
-Boxplots show *where* data fall. Mean ± SE shows *how confident* you are in the mean.
-:::
-:::::
+::::
 
 # What We Learned Today
 
-::::: columns
+:::: {.columns}
 ::: {.column width="60%"}
+**R wrangling skills:**
+
+- `filter()` — keep rows by condition
+- `select()` — keep columns by name
+- `mutate()` — add new calculated columns
+- `arrange()` — sort rows
+- Full pipeline: chain all verbs with `%>%`
+
 **Statistics concepts:**
 
 - **Mean** — balance point; sensitive to outliers
 - **Median** — middle value; robust
 - **Variance / SD** — spread of individual data
 - **SE** — precision of the sample mean
-- ***p*****-value** — how unlikely are the data if H₀ is true?
 
-**R skills:**
+**More R skills:**
 
-- `read_excel()` — load real Excel data
-- `filter() %>% pull()` — extract a group's values as a vector
-- `group_by() %>% summarize()` — all stats for all groups at once
+- `group_by()` + `summarize()` — all stats for all groups at once
 - `sum(!is.na())` — the right way to count *n*
 - `skim()` — instant full dataset overview
-- `[[ ]]` — flexible column extraction
-- `geom_boxplot()` + `geom_point()` — no pivot needed with long data!
-- `stat_summary()` — mean ± SE
+- `geom_boxplot()` + `geom_point()`, `stat_summary()`
 :::
-
 ::: {.column width="40%"}
 **References:**
 
 - 📖 [R4DS §3](https://r4ds.hadley.nz/data-transform) — Data Transformation
 - 📖 [R4DS §13](https://r4ds.hadley.nz/numbers) — Numbers
 - 📖 [R4DS §18](https://r4ds.hadley.nz/missing-values) — Missing Values
-- 📖 [R4DS §27](https://r4ds.hadley.nz/base-r) — Base R
 - 🌐 [Data Carpentry](https://datacarpentry.github.io/R-ecology-lesson/)
 
 **Up next — Lecture 04:**
@@ -959,4 +885,4 @@ Boxplots show *where* data fall. Mean ± SE shows *how confident* you are in the
 - Checking assumptions (normality, equal variance)
 - Interpreting and reporting results
 :::
-:::::
+::::

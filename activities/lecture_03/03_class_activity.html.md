@@ -1,5 +1,6 @@
 ---
-title: "03_Class_Activity Descriptive Statistics"
+title: "Worksheet 03 — Describing Our Data"
+subtitle: "Wrangling, descriptive statistics, and first visualizations"
 author: "Bill Perry"
 date: today
 format:
@@ -9,22 +10,26 @@ format:
 
 # In-class Activity 3: Describing Our Leaf Data
 
-### Recap from Lecture 02
+### Recap from Worksheet 02
 
-- Installed R and Positron; organized project folders
+- Installed R and Positron; created a project folder (`data/`, `scripts/`, `figures/`)
 - Used R as a calculator and stored values with `<-`
-- Learned about vectors, data types, and calling functions
-- Loaded our leaf data with `read_excel()` and made a first `ggplot`
+- Built vectors, learned data types, wrote scripts with `#` comments
+- Loaded our leaf data with `read_excel()` and learned how `read_csv()` differs
+- Inspected a data frame with `glimpse()`, `head()`, `dim()`
+- Used the pipe `%>%` to chain steps
+- Made and saved a first `ggplot` as a PNG (`dpi = 300`)
 
 ### Today's Objectives
 
-1.  Load the leaf Excel file and inspect its structure
-2.  Understand why `NA` values require special handling with `sum(!is.na())`
-3.  Calculate mean, median, SD, and SE in base R using `filter()` and `pull()`
-4.  Use `group_by()` + `summarize()` to compute stats the tidy way
-5.  Explore data quickly with `skimr`
-6.  Build a boxplot with individual points overlaid
-7.  Create a mean ± SE summary plot using `stat_summary()`
+1. Use `filter()`, `select()`, `mutate()`, and `arrange()` to wrangle data
+2. Chain all four verbs into a single pipeline
+3. Understand why `NA` values require special handling with `sum(!is.na())`
+4. Calculate mean, median, SD, and SE using `filter()` and `pull()`
+5. Use `group_by()` + `summarize()` to compute stats the tidy way
+6. Explore data quickly with `skimr`
+7. Build a boxplot with individual points overlaid
+8. Create a mean ± SE summary plot using `stat_summary()`
 
 > # **How to use this worksheet**
 >
@@ -36,7 +41,7 @@ format:
 
 ### Libraries first
 
-Always load all packages at the very top of your script. They go before any data or analysis.
+Always load all packages at the very top of your script.
 
 **▶ Run this at the top of your script:**
 
@@ -51,31 +56,38 @@ library(skimr)       # fast descriptive summaries
 
 ### Load the leaf data
 
-The Excel file is already in your `data/` folder.
-
 **▶ Run this:**
 
 ``` r
-# Read the Excel file ----------------------------------------
-tree_df <- read_excel(
-  "data/2026_06_25_tree_experiment_raw_data.xlsx"
-)
+# Read the Excel file — path is relative to your project folder
+tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
 ```
 
-> 💡 **Key idea:** `"data/..."` is a *relative* path — it looks inside your project folder for the `data/` sub-folder. This works on any computer, not just yours.
+------------------------------------------------------------------------
 
-✏️ **Your turn:** Run `dim(tree_df)`. The output gives you two numbers. What does each one mean?
+# Part 2 · Inspect the data
+
+**▶ Run each of these:**
 
 ``` r
-# Write your code here:
+head(tree_df)       # first 6 rows
+glimpse(tree_df)    # column names, types, first values — use this!
+dim(tree_df)        # rows × columns
 ```
+
+✏️ **Your turn:** Fill in the table below from the `glimpse()` output.
 
 ```         
-First number means:
-Second number means:
+Column name     | Data type (<chr> / <dbl>)  | Example value
+----------------|----------------------------|---------------
+index           |                            |
+side            |                            |
+weight_g        |                            |
+width_cm        |                            |
+height_cm       |                            |
 ```
 
-✏️ **Your turn:** How many leaves are from the sunny side? How many from shady? Use `table(tree_df$side)` to find out.
+✏️ **Your turn:** How many leaves are from the sunny side and how many from the shady side? Use `table(tree_df$side)`.
 
 ``` r
 # Write your code here:
@@ -89,49 +101,168 @@ Is the design balanced (equal n per group)?  Y / N
 
 ------------------------------------------------------------------------
 
-# Part 2 · Inspect the data
+# Part 3 · The core tidyverse verbs — filter, select, mutate, arrange
 
-### Get a first look
+These four functions do most of the work in data wrangling. All take a data frame and return a data frame.
 
-**▶ Run each of these:**
+### `filter()` — keeping rows you want
 
-``` r
-# Show the first 6 rows
-head(tree_df)
-```
+**▶ Run this:**
 
 ``` r
-# Show column names, types, and first values
-glimpse(tree_df)
+# filter() keeps rows where the condition is TRUE ------
+
+# Keep only sunny leaves
+tree_df %>% filter(side == "sunny")
+
+# Keep only leaves heavier than 5 g
+tree_df %>% filter(weight_g > 5)
+
+# Combine conditions (AND = both must be true)
+tree_df %>% filter(side == "shady", weight_g > 7)
 ```
 
-✏️ **Your turn:** Fill in the table below from the `glimpse()` output.
+> ⚠️ **Watch out!** `=` assigns a value. `==` tests equality. Always use `==` inside `filter()`.
 
-```         
-Column name     | Data type (chr / dbl / int)  | Example value
-----------------|------------------------------|---------------
-index           |                              |
-side            |                              |
-weight_g        |                              |
-width_cm        |                              |
-height_cm       |                              |
+✏️ **Your turn:** Use `filter()` to find all leaves where `height_cm` is greater than 25. How many rows does the result have?
+
+``` r
+# Write your code here:
 ```
 
-✏️ **Your turn:** This data is in **long format** — one row per leaf, with `side` as a grouping column. How would you describe the difference between *long* and *wide* format in your own words?
-
 ```         
-Long format means:
-
-Wide format would look like:
+Number of leaves with height_cm > 25:
+Are they mostly sunny or shady side?
 ```
 
 ------------------------------------------------------------------------
 
-# Part 3 · The NA problem — counting observations correctly
+### `select()` — keeping columns you want
+
+**▶ Run this:**
+
+``` r
+# select() keeps the columns you name ------------------
+
+# Keep only side and weight
+tree_df %>% select(side, weight_g)
+
+# Drop the index column (use minus sign)
+tree_df %>% select(-index)
+
+# Keep columns that end with a unit label
+tree_df %>% select(side, ends_with("_cm"))
+```
+
+✏️ **Your turn:** Create a data frame called `lean_df` that has only `side` and `height_cm`. Then run `glimpse(lean_df)` to verify.
+
+``` r
+# Write your code here:
+```
+
+```         
+How many columns does lean_df have?
+What are they?
+```
+
+------------------------------------------------------------------------
+
+### `mutate()` — adding new columns
+
+`mutate()` adds new columns (or changes existing ones) without removing anything.
+
+**▶ Run this:**
+
+``` r
+# mutate() adds a new column to the data frame ---------
+
+# Convert grams to milligrams
+tree_df %>%
+  mutate(weight_mg = weight_g * 1000)
+
+# Add a size category based on weight
+tree_df %>%
+  mutate(size_class = if_else(weight_g > 5, "large", "small"))
+```
+
+✏️ **Your turn:** Use `mutate()` to add a column called `height_mm` (height converted to millimetres — multiply by 10). What is the maximum height in mm?
+
+``` r
+# Write your code here:
+```
+
+```         
+Column name you added:
+Maximum height in mm:
+```
+
+------------------------------------------------------------------------
+
+### `arrange()` — sorting rows
+
+**▶ Run this:**
+
+``` r
+# arrange() sorts rows by a column ---------------------
+
+# Lightest leaves first (ascending — default)
+tree_df %>% arrange(weight_g)
+
+# Heaviest leaves first (descending — use desc())
+tree_df %>% arrange(desc(weight_g))
+
+# Sort by side, then by weight within each side
+tree_df %>% arrange(side, desc(weight_g))
+```
+
+✏️ **Your turn:** Sort the data by `height_cm` descending. What is the `index` number and `side` of the tallest leaf?
+
+``` r
+# Write your code here:
+```
+
+```         
+Index of tallest leaf:
+Side (sunny or shady):
+Height (cm):
+```
+
+------------------------------------------------------------------------
+
+### The full pipeline — chaining all four verbs
+
+**▶ Run this:**
+
+``` r
+# Chain all four verbs — read it as a recipe ----------
+tree_clean_df <- tree_df %>%
+  filter(weight_g > 0) %>%              # remove any zeros
+  select(side, weight_g, height_cm) %>%  # keep three columns
+  mutate(
+    weight_mg   = weight_g * 1000,
+    size_class  = if_else(weight_g > 5, "large", "small")
+  ) %>%
+  arrange(side, desc(weight_g))          # sort by side, then weight
+
+head(tree_clean_df)
+```
+
+✏️ **Your turn:** Read the pipeline out loud, one `%>%` step at a time. Write in plain English what each step does:
+
+```         
+Step 1 (filter):
+Step 2 (select):
+Step 3 (mutate):
+Step 4 (arrange):
+```
+
+------------------------------------------------------------------------
+
+# Part 4 · The NA problem — counting observations correctly
 
 ### What is an NA?
 
-`NA` stands for "Not Available" — it marks a **missing value**. Missing data are common in real ecological studies (a leaf blew away, a measurement was smudged, equipment failed). Understanding how R handles them is critical.
+`NA` stands for "Not Available" — it marks a **missing value**. Missing data are common in real ecological studies.
 
 ### The problem with `length()`
 
@@ -171,7 +302,7 @@ is.na(x)
 sum(!is.na(x))
 ```
 
-✏️ **Your turn:** In the space below, trace through what each step does to the vector `c(4, 3, NA, 7, NA)`:
+✏️ **Your turn:** Trace through what each step does to `c(4, 3, NA, 7, NA)`:
 
 ```         
 is.na(x)       produces: 
@@ -179,31 +310,11 @@ is.na(x)       produces:
 sum(!is.na(x)) produces: 
 ```
 
-### Apply to real data
-
-**▶ Run this:**
-
-``` r
-# Count non-missing values in our leaf data -----------
-n_sunny <- tree_df %>%
-  filter(side == "sunny") %>%
-  pull(weight_g) %>%
-  sum(!is.na(.))
-
-n_shady <- tree_df %>%
-  filter(side == "shady") %>%
-  pull(weight_g) %>%
-  sum(!is.na(.))
-
-cat("Non-missing sunny weights =", n_sunny, "\n")
-cat("Non-missing shady weights =", n_shady, "\n")
-```
-
-> ⚠️ **Watch out!** Any stats function run on a vector containing `NA` will return `NA` — not an error. R will not tell you something went wrong. Always include `na.rm = TRUE`.
+> ⚠️ **Watch out!** Any stats function on a vector containing `NA` returns `NA` — not an error. R will not tell you something went wrong. Always include `na.rm = TRUE`.
 
 ------------------------------------------------------------------------
 
-# Part 4 · Descriptive statistics in base R
+# Part 5 · Descriptive statistics in base R
 
 ### Extract one group with `filter()` and `pull()`
 
@@ -319,7 +430,7 @@ Your answer:
 
 ------------------------------------------------------------------------
 
-# Part 5 · Tidy stats with `group_by()` + `summarize()`
+# Part 6 · Tidy stats with `group_by()` + `summarize()`
 
 ### All groups, all stats, one pipeline
 
@@ -348,7 +459,7 @@ stats_df
 SE equals:
 ```
 
-✏️ **Your turn:** Do the numbers in `stats_df` match what you calculated by hand in Part 4?
+✏️ **Your turn:** Do the numbers in `stats_df` match what you calculated by hand in Part 5?
 
 ```         
 Y / N — if not, explain any differences:
@@ -363,10 +474,10 @@ Y / N — if not, explain any differences:
 size_stats_df <- tree_df %>%
   group_by(side) %>%
   summarize(
-    n         = n(),
-    mean_wt   = round(mean(weight_g,  na.rm = TRUE), 2),
-    mean_ht   = round(mean(height_cm, na.rm = TRUE), 2),
-    mean_wd   = round(mean(width_cm,  na.rm = TRUE), 2)
+    n       = n(),
+    mean_wt = round(mean(weight_g,  na.rm = TRUE), 2),
+    mean_ht = round(mean(height_cm, na.rm = TRUE), 2),
+    mean_wd = round(mean(width_cm,  na.rm = TRUE), 2)
   )
 
 size_stats_df
@@ -386,9 +497,7 @@ Overall: does the data support the hypothesis?
 
 ------------------------------------------------------------------------
 
-# Part 6 · Fast overview with `skimr`
-
-### `skim()` in one line
+# Part 7 · Fast overview with `skimr`
 
 **▶ Run this:**
 
@@ -406,7 +515,7 @@ n_missing sunny weight_g:
 n_missing shady weight_g:
 ```
 
-✏️ **Your turn:** Look at the `mean` and `p50` (50th percentile = median) values in the skim output for `weight_g`. Are mean and median close for each group? What does that suggest about skewness?
+✏️ **Your turn:** Look at the `mean` and `p50` (50th percentile = median) values for `weight_g`. Are mean and median close for each group? What does that suggest about skewness?
 
 ```         
 Your answer:
@@ -416,7 +525,7 @@ Your answer:
 
 ------------------------------------------------------------------------
 
-# Part 7 · Visualizing with boxplots
+# Part 8 · Visualizing with boxplots
 
 ### Basic boxplot
 
@@ -441,20 +550,13 @@ tree_box_plot <- tree_df %>%
 tree_box_plot
 ```
 
-✏️ **Your turn:** Label the five key parts of a boxplot from memory (or look it up):
+✏️ **Your turn:** Label the four key parts of a boxplot from memory:
 
 ```         
 The line inside the box represents:
 The top and bottom of the box represent:
 The whiskers represent:
 Dots beyond the whiskers represent:
-```
-
-✏️ **Your turn:** Do the two boxes overlap? What does that suggest about whether the groups are different?
-
-```         
-Do the boxes overlap?  Y / N
-What it suggests:
 ```
 
 ### Add individual data points
@@ -494,7 +596,7 @@ What alpha controls:
 Which alpha value looks best for 10 points?
 ```
 
-✏️ **Your turn:** Change `width = 0.15` inside `position_jitter()` to `width = 0.8`. What happens? Is `0.15` or `0.8` more appropriate for this plot, and why?
+✏️ **Your turn:** Change `width = 0.15` inside `position_jitter()` to `width = 0.8`. What happens? Is `0.15` or `0.8` more appropriate?
 
 ``` r
 # Write your modified code here:
@@ -519,13 +621,9 @@ ggsave("figures/leaf_weight_boxplot.png",
        dpi    = 300)
 ```
 
-Check your `figures/` folder — the PNG should be there.
-
-> 💡 **Key idea:** `dpi = 300` is the standard for publication-quality figures. The default (72 dpi) is fine for exploring but too blurry for papers.
-
 ------------------------------------------------------------------------
 
-# Part 8 · Mean ± SE plot with `stat_summary()`
+# Part 9 · Mean ± SE plot with `stat_summary()`
 
 **▶ Run this:**
 
@@ -538,8 +636,7 @@ tree_mean_se_plot <- tree_df %>%
     alpha    = 0.35,
     size     = 2
   ) +
-  stat_summary(fun      = mean,    geom = "point",
-               size = 4) +
+  stat_summary(fun      = mean,    geom = "point", size = 4) +
   stat_summary(fun.data = mean_se, geom = "errorbar",
                width = 0.15, linewidth = 0.9) +
   labs(
@@ -554,24 +651,14 @@ tree_mean_se_plot <- tree_df %>%
 tree_mean_se_plot
 ```
 
-✏️ **Your turn:** The large dot shows the **mean**. The vertical bars show **± 1 SE**. Do the error bars for the two groups overlap? What does non-overlapping bars suggest (informally) about the groups?
+✏️ **Your turn:** The large dot shows the **mean**. The vertical bars show **± 1 SE**. Do the error bars overlap? What does non-overlapping bars suggest (informally)?
 
 ```         
 Do the error bars overlap?  Y / N
 What non-overlap suggests:
 ```
 
-✏️ **Your turn:** In the second `stat_summary()` line, change `width = 0.15` to `width = 0.5`. What does `width` control in an error bar?
-
-``` r
-# Write your modified code here:
-```
-
-```         
-What width controls in an error bar:
-```
-
-✏️ **Your turn:** Change `fun = mean` in the first `stat_summary()` to `fun = median`. What changes in the plot? Why might you sometimes report median instead of mean?
+✏️ **Your turn:** Change `fun = mean` in the first `stat_summary()` to `fun = median`. What changes in the plot?
 
 ``` r
 # Write your modified code here:
@@ -579,15 +666,13 @@ What width controls in an error bar:
 
 ```         
 What changed:
-When you'd use median:
 ```
 
-### Save this plot too
+### Save this plot
 
 **▶ Run this:**
 
 ``` r
-# Save the mean SE plot to figures -------------------
 ggsave("figures/leaf_weight_mean_se.png",
        plot   = tree_mean_se_plot,
        width  = 5,
@@ -598,22 +683,25 @@ ggsave("figures/leaf_weight_mean_se.png",
 
 ------------------------------------------------------------------------
 
-# Part 9 · Review and checkpoint
+# Part 10 · Review and checkpoint
 
 At this point you should be able to:
 
-- [ ] Load an Excel file with `read_excel()` into R
-- [ ] Use `dim()`, `head()`, and `glimpse()` to inspect a data frame
+- [ ] Load an Excel file with `read_excel()` and inspect with `glimpse()`, `head()`, `dim()`
+- [ ] Use `filter()` to keep rows matching a condition
+- [ ] Use `select()` to keep specific columns
+- [ ] Use `mutate()` to add a new calculated column
+- [ ] Use `arrange()` to sort rows
+- [ ] Chain all four verbs into a single `%>%` pipeline
 - [ ] Explain why `length()` is unreliable with NAs and use `sum(!is.na())` instead
 - [ ] Use `filter()` and `pull()` to extract a group's values as a vector
 - [ ] Calculate mean, median, SD, and SE with `na.rm = TRUE`
 - [ ] Use `group_by()` + `summarize()` to compute stats for all groups at once
 - [ ] Use `skim()` for a fast full-dataset overview
-- [ ] Build a boxplot with jittered points using `geom_boxplot()` + `geom_point()`
+- [ ] Build a boxplot with jittered points and save as PNG with `dpi = 300`
 - [ ] Add a mean ± SE layer using `stat_summary()`
-- [ ] Save plots to `figures/` with `ggsave()`
 
-✏️ **Your turn — before you move on:** Run your entire script from top to bottom with **Ctrl/Cmd + Shift + Enter**. Does it complete without errors?
+✏️ **Your turn — before you move on:** Run your entire script with **Ctrl/Cmd + Shift + Enter**. Does it complete without errors?
 
 ```         
 Ran cleanly?  Y / N
@@ -622,30 +710,22 @@ If not, what error appeared:
 
 ------------------------------------------------------------------------
 
-# Part 10 · Going further
+# Part 11 · Going further
 
-> This section is optional — work through it if you finish early or want to explore more. There are no wrong answers here.
+> This section is optional — work through it if you finish early.
 
 ### Explore `height_cm` and `width_cm`
-
-The data has two more variables you have not plotted yet.
 
 **▶ Try this for `height_cm`:**
 
 ``` r
-# Boxplot for leaf height ----------------------------
 tree_height_plot <- tree_df %>%
   ggplot(aes(x = side, y = height_cm, fill = side)) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +
-  geom_point(
-    position = position_jitter(width = 0.15, seed = 42),
-    alpha = 0.6, size = 2.5
-  ) +
-  labs(
-    title = "Leaf Height by Tree Side",
-    x     = "Side of Tree",
-    y     = "Leaf Height (cm)"
-  ) +
+  geom_point(position = position_jitter(width = 0.15, seed = 42),
+             alpha = 0.6, size = 2.5) +
+  labs(title = "Leaf Height by Tree Side",
+       x = "Side of Tree", y = "Leaf Height (cm)") +
   theme_minimal() +
   theme(legend.position = "none")
 
@@ -658,58 +738,40 @@ tree_height_plot
 # Write your modified code here:
 ```
 
-✏️ **Your turn:** Does `width_cm` show the same pattern as `weight_g` and `height_cm`? Are there any surprising values in the shady `width_cm` data? (Hint: look at the raw points.)
-
-```         
-Your observation:
-```
-
-### The `[[ ]]` notation
-
-The double-bracket `[[ ]]` is another way to extract a column as a vector. It is more flexible than `$` because you can store the column name in a variable first.
+### Use `mutate()` to add a column, then plot it
 
 **▶ Try this:**
 
 ``` r
-# All three do the same thing -------------------------
-tree_df$weight_g
-tree_df[["weight_g"]]
-
-col <- "weight_g"
-mean(tree_df[[col]], na.rm = TRUE)   # works!
-# mean(tree_df$col, na.rm = TRUE)    # does NOT work
+# Add size_class column, then make a bar chart
+tree_df %>%
+  mutate(size_class = if_else(weight_g > 5, "large", "small")) %>%
+  ggplot(aes(x = side, fill = size_class)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Number of large vs small leaves by side",
+       x = "Side", y = "Count", fill = "Size class") +
+  theme_minimal()
 ```
 
-✏️ **Your turn:** Combine `filter()` and `[[ ]]` to calculate the SE of `height_cm` for the shady side only.
-
-``` r
-# Write your code here:
-```
+✏️ **Your turn:** What does `position = "dodge"` do to the bars? What happens if you change it to `position = "fill"`?
 
 ```         
-SE of shady height_cm:
+dodge does:
+fill does:
 ```
 
-### Violin plot
-
-A violin plot shows the full *shape* of the distribution, not just the quartile box.
+### Violin plots
 
 **▶ Try this:**
 
 ``` r
-# Violin plot of leaf weight -------------------------
 tree_violin_plot <- tree_df %>%
   ggplot(aes(x = side, y = weight_g, fill = side)) +
   geom_violin(alpha = 0.5) +
-  geom_point(
-    position = position_jitter(width = 0.1, seed = 42),
-    alpha = 0.6, size = 2
-  ) +
-  labs(
-    title = "Violin Plot of Leaf Weight",
-    x     = "Side of Tree",
-    y     = "Leaf Weight (g)"
-  ) +
+  geom_point(position = position_jitter(width = 0.1, seed = 42),
+             alpha = 0.6, size = 2) +
+  labs(title = "Violin Plot of Leaf Weight",
+       x = "Side of Tree", y = "Leaf Weight (g)") +
   theme_minimal() +
   theme(legend.position = "none")
 
@@ -722,35 +784,19 @@ tree_violin_plot
 Your observation:
 ```
 
-### Change the theme
-
-**▶ Try swapping themes — add one of these to the end of any plot above:**
-
-``` r
-+ theme_bw()       # clean white background
-+ theme_classic()  # classic axis lines, no grid
-+ theme_light()    # light grey lines
-```
-
-✏️ **Your turn:** Which theme do you prefer for comparing two biological groups? Why?
-
-```         
-Your answer:
-```
-
 ------------------------------------------------------------------------
 
-# What your finished `figures/` folder should contain
+# What your `figures/` folder should contain
 
 After completing this worksheet:
 
 ```         
-project/
+tree_project/
 ├── data/
 │   └── 2026_06_25_tree_experiment_raw_data.xlsx   <- never edit this
 ├── figures/
-│   ├── leaf_weight_boxplot.png                     <- Part 7
-│   └── leaf_weight_mean_se.png                     <- Part 8
+│   ├── leaf_weight_boxplot.png                     <- Part 8
+│   └── leaf_weight_mean_se.png                     <- Part 9
 └── scripts/
     └── 03_leaf_descriptions.R                      <- your script
 ```
@@ -759,21 +805,16 @@ project/
 
 # Getting unstuck
 
-When code breaks — and it will — work through this list in order:
+1. **Read the error message out loud.** R usually names the line and the problem.
+2. **Check the usual suspects:** Did you load `library(readxl)`, `library(tidyverse)`, and `library(skimr)`?
+3. **Spelling?** R is **case-sensitive** — `"Sunny"` ≠ `"sunny"`. Check with `names(tree_df)`.
+4. **`na.rm = TRUE` missing?** Any stat function on a column with NAs returns `NA` without it — no error, just a silent wrong answer.
+5. **File not found?** Check with `getwd()` and confirm the `data/` folder is inside your project.
+6. **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
+7. **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
 
-1.  **Read the error message out loud.** R usually names the line and the problem.
-2.  **Check the usual suspects:**
-    - Did you load `library(readxl)`, `library(tidyverse)`, and `library(skimr)`?
-    - Spelling? R is **case-sensitive** — `"Sunny"` ≠ `"sunny"`
-    - Missing `)`, `%>%`, or `+` at the *end* of a line?
-3.  **`na.rm = TRUE` missing?** Any stat function on a column with NAs returns `NA` without it — no error, just a silent wrong answer.
-4.  **Column name typo?** Check with `names(tree_df)`.
-5.  **File not found?** Check your working directory with `getwd()` and confirm the `data/` folder is inside it.
-6.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
-7.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
-
-> 💡 **Key idea:** Getting stuck is not failing — every working data scientist googles error messages daily. The skill is knowing what to google.
+> 💡 **Key idea:** Getting stuck is not failing — every working data scientist googles error messages daily.
 
 ------------------------------------------------------------------------
 
-*End of Worksheet 03. Next: Worksheet 04 will cover the two-sample t-test — formally testing whether the difference in leaf weight between sunny and shady sides is statistically significant.*
+*End of Worksheet 03. Next: Worksheet 04 will cover the two-sample Welch's t-test — formally testing whether the difference in leaf weight between sunny and shady sides is statistically significant.*

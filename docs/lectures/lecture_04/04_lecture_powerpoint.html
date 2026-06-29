@@ -9,7 +9,7 @@
 <meta name="author" content="Bill Perry">
 <meta name="dcterms.date" content="2026-06-28">
 
-<title>Lecture 04: T-Tests – UMD Biostatistics</title>
+<title>Lecture 04 — Testing Our Hypothesis – UMD Biostatistics</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -144,11 +144,12 @@ window.Quarto = {
 </script>
 
 <link rel="stylesheet" href="../../css/main.css">
-<meta property="og:title" content="Lecture 04: T-Tests – UMD Biostatistics">
-<meta property="og:image" content="https://wlperry.github.io/ecostats_2026/lectures/lecture_04/04_lecture_powerpoint_files/figure-html/recap-plot-1.png">
+<meta property="og:title" content="Lecture 04 — Testing Our Hypothesis – UMD Biostatistics">
+<meta property="og:description" content="The two-sample Welch’s t-test from assumptions to results">
+<meta property="og:image" content="https://wlperry.github.io/ecostats_2026/lectures/lecture_04/04_lecture_powerpoint_files/figure-revealjs/recap-plot-1.png">
 <meta property="og:site_name" content="UMD Biostatistics">
-<meta property="og:image:height" content="960">
-<meta property="og:image:width" content="1344">
+<meta property="og:image:height" content="364">
+<meta property="og:image:width" content="480">
 </head>
 
 <body class="nav-sidebar docked quarto-light"><script id="quarto-html-before-body" type="application/javascript">
@@ -322,7 +323,7 @@ window.Quarto = {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Lecture 04: T-Tests</li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Lecture 04 — Testing Our Hypothesis</li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -475,7 +476,8 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Lecture 04: T-Tests</h1>
+<h1 class="title">Lecture 04 — Testing Our Hypothesis</h1>
+<p class="subtitle lead">The two-sample Welch’s t-test from assumptions to results</p>
 </div>
 
 
@@ -507,7 +509,7 @@ window.Quarto = {
 <section id="where-we-left-off-lecture-03" class="level1">
 <h1>Where we left off (Lecture 03)</h1>
 <ul>
-<li><strong>Loaded</strong> our leaf Excel file with <code>read_excel()</code>; inspected with <code>head()</code> and <code>glimpse()</code></li>
+<li><strong>Wrangling</strong> — <code>filter()</code>, <code>select()</code>, <code>mutate()</code>, <code>arrange()</code> as the core tidyverse verbs</li>
 <li><strong>Descriptive stats</strong> — mean, median, SD, SE with <code>group_by()</code> + <code>summarize()</code></li>
 <li><strong>NA handling</strong> — <code>sum(!is.na())</code> is the safe way to count <em>n</em></li>
 <li><strong><code>skimr</code></strong> — fast full-dataset overview in one line</li>
@@ -629,9 +631,7 @@ Tip
 </div>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the leaf data from the data folder -----------------</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>tree_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"data/2026_06_25_tree_experiment_raw_data.xlsx"</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>tree_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/2026_06_25_tree_experiment_raw_data.xlsx"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -643,7 +643,7 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><code>car</code> is the Companion to Applied Regression package. It contains <code>leveneTest()</code>, which we will use to check whether our two groups have similar variance.</p>
+<p><code>car</code> is the Companion to Applied Regression package. It contains <code>leveneTest()</code>, which we use to check whether our two groups have similar variance.</p>
 <p>Install once: <code>install.packages("car")</code></p>
 </div>
 </div>
@@ -704,7 +704,7 @@ Note
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="04_lecture_powerpoint_files/figure-html/recap-plot-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="04_lecture_powerpoint_files/figure-revealjs/recap-plot-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -768,7 +768,6 @@ Note
 </tr>
 </tbody>
 </table>
-<p>📖 <a href="https://r4ds.hadley.nz/data-transform">R4DS §3</a></p>
 </div>
 </div>
 </section>
@@ -783,7 +782,7 @@ Note
 </div><div class="column" style="width:40%;">
 <p><strong>Why always use Welch’s?</strong></p>
 <ul>
-<li>When variances <strong>are</strong> equal: almost identical result to standard t-test — minimal loss of power</li>
+<li>When variances <strong>are</strong> equal: almost identical result — minimal loss of power</li>
 <li>When variances <strong>are not</strong> equal: standard t-test gives <strong>inflated Type I error</strong> (false positives)</li>
 <li>Welch’s protects you either way</li>
 </ul>
@@ -798,9 +797,9 @@ Tip
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>Best practice:</strong> use Welch’s as your <strong>default</strong> for all two-group comparisons.</p>
-</div>
-</div>
 <p>In R: <code>var.equal = FALSE</code></p>
+</div>
+</div>
 </div>
 </div>
 </section>
@@ -809,7 +808,7 @@ Tip
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pull stats from the data and compute t by hand --------</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pull stats and compute t by hand ----------------------</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>stats_df <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(side) <span class="sc">%&gt;%</span></span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
@@ -848,8 +847,7 @@ Tip
 <li>SE of the difference: <span class="math inline">\(\sqrt{\frac{s^2_{shady}}{10} + \frac{s^2_{sunny}}{10}}\)</span></li>
 <li>t = difference / SE</li>
 </ol>
-<p><strong>The t-statistic tells us:</strong> the observed difference is ~10 standard errors above zero — very far from what we’d expect if H₀ were true.</p>
-<p>We compare this to the <strong>t-distribution</strong> with Welch-Satterthwaite <em>df</em> to get the <em>p</em>-value.</p>
+<p>The observed difference is ~10 standard errors above zero — very far from what we’d expect if H₀ were true.</p>
 </div>
 </div>
 </section>
@@ -951,7 +949,7 @@ Important
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="04_lecture_powerpoint_files/figure-html/histogram-norm-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="04_lecture_powerpoint_files/figure-revealjs/histogram-norm-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -990,7 +988,7 @@ Important
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="04_lecture_powerpoint_files/figure-html/qq-norm-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="04_lecture_powerpoint_files/figure-revealjs/qq-norm-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -1058,7 +1056,6 @@ Important
 <p>With n = 10, this test has <strong>low power</strong> — it rarely detects non-normality even when present. The QQ plot is equally important.</p>
 </div>
 </div>
-<p>📖 <a href="https://datacarpentry.github.io/R-ecology-lesson/">Data Carpentry</a></p>
 </div>
 </div>
 </section>
@@ -1119,10 +1116,6 @@ mean in group shady mean in group sunny
 </div><div class="column" style="width:40%;">
 <p><strong>Key arguments:</strong></p>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>argument</th>
@@ -1132,7 +1125,7 @@ mean in group shady mean in group sunny
 <tbody>
 <tr class="odd">
 <td><code>weight_g ~ side</code></td>
-<td>formula: compare <code>weight_g</code> between levels of <code>side</code></td>
+<td>compare <code>weight_g</code> between levels of <code>side</code></td>
 </tr>
 <tr class="even">
 <td><code>var.equal = FALSE</code></td>
@@ -1144,7 +1137,7 @@ mean in group shady mean in group sunny
 </tr>
 </tbody>
 </table>
-<p>The result is a model object. We will decode each line of the output on the next slide.</p>
+<p>The result is a model object. We decode each line of the output on the next slide.</p>
 </div>
 </div>
 </section>
@@ -1212,7 +1205,7 @@ mean in group shady mean in group sunny
 </tr>
 </tbody>
 </table>
-<p>The <strong>95% CI</strong> is the difference in means we could expect to see if we repeated this study many times.</p>
+<p>The <strong>95% CI</strong> is the range we could expect to see if we repeated this study many times.</p>
 </div>
 </div>
 </section>
@@ -1222,18 +1215,20 @@ mean in group shady mean in group sunny
 <div class="column" style="width:60%;">
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># State the decision formally --------------------------</span></span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>p_val <span class="ot">&lt;-</span> leaf_ttest_model<span class="sc">$</span>p.value</span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="fl">0.05</span></span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (p_val <span class="sc">&lt;</span> alpha) {</span>
-<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"p ="</span>, <span class="fu">signif</span>(p_val, <span class="dv">3</span>), <span class="st">"&lt; α ="</span>, alpha, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Decision: REJECT H₀</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Conclusion: leaf weight differs between sides.</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
-<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"p ="</span>, <span class="fu">signif</span>(p_val, <span class="dv">3</span>), <span class="st">"&gt;= α ="</span>, alpha, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Decision: FAIL TO REJECT H₀</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Conclusion: insufficient evidence of a difference.</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="co"># if/else: R checks the condition and runs one of two blocks</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="co"># We will learn these formally in the functions lecture</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>p_val <span class="ot">&lt;-</span> leaf_ttest_model<span class="sc">$</span>p.value</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="fl">0.05</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (p_val <span class="sc">&lt;</span> alpha) {</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"p ="</span>, <span class="fu">signif</span>(p_val, <span class="dv">3</span>), <span class="st">"&lt; α ="</span>, alpha, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Decision: REJECT H₀</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Conclusion: leaf weight differs between sides.</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"p ="</span>, <span class="fu">signif</span>(p_val, <span class="dv">3</span>), <span class="st">"&gt;= α ="</span>, alpha, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Decision: FAIL TO REJECT H₀</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Conclusion: insufficient evidence of a difference.</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>p = 2.51e-08 &lt; α = 0.05 
 Decision: REJECT H₀
@@ -1293,7 +1288,7 @@ Important
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="04_lecture_powerpoint_files/figure-html/boxplot-04-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="04_lecture_powerpoint_files/figure-revealjs/boxplot-04-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -1301,7 +1296,7 @@ Important
 </div><div class="column" style="width:40%;">
 <p><strong>Including the test result in the figure:</strong></p>
 <ul>
-<li><code>subtitle</code> shows t and p from the model object</li>
+<li><code>subtitle</code> pulls t and p directly from the model object</li>
 <li>R fills in the actual numbers automatically</li>
 <li>If you re-run with new data, the subtitle updates</li>
 </ul>
@@ -1315,7 +1310,7 @@ Tip
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Embedding test statistics in the plot title or subtitle saves you from copying numbers by hand — and avoids typos in your report.</p>
+<p>Embedding test statistics in the plot subtitle saves you from copying numbers by hand — and avoids typos in your report.</p>
 </div>
 </div>
 </div>
@@ -1353,7 +1348,7 @@ Tip
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="04_lecture_powerpoint_files/figure-html/mean-se-04-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="04_lecture_powerpoint_files/figure-revealjs/mean-se-04-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -1362,11 +1357,10 @@ Tip
 <p><strong>What the error bars tell you:</strong></p>
 <ul>
 <li>Bars show <strong>± 1 SE</strong> — precision of the mean estimate</li>
-<li>Non-overlapping bars suggest a significant difference (but overlapping bars do NOT necessarily mean no significance!)</li>
+<li>Non-overlapping bars suggest a significant difference</li>
 </ul>
 <p><strong>Rule of thumb:</strong></p>
-<p>If error bars overlap by less than half the bar length, the difference is <em>likely</em> significant at α = 0.05.</p>
-<p>The <em>p</em>-value from the t-test is the definitive answer.</p>
+<p>If error bars overlap by less than half the bar length, the difference is <em>likely</em> significant at α = 0.05. The <em>p</em>-value from the t-test is the definitive answer.</p>
 </div>
 </div>
 </section>
@@ -1379,10 +1373,8 @@ Tip
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>t_val  <span class="ot">&lt;-</span> <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>statistic, <span class="dv">2</span>)</span>
 <span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>df_val <span class="ot">&lt;-</span> <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>parameter, <span class="dv">1</span>)</span>
 <span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>p_val2 <span class="ot">&lt;-</span> <span class="fu">signif</span>(leaf_ttest_model<span class="sc">$</span>p.value, <span class="dv">2</span>)</span>
-<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>ci_lo  <span class="ot">&lt;-</span> <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>conf.int[<span class="dv">1</span>], <span class="dv">2</span>)</span>
-<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>ci_hi  <span class="ot">&lt;-</span> <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>conf.int[<span class="dv">2</span>], <span class="dv">2</span>)</span>
-<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"--- Results sentence ---</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"--- Results sentence ---</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>--- Results sentence ---</code></pre>
 </div>
@@ -1430,12 +1422,12 @@ Tip
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save both plots to the figures folder ----------------</span></span>
 <span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figures/leaf_weight_boxplot_ttest.png"</span>,</span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot =</span> leaf_box_04_plot,</span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">width =</span> <span class="dv">5</span>, <span class="at">height =</span> <span class="dv">5</span>, <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot   =</span> leaf_box_04_plot,</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">width  =</span> <span class="dv">5</span>, <span class="at">height =</span> <span class="dv">5</span>, <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span>
 <span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figures/leaf_weight_mean_se_ttest.png"</span>,</span>
-<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot =</span> leaf_mean_se_04_plot,</span>
-<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">width =</span> <span class="dv">5</span>, <span class="at">height =</span> <span class="dv">5</span>, <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot   =</span> leaf_mean_se_04_plot,</span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">width  =</span> <span class="dv">5</span>, <span class="at">height =</span> <span class="dv">5</span>, <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="columns">
 <div class="column" style="width:60%;">
@@ -1473,9 +1465,9 @@ Tip
 <ul>
 <li><code>library(car)</code> + <code>leveneTest(y ~ group, data)</code> — variance check</li>
 <li><code>filter() %&gt;% pull() %&gt;% shapiro.test()</code> — normality per group</li>
-<li><code>t.test(y ~ group, data, var.equal = FALSE, alternative = "two.sided")</code> — the test</li>
+<li><code>t.test(y ~ group, data, var.equal = FALSE, alternative = "two.sided")</code></li>
 <li><code>model$statistic</code>, <code>model$p.value</code>, <code>model$conf.int</code> — extract results</li>
-<li>Embedding results in <code>subtitle = paste0(...)</code> — reproducible figure labels</li>
+<li><code>paste0(...)</code> in subtitle — embed test statistics in figures</li>
 </ul>
 </div><div class="column" style="width:40%;">
 <p><strong>References:</strong></p>
@@ -1486,9 +1478,9 @@ Tip
 </ul>
 <p><strong>Up next — Lecture 05:</strong></p>
 <ul>
-<li>More than two groups? → ANOVA</li>
-<li>Checking ANOVA assumptions</li>
-<li>Post-hoc tests (which groups differ?)</li>
+<li>Linear regression — predicting leaf area from paper tracing mass</li>
+<li>Building a calibration curve with <code>lm()</code></li>
+<li>R², residuals, and assumption checking</li>
 </ul>
 </div>
 </div>
@@ -1497,6 +1489,44 @@ Tip
 </section>
 
 </main> <!-- /main -->
+
+<script>
+  // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+  // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+  // slide changes (different for each slide format).
+  (function () {
+    // dispatch for htmlwidgets
+    function fireSlideEnter() {
+      const event = window.document.createEvent("Event");
+      event.initEvent("slideenter", true, true);
+      window.document.dispatchEvent(event);
+    }
+
+    function fireSlideChanged(previousSlide, currentSlide) {
+      fireSlideEnter();
+
+      // dispatch for shiny
+      if (window.jQuery) {
+        if (previousSlide) {
+          window.jQuery(previousSlide).trigger("hidden");
+        }
+        if (currentSlide) {
+          window.jQuery(currentSlide).trigger("shown");
+        }
+      }
+    }
+
+    // hookup for slidy
+    if (window.w3c_slidy) {
+      window.w3c_slidy.add_observer(function (slide_num) {
+        // slide_num starts at position 1
+        fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+      });
+    }
+
+  })();
+</script>
+
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

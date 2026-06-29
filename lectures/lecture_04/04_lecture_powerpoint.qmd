@@ -1,17 +1,25 @@
 ---
-title: "Lecture 04: T-Tests"
+title: "Lecture 04 — Testing Our Hypothesis"
+subtitle: "The two-sample Welch's t-test from assumptions to results"
 author: "Bill Perry"
 date: today
-
 format:
-  html:
-    downloads: [docx, pptx, typst]  # This creates download links for all three
   revealjs:
     output-ext: "slides.html"
+    theme: simple
+    slide-number: true
+    fig-format: png
+    fig-width: 5
+    fig-height: 3.8
+    code-overflow: wrap
+    highlight-style: github
   docx: default
   pptx: default
+execute:
+  echo: true
+  warning: false
+  message: false
 ---
-
 
 ```{r setup}
 #| echo: false
@@ -20,7 +28,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 # Where we left off (Lecture 03)
 
-- **Loaded** our leaf Excel file with `read_excel()`; inspected with `head()` and `glimpse()`
+- **Wrangling** — `filter()`, `select()`, `mutate()`, `arrange()` as the core tidyverse verbs
 - **Descriptive stats** — mean, median, SD, SE with `group_by()` + `summarize()`
 - **NA handling** — `sum(!is.na())` is the safe way to count *n*
 - **`skimr`** — fast full-dataset overview in one line
@@ -109,13 +117,11 @@ library(car)         # Levene's test for variance equality
 
 ```{r load-data-04}
 # Load the leaf data from the data folder -----------------
-tree_df <- read_excel(
-  "data/2026_06_25_tree_experiment_raw_data.xlsx"
-)
+tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
 ```
 
 ::: {.callout-note}
-`car` is the Companion to Applied Regression package. It contains `leveneTest()`, which we will use to check whether our two groups have similar variance.
+`car` is the Companion to Applied Regression package. It contains `leveneTest()`, which we use to check whether our two groups have similar variance.
 
 Install once: `install.packages("car")`
 :::
@@ -210,8 +216,6 @@ $$t = \frac{\bar{x}_1 - \bar{x}_2}{\text{SE}_{\text{diff}}}$$
 | Measurement | `weight_g` |
 | H₀ | $\mu_{shady} = \mu_{sunny}$ |
 | Hₐ | $\mu_{shady} \neq \mu_{sunny}$ |
-
-📖 [R4DS §3](https://r4ds.hadley.nz/data-transform)
 :::
 ::::
 
@@ -232,15 +236,15 @@ The denominator is the **true SE of the difference** — no pooling.
 ::: {.column width="40%"}
 **Why always use Welch's?**
 
-- When variances **are** equal: almost identical result to standard t-test — minimal loss of power
+- When variances **are** equal: almost identical result — minimal loss of power
 - When variances **are not** equal: standard t-test gives **inflated Type I error** (false positives)
 - Welch's protects you either way
 
 ::: {.callout-tip}
 **Best practice:** use Welch's as your **default** for all two-group comparisons.
-:::
 
 In R: `var.equal = FALSE`
+:::
 :::
 ::::
 
@@ -249,7 +253,7 @@ In R: `var.equal = FALSE`
 :::: {.columns}
 ::: {.column width="60%"}
 ```{r formula-manual}
-# Pull stats from the data and compute t by hand --------
+# Pull stats and compute t by hand ----------------------
 stats_df <- tree_df %>%
   group_by(side) %>%
   summarize(
@@ -281,9 +285,7 @@ cat("t-statistic:        ", round(t_manual, 3),      "\n")
    $\sqrt{\frac{s^2_{shady}}{10} + \frac{s^2_{sunny}}{10}}$
 3. t = difference / SE
 
-**The t-statistic tells us:** the observed difference is ~10 standard errors above zero — very far from what we'd expect if H₀ were true.
-
-We compare this to the **t-distribution** with Welch-Satterthwaite *df* to get the *p*-value.
+The observed difference is ~10 standard errors above zero — very far from what we'd expect if H₀ were true.
 :::
 ::::
 
@@ -442,8 +444,6 @@ tree_df %>%
 
 With n = 10, this test has **low power** — it rarely detects non-normality even when present. The QQ plot is equally important.
 :::
-
-📖 [Data Carpentry](https://datacarpentry.github.io/R-ecology-lesson/)
 :::
 ::::
 
@@ -467,7 +467,6 @@ leveneTest(weight_g ~ side, data = tree_df)
 We will use Welch's t-test (`var.equal = FALSE`).
 
 Welch's is valid whether or not the variances are equal. We run Levene's to *understand our data*, not to choose our test.
-
 :::
 ::::
 
@@ -492,11 +491,11 @@ leaf_ttest_model
 
 | argument | what it does |
 |---|---|
-| `weight_g ~ side` | formula: compare `weight_g` between levels of `side` |
+| `weight_g ~ side` | compare `weight_g` between levels of `side` |
 | `var.equal = FALSE` | use Welch's correction |
 | `alternative = "two.sided"` | two-tailed test |
 
-The result is a model object. We will decode each line of the output on the next slide.
+The result is a model object. We decode each line of the output on the next slide.
 :::
 ::::
 
@@ -526,7 +525,7 @@ cat("Mean sunny   :", round(leaf_ttest_model$estimate[2], 2), "g\n")
 | `95% CI` | plausible range for the true difference in means |
 | `mean of shady/sunny` | the two group means |
 
-The **95% CI** is the difference in means we could expect to see if we repeated this study many times.
+The **95% CI** is the range we could expect to see if we repeated this study many times.
 :::
 ::::
 
@@ -536,6 +535,8 @@ The **95% CI** is the difference in means we could expect to see if we repeated 
 ::: {.column width="60%"}
 ```{r decision-output}
 # State the decision formally --------------------------
+# if/else: R checks the condition and runs one of two blocks
+# We will learn these formally in the functions lecture
 p_val <- leaf_ttest_model$p.value
 alpha <- 0.05
 
@@ -598,12 +599,12 @@ leaf_box_04_plot
 ::: {.column width="40%"}
 **Including the test result in the figure:**
 
-- `subtitle` shows t and p from the model object
+- `subtitle` pulls t and p directly from the model object
 - R fills in the actual numbers automatically
 - If you re-run with new data, the subtitle updates
 
 ::: {.callout-tip}
-Embedding test statistics in the plot title or subtitle saves you from copying numbers by hand — and avoids typos in your report.
+Embedding test statistics in the plot subtitle saves you from copying numbers by hand — and avoids typos in your report.
 :::
 :::
 ::::
@@ -644,13 +645,11 @@ leaf_mean_se_04_plot
 **What the error bars tell you:**
 
 - Bars show **± 1 SE** — precision of the mean estimate
-- Non-overlapping bars suggest a significant difference (but overlapping bars do NOT necessarily mean no significance!)
+- Non-overlapping bars suggest a significant difference
 
 **Rule of thumb:**
 
-If error bars overlap by less than half the bar length, the difference is *likely* significant at α = 0.05.
-
-The *p*-value from the t-test is the definitive answer.
+If error bars overlap by less than half the bar length, the difference is *likely* significant at α = 0.05. The *p*-value from the t-test is the definitive answer.
 :::
 ::::
 
@@ -663,8 +662,6 @@ The *p*-value from the t-test is the definitive answer.
 t_val  <- round(leaf_ttest_model$statistic, 2)
 df_val <- round(leaf_ttest_model$parameter, 1)
 p_val2 <- signif(leaf_ttest_model$p.value, 2)
-ci_lo  <- round(leaf_ttest_model$conf.int[1], 2)
-ci_hi  <- round(leaf_ttest_model$conf.int[2], 2)
 
 cat("--- Results sentence ---\n")
 cat("Shady-side leaves were significantly heavier than\n")
@@ -700,12 +697,12 @@ cat("           sunny =",
 ```{r save-plots-04}
 # Save both plots to the figures folder ----------------
 ggsave("figures/leaf_weight_boxplot_ttest.png",
-       plot = leaf_box_04_plot,
-       width = 5, height = 5, units = "in", dpi = 300)
+       plot   = leaf_box_04_plot,
+       width  = 5, height = 5, units = "in", dpi = 300)
 
 ggsave("figures/leaf_weight_mean_se_ttest.png",
-       plot = leaf_mean_se_04_plot,
-       width = 5, height = 5, units = "in", dpi = 300)
+       plot   = leaf_mean_se_04_plot,
+       width  = 5, height = 5, units = "in", dpi = 300)
 ```
 
 :::: {.columns}
@@ -735,9 +732,9 @@ Both plots are now in your `figures/` folder with the test statistics embedded i
 
 - `library(car)` + `leveneTest(y ~ group, data)` — variance check
 - `filter() %>% pull() %>% shapiro.test()` — normality per group
-- `t.test(y ~ group, data, var.equal = FALSE, alternative = "two.sided")` — the test
+- `t.test(y ~ group, data, var.equal = FALSE, alternative = "two.sided")`
 - `model$statistic`, `model$p.value`, `model$conf.int` — extract results
-- Embedding results in `subtitle = paste0(...)` — reproducible figure labels
+- `paste0(...)` in subtitle — embed test statistics in figures
 :::
 ::: {.column width="40%"}
 **References:**
@@ -748,8 +745,8 @@ Both plots are now in your `figures/` folder with the test statistics embedded i
 
 **Up next — Lecture 05:**
 
-- More than two groups? → ANOVA
-- Checking ANOVA assumptions
-- Post-hoc tests (which groups differ?)
+- Linear regression — predicting leaf area from paper tracing mass
+- Building a calibration curve with `lm()`
+- R², residuals, and assumption checking
 :::
 ::::
