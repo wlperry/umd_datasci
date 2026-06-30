@@ -16,21 +16,24 @@ format:
 - Used `group_by()` + `summarize()` to compute mean, SD, and SE per group
 - Checked for missing values with `sum(!is.na())`
 - Made boxplots with jittered points and mean ± SE plots with `stat_summary()`
-- **Finding:** shady leaves appeared heavier, taller, and wider than sunny leaves
+- **Prediction:** shady leaves appeared heavier, taller, and wider than sunny leaves
 
 ### Today's Objectives
 
-1. State null and alternate hypotheses formally before running any test
-2. Check the normality assumption — histogram, QQ plot, and Shapiro-Wilk test
-3. Check the variance assumption — Levene's test
-4. Run a Welch's two-sample t-test (`var.equal = FALSE`, two-tailed)
-5. Read and decode every line of the `t.test()` output
-6. Make a formal statistical decision and state a conclusion
-7. Write a results sentence in proper scientific format
+1.  State null and alternate hypotheses formally before running any test
+2.  Check the normality assumption — histogram, QQ plot, and Shapiro-Wilk test
+3.  Check the variance assumption — Levene's test
+4.  Run a Welch's two-sample t-test (`var.equal = FALSE`, two-tailed)
+5.  Read and decode every line of the `t.test()` output
+6.  Make a formal statistical decision and state a conclusion
+7.  Write a results sentence in proper scientific format
 
 > # **How to use this worksheet**
 >
-> Work through each part in order — the steps build on each other. Type the code into your script in Positron and run it line by line. Code blocks marked **▶ Run this** should be executed as written. Blocks marked **✏️ Your turn** ask you to write, modify, or interpret something. The **Going further** section is optional if you finish early.
+> - Work through each part in order — the steps build on each other. Type the code into your script in Positron and run it line by line.
+> - Code blocks marked **▶ Run this** should be executed as written.
+> - Blocks marked **✏️ Your turn** ask you to write, modify, or interpret something.
+> - The **Going further** section is optional if you finish early.
 
 ------------------------------------------------------------------------
 
@@ -48,7 +51,11 @@ library(skimr)       # fast dataset summaries
 library(car)         # Levene's test for variance
 ```
 
-> ⚠️ **Watch out!** If R says `"could not find function 'leveneTest'"` you forgot `library(car)`. Install it once with `install.packages("car")`, then load it every session.
+> ⚠️ **Watch out!**
+>
+> - If R says `"could not find function 'leveneTest'"`
+>   - you forgot `library(car)`.
+> - Install it once with `install.packages("car")`, then load it every session `library(car)`
 
 ### Load the data
 
@@ -56,10 +63,7 @@ library(car)         # Levene's test for variance
 
 ``` r
 # Load the leaf data from the data folder --------------
-tree_df <- read_excel(
-  "data/2026_06_25_tree_experiment_raw_data.xlsx"
-)
-
+tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
 head(tree_df)
 ```
 
@@ -218,8 +222,8 @@ What strong curvature at the ends would indicate:
 The Shapiro-Wilk test formally tests whether a sample could have come from a normal distribution.
 
 - **H₀ (Shapiro-Wilk):** the data are normally distributed
-- **p > 0.05** → fail to reject normality → proceed with t-test
-- **p < 0.05** → evidence of non-normality → consider alternatives
+- **p \> 0.05** → fail to reject normality → proceed with t-test
+- **p \< 0.05** → evidence of non-normality → consider alternatives
 
 **▶ Run this:**
 
@@ -252,7 +256,7 @@ Shady:  W = _____   p = _____   Decision (normal / not normal):
 Your answer:
 ```
 
-> ⚠️ **Watch out!** Even if Shapiro-Wilk returns *p* < 0.05 with very small samples, the t-test may still be appropriate — the QQ plot and histogram give important visual context. None of these checks alone is definitive.
+> ⚠️ **Watch out!** Even if Shapiro-Wilk returns *p* \< 0.05 with very small samples, the t-test may still be appropriate — the QQ plot and histogram give important visual context. None of these checks alone is definitive.
 
 ------------------------------------------------------------------------
 
@@ -261,8 +265,8 @@ Your answer:
 Levene's test checks whether the two groups have the same population variance.
 
 - **H₀ (Levene's):** the two groups have equal variance
-- **p > 0.05** → variances are not significantly different
-- **p < 0.05** → variances are significantly different
+- **p \> 0.05** → variances are not significantly different
+- **p \< 0.05** → variances are significantly different
 
 **▶ Run this:**
 
@@ -623,19 +627,19 @@ project/
 
 # Getting unstuck
 
-1. **Read the error message out loud.** R usually names the line and the problem.
-2. **Check the usual suspects:**
-   - Loaded `library(car)`, `library(readxl)`, `library(tidyverse)`?
-   - Spelling of column names? Check with `names(tree_df)`
-   - Missing `)` or `%>%`?
-3. **`leveneTest` not found?** You need `library(car)` — not just `car::leveneTest`.
-4. **Shapiro-Wilk needs > 3 values.** If you filtered to a tiny subset, you may get an error.
-5. **`t.test()` formula:** the grouping variable goes on the *right* of `~` and must have exactly **two levels**. Check with `unique(tree_df$side)`.
-6. **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
-7. **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
+1.  **Read the error message out loud.** R usually names the line and the problem.
+2.  **Check the usual suspects:**
+    - Loaded `library(car)`, `library(readxl)`, `library(tidyverse)`?
+    - Spelling of column names? Check with `names(tree_df)`
+    - Missing `)` or `%>%`?
+3.  **`leveneTest` not found?** You need `library(car)` — not just `car::leveneTest`.
+4.  **Shapiro-Wilk needs \> 3 values.** If you filtered to a tiny subset, you may get an error.
+5.  **`t.test()` formula:** the grouping variable goes on the *right* of `~` and must have exactly **two levels**. Check with `unique(tree_df$side)`.
+6.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
+7.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
 
 > 💡 **Key idea:** The five-step framework (hypotheses → normality → variance → test → report) is the same for nearly every parametric test you will ever run. Master it here and it transfers directly to ANOVA and regression.
 
 ------------------------------------------------------------------------
 
-*End of Worksheet 04.  Next: Worksheet 05 — one-way ANOVA for comparing more than two groups.*
+*End of Worksheet 04. Next: Worksheet 05 — one-way ANOVA for comparing more than two groups.*

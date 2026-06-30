@@ -7,8 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
+<meta name="dcterms.date" content="2026-06-30">
 
-<title>Lecture 06 – UMD Biostatistics</title>
+<title>Lecture 06 — Real Climate Data in R – UMD Biostatistics</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -23,6 +24,41 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -79,8 +115,12 @@ ul.task-list li input[type="checkbox"] {
 
 
 <link rel="stylesheet" href="../../css/main.css">
-<meta property="og:title" content="Lecture 06 – UMD Biostatistics">
+<meta property="og:title" content="Lecture 06 — Real Climate Data in R – UMD Biostatistics">
+<meta property="og:description" content="Downloading, summarizing, and modeling Duluth weather station data">
+<meta property="og:image" content="https://wlperry.github.io/ecostats_2026/lectures/lecture_06/06_lecture_powerpoint_files/figure-revealjs/raw-plot-06-1.png">
 <meta property="og:site_name" content="UMD Biostatistics">
+<meta property="og:image:height" content="364">
+<meta property="og:image:width" content="480">
 </head>
 
 <body class="nav-sidebar docked quarto-light"><script id="quarto-html-before-body" type="application/javascript">
@@ -254,7 +294,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Lecture 06</li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Lecture 06 — Real Climate Data in R</li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -371,7 +411,25 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#lecture-5-review" id="toc-lecture-5-review" class="nav-link active" data-scroll-target="#lecture-5-review">Lecture 5: Review</a></li>
+  <li><a href="#where-we-left-off-lecture-05" id="toc-where-we-left-off-lecture-05" class="nav-link active" data-scroll-target="#where-we-left-off-lecture-05">Where we left off (Lecture 05)</a></li>
+  <li><a href="#goals-for-today" id="toc-goals-for-today" class="nav-link" data-scroll-target="#goals-for-today">Goals for Today</a></li>
+  <li><a href="#where-does-this-data-come-from" id="toc-where-does-this-data-come-from" class="nav-link" data-scroll-target="#where-does-this-data-come-from">Where Does This Data Come From?</a></li>
+  <li><a href="#load-libraries-and-download-the-data" id="toc-load-libraries-and-download-the-data" class="nav-link" data-scroll-target="#load-libraries-and-download-the-data">Load Libraries and Download the Data</a></li>
+  <li><a href="#trim-to-what-we-need" id="toc-trim-to-what-we-need" class="nav-link" data-scroll-target="#trim-to-what-we-need">Trim to What We Need</a></li>
+  <li><a href="#first-look-plot-the-raw-daily-data" id="toc-first-look-plot-the-raw-daily-data" class="nav-link" data-scroll-target="#first-look-plot-the-raw-daily-data">First Look — Plot the Raw Daily Data</a></li>
+  <li><a href="#the-fix-summarize-the-story-out-of-the-noise" id="toc-the-fix-summarize-the-story-out-of-the-noise" class="nav-link" data-scroll-target="#the-fix-summarize-the-story-out-of-the-noise">The Fix — Summarize the Story Out of the Noise</a></li>
+  <li><a href="#summarize-by-month" id="toc-summarize-by-month" class="nav-link" data-scroll-target="#summarize-by-month">Summarize by Month</a></li>
+  <li><a href="#summarize-by-year-the-story-gets-clear" id="toc-summarize-by-year-the-story-gets-clear" class="nav-link" data-scroll-target="#summarize-by-year-the-story-gets-clear">Summarize by Year — The Story Gets Clear</a></li>
+  <li><a href="#same-data-three-levels-side-by-side" id="toc-same-data-three-levels-side-by-side" class="nav-link" data-scroll-target="#same-data-three-levels-side-by-side">Same Data, Three Levels — Side by Side</a></li>
+  <li><a href="#what-is-the-rate-of-change-reusing-lm" id="toc-what-is-the-rate-of-change-reusing-lm" class="nav-link" data-scroll-target="#what-is-the-rate-of-change-reusing-lm">What Is the Rate of Change? — Reusing <code>lm()</code></a></li>
+  <li><a href="#extracting-and-interpreting-the-slope" id="toc-extracting-and-interpreting-the-slope" class="nav-link" data-scroll-target="#extracting-and-interpreting-the-slope">Extracting and Interpreting the Slope</a></li>
+  <li><a href="#does-the-same-pattern-hold-at-the-monthly-level" id="toc-does-the-same-pattern-hold-at-the-monthly-level" class="nav-link" data-scroll-target="#does-the-same-pattern-hold-at-the-monthly-level">Does the Same Pattern Hold at the Monthly Level?</a></li>
+  <li><a href="#a-new-question-is-every-season-warming-the-same" id="toc-a-new-question-is-every-season-warming-the-same" class="nav-link" data-scroll-target="#a-new-question-is-every-season-warming-the-same">A New Question — Is Every Season Warming the Same?</a></li>
+  <li><a href="#building-a-season-variable-with-case_when" id="toc-building-a-season-variable-with-case_when" class="nav-link" data-scroll-target="#building-a-season-variable-with-case_when">Building a Season Variable with <code>case_when()</code></a></li>
+  <li><a href="#summarize-each-season-by-year" id="toc-summarize-each-season-by-year" class="nav-link" data-scroll-target="#summarize-each-season-by-year">Summarize Each Season by Year</a></li>
+  <li><a href="#plot-both-seasons-together" id="toc-plot-both-seasons-together" class="nav-link" data-scroll-target="#plot-both-seasons-together">Plot Both Seasons Together</a></li>
+  <li><a href="#fit-a-separate-model-for-each-season" id="toc-fit-a-separate-model-for-each-season" class="nav-link" data-scroll-target="#fit-a-separate-model-for-each-season">Fit a Separate Model for Each Season</a></li>
+  <li><a href="#what-we-learned-today" id="toc-what-we-learned-today" class="nav-link" data-scroll-target="#what-we-learned-today">What We Learned Today</a></li>
   </ul>
 <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="06_lecture_powerpoint.slides.html"><i class="bi bi-file-slides"></i>RevealJS</a></li><li><a href="06_lecture_powerpoint.docx"><i class="bi bi-file-word"></i>MS Word</a></li><li><a href="06_lecture_powerpoint.pptx"><i class="bi bi-file-slides"></i>Powerpoint</a></li></ul></div></nav>
 </nav>
@@ -385,7 +443,8 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Lecture 06</h1>
+<h1 class="title">Lecture 06 — Real Climate Data in R</h1>
+<p class="subtitle lead">Downloading, summarizing, and modeling Duluth weather station data</p>
 </div>
 
 
@@ -399,6 +458,12 @@ ul.task-list li input[type="checkbox"] {
           </div>
   </div>
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June 30, 2026</p>
+    </div>
+  </div>
   
     
   </div>
@@ -408,13 +473,859 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="lecture-5-review" class="level1">
-<h1>Lecture 5: Review</h1>
+<section id="where-we-left-off-lecture-05" class="level1">
+<h1>Where we left off (Lecture 05)</h1>
+<ul>
+<li><strong>Linear regression</strong> — fit a calibration curve (area ~ mass) with <code>lm()</code></li>
+<li><strong>Reading <code>summary()</code></strong> — slope <em>b</em>, intercept <em>a</em>, R², p-value for the slope</li>
+<li><strong>Least squares</strong> — the line that minimizes the sum of squared residuals</li>
+<li><strong>Assumption checks</strong> — residual vs.&nbsp;fitted plot, QQ plot, Shapiro-Wilk on <strong>residuals</strong></li>
+<li><strong><code>predict()</code></strong> — confidence intervals (mean Y) vs.&nbsp;prediction intervals (one new Y)</li>
+<li><strong>Applied it</strong> — converted paper tracing mass into predicted leaf area (cm²)</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>✅ Transition</strong></p>
+<p>So far every regression we have run used a dataset you were handed. Today we <strong>download real data from inside R</strong> for the first time — long-term weather records for Duluth, MN — and use that same regression toolkit to ask a much bigger question: <em>is it getting warmer?</em></p>
+</div>
+</div>
+</section>
+<section id="goals-for-today" class="level1">
+<h1>Goals for Today</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<ul>
+<li>Download real weather station data <strong>from inside R</strong> (no Excel step!)</li>
+<li>Explore raw daily data — and see why raw data alone is hard to read</li>
+<li><strong>Summarize</strong> the same data by day, week, month, and year — and watch the story get clearer</li>
+<li>Reuse <code>lm()</code> to estimate the <strong>rate of change</strong> (slope) in temperature over time</li>
+<li>Use <code>case_when()</code> to build a new categorical variable — <strong>summer vs.&nbsp;winter</strong></li>
+<li>Compare how fast each season is warming</li>
+</ul>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🖐 Try it yourself</strong></p>
+<p>By the end you’ll have downloaded a real NOAA climate record and estimated how many degrees per decade Duluth has warmed.</p>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Tools today:</strong></p>
+<ul>
+<li><code>GSODR</code>, <code>tidyverse</code>, <code>lubridate</code></li>
+</ul>
+<p><strong>Textbook:</strong></p>
+<ul>
+<li>📖 R for Data Science 2e — Hadley Wickham
+<ul>
+<li><a href="https://r4ds.hadley.nz/data-transform">Ch. 3 Data transformation</a></li>
+<li><a href="https://r4ds.hadley.nz/datetimes">Ch. 17 Dates and times</a></li>
+</ul></li>
+<li>📖 Data Carpentry — <a href="https://datacarpentry.github.io/R-ecology-lesson/">R for Ecologists</a></li>
+</ul>
+<p><strong>Naming conventions:</strong></p>
+<ul>
+<li>data frames → <code>_df</code></li>
+<li>plots → <code>_plot</code></li>
+<li>models → <code>_model</code></li>
+</ul>
+</div>
+</div>
+</section>
+<section id="where-does-this-data-come-from" class="level1">
+<h1>Where Does This Data Come From?</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>GSOD</strong> = Global Surface Summary of the Day, maintained by NOAA. It contains daily weather observations from thousands of stations worldwide, some going back to the <strong>1940s</strong>.</p>
+<p>The <code>GSODR</code> package lets us pull this data <strong>directly into R</strong> — no manual download, no Excel, no copy-paste.</p>
+<p><strong>The station we’ll use:</strong></p>
+<ul>
+<li>Duluth International Airport</li>
+<li>Station ID <code>727450-14913</code></li>
+<li>Daily records back to <strong>1948</strong> — 78 years of data</li>
+</ul>
+</div><div class="column" style="width:40%;">
+<p><strong>Why this matters:</strong></p>
+<ul>
+<li>This is the <em>same</em> kind of messy, real-world data you’ll meet in your own research</li>
+<li>Today’s workflow — download → explore → summarize → model — is the same workflow you’ll use for your final project</li>
+</ul>
+<p>📖 R4DS Ch. 3 — every analysis starts with getting data into R</p>
+</div>
+</div>
+</section>
+<section id="load-libraries-and-download-the-data" class="level1">
+<h1>Load Libraries and Download the Data</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load packages at the top — always -------------------</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># data manipulation + ggplot2</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GSODR)        <span class="co"># download NOAA weather station data</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Download daily Duluth weather data, 1948-2025 --------</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># this is DAILY data - rows = days, so expect ~28,000 rows</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>duluth_df <span class="ot">&lt;-</span> <span class="fu">get_GSOD</span>(<span class="at">years =</span> <span class="dv">1948</span><span class="sc">:</span><span class="dv">2025</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                       <span class="at">station =</span> <span class="st">"727450-14913"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Look at what we got -----------------------------------</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(duluth_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 25,441
+Columns: 47
+$ STNID            &lt;chr&gt; "727450-14913", "727450-14913", "727450-14913", "7274…
+$ NAME             &lt;chr&gt; "DULUTH INTERNATIONAL AIRPORT", "DULUTH INTERNATIONAL…
+$ CTRY             &lt;chr&gt; "US", "US", "US", "US", "US", "US", "US", "US", "US",…
+$ COUNTRY_NAME     &lt;chr&gt; "UNITED STATES", "UNITED STATES", "UNITED STATES", "U…
+$ ISO2C            &lt;chr&gt; "US", "US", "US", "US", "US", "US", "US", "US", "US",…
+$ ISO3C            &lt;chr&gt; "USA", "USA", "USA", "USA", "USA", "USA", "USA", "USA…
+$ STATE            &lt;chr&gt; "MN", "MN", "MN", "MN", "MN", "MN", "MN", "MN", "MN",…
+$ LATITUDE         &lt;dbl&gt; 46.844, 46.844, 46.844, 46.844, 46.844, 46.844, 46.84…
+$ LONGITUDE        &lt;dbl&gt; -92.187, -92.187, -92.187, -92.187, -92.187, -92.187,…
+$ ELEVATION        &lt;dbl&gt; 436.8, 436.8, 436.8, 436.8, 436.8, 436.8, 436.8, 436.…
+$ BEGIN            &lt;int&gt; 19480101, 19480101, 19480101, 19480101, 19480101, 194…
+$ END              &lt;int&gt; 20250827, 20250827, 20250827, 20250827, 20250827, 202…
+$ YEARMODA         &lt;date&gt; 1948-01-01, 1948-01-02, 1948-01-03, 1948-01-04, 1948…
+$ YEAR             &lt;int&gt; 1948, 1948, 1948, 1948, 1948, 1948, 1948, 1948, 1948,…
+$ MONTH            &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,…
+$ DAY              &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16…
+$ YDAY             &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16…
+$ TEMP             &lt;dbl&gt; -8.2, -4.1, -8.4, -6.5, -2.9, -7.8, -8.8, -4.0, -5.8,…
+$ TEMP_ATTRIBUTES  &lt;int&gt; 18, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 2…
+$ DEWP             &lt;dbl&gt; -9.9, -6.5, -10.8, -8.8, -5.9, -12.2, -13.2, -5.8, -6…
+$ DEWP_ATTRIBUTES  &lt;int&gt; 18, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 2…
+$ SLP              &lt;dbl&gt; 1019.8, 1011.1, 1010.0, 1016.8, 1016.3, 1019.3, 1015.…
+$ SLP_ATTRIBUTES   &lt;int&gt; 18, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 2…
+$ STP              &lt;dbl&gt; 965.3, 958.0, 956.6, 963.1, 962.9, 965.6, 961.8, 957.…
+$ STP_ATTRIBUTES   &lt;int&gt; 18, 24, 24, 24, 24, 24, 24, 24, 24, 23, 24, 24, 24, 2…
+$ VISIB            &lt;dbl&gt; 22.0, 22.7, 18.0, 22.4, 23.2, 24.0, 23.7, 15.0, 16.6,…
+$ VISIB_ATTRIBUTES &lt;int&gt; 18, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 2…
+$ WDSP             &lt;dbl&gt; 4.4, 4.3, 3.0, 4.9, 6.4, 8.3, 3.8, 2.8, 5.9, 2.7, 5.5…
+$ WDSP_ATTRIBUTES  &lt;int&gt; 18, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 2…
+$ MXSPD            &lt;dbl&gt; 8.2, 8.8, 7.2, 8.2, 11.8, 11.8, 7.2, 6.2, 11.8, 5.2, …
+$ GUST             &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ MAX              &lt;dbl&gt; -3.1, -2.0, -5.4, -1.5, 1.3, -1.7, -2.6, -2.0, -2.2, …
+$ MAX_ATTRIBUTES   &lt;chr&gt; NA, NA, NA, NA, NA, "*", NA, NA, "*", NA, NA, "*", "*…
+$ MIN              &lt;dbl&gt; -15.6, -8.7, -12.8, -9.8, -7.0, -15.4, -15.0, -6.5, -…
+$ MIN_ATTRIBUTES   &lt;chr&gt; "*", NA, "*", NA, NA, NA, "*", NA, NA, "*", "*", NA, …
+$ PRCP             &lt;dbl&gt; 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 7.87, 0.00,…
+$ PRCP_ATTRIBUTES  &lt;chr&gt; "G", "G", "G", "G", "G", "G", "G", "G", "G", "G", "G"…
+$ SNDP             &lt;dbl&gt; 279.4, 279.4, 279.4, 279.4, 248.9, 248.9, 248.9, 248.…
+$ I_FOG            &lt;dbl&gt; 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,…
+$ I_RAIN_DRIZZLE   &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+$ I_SNOW_ICE       &lt;dbl&gt; 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1,…
+$ I_HAIL           &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+$ I_THUNDER        &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+$ I_TORNADO_FUNNEL &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+$ EA               &lt;dbl&gt; 0.3, 0.4, 0.3, 0.3, 0.4, 0.2, 0.2, 0.4, 0.4, 0.1, 0.3…
+$ ES               &lt;dbl&gt; 0.3, 0.5, 0.3, 0.4, 0.5, 0.3, 0.3, 0.5, 0.4, 0.1, 0.3…
+$ RH               &lt;dbl&gt; 87.5, 83.4, 82.8, 83.7, 79.8, 70.7, 70.5, 87.3, 91.9,…</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>What just happened:</strong></p>
+<ul>
+<li><code>get_GSOD()</code> reached out to NOAA’s servers and pulled every daily record for this station</li>
+<li><code>years = 1948:2025</code> is a vector — shorthand for “every year in this range”</li>
+<li>This download can take a minute — daily data for 78 years is a lot of rows!</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Don’t panic at the row count. <strong>Daily</strong> data for 78 years ≈ 28,000 rows. We will fix that with summarizing.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="trim-to-what-we-need" class="level1">
+<h1>Trim to What We Need</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep only the columns we actually need -----------------</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>dlh_temp_df <span class="ot">&lt;-</span> duluth_df <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    STNID, NAME, YEARMODA,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    YEAR, MONTH, DAY,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    TEMP, MXSPD, PRCP, I_SNOW_ICE</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(dlh_temp_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          STNID                         NAME   YEARMODA  YEAR MONTH   DAY  TEMP
+         &lt;char&gt;                       &lt;char&gt;     &lt;Date&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;num&gt;
+1: 727450-14913 DULUTH INTERNATIONAL AIRPORT 1948-01-01  1948     1     1  -8.2
+2: 727450-14913 DULUTH INTERNATIONAL AIRPORT 1948-01-02  1948     1     2  -4.1
+3: 727450-14913 DULUTH INTERNATIONAL AIRPORT 1948-01-03  1948     1     3  -8.4
+4: 727450-14913 DULUTH INTERNATIONAL AIRPORT 1948-01-04  1948     1     4  -6.5
+5: 727450-14913 DULUTH INTERNATIONAL AIRPORT 1948-01-05  1948     1     5  -2.9
+6: 727450-14913 DULUTH INTERNATIONAL AIRPORT 1948-01-06  1948     1     6  -7.8
+   MXSPD  PRCP I_SNOW_ICE
+   &lt;num&gt; &lt;num&gt;      &lt;num&gt;
+1:   8.2     0          1
+2:   8.8     0          1
+3:   7.2     0          1
+4:   8.2     0          1
+5:  11.8     0          1
+6:  11.8     0          0</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Why <code>select()</code> here:</strong></p>
+<ul>
+<li><code>get_GSOD()</code> returns 40+ columns — station metadata, multiple temperature scales, attribute flags</li>
+<li>We only need a handful for this question</li>
+<li>This is the same <code>select()</code> skill from Lecture 02 — applied to a much wider real-world file</li>
+</ul>
+<p>📖 R4DS Ch. 3.2 — <code>select()</code> for picking columns</p>
+</div>
+</div>
+</section>
+<section id="first-look-plot-the-raw-daily-data" class="level1">
+<h1>First Look — Plot the Raw Daily Data</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot every single daily temperature ---------------------</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>raw_temp_plot <span class="ot">&lt;-</span> dlh_temp_df <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> YEARMODA, <span class="at">y =</span> TEMP)) <span class="sc">+</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Duluth Daily Mean Temperature, 1948–2025"</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x     =</span> <span class="st">"Date"</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y     =</span> <span class="st">"Temperature (°C)"</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>raw_temp_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="06_lecture_powerpoint_files/figure-revealjs/raw-plot-06-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>What do you see?</strong></p>
+<ul>
+<li>A dense, fuzzy band — the seasonal cycle (winter ↔︎ summer) dominates the plot</li>
+<li>~28,000 points overlapping each other</li>
+<li>Any long-term <em>trend</em> is completely hidden inside the seasonal noise</li>
+</ul>
+<p><strong>The problem:</strong> raw daily data shows you <em>everything</em> — which means it can hide the <em>one thing</em> you’re looking for.</p>
+</div>
+</div>
+</section>
+<section id="the-fix-summarize-the-story-out-of-the-noise" class="level1">
+<h1>The Fix — Summarize the Story Out of the Noise</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>The idea:</strong> group the data into bigger time chunks, then take the <strong>mean</strong> within each chunk.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Summary level</th>
+<th><code>group_by()</code></th>
+<th>Rows after summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Daily (raw)</td>
+<td>none</td>
+<td>~28,000</td>
+</tr>
+<tr class="even">
+<td>Monthly</td>
+<td><code>YEAR, MONTH</code></td>
+<td>~936</td>
+</tr>
+<tr class="odd">
+<td>Yearly</td>
+<td><code>YEAR</code></td>
+<td>78</td>
+</tr>
+</tbody>
+</table>
+<p>Each step <strong>trades detail for clarity</strong>. We lose day-to-day weather noise, but the climate signal becomes visible.</p>
+</div><div class="column" style="width:40%;">
+<p><strong>This is the same logic as Lecture 03’s <code>group_by()</code> + <code>summarize()</code></strong> — just applied to time instead of to <code>side</code> (sunny/shady).</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🖐 Try it yourself</strong></p>
+<p>Watch the <em>same</em> underlying data tell three different stories as we change the summary level.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="summarize-by-month" class="level1">
+<h1>Summarize by Month</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mean temperature per year-month -----------------------</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>dlh_month_df <span class="ot">&lt;-</span> dlh_temp_df <span class="sc">%&gt;%</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(YEAR, MONTH) <span class="sc">%&gt;%</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">YEARMODA =</span> <span class="fu">first</span>(YEARMODA),</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">TEMP     =</span> <span class="fu">mean</span>(TEMP, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the monthly means ----------------------------------</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>month_temp_plot <span class="ot">&lt;-</span> dlh_month_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> YEARMODA, <span class="at">y =</span> TEMP)) <span class="sc">+</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"steelblue"</span>) <span class="sc">+</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Duluth Monthly Mean Temperature"</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">x     =</span> <span class="st">"Date"</span>, <span class="at">y =</span> <span class="st">"Temperature (°C)"</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>month_temp_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="06_lecture_powerpoint_files/figure-revealjs/monthly-plot-06-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Better — but still busy.</strong></p>
+<ul>
+<li>The seasonal cycle (summer peaks, winter dips) is now a clean, regular wave</li>
+<li>A faint regression line is visible, but the seasonal swing still dominates the y-axis range</li>
+</ul>
+<p><code>first(YEARMODA)</code> keeps one representative date per month so we can still plot on a time axis.</p>
+</div>
+</div>
+</section>
+<section id="summarize-by-year-the-story-gets-clear" class="level1">
+<h1>Summarize by Year — The Story Gets Clear</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mean temperature per year -------------------------------</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>dlh_year_df <span class="ot">&lt;-</span> dlh_temp_df <span class="sc">%&gt;%</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(YEAR) <span class="sc">%&gt;%</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">YEARMODA =</span> <span class="fu">first</span>(YEARMODA),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">TEMP     =</span> <span class="fu">mean</span>(TEMP, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(dlh_year_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 3
+   YEAR YEARMODA    TEMP
+  &lt;int&gt; &lt;date&gt;     &lt;dbl&gt;
+1  1948 1948-01-01  3.76
+2  1949 1949-01-01  4.10
+3  1950 1950-01-01  1.60
+4  1951 1951-01-01  2.41
+5  1952 1952-01-01  4.55
+6  1953 1953-01-01  4.55</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>yearly_temp_plot <span class="ot">&lt;-</span> dlh_year_df <span class="sc">%&gt;%</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> YEAR, <span class="at">y =</span> TEMP)) <span class="sc">+</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Duluth Annual Mean Temperature, 1948–2025"</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x     =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"Mean Temp (°C)"</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>yearly_temp_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="06_lecture_powerpoint_files/figure-revealjs/yearly-plot-06-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Now the trend is obvious.</strong></p>
+<ul>
+<li>The seasonal noise is completely averaged out</li>
+<li>78 points instead of 28,000 — and the story is <em>clearer</em>, not weaker</li>
+<li>The blue/red trend line is the same kind of <code>geom_smooth(method = "lm")</code> line from Lecture 03</li>
+</ul>
+<p>This is the power of <code>group_by() %&gt;% summarize()</code>: the right level of summary reveals the signal.</p>
+</div>
+</div>
+</section>
+<section id="same-data-three-levels-side-by-side" class="level1">
+<h1>Same Data, Three Levels — Side by Side</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Level</th>
+<th>What it shows</th>
+<th>What it hides</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Daily</strong></td>
+<td>every weather event</td>
+<td>the long-term trend</td>
+</tr>
+<tr class="even">
+<td><strong>Monthly</strong></td>
+<td>the seasonal cycle</td>
+<td>day-to-day noise</td>
+</tr>
+<tr class="odd">
+<td><strong>Yearly</strong></td>
+<td>the climate trend</td>
+<td>season, weather events</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key idea:</strong> there is no single “correct” level — it depends on your <em>question</em>. Want to know about a heat wave? Use daily. Want to know about climate change? Use yearly.</p>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Summarizing is not “losing information” — it’s choosing which question you’re answering.</strong></p>
+</div>
+</div>
+<p>📖 R4DS Ch. 3.5 — <code>group_by()</code> + <code>summarize()</code> workflow</p>
+</div>
+</div>
+</section>
+<section id="what-is-the-rate-of-change-reusing-lm" class="level1">
+<h1>What Is the Rate of Change? — Reusing <code>lm()</code></h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit a regression: TEMP predicted by YEAR ---------------</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>yearly_temp_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(TEMP <span class="sc">~</span> YEAR, <span class="at">data =</span> dlh_year_df)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(yearly_temp_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = TEMP ~ YEAR, data = dlh_year_df)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1.99794 -0.51059  0.00688  0.49950  1.90458 
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) -49.096842   9.119103  -5.384 9.77e-07 ***
+YEAR          0.026872   0.004585   5.860 1.49e-07 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.8774 on 68 degrees of freedom
+Multiple R-squared:  0.3356,    Adjusted R-squared:  0.3258 
+F-statistic: 34.34 on 1 and 68 DF,  p-value: 1.489e-07</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>This is exactly Lecture 05’s <code>lm()</code> syntax</strong> — only now:</p>
+<ul>
+<li><code>X</code> = <code>YEAR</code> (instead of paper mass)</li>
+<li><code>Y</code> = <code>TEMP</code> (instead of paper area)</li>
+<li>The <strong>slope</strong> is no longer “cm² per gram” — it’s <strong>°C per year</strong></li>
+</ul>
+<p><strong>H₀:</strong> β = 0 (no warming trend)</p>
+<p><strong>Hₐ:</strong> β ≠ 0 (temperature is changing over time)</p>
+</div>
+</div>
+</section>
+<section id="extracting-and-interpreting-the-slope" class="level1">
+<h1>Extracting and Interpreting the Slope</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pull the slope and convert to °C per decade ------------</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>yearly_intercept <span class="ot">&lt;-</span> <span class="fu">coef</span>(yearly_temp_model)[<span class="dv">1</span>]</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>yearly_slope     <span class="ot">&lt;-</span> <span class="fu">coef</span>(yearly_temp_model)[<span class="dv">2</span>]</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Slope (b)         ="</span>, <span class="fu">round</span>(yearly_slope, <span class="dv">4</span>), <span class="st">"°C/year</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Slope (b)         = 0.0269 °C/year</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Warming rate       ="</span>,</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">round</span>(yearly_slope <span class="sc">*</span> <span class="dv">10</span>, <span class="dv">3</span>), <span class="st">"°C per decade</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Warming rate       = 0.269 °C per decade</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Why multiply by 10?</strong></p>
+<ul>
+<li>The raw slope is in °C <strong>per year</strong> — a small, hard-to-feel number</li>
+<li>Multiplying by 10 converts to °C <strong>per decade</strong> — easier to communicate</li>
+<li>This is the same <code>coef()</code> extraction skill from Lecture 05</li>
+</ul>
+<blockquote class="blockquote">
+<p><em>b</em> = 0.02 °C/year → 0.2 °C/decade — small year to year, but adds up over 78 years</p>
+</blockquote>
+</div>
+</div>
+</section>
+<section id="does-the-same-pattern-hold-at-the-monthly-level" class="level1">
+<h1>Does the Same Pattern Hold at the Monthly Level?</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the same model on the monthly summary ---------------</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>monthly_temp_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(TEMP <span class="sc">~</span> YEARMODA, <span class="at">data =</span> dlh_month_df)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(monthly_temp_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = TEMP ~ YEARMODA, data = dlh_month_df)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-23.285  -9.826   1.130  10.303  17.402 
+
+Coefficients:
+             Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) 3.734e+00  4.954e-01   7.538 1.25e-13 ***
+YEARMODA    7.788e-05  4.588e-05   1.698   0.0899 .  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 11.04 on 834 degrees of freedom
+Multiple R-squared:  0.003444,  Adjusted R-squared:  0.002249 
+F-statistic: 2.882 on 1 and 834 DF,  p-value: 0.08995</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Compare to the yearly model:</strong></p>
+<ul>
+<li>Same overall warming direction</li>
+<li>More residual scatter, because each point still carries some seasonal “memory”</li>
+<li>The yearly summary gives the cleanest, most interpretable slope for a <em>long-term</em> trend question</li>
+</ul>
+<p>This is why we chose the <strong>yearly</strong> summary for our headline result.</p>
+</div>
+</div>
+</section>
+<section id="a-new-question-is-every-season-warming-the-same" class="level1">
+<h1>A New Question — Is Every Season Warming the Same?</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>So far we’ve asked:</strong> is Duluth warming overall?</p>
+<p><strong>New question:</strong> is <strong>winter</strong> warming at the same rate as <strong>summer</strong>?</p>
+<p>This matters biologically — earlier springs, shorter ice seasons, and changing growing seasons don’t depend on the <em>annual average</em>. They depend on which <strong>season</strong> is changing fastest.</p>
+<p><strong>Plan:</strong></p>
+<ol type="1">
+<li>Label every day as summer or winter using <code>case_when()</code></li>
+<li>Summarize mean temperature by year <strong>within each season</strong></li>
+<li>Fit a <em>separate</em> <code>lm()</code> for each season</li>
+<li>Compare the two slopes</li>
+</ol>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🖐 Try it yourself</strong></p>
+<p>Make a prediction now: which season do you think is warming faster — winter or summer? We’ll find out with real data.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="building-a-season-variable-with-case_when" class="level1">
+<h1>Building a Season Variable with <code>case_when()</code></h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Label each day as summer, winter, or shoulder season ----</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>dlh_season_df <span class="ot">&lt;-</span> dlh_temp_df <span class="sc">%&gt;%</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">season =</span> <span class="fu">case_when</span>(</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>      MONTH <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>)   <span class="sc">~</span> <span class="st">"summer"</span>,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>      MONTH <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">12</span>, <span class="dv">1</span>, <span class="dv">2</span>)  <span class="sc">~</span> <span class="st">"winter"</span>,</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span>                     <span class="sc">~</span> <span class="st">"shoulder"</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick check - did it work? -------------------------------</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>dlh_season_df <span class="sc">%&gt;%</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(season)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     season     n
+     &lt;char&gt; &lt;int&gt;
+1: shoulder 12718
+2:   summer  6436
+3:   winter  6287</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Reading <code>case_when()</code>:</strong></p>
+<ul>
+<li>Each line is read top to bottom: <em>condition</em> <code>~</code> <em>result</em></li>
+<li><code>MONTH %in% c(6, 7, 8)</code> — “is MONTH one of 6, 7, or 8?”</li>
+<li><code>TRUE ~ "shoulder"</code> — the catch-all for everything not matched above (spring/fall)</li>
+</ul>
+<p>This is a new, more powerful cousin of the <code>ifelse()</code> you’ve used before — <code>case_when()</code> handles <strong>many</strong> conditions cleanly.</p>
+<p>📖 R4DS Ch. 3.4 — <code>case_when()</code> for multi-way <code>mutate()</code></p>
+</div>
+</div>
+</section>
+<section id="summarize-each-season-by-year" class="level1">
+<h1>Summarize Each Season by Year</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep only summer and winter, then summarize by year -----</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>season_year_df <span class="ot">&lt;-</span> dlh_season_df <span class="sc">%&gt;%</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(season <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"summer"</span>, <span class="st">"winter"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(YEAR, season) <span class="sc">%&gt;%</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">TEMP =</span> <span class="fu">mean</span>(TEMP, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(season_year_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 3
+# Groups:   YEAR [3]
+   YEAR season  TEMP
+  &lt;int&gt; &lt;chr&gt;  &lt;dbl&gt;
+1  1948 summer  17.4
+2  1948 winter -12.6
+3  1949 summer  18.4
+4  1949 winter -11.4
+5  1950 summer  15.3
+6  1950 winter -13.6</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>What changed:</strong></p>
+<ul>
+<li><code>filter()</code> drops shoulder-season days — we only want the two extremes</li>
+<li><code>group_by(YEAR, season)</code> — grouping by <strong>two</strong> variables gives us one mean temperature per year <strong>per season</strong></li>
+</ul>
+<p>This produces a tidy long-format data frame — perfect for both plotting and modeling.</p>
+</div>
+</div>
+</section>
+<section id="plot-both-seasons-together" class="level1">
+<h1>Plot Both Seasons Together</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot both seasons with separate trend lines --------------</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>season_temp_plot <span class="ot">&lt;-</span> season_year_df <span class="sc">%&gt;%</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> YEAR, <span class="at">y =</span> TEMP, <span class="at">color =</span> season)) <span class="sc">+</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="fl">1.8</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"summer"</span> <span class="ot">=</span> <span class="st">"firebrick"</span>,</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"winter"</span> <span class="ot">=</span> <span class="st">"steelblue"</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Duluth Summer vs. Winter Temperature Trends"</span>,</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">x     =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"Mean Temp (°C)"</span>,</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Season"</span></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>season_temp_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="06_lecture_powerpoint_files/figure-revealjs/season-plot-06-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>What to look for:</strong></p>
+<ul>
+<li>Two clearly separated bands — winter is much colder than summer, as expected</li>
+<li>Compare the <strong>steepness</strong> of each trend line, not just the starting height</li>
+<li>A steeper slope means a faster rate of warming for that season</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="fit-a-separate-model-for-each-season" class="level1">
+<h1>Fit a Separate Model for Each Season</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Summer-only model -----------------------------------------</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>summer_df <span class="ot">&lt;-</span> season_year_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(season <span class="sc">==</span> <span class="st">"summer"</span>)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>summer_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(TEMP <span class="sc">~</span> YEAR, <span class="at">data =</span> summer_df)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>summer_slope <span class="ot">&lt;-</span> <span class="fu">coef</span>(summer_model)[<span class="dv">2</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Winter-only model -----------------------------------------</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>winter_df <span class="ot">&lt;-</span> season_year_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(season <span class="sc">==</span> <span class="st">"winter"</span>)</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>winter_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(TEMP <span class="sc">~</span> YEAR, <span class="at">data =</span> winter_df)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>winter_slope <span class="ot">&lt;-</span> <span class="fu">coef</span>(winter_model)[<span class="dv">2</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Summer warming rate:"</span>,</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">round</span>(summer_slope <span class="sc">*</span> <span class="dv">10</span>, <span class="dv">3</span>), <span class="st">"°C/decade</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Summer warming rate: 0.211 °C/decade</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Winter warming rate:"</span>,</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">round</span>(winter_slope <span class="sc">*</span> <span class="dv">10</span>, <span class="dv">3</span>), <span class="st">"°C/decade</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Winter warming rate: 0.342 °C/decade</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Why fit two separate models</strong> instead of one model with <code>season</code> as a predictor?</p>
+<ul>
+<li>Two simple models are easier to interpret at this stage</li>
+<li>Each gives us a clean, separate slope (°C/decade) to directly compare</li>
+</ul>
+<p><strong>Spoiler from the climate science literature:</strong> in most northern locations, <strong>winter warms faster than summer</strong> — fewer extreme-cold days, shorter ice seasons. Does Duluth’s data agree?</p>
+</div>
+</div>
+</section>
+<section id="what-we-learned-today" class="level1">
+<h1>What We Learned Today</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>Concepts:</strong></p>
+<ul>
+<li>Real climate data can be downloaded <strong>directly into R</strong> with <code>GSODR</code></li>
+<li>Raw daily data hides long-term trends inside seasonal/day-to-day noise</li>
+<li><code>group_by() %&gt;% summarize()</code> at different time scales reveals different stories</li>
+<li>The same <code>lm()</code> workflow from Lecture 05 works on <em>any</em> X ~ Y relationship — including time</li>
+<li><code>case_when()</code> builds a new categorical variable from multiple conditions</li>
+<li>Splitting data by group (season) before modeling lets us compare <strong>rates of change</strong></li>
+</ul>
+<p><strong>R skills:</strong></p>
+<ul>
+<li><code>get_GSOD()</code> — download NOAA station data</li>
+<li><code>group_by(YEAR, MONTH)</code> / <code>group_by(YEAR)</code> — multi-level time summaries</li>
+<li><code>case_when()</code> — multi-condition <code>mutate()</code></li>
+<li><code>filter(x %in% c(...))</code> — keep only specific categories</li>
+<li>Two-group regression comparison with separate <code>lm()</code> calls</li>
+</ul>
+</div><div class="column" style="width:40%;">
+<p><strong>References:</strong></p>
+<ul>
+<li>📖 R4DS Ch. 3 — Data transformation</li>
+<li>📖 R4DS Ch. 17 — Dates and times</li>
+<li>📖 Data Carpentry — R for Ecologists</li>
+</ul>
+<p><strong>Up next — Homework:</strong></p>
+<ul>
+<li>Pick <strong>your own city</strong> (anywhere with a long GSOD record)</li>
+<li>Repeat this entire workflow: download → raw plot → summarize → model the trend</li>
+<li>Build your own summer vs.&nbsp;winter <code>case_when()</code> comparison</li>
+<li>Write a short results paragraph comparing your city’s warming rate to Duluth’s</li>
+</ul>
+</div>
+</div>
 
 
 </section>
 
 </main> <!-- /main -->
+
+<script>
+  // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+  // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+  // slide changes (different for each slide format).
+  (function () {
+    // dispatch for htmlwidgets
+    function fireSlideEnter() {
+      const event = window.document.createEvent("Event");
+      event.initEvent("slideenter", true, true);
+      window.document.dispatchEvent(event);
+    }
+
+    function fireSlideChanged(previousSlide, currentSlide) {
+      fireSlideEnter();
+
+      // dispatch for shiny
+      if (window.jQuery) {
+        if (previousSlide) {
+          window.jQuery(previousSlide).trigger("hidden");
+        }
+        if (currentSlide) {
+          window.jQuery(currentSlide).trigger("shown");
+        }
+      }
+    }
+
+    // hookup for slidy
+    if (window.w3c_slidy) {
+      window.w3c_slidy.add_observer(function (slide_num) {
+        // slide_num starts at position 1
+        fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+      });
+    }
+
+  })();
+</script>
+
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

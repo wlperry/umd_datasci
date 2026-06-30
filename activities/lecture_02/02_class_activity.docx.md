@@ -20,15 +20,15 @@ format:
 
 ### Today's Objectives
 
-1. Get R and Positron installed and oriented
-2. Organize a project folder the right way — `data/`, `scripts/`, `figures/`
-3. Use R as a calculator and store values with `<-`
-4. Write and run a script with `#` comments
-5. Call functions, build vectors, understand data types
-6. Load our leaf data from Excel with `read_excel()` and from CSV with `read_csv()`
-7. Inspect a data frame with `head()`, `glimpse()`, and `dim()`
-8. Use the pipe `%>%` to chain steps
-9. Make and save a first `ggplot` figure
+1.  Get R and Positron installed and oriented
+2.  Organize a project folder the right way — `data/`, `scripts/`, `figures/`
+3.  Use R as a calculator and store values with `<-`
+4.  Write and run a script with `#` comments
+5.  Call functions, build vectors, understand data types
+6.  Load our leaf data from Excel with `read_excel()` and from CSV with `read_csv()`
+7.  Inspect a data frame with `head()`, `glimpse()`, and `dim()`
+8.  Use the pipe `%>%` to chain steps
+9.  Make and save a first `ggplot` figure
 
 > # **How to use this worksheet**
 >
@@ -40,11 +40,11 @@ format:
 
 ### Download and install — in this order
 
-1. **R** (the engine) — <https://cran.r-project.org/>
-   - Choose your operating system, run the installer, accept all defaults
-2. **Positron** (the editor) — <https://positron.posit.co/download.html>
-   - Install **after** R — Positron needs to find R already on your machine
-   - Open Positron and verify it finds R (check the bottom status bar)
+1.  **R** (the engine) — <https://cran.r-project.org/>
+    - Choose your operating system, run the installer, accept all defaults
+2.  **Positron** (the editor) — <https://positron.posit.co/download.html>
+    - Install **after** R — Positron needs to find R already on your machine
+    - Open Positron and verify it finds R (check the bottom status bar)
 
 > ⚠️ **Watch out!** Install R *first*, then Positron. If you installed them in the wrong order, reinstall R and then restart Positron.
 
@@ -52,12 +52,12 @@ format:
 
 Four panes you will use constantly:
 
-| Pane | Where | What it does |
-|---|---|---|
-| **Editor** | Top-left | Your scripts live here |
-| **Console / Terminal** | Bottom | Where code runs and results appear |
-| **Variables / Session** | Right | Every object you have stored |
-| **Plots** | Right (tab) | Your figures appear here |
+| Pane                    | Where       | What it does                       |
+|-------------------------|-------------|------------------------------------|
+| **Editor**              | Top-left    | Your scripts live here             |
+| **Console / Terminal**  | Bottom      | Where code runs and results appear |
+| **Variables / Session** | Right       | Every object you have stored       |
+| **Plots**               | Right (tab) | Your figures appear here           |
 
 ✏️ **Your turn:** Click the **Console** tab. Type `1 + 1` and press Enter. What did R return?
 
@@ -106,7 +106,10 @@ Copy `2026_06_25_tree_experiment_raw_data.xlsx` into `tree_project/data/`.
 
 ### Create your first script
 
-In Positron: **File → New File → R File**. Save it immediately with **Ctrl/Cmd + S**, name it `02_tree_analysis.R`, and save it inside `tree_project/scripts/`.
+- In Positron:
+  - **File → New File → R File**.
+  - Save it immediately with **Ctrl/Cmd + S**, name it `02_tree_analysis.R`,
+  - and save it inside `tree_project/scripts/`.
 
 > 💡 **Key idea:** Console = scratch paper. Script = the lab notebook you keep.
 
@@ -270,11 +273,11 @@ str(weight_g)       # structure overview
 
 Every vector holds **one type**:
 
-| Type | Example | Notes |
-|---|---|---|
-| `numeric` | `4`, `3.5` | All numbers by default |
-| `character` | `"sunny"` | Any text, always quoted |
-| `logical` | `TRUE` / `FALSE` | Must be all-caps |
+| Type        | Example          | Notes                   |
+|-------------|------------------|-------------------------|
+| `numeric`   | `4`, `3.5`       | All numbers by default  |
+| `character` | `"sunny"`        | Any text, always quoted |
+| `logical`   | `TRUE` / `FALSE` | Must be all-caps        |
 
 Mix types and R silently converts everything to the most flexible type — numbers become text, TRUE becomes 1. This can cause surprising bugs.
 
@@ -346,9 +349,7 @@ Many public datasets (NOAA climate data, iNaturalist, eBird) come as `.csv` file
 # noaa_df <- read_csv("data/noaa_global_yearly_temps.csv")
 ```
 
-> 💡 **Key difference:**
-> `read_excel()` needs `library(readxl)`.
-> `read_csv()` comes with `library(tidyverse)` — no extra install needed.
+> 💡 **Key difference:** `read_excel()` needs `library(readxl)`. `read_csv()` comes with `library(tidyverse)` — no extra install needed.
 
 ------------------------------------------------------------------------
 
@@ -358,13 +359,13 @@ A **data frame** is R's word for a spreadsheet-style table. Each column is a vec
 
 Our `tree_df` has five columns:
 
-| Column | Type | What it holds |
-|---|---|---|
-| `index` | numeric | leaf number (1–20) |
-| `side` | character | `"sunny"` or `"shady"` |
-| `weight_g` | numeric | leaf weight in grams |
-| `width_cm` | numeric | leaf width in centimetres |
-| `height_cm` | numeric | leaf height in centimetres |
+| Column      | Type      | What it holds              |
+|-------------|-----------|----------------------------|
+| `index`     | numeric   | leaf number (1–20)         |
+| `side`      | character | `"sunny"` or `"shady"`     |
+| `weight_g`  | numeric   | leaf weight in grams       |
+| `width_cm`  | numeric   | leaf width in centimetres  |
+| `height_cm` | numeric   | leaf height in centimetres |
 
 Pull a single column with `$`:
 
@@ -426,10 +427,7 @@ tree_df %>%
   head(3)                   # take tree_df, THEN show first 3 rows
 ```
 
-> 💡 **Two pipes — same idea:**
-> `%>%` — from tidyverse (we use this one throughout the course)
-> The native pipe (a vertical bar then greater-than sign) — built into R 4.1+; you will see it in code online
-> They behave identically for everything in this course.
+> 💡 **Two pipes — same idea:** `%>%` — from tidyverse (we use this one throughout the course) The native pipe (a vertical bar then greater-than sign) — built into R 4.1+; you will see it in code online They behave identically for everything in this course.
 
 ✏️ **Your turn:** Using the pipe, write code to show only the last 3 rows of `tree_df`. Hint: look at `tail()`.
 
@@ -447,9 +445,9 @@ In Lecture 03 we will use `%>%` with `group_by()` and `summarize()` to compute s
 
 Every ggplot is built in three pieces, joined with `+`:
 
-1. `ggplot(data, aes(...))` — which data frame, which columns map to x and y
-2. `geom_*()` — the shape to draw (points, boxes, bars, …)
-3. `labs()` — axis labels and title
+1.  `ggplot(data, aes(...))` — which data frame, which columns map to x and y
+2.  `geom_*()` — the shape to draw (points, boxes, bars, …)
+3.  `labs()` — axis labels and title
 
 **▶ Run this in your Script — the simplest possible plot:**
 
@@ -700,11 +698,11 @@ tree_project/
 
 This is the project structure we will use **for every analysis** in this course:
 
-| Folder | Contents | Rule |
-|---|---|---|
-| `data/` | All data files | Read only — never overwrite |
-| `scripts/` | `.R` code files | One script per topic |
-| `figures/` | Saved plots | Always PNG, always `dpi = 300` |
+| Folder     | Contents        | Rule                           |
+|------------|-----------------|--------------------------------|
+| `data/`    | All data files  | Read only — never overwrite    |
+| `scripts/` | `.R` code files | One script per topic           |
+| `figures/` | Saved plots     | Always PNG, always `dpi = 300` |
 
 ------------------------------------------------------------------------
 
@@ -712,11 +710,11 @@ This is the project structure we will use **for every analysis** in this course:
 
 When code breaks — and it will, that is normal — try these in order:
 
-1. **Read the error message out loud.** R usually names the line and the problem.
-2. **Check the usual suspects:** Did you load `library(tidyverse)` and `library(readxl)`? Spelling? Missing `)` or `+` at the *start* of a line?
-3. **`?function_name`** opens the built-in help page.
-4. **Tidyverse cheat sheets** — <https://posit.co/resources/cheatsheets/>
-5. **Bring the exact error** (copy-paste it) to class or office hours.
+1.  **Read the error message out loud.** R usually names the line and the problem.
+2.  **Check the usual suspects:** Did you load `library(tidyverse)` and `library(readxl)`? Spelling? Missing `)` or `+` at the *start* of a line?
+3.  **`?function_name`** opens the built-in help page.
+4.  **Tidyverse cheat sheets** — <https://posit.co/resources/cheatsheets/>
+5.  **Bring the exact error** (copy-paste it) to class or office hours.
 
 > 💡 **Key idea:** Every working data scientist googles error messages daily. Getting stuck is not failing — it is the job.
 

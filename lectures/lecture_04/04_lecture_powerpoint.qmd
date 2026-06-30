@@ -35,17 +35,16 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 - **Boxplot** + jittered points; **mean ± SE** with `stat_summary()`
 - **Finding:** shady leaves appear heavier, taller, and wider than sunny leaves
 
-::: {.callout-note}
+::: callout-note
 **✅ Key idea from Lecture 03**
 
-We described the pattern in our data.
-Today we formally test whether that pattern is *statistically significant*.
+We described the pattern in our data. Today we formally test whether that pattern is *statistically significant*.
 :::
 
 # Goals for Today
 
-:::: {.columns}
-::: {.column width="60%"}
+:::::: columns
+:::: {.column width="60%"}
 - **Understand** why comparing means is not enough — we need a test
 - **State** null and alternate hypotheses formally
 - **Check assumptions** before running any test
@@ -55,12 +54,13 @@ Today we formally test whether that pattern is *statistically significant*.
 - **Read** every line of the `t.test()` output
 - **Report** results in scientific writing format
 
-::: {.callout-tip}
+::: callout-tip
 **🖐 Try it yourself**
 
 By the end you will run and interpret a complete t-test on our leaf data.
 :::
-:::
+::::
+
 ::: {.column width="40%"}
 **Tools added today:**
 
@@ -76,34 +76,35 @@ By the end you will run and interpret a complete t-test on our leaf data.
 - test objects → `_model`
 - plots → `_plot`
 :::
-::::
+::::::
 
 # Our Hypotheses — A Reminder
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 **Biological prediction:**
 
 Shady-side leaves will be **larger and heavier** — they need more surface area to capture the limited light filtering through the canopy.
 
-| | Formal statement |
-|---|---|
+|   | Formal statement |
+|------------------------------------|------------------------------------|
 | **H₀ — null** | $\mu_{shady} = \mu_{sunny}$ — no difference in mean leaf weight |
 | **Hₐ — alternate** | $\mu_{shady} \neq \mu_{sunny}$ — mean leaf weight differs by side |
 
 We use a **two-tailed** test — we will detect a difference in *either* direction.
 :::
+
 ::: {.column width="40%"}
 **Why two-tailed?**
 
-- We predicted shady > sunny
+- We predicted shady \> sunny
 - A one-tailed test would only reject H₀ in that direction
 - Two-tailed is **more conservative** and more broadly accepted
 - If the result is significant two-tailed, it is also significant one-tailed
 
 **α = 0.05** — our threshold for rejecting H₀
 :::
-::::
+:::::
 
 # Load Libraries and Data
 
@@ -120,15 +121,15 @@ library(car)         # Levene's test for variance equality
 tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
 ```
 
-::: {.callout-note}
-`car` is the Companion to Applied Regression package. It contains `leveneTest()`, which we use to check whether our two groups have similar variance.
+::: callout-note
+`car` is the **C**ompanion to **A**pplied **R**egression package. It contains `leveneTest()`, which we use to check whether our two groups have similar variance.
 
 Install once: `install.packages("car")`
 :::
 
 # What We Know So Far
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 ```{r recap-summary}
 # Quick recap from Lecture 03 ----------------------------
@@ -143,20 +144,21 @@ recap_df <- tree_df %>%
 recap_df
 ```
 :::
+
 ::: {.column width="40%"}
-- Shady mean: **7.80 g**
-- Sunny mean: **3.80 g**
-- Difference: **4.0 g** — a big gap!
-
-**But is that gap real, or could it just be sampling noise?**
-
-With only n = 10 per group, random chance could produce apparent differences. We need a formal test to quantify the probability.
+- RESULTS:
+  - Shady mean: **7.80 g**
+  - Sunny mean: **3.80 g**
+  - Difference: **4.0 g** — a big gap!
+- **But is that gap real, or could it just be sampling noise?**
+- With only n = 10 per group, random chance could produce apparent differences.
+- **We need a formal test to quantify the probability.**
 :::
-::::
+:::::
 
 # Why Comparing Means Is Not Enough
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 ```{r recap-plot}
 #| fig-format: png
@@ -176,6 +178,7 @@ recap_plot <- tree_df %>%
 recap_plot
 ```
 :::
+
 ::: {.column width="40%"}
 The means look different — but:
 
@@ -189,11 +192,11 @@ A *p*-value tells us:
 
 Small *p* → the gap is unlikely to be chance.
 :::
-::::
+:::::
 
 # What Is a Two-Sample t-Test?
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 A two-sample t-test compares the **means of two independent groups**.
 
@@ -206,51 +209,51 @@ $$t = \frac{\bar{x}_1 - \bar{x}_2}{\text{SE}_{\text{diff}}}$$
 - Numerator: the **observed difference** in means
 - Denominator: the **uncertainty** in that difference (SE of the difference)
 
-**Large |t|** → the difference is large relative to the noise → small *p*-value
+**Large \|t\|** → the difference is large relative to the noise → small *p*-value
 :::
+
 ::: {.column width="40%"}
-| Component | Our context |
-|---|---|
-| Group 1 | Shady leaves |
-| Group 2 | Sunny leaves |
-| Measurement | `weight_g` |
-| H₀ | $\mu_{shady} = \mu_{sunny}$ |
-| Hₐ | $\mu_{shady} \neq \mu_{sunny}$ |
+| Component   | Our context                    |
+|-------------|--------------------------------|
+| Group 1     | Shady leaves                   |
+| Group 2     | Sunny leaves                   |
+| Measurement | `weight_g`                     |
+| H₀          | $\mu_{shady} = \mu_{sunny}$    |
+| Hₐ          | $\mu_{shady} \neq \mu_{sunny}$ |
 :::
-::::
+:::::
 
 # Why Welch's? — Don't Assume Equal Variance
 
-:::: {.columns}
+:::::: columns
 ::: {.column width="60%"}
-**Standard t-test** — pools the two variances into one estimate.
-Requires both groups to have the **same population variance**.
+**Standard t-test** — pools the two variances into one estimate. Requires both groups to have the **same population variance**.
 
-**Welch's t-test** — uses each group's variance separately.
-Does **not** require equal variance.
+**Welch's t-test** — uses each group's variance separately. Does **not** require equal variance.
 
 $$t_W = \frac{\bar{x}_1 - \bar{x}_2}{\sqrt{\dfrac{s_1^2}{n_1} + \dfrac{s_2^2}{n_2}}}$$
 
 The denominator is the **true SE of the difference** — no pooling.
 :::
-::: {.column width="40%"}
+
+:::: {.column width="40%"}
 **Why always use Welch's?**
 
 - When variances **are** equal: almost identical result — minimal loss of power
 - When variances **are not** equal: standard t-test gives **inflated Type I error** (false positives)
-- Welch's protects you either way
+- **Welch's protects you either way**
 
-::: {.callout-tip}
+::: callout-tip
 **Best practice:** use Welch's as your **default** for all two-group comparisons.
 
-In R: `var.equal = FALSE`
-:::
+In R: **`var.equal = FALSE`**
 :::
 ::::
+::::::
 
 # The Welch's Formula in Action
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 ```{r formula-manual}
 # Pull stats and compute t by hand ----------------------
@@ -277,47 +280,47 @@ cat("SE of difference:   ", round(se_diff, 4),      "\n")
 cat("t-statistic:        ", round(t_manual, 3),      "\n")
 ```
 :::
+
 ::: {.column width="40%"}
 **Step by step:**
 
-1. Difference in means: 7.80 − 3.80 = **4.0 g**
-2. SE of the difference:
-   $\sqrt{\frac{s^2_{shady}}{10} + \frac{s^2_{sunny}}{10}}$
-3. t = difference / SE
+1.  Difference in means: 7.80 − 3.80 = **4.0 g**
+2.  SE of the difference: $\sqrt{\frac{s^2_{shady}}{10} + \frac{s^2_{sunny}}{10}}$
+3.  t = difference / SE
 
-The observed difference is ~10 standard errors above zero — very far from what we'd expect if H₀ were true.
+The observed difference is \~10 standard errors above zero — very far from what we'd expect if H₀ were true.
 :::
-::::
+:::::
 
 # Five Steps to a Hypothesis Test
 
-:::: {.columns}
+:::::: columns
 ::: {.column width="60%"}
 We will always follow this sequence:
 
-| Step | Action |
-|---|---|
-| **1** | State H₀ and Hₐ |
-| **2** | Check **normality** — histogram |
-| **3** | Check **normality** — QQ plot + Shapiro-Wilk |
-| **4** | Check **variance** — Levene's test |
+| Step  | Action                                         |
+|-------|------------------------------------------------|
+| **1** | State H₀ and Hₐ                                |
+| **2** | Check **normality** — histogram/box plot       |
+| **3** | Check **normality** — QQ plot + Shapiro-Wilk   |
+| **4** | Check **variance** — Levene's test             |
 | **5** | **Run** the test; **interpret** and **report** |
-
 :::
-::: {.column width="40%"}
-::: {.callout-important}
+
+:::: {.column width="40%"}
+::: callout-important
 **Check assumptions BEFORE running the test.**
 
 If your data seriously violate assumptions, the *p*-value from the t-test is unreliable.
 
 With n = 10 per group, our main concern is **gross non-normality**. The t-test is quite robust to mild departures.
 :::
-:::
 ::::
+::::::
 
 # Step 1 — Hypotheses (Formal)
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 **Null hypothesis:**
 
@@ -333,8 +336,9 @@ The mean leaf weights **differ** between sides — in either direction.
 
 **Significance level:** α = 0.05
 
-We will reject H₀ if *p* < 0.05.
+We will reject H₀ if *p* \< 0.05.
 :::
+
 ::: {.column width="40%"}
 **Why state hypotheses first?**
 
@@ -344,11 +348,11 @@ We will reject H₀ if *p* < 0.05.
 
 **Our commitment:** two-tailed, α = 0.05, before running any test.
 :::
-::::
+:::::
 
 # Step 2 — Check Normality: Histogram
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 ```{r histogram-norm}
 #| fig-format: png
@@ -367,6 +371,7 @@ hist_norm_plot <- tree_df %>%
 hist_norm_plot
 ```
 :::
+
 ::: {.column width="40%"}
 **What to look for:**
 
@@ -378,11 +383,11 @@ With n = 10 per group, histograms look lumpy — that is **normal for small samp
 
 Histograms are a visual check only. We also use QQ plots and Shapiro-Wilk.
 :::
-::::
+:::::
 
 # Step 3 — Check Normality: QQ Plot
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 ```{r qq-norm}
 #| fig-format: png
@@ -402,6 +407,7 @@ qq_norm_plot <- tree_df %>%
 qq_norm_plot
 ```
 :::
+
 ::: {.column width="40%"}
 **How to read a QQ plot:**
 
@@ -411,11 +417,11 @@ qq_norm_plot
 
 If points follow the line roughly, we are comfortable proceeding with the t-test.
 :::
-::::
+:::::
 
 # Step 3 — Check Normality: Shapiro-Wilk Test
 
-:::: {.columns}
+:::::: columns
 ::: {.column width="60%"}
 ```{r shapiro-sunny}
 # Shapiro-Wilk test for the sunny side -----------------
@@ -433,34 +439,36 @@ tree_df %>%
   shapiro.test()
 ```
 :::
-::: {.column width="40%"}
+
+:::: {.column width="40%"}
 **Shapiro-Wilk H₀:** the data are normally distributed.
 
-- *p* > 0.05 → **fail to reject** normality → proceed with t-test
-- *p* < 0.05 → evidence of non-normality → consider a non-parametric alternative
+- *p* \> 0.05 → **fail to reject** normality → proceed with t-test
+- *p* \< 0.05 → evidence of non-normality → consider a non-parametric alternative
 
-::: {.callout-important}
+::: callout-important
 **Small-sample caution:**
 
 With n = 10, this test has **low power** — it rarely detects non-normality even when present. The QQ plot is equally important.
 :::
-:::
 ::::
+::::::
 
 # Step 4 — Check Variance: Levene's Test
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 ```{r levene-test}
 # Levene's test — are the variances similar? -----------
 leveneTest(weight_g ~ side, data = tree_df)
 ```
 :::
+
 ::: {.column width="40%"}
 **Levene's test H₀:** the two groups have **equal variance**.
 
-- *p* > 0.05 → variances are not significantly different
-- *p* < 0.05 → variances are significantly different
+- *p* \> 0.05 → variances are not significantly different
+- *p* \< 0.05 → variances are significantly different
 
 **Our response regardless of the result:**
 
@@ -468,11 +476,11 @@ We will use Welch's t-test (`var.equal = FALSE`).
 
 Welch's is valid whether or not the variances are equal. We run Levene's to *understand our data*, not to choose our test.
 :::
-::::
+:::::
 
 # Step 5 — Run the Welch's t-Test
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 ```{r welch-ttest}
 # Welch's two-sample t-test — unequal variance ---------
@@ -486,22 +494,23 @@ leaf_ttest_model <- t.test(
 leaf_ttest_model
 ```
 :::
+
 ::: {.column width="40%"}
 **Key arguments:**
 
-| argument | what it does |
-|---|---|
-| `weight_g ~ side` | compare `weight_g` between levels of `side` |
-| `var.equal = FALSE` | use Welch's correction |
-| `alternative = "two.sided"` | two-tailed test |
+| argument                    | what it does                                |
+|-----------------------------|---------------------------------------------|
+| `weight_g ~ side`           | compare `weight_g` between levels of `side` |
+| `var.equal = FALSE`         | use Welch's correction                      |
+| `alternative = "two.sided"` | two-tailed test                             |
 
 The result is a model object. We decode each line of the output on the next slide.
 :::
-::::
+:::::
 
 # Reading the `t.test()` Output
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 ```{r ttest-parse}
 # Extract individual values from the model object ------
@@ -514,24 +523,25 @@ cat("Mean shady   :", round(leaf_ttest_model$estimate[1], 2), "g\n")
 cat("Mean sunny   :", round(leaf_ttest_model$estimate[2], 2), "g\n")
 ```
 :::
+
 ::: {.column width="40%"}
 **Line by line:**
 
-| output | meaning |
-|---|---|
-| `t` | our calculated t-statistic |
-| `df` | Welch-Satterthwaite df (non-integer is normal!) |
-| `p-value` | probability of this result if H₀ is true |
-| `95% CI` | plausible range for the true difference in means |
-| `mean of shady/sunny` | the two group means |
+| output                | meaning                                          |
+|-----------------------|--------------------------------------------------|
+| `t`                   | our calculated t-statistic                       |
+| `df`                  | Welch-Satterthwaite df (non-integer is normal!)  |
+| `p-value`             | probability of this result if H₀ is true         |
+| `95% CI`              | plausible range for the true difference in means |
+| `mean of shady/sunny` | the two group means                              |
 
 The **95% CI** is the range we could expect to see if we repeated this study many times.
 :::
-::::
+:::::
 
 # Step 5 — Make a Decision
 
-:::: {.columns}
+:::::: columns
 ::: {.column width="60%"}
 ```{r decision-output}
 # State the decision formally --------------------------
@@ -551,13 +561,14 @@ if (p_val < alpha) {
 }
 ```
 :::
-::: {.column width="40%"}
-::: {.callout-important}
+
+:::: {.column width="40%"}
+::: callout-important
 **What a small p-value means:**
 
 If H₀ were true (no real difference), we would get a t-statistic this large or larger less than `p` × 100% of the time just by chance.
 
-We set α = 0.05 *before* the test. If *p* < α, we reject H₀.
+We set α = 0.05 *before* the test. If *p* \< α, we reject H₀.
 :::
 
 **What a small p-value does NOT mean:**
@@ -565,12 +576,12 @@ We set α = 0.05 *before* the test. If *p* < α, we reject H₀.
 - It is not the probability that H₀ is true
 - Statistical significance ≠ biological importance
 - Report the effect size (difference in means) alongside *p*
-:::
 ::::
+::::::
 
 # Visualize the Result — Boxplot
 
-:::: {.columns}
+:::::: columns
 ::: {.column width="60%"}
 ```{r boxplot-04}
 #| fig-format: png
@@ -596,22 +607,23 @@ leaf_box_04_plot <- tree_df %>%
 leaf_box_04_plot
 ```
 :::
-::: {.column width="40%"}
+
+:::: {.column width="40%"}
 **Including the test result in the figure:**
 
 - `subtitle` pulls t and p directly from the model object
 - R fills in the actual numbers automatically
 - If you re-run with new data, the subtitle updates
 
-::: {.callout-tip}
+::: callout-tip
 Embedding test statistics in the plot subtitle saves you from copying numbers by hand — and avoids typos in your report.
 :::
-:::
 ::::
+::::::
 
 # Visualize the Result — Mean ± SE
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 ```{r mean-se-04}
 #| fig-format: png
@@ -641,6 +653,7 @@ leaf_mean_se_04_plot <- tree_df %>%
 leaf_mean_se_04_plot
 ```
 :::
+
 ::: {.column width="40%"}
 **What the error bars tell you:**
 
@@ -651,11 +664,11 @@ leaf_mean_se_04_plot
 
 If error bars overlap by less than half the bar length, the difference is *likely* significant at α = 0.05. The *p*-value from the t-test is the definitive answer.
 :::
-::::
+:::::
 
 # How to Report Results in Science
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 ```{r report-stats}
 # Compute reporting values from the model object -------
@@ -675,22 +688,23 @@ cat("           sunny =",
     round(recap_df$se_wt[recap_df$side == "sunny"], 2), "g.\n")
 ```
 :::
+
 ::: {.column width="40%"}
 **Standard format:**
 
-> *"[Finding] (Welch's t-test: t(df) = X.XX, p = X.XXX; mean ± SE: group1 = X.X ± X.X units, group2 = X.X ± X.X units)."*
+> *"\[Finding\] (Welch's t-test: t(df) = X.XX, p = X.XXX; mean ± SE: group1 = X.X ± X.X units, group2 = X.X ± X.X units)."*
 
 **Always include:**
 
 - Test type (Welch's t-test)
 - t-statistic and df
-- Exact *p*-value (or < 0.001)
+- Exact *p*-value (or \< 0.001)
 - Group means ± SE
 - Units
 
-**Never report** "p = 0.000" — write "p < 0.001" instead.
+**Never report** "p = 0.000" — write "p \< 0.001" instead.
 :::
-::::
+:::::
 
 # Save Your Plots
 
@@ -705,20 +719,21 @@ ggsave("figures/leaf_weight_mean_se_ttest.png",
        width  = 5, height = 5, units = "in", dpi = 300)
 ```
 
-:::: {.columns}
+:::::: columns
 ::: {.column width="60%"}
 Both plots are now in your `figures/` folder with the test statistics embedded in the subtitle — ready for a lab report or paper.
 :::
-::: {.column width="40%"}
-::: {.callout-tip}
+
+:::: {.column width="40%"}
+::: callout-tip
 `dpi = 300` is publication quality. Use it for any figure that will appear in a paper, poster, or formal report.
 :::
-:::
 ::::
+::::::
 
 # What We Learned Today
 
-:::: {.columns}
+::::: columns
 ::: {.column width="60%"}
 **Concepts:**
 
@@ -736,6 +751,7 @@ Both plots are now in your `figures/` folder with the test statistics embedded i
 - `model$statistic`, `model$p.value`, `model$conf.int` — extract results
 - `paste0(...)` in subtitle — embed test statistics in figures
 :::
+
 ::: {.column width="40%"}
 **References:**
 
@@ -749,4 +765,4 @@ Both plots are now in your `figures/` folder with the test statistics embedded i
 - Building a calibration curve with `lm()`
 - R², residuals, and assumption checking
 :::
-::::
+:::::

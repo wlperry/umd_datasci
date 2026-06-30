@@ -1,15 +1,607 @@
 ---
-title: "Lecture 06"
+title: "Lecture 06 — Real Climate Data in R"
+subtitle: "Downloading, summarizing, and modeling Duluth weather station data"
 author: "Bill Perry"
-
+date: today
 format:
-  html:
-    downloads: [docx, pptx, typst]  # This creates download links for all three
   revealjs:
     output-ext: "slides.html"
+    theme: simple
+    slide-number: true
+    fig-format: png
+    fig-width: 5
+    fig-height: 3.8
+    code-overflow: wrap
+    highlight-style: github
   docx: default
   pptx: default
+execute:
+  echo: true
+  warning: false
+  message: false
 ---
 
-# Lecture 5: Review
+```{r setup}
+#| echo: false
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
 
+# Where we left off (Lecture 05)
+
+- **Linear regression** — fit a calibration curve (area ~ mass) with `lm()`
+- **Reading `summary()`** — slope *b*, intercept *a*, R², p-value for the slope
+- **Least squares** — the line that minimizes the sum of squared residuals
+- **Assumption checks** — residual vs. fitted plot, QQ plot, Shapiro-Wilk on **residuals**
+- **`predict()`** — confidence intervals (mean Y) vs. prediction intervals (one new Y)
+- **Applied it** — converted paper tracing mass into predicted leaf area (cm²)
+
+::: callout-note
+**✅ Transition**
+
+So far every regression we have run used a dataset you were handed. Today we **download real data from inside R** for the first time — long-term weather records for Duluth, MN — and use that same regression toolkit to ask a much bigger question: *is it getting warmer?*
+:::
+
+# Goals for Today
+
+:::::: columns
+:::: {.column width="60%"}
+- Download real weather station data **from inside R** (no Excel step!)
+- Explore raw daily data — and see why raw data alone is hard to read
+- **Summarize** the same data by day, week, month, and year — and watch the story get clearer
+- Reuse `lm()` to estimate the **rate of change** (slope) in temperature over time
+- Use `case_when()` to build a new categorical variable — **summer vs. winter**
+- Compare how fast each season is warming
+
+::: callout-tip
+**🖐 Try it yourself**
+
+By the end you'll have downloaded a real NOAA climate record and estimated how many degrees per decade Duluth has warmed.
+:::
+::::
+
+::: {.column width="40%"}
+**Tools today:**
+
+- `GSODR`, `tidyverse`, `lubridate`
+
+**Textbook:**
+
+- 📖 R for Data Science 2e — Hadley Wickham
+  - [Ch. 3 Data transformation](https://r4ds.hadley.nz/data-transform)
+  - [Ch. 17 Dates and times](https://r4ds.hadley.nz/datetimes)
+- 📖 Data Carpentry — [R for Ecologists](https://datacarpentry.github.io/R-ecology-lesson/)
+
+**Naming conventions:**
+
+- data frames → `_df`
+- plots → `_plot`
+- models → `_model`
+:::
+::::::
+
+# Where Does This Data Come From?
+
+::::: columns
+::: {.column width="60%"}
+**GSOD** = Global Surface Summary of the Day, maintained by NOAA. It contains daily weather observations from thousands of stations worldwide, some going back to the **1940s**.
+
+The `GSODR` package lets us pull this data **directly into R** — no manual download, no Excel, no copy-paste.
+
+**The station we'll use:**
+
+- Duluth International Airport
+- Station ID `727450-14913`
+- Daily records back to **1948** — 78 years of data
+:::
+
+::: {.column width="40%"}
+**Why this matters:**
+
+- This is the *same* kind of messy, real-world data you'll meet in your own research
+- Today's workflow — download → explore → summarize → model — is the same workflow you'll use for your final project
+
+📖 R4DS Ch. 3 — every analysis starts with getting data into R
+:::
+:::::
+
+# Load Libraries and Download the Data
+
+::::: columns
+::: {.column width="60%"}
+```{r load-libs-06}
+# Load packages at the top — always -------------------
+library(tidyverse)   # data manipulation + ggplot2
+library(GSODR)        # download NOAA weather station data
+```
+
+```{r get-duluth-06}
+# Download daily Duluth weather data, 1948-2025 --------
+# this is DAILY data - rows = days, so expect ~28,000 rows
+duluth_df <- get_GSOD(years = 1948:2025,
+                       station = "727450-14913")
+```
+
+```{r glimpse-duluth-06}
+# Look at what we got -----------------------------------
+glimpse(duluth_df)
+```
+:::
+
+::: {.column width="40%"}
+**What just happened:**
+
+- `get_GSOD()` reached out to NOAA's servers and pulled every daily record for this station
+- `years = 1948:2025` is a vector — shorthand for "every year in this range"
+- This download can take a minute — daily data for 78 years is a lot of rows!
+
+::: callout-important
+Don't panic at the row count. **Daily** data for 78 years ≈ 28,000 rows. We will fix that with summarizing.
+:::
+:::
+:::::
+
+# Trim to What We Need
+
+::::: columns
+::: {.column width="60%"}
+```{r select-cols-06}
+# Keep only the columns we actually need -----------------
+dlh_temp_df <- duluth_df %>%
+  select(
+    STNID, NAME, YEARMODA,
+    YEAR, MONTH, DAY,
+    TEMP, MXSPD, PRCP, I_SNOW_ICE
+  )
+
+head(dlh_temp_df)
+```
+:::
+
+::: {.column width="40%"}
+**Why `select()` here:**
+
+- `get_GSOD()` returns 40+ columns — station metadata, multiple temperature scales, attribute flags
+- We only need a handful for this question
+- This is the same `select()` skill from Lecture 02 — applied to a much wider real-world file
+
+📖 R4DS Ch. 3.2 — `select()` for picking columns
+:::
+:::::
+
+# First Look — Plot the Raw Daily Data
+
+::::: columns
+::: {.column width="60%"}
+```{r raw-plot-06}
+#| fig-format: png
+# Plot every single daily temperature ---------------------
+raw_temp_plot <- dlh_temp_df %>%
+  ggplot(aes(x = YEARMODA, y = TEMP)) +
+  geom_point(alpha = 0.2, size = 0.5) +
+  geom_line(alpha = 0.3) +
+  labs(
+    title = "Duluth Daily Mean Temperature, 1948–2025",
+    x     = "Date",
+    y     = "Temperature (°C)"
+  ) +
+  theme_minimal()
+
+raw_temp_plot
+```
+:::
+
+::: {.column width="40%"}
+**What do you see?**
+
+- A dense, fuzzy band — the seasonal cycle (winter ↔ summer) dominates the plot
+- ~28,000 points overlapping each other
+- Any long-term *trend* is completely hidden inside the seasonal noise
+
+**The problem:** raw daily data shows you *everything* — which means it can hide the *one thing* you're looking for.
+:::
+:::::
+
+# The Fix — Summarize the Story Out of the Noise
+
+::::: columns
+::: {.column width="60%"}
+**The idea:** group the data into bigger time chunks, then take the **mean** within each chunk.
+
+| Summary level | `group_by()` | Rows after summary |
+|----------------|--------------|---------------------|
+| Daily (raw)    | none         | ~28,000             |
+| Monthly        | `YEAR, MONTH`| ~936                |
+| Yearly         | `YEAR`       | 78                  |
+
+Each step **trades detail for clarity**. We lose day-to-day weather noise, but the climate signal becomes visible.
+:::
+
+::: {.column width="40%"}
+**This is the same logic as Lecture 03's `group_by()` + `summarize()`** — just applied to time instead of to `side` (sunny/shady).
+
+::: callout-tip
+**🖐 Try it yourself**
+
+Watch the *same* underlying data tell three different stories as we change the summary level.
+:::
+:::
+:::::
+
+# Summarize by Month
+
+::::: columns
+::: {.column width="60%"}
+```{r monthly-summary-06}
+# Mean temperature per year-month -----------------------
+dlh_month_df <- dlh_temp_df %>%
+  group_by(YEAR, MONTH) %>%
+  summarize(
+    YEARMODA = first(YEARMODA),
+    TEMP     = mean(TEMP, na.rm = TRUE)
+  )
+```
+
+```{r monthly-plot-06}
+#| fig-format: png
+# Plot the monthly means ----------------------------------
+month_temp_plot <- dlh_month_df %>%
+  ggplot(aes(x = YEARMODA, y = TEMP)) +
+  geom_point(alpha = 0.4, size = 0.8) +
+  geom_line(alpha = 0.4) +
+  geom_smooth(method = "lm", color = "steelblue") +
+  labs(
+    title = "Duluth Monthly Mean Temperature",
+    x     = "Date", y = "Temperature (°C)"
+  ) +
+  theme_minimal()
+
+month_temp_plot
+```
+:::
+
+::: {.column width="40%"}
+**Better — but still busy.**
+
+- The seasonal cycle (summer peaks, winter dips) is now a clean, regular wave
+- A faint regression line is visible, but the seasonal swing still dominates the y-axis range
+
+`first(YEARMODA)` keeps one representative date per month so we can still plot on a time axis.
+:::
+:::::
+
+# Summarize by Year — The Story Gets Clear
+
+::::: columns
+::: {.column width="60%"}
+```{r yearly-summary-06}
+# Mean temperature per year -------------------------------
+dlh_year_df <- dlh_temp_df %>%
+  group_by(YEAR) %>%
+  summarize(
+    YEARMODA = first(YEARMODA),
+    TEMP     = mean(TEMP, na.rm = TRUE)
+  )
+
+head(dlh_year_df)
+```
+
+```{r yearly-plot-06}
+#| fig-format: png
+yearly_temp_plot <- dlh_year_df %>%
+  ggplot(aes(x = YEAR, y = TEMP)) +
+  geom_point(size = 2) +
+  geom_line() +
+  geom_smooth(method = "lm", color = "firebrick") +
+  labs(
+    title = "Duluth Annual Mean Temperature, 1948–2025",
+    x     = "Year", y = "Mean Temp (°C)"
+  ) +
+  theme_minimal()
+
+yearly_temp_plot
+```
+:::
+
+::: {.column width="40%"}
+**Now the trend is obvious.**
+
+- The seasonal noise is completely averaged out
+- 78 points instead of 28,000 — and the story is *clearer*, not weaker
+- The blue/red trend line is the same kind of `geom_smooth(method = "lm")` line from Lecture 03
+
+This is the power of `group_by() %>% summarize()`: the right level of summary reveals the signal.
+:::
+:::::
+
+# Same Data, Three Levels — Side by Side
+
+::::: columns
+::: {.column width="60%"}
+| Level | What it shows | What it hides |
+|-------|---------------|----------------|
+| **Daily** | every weather event | the long-term trend |
+| **Monthly** | the seasonal cycle | day-to-day noise |
+| **Yearly** | the climate trend | season, weather events |
+
+**Key idea:** there is no single "correct" level — it depends on your *question*. Want to know about a heat wave? Use daily. Want to know about climate change? Use yearly.
+:::
+
+::: {.column width="40%"}
+::: callout-important
+**Summarizing is not "losing information" — it's choosing which question you're answering.**
+:::
+
+📖 R4DS Ch. 3.5 — `group_by()` + `summarize()` workflow
+:::
+:::::
+
+# What Is the Rate of Change? — Reusing `lm()`
+
+::::: columns
+::: {.column width="60%"}
+```{r yearly-lm-06}
+# Fit a regression: TEMP predicted by YEAR ---------------
+yearly_temp_model <- lm(TEMP ~ YEAR, data = dlh_year_df)
+
+summary(yearly_temp_model)
+```
+:::
+
+::: {.column width="40%"}
+**This is exactly Lecture 05's `lm()` syntax** — only now:
+
+- `X` = `YEAR` (instead of paper mass)
+- `Y` = `TEMP` (instead of paper area)
+- The **slope** is no longer "cm² per gram" — it's **°C per year**
+
+**H₀:** β = 0 (no warming trend)
+
+**Hₐ:** β ≠ 0 (temperature is changing over time)
+:::
+:::::
+
+# Extracting and Interpreting the Slope
+
+::::: columns
+::: {.column width="60%"}
+```{r yearly-slope-06}
+# Pull the slope and convert to °C per decade ------------
+yearly_intercept <- coef(yearly_temp_model)[1]
+yearly_slope     <- coef(yearly_temp_model)[2]
+
+cat("Slope (b)         =", round(yearly_slope, 4), "°C/year\n")
+cat("Warming rate       =",
+    round(yearly_slope * 10, 3), "°C per decade\n")
+```
+:::
+
+::: {.column width="40%"}
+**Why multiply by 10?**
+
+- The raw slope is in °C **per year** — a small, hard-to-feel number
+- Multiplying by 10 converts to °C **per decade** — easier to communicate
+- This is the same `coef()` extraction skill from Lecture 05
+
+> *b* = 0.02 °C/year → 0.2 °C/decade — small year to year, but adds up over 78 years
+:::
+:::::
+
+# Does the Same Pattern Hold at the Monthly Level?
+
+::::: columns
+::: {.column width="60%"}
+```{r monthly-lm-06}
+# Fit the same model on the monthly summary ---------------
+monthly_temp_model <- lm(TEMP ~ YEARMODA, data = dlh_month_df)
+
+summary(monthly_temp_model)
+```
+:::
+
+::: {.column width="40%"}
+**Compare to the yearly model:**
+
+- Same overall warming direction
+- More residual scatter, because each point still carries some seasonal "memory"
+- The yearly summary gives the cleanest, most interpretable slope for a *long-term* trend question
+
+This is why we chose the **yearly** summary for our headline result.
+:::
+:::::
+
+# A New Question — Is Every Season Warming the Same?
+
+::::: columns
+::: {.column width="60%"}
+**So far we've asked:** is Duluth warming overall?
+
+**New question:** is **winter** warming at the same rate as **summer**?
+
+This matters biologically — earlier springs, shorter ice seasons, and changing growing seasons don't depend on the *annual average*. They depend on which **season** is changing fastest.
+
+**Plan:**
+
+1.  Label every day as summer or winter using `case_when()`
+2.  Summarize mean temperature by year **within each season**
+3.  Fit a *separate* `lm()` for each season
+4.  Compare the two slopes
+:::
+
+::: {.column width="40%"}
+::: callout-tip
+**🖐 Try it yourself**
+
+Make a prediction now: which season do you think is warming faster — winter or summer? We'll find out with real data.
+:::
+:::
+:::::
+
+# Building a Season Variable with `case_when()`
+
+::::: columns
+::: {.column width="60%"}
+```{r season-case-when-06}
+# Label each day as summer, winter, or shoulder season ----
+dlh_season_df <- dlh_temp_df %>%
+  mutate(
+    season = case_when(
+      MONTH %in% c(6, 7, 8)   ~ "summer",
+      MONTH %in% c(12, 1, 2)  ~ "winter",
+      TRUE                     ~ "shoulder"
+    )
+  )
+
+# Quick check - did it work? -------------------------------
+dlh_season_df %>%
+  count(season)
+```
+:::
+
+::: {.column width="40%"}
+**Reading `case_when()`:**
+
+- Each line is read top to bottom: *condition* `~` *result*
+- `MONTH %in% c(6, 7, 8)` — "is MONTH one of 6, 7, or 8?"
+- `TRUE ~ "shoulder"` — the catch-all for everything not matched above (spring/fall)
+
+This is a new, more powerful cousin of the `ifelse()` you've used before — `case_when()` handles **many** conditions cleanly.
+
+📖 R4DS Ch. 3.4 — `case_when()` for multi-way `mutate()`
+:::
+:::::
+
+# Summarize Each Season by Year
+
+::::: columns
+::: {.column width="60%"}
+```{r season-summary-06}
+# Keep only summer and winter, then summarize by year -----
+season_year_df <- dlh_season_df %>%
+  filter(season %in% c("summer", "winter")) %>%
+  group_by(YEAR, season) %>%
+  summarize(
+    TEMP = mean(TEMP, na.rm = TRUE)
+  )
+
+head(season_year_df)
+```
+:::
+
+::: {.column width="40%"}
+**What changed:**
+
+- `filter()` drops shoulder-season days — we only want the two extremes
+- `group_by(YEAR, season)` — grouping by **two** variables gives us one mean temperature per year **per season**
+
+This produces a tidy long-format data frame — perfect for both plotting and modeling.
+:::
+:::::
+
+# Plot Both Seasons Together
+
+::::: columns
+::: {.column width="60%"}
+```{r season-plot-06}
+#| fig-format: png
+# Plot both seasons with separate trend lines --------------
+season_temp_plot <- season_year_df %>%
+  ggplot(aes(x = YEAR, y = TEMP, color = season)) +
+  geom_point(size = 1.8, alpha = 0.7) +
+  geom_smooth(method = "lm", se = TRUE) +
+  scale_color_manual(values = c(
+    "summer" = "firebrick",
+    "winter" = "steelblue"
+  )) +
+  labs(
+    title = "Duluth Summer vs. Winter Temperature Trends",
+    x     = "Year", y = "Mean Temp (°C)",
+    color = "Season"
+  ) +
+  theme_minimal()
+
+season_temp_plot
+```
+:::
+
+::: {.column width="40%"}
+**What to look for:**
+
+- Two clearly separated bands — winter is much colder than summer, as expected
+- Compare the **steepness** of each trend line, not just the starting height
+- A steeper slope means a faster rate of warming for that season
+:::
+:::::
+
+# Fit a Separate Model for Each Season
+
+::::: columns
+::: {.column width="60%"}
+```{r summer-model-06}
+# Summer-only model -----------------------------------------
+summer_df <- season_year_df %>% filter(season == "summer")
+summer_model <- lm(TEMP ~ YEAR, data = summer_df)
+summer_slope <- coef(summer_model)[2]
+```
+
+```{r winter-model-06}
+# Winter-only model -----------------------------------------
+winter_df <- season_year_df %>% filter(season == "winter")
+winter_model <- lm(TEMP ~ YEAR, data = winter_df)
+winter_slope <- coef(winter_model)[2]
+```
+
+```{r compare-slopes-06}
+cat("Summer warming rate:",
+    round(summer_slope * 10, 3), "°C/decade\n")
+cat("Winter warming rate:",
+    round(winter_slope * 10, 3), "°C/decade\n")
+```
+:::
+
+::: {.column width="40%"}
+**Why fit two separate models** instead of one model with `season` as a predictor?
+
+- Two simple models are easier to interpret at this stage
+- Each gives us a clean, separate slope (°C/decade) to directly compare
+
+**Spoiler from the climate science literature:** in most northern locations, **winter warms faster than summer** — fewer extreme-cold days, shorter ice seasons. Does Duluth's data agree?
+:::
+:::::
+
+# What We Learned Today
+
+::::: columns
+::: {.column width="60%"}
+**Concepts:**
+
+- Real climate data can be downloaded **directly into R** with `GSODR`
+- Raw daily data hides long-term trends inside seasonal/day-to-day noise
+- `group_by() %>% summarize()` at different time scales reveals different stories
+- The same `lm()` workflow from Lecture 05 works on *any* X ~ Y relationship — including time
+- `case_when()` builds a new categorical variable from multiple conditions
+- Splitting data by group (season) before modeling lets us compare **rates of change**
+
+**R skills:**
+
+- `get_GSOD()` — download NOAA station data
+- `group_by(YEAR, MONTH)` / `group_by(YEAR)` — multi-level time summaries
+- `case_when()` — multi-condition `mutate()`
+- `filter(x %in% c(...))` — keep only specific categories
+- Two-group regression comparison with separate `lm()` calls
+:::
+
+::: {.column width="40%"}
+**References:**
+
+- 📖 R4DS Ch. 3 — Data transformation
+- 📖 R4DS Ch. 17 — Dates and times
+- 📖 Data Carpentry — R for Ecologists
+
+**Up next — Homework:**
+
+- Pick **your own city** (anywhere with a long GSOD record)
+- Repeat this entire workflow: download → raw plot → summarize → model the trend
+- Build your own summer vs. winter `case_when()` comparison
+- Write a short results paragraph comparing your city's warming rate to Duluth's
+:::
+:::::

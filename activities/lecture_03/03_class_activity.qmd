@@ -22,14 +22,14 @@ format:
 
 ### Today's Objectives
 
-1. Use `filter()`, `select()`, `mutate()`, and `arrange()` to wrangle data
-2. Chain all four verbs into a single pipeline
-3. Understand why `NA` values require special handling with `sum(!is.na())`
-4. Calculate mean, median, SD, and SE using `filter()` and `pull()`
-5. Use `group_by()` + `summarize()` to compute stats the tidy way
-6. Explore data quickly with `skimr`
-7. Build a boxplot with individual points overlaid
-8. Create a mean ± SE summary plot using `stat_summary()`
+1.  Use `filter()`, `select()`, `mutate()`, and `arrange()` to wrangle data
+2.  Chain all four verbs into a single pipeline
+3.  Understand why `NA` values require special handling with `sum(!is.na())`
+4.  Calculate mean, median, SD, and SE using `filter()` and `pull()`
+5.  Use `group_by()` + `summarize()` to compute stats the tidy way
+6.  Explore data quickly with `skimr`
+7.  Build a boxplot with individual points overlaid
+8.  Create a mean ± SE summary plot using `stat_summary()`
 
 > # **How to use this worksheet**
 >
@@ -805,13 +805,13 @@ tree_project/
 
 # Getting unstuck
 
-1. **Read the error message out loud.** R usually names the line and the problem.
-2. **Check the usual suspects:** Did you load `library(readxl)`, `library(tidyverse)`, and `library(skimr)`?
-3. **Spelling?** R is **case-sensitive** — `"Sunny"` ≠ `"sunny"`. Check with `names(tree_df)`.
-4. **`na.rm = TRUE` missing?** Any stat function on a column with NAs returns `NA` without it — no error, just a silent wrong answer.
-5. **File not found?** Check with `getwd()` and confirm the `data/` folder is inside your project.
-6. **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
-7. **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
+1.  **Read the error message out loud.** R usually names the line and the problem.
+2.  **Check the usual suspects:** Did you load `library(readxl)`, `library(tidyverse)`, and `library(skimr)`?
+3.  **Spelling?** R is **case-sensitive** — `"Sunny"` ≠ `"sunny"`. Check with `names(tree_df)`.
+4.  **`na.rm = TRUE` missing?** Any stat function on a column with NAs returns `NA` without it — no error, just a silent wrong answer.
+5.  **File not found?** Check with `getwd()` and confirm the `data/` folder is inside your project.
+6.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
+7.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
 
 > 💡 **Key idea:** Getting stuck is not failing — every working data scientist googles error messages daily.
 
