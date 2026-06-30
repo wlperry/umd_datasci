@@ -7,8 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
+<meta name="dcterms.date" content="2026-06-30">
 
-<title>Lecture 07 – UMD Biostatistics</title>
+<title>Lecture 07 — Wide, Long, and Wild: Pivoting Real Data – UMD Biostatistics</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -23,6 +24,41 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -79,8 +115,12 @@ ul.task-list li input[type="checkbox"] {
 
 
 <link rel="stylesheet" href="../../css/main.css">
-<meta property="og:title" content="Lecture 07 – UMD Biostatistics">
+<meta property="og:title" content="Lecture 07 — Wide, Long, and Wild: Pivoting Real Data – UMD Biostatistics">
+<meta property="og:description" content="Reshaping Lake Superior ice cover data with pivot_longer() and pivot_wider()">
+<meta property="og:image" content="https://wlperry.github.io/ecostats_2026/lectures/lecture_07/07_lecture_powerpoint_files/figure-revealjs/spaghetti-plot-07-1.png">
 <meta property="og:site_name" content="UMD Biostatistics">
+<meta property="og:image:height" content="364">
+<meta property="og:image:width" content="480">
 </head>
 
 <body class="nav-sidebar docked quarto-light"><script id="quarto-html-before-body" type="application/javascript">
@@ -254,7 +294,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Lecture 07</li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Lecture 07 — Wide, Long, and Wild: Pivoting Real Data</li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -371,7 +411,23 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#lecture-6---a-brief-review" id="toc-lecture-6---a-brief-review" class="nav-link active" data-scroll-target="#lecture-6---a-brief-review">Lecture 6 - A Brief review</a></li>
+  <li><a href="#where-we-left-off-lecture-06" id="toc-where-we-left-off-lecture-06" class="nav-link active" data-scroll-target="#where-we-left-off-lecture-06">Where We Left Off (Lecture 06)</a></li>
+  <li><a href="#goals-for-today" id="toc-goals-for-today" class="nav-link" data-scroll-target="#goals-for-today">Goals for Today</a></li>
+  <li><a href="#meet-the-data-lake-superior-ice-cover" id="toc-meet-the-data-lake-superior-ice-cover" class="nav-link" data-scroll-target="#meet-the-data-lake-superior-ice-cover">Meet the Data: Lake Superior Ice Cover</a></li>
+  <li><a href="#what-does-wide-data-look-like" id="toc-what-does-wide-data-look-like" class="nav-link" data-scroll-target="#what-does-wide-data-look-like">What Does “Wide” Data Look Like?</a></li>
+  <li><a href="#load-libraries-and-read-the-raw-file" id="toc-load-libraries-and-read-the-raw-file" class="nav-link" data-scroll-target="#load-libraries-and-read-the-raw-file">Load Libraries and Read the Raw File</a></li>
+  <li><a href="#pivot_longer-collapsing-wide-to-long" id="toc-pivot_longer-collapsing-wide-to-long" class="nav-link" data-scroll-target="#pivot_longer-collapsing-wide-to-long"><code>pivot_longer()</code> — Collapsing Wide to Long</a></li>
+  <li><a href="#before-and-after-same-data-different-shape" id="toc-before-and-after-same-data-different-shape" class="nav-link" data-scroll-target="#before-and-after-same-data-different-shape">Before and After: Same Data, Different Shape</a></li>
+  <li><a href="#a-tricky-real-world-wrinkle-winters-cross-the-new-year" id="toc-a-tricky-real-world-wrinkle-winters-cross-the-new-year" class="nav-link" data-scroll-target="#a-tricky-real-world-wrinkle-winters-cross-the-new-year">A Tricky Real-World Wrinkle: Winters Cross the New Year</a></li>
+  <li><a href="#summarize-now-that-were-long" id="toc-summarize-now-that-were-long" class="nav-link" data-scroll-target="#summarize-now-that-were-long">Summarize Now That We’re Long</a></li>
+  <li><a href="#pivot_wider-going-back-the-other-direction" id="toc-pivot_wider-going-back-the-other-direction" class="nav-link" data-scroll-target="#pivot_wider-going-back-the-other-direction"><code>pivot_wider()</code> — Going Back the Other Direction</a></li>
+  <li><a href="#why-learn-both-directions" id="toc-why-learn-both-directions" class="nav-link" data-scroll-target="#why-learn-both-directions">Why Learn Both Directions?</a></li>
+  <li><a href="#noaas-own-spaghetti-plot" id="toc-noaas-own-spaghetti-plot" class="nav-link" data-scroll-target="#noaas-own-spaghetti-plot">NOAA’s Own “Spaghetti Plot”</a></li>
+  <li><a href="#prep-put-every-winter-on-one-shared-axis" id="toc-prep-put-every-winter-on-one-shared-axis" class="nav-link" data-scroll-target="#prep-put-every-winter-on-one-shared-axis">Prep: Put Every Winter on One Shared Axis</a></li>
+  <li><a href="#build-the-spaghetti-plot" id="toc-build-the-spaghetti-plot" class="nav-link" data-scroll-target="#build-the-spaghetti-plot">Build the Spaghetti Plot</a></li>
+  <li><a href="#a-new-question-is-maximum-ice-cover-changing" id="toc-a-new-question-is-maximum-ice-cover-changing" class="nav-link" data-scroll-target="#a-new-question-is-maximum-ice-cover-changing">A New Question: Is Maximum Ice Cover Changing?</a></li>
+  <li><a href="#model-the-trend-in-maximum-ice-cover" id="toc-model-the-trend-in-maximum-ice-cover" class="nav-link" data-scroll-target="#model-the-trend-in-maximum-ice-cover">Model the Trend in Maximum Ice Cover</a></li>
+  <li><a href="#what-we-learned-today" id="toc-what-we-learned-today" class="nav-link" data-scroll-target="#what-we-learned-today">What We Learned Today</a></li>
   </ul>
 <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="07_lecture_powerpoint.slides.html"><i class="bi bi-file-slides"></i>RevealJS</a></li><li><a href="07_lecture_powerpoint.docx"><i class="bi bi-file-word"></i>MS Word</a></li><li><a href="07_lecture_powerpoint.pptx"><i class="bi bi-file-slides"></i>Powerpoint</a></li></ul></div></nav>
 </nav>
@@ -385,7 +441,8 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Lecture 07</h1>
+<h1 class="title">Lecture 07 — Wide, Long, and Wild: Pivoting Real Data</h1>
+<p class="subtitle lead">Reshaping Lake Superior ice cover data with pivot_longer() and pivot_wider()</p>
 </div>
 
 
@@ -399,6 +456,12 @@ ul.task-list li input[type="checkbox"] {
           </div>
   </div>
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June 30, 2026</p>
+    </div>
+  </div>
   
     
   </div>
@@ -408,13 +471,778 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="lecture-6---a-brief-review" class="level1">
-<h1>Lecture 6 - A Brief review</h1>
+<section id="where-we-left-off-lecture-06" class="level1">
+<h1>Where We Left Off (Lecture 06)</h1>
+<ul>
+<li><strong>Downloaded real data from inside R</strong> — NOAA’s <code>GSODR</code> package, Duluth station</li>
+<li><strong>Raw vs.&nbsp;summarized data</strong> — daily data hides trends; <code>group_by() %&gt;% summarize()</code> reveals them</li>
+<li><strong>Reused <code>lm()</code></strong> to estimate a rate of change — °C per year, converted to °C per decade</li>
+<li><strong><code>case_when()</code></strong> to build a new categorical variable — summer vs.&nbsp;winter</li>
+<li><strong>Compared two group-specific models</strong> — found winter warming faster than summer</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>✅ Transition</strong></p>
+<ul>
+<li>Duluth’s weather data came to us <strong>already tidy</strong>
+<ul>
+<li>one row per day, one column per variable.</li>
+</ul></li>
+<li>Today’s dataset will <strong>not</strong> be tidy.</li>
+<li>We’ll learn how to fix that.</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="goals-for-today" class="level1">
+<h1>Goals for Today</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<ul>
+<li>Download a genuinely <strong>messy, wide</strong> real-world dataset — Lake Superior daily ice cover</li>
+<li>Understand <strong>why</strong> wide data is hard for R (and great for humans)</li>
+<li>Learn <code>pivot_longer()</code> — turn wide data into tidy long data</li>
+<li>Learn <code>pivot_wider()</code> — turn long data back into a human-readable summary table</li>
+<li>Handle a tricky real-world wrinkle: <strong>winter seasons that cross the new year</strong></li>
+<li>Recreate NOAA’s own “spaghetti plot” comparing every year of ice cover</li>
+<li>Ask: is Lake Superior’s <strong>maximum ice cover</strong> changing over time?</li>
+</ul>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🖐 Try it yourself</strong></p>
+<p>By the end you’ll have reshaped real NOAA ice data and built the same kind of plot NOAA scientists publish.</p>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Tools today:</strong></p>
+<ul>
+<li><code>tidyverse</code>, <code>janitor</code></li>
+</ul>
+<p><strong>Textbook:</strong></p>
+<ul>
+<li>📖 R4DS 2e — Hadley Wickham
+<ul>
+<li><a href="https://r4ds.hadley.nz/data-tidy">Ch. 5 Data tidying</a></li>
+<li><a href="https://r4ds.hadley.nz/datetimes">Ch. 17 Dates and times</a></li>
+</ul></li>
+<li>📖 Data Carpentry — <a href="https://datacarpentry.github.io/R-ecology-lesson/">R for Ecologists</a></li>
+</ul>
+</div>
+</div>
+</section>
+<section id="meet-the-data-lake-superior-ice-cover" class="level1">
+<h1>Meet the Data: Lake Superior Ice Cover</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>NOAA-GLERL</strong> (Great Lakes Environmental Research Laboratory) has tracked daily Great Lakes ice cover since <strong>1973</strong> — over 50 years of satellite-derived ice charts.</p>
+<p><strong>Today’s dataset:</strong> daily percent ice cover for Lake Superior, one row per <strong>day-of-winter</strong>, one column per <strong>year</strong>.</p>
+<p><strong>Source:</strong><br>
+<code>https://www.glerl.noaa.gov/data/ice/glicd/daily/sup.txt</code></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This is a <strong>plain text file living on a government server</strong> — not a tidy CSV. This is what real environmental data often looks like.</p>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.glerl.noaa.gov/data/ice/imgs/ice_collage.jpg" class="img-fluid figure-img"></p>
+<figcaption>Great Lakes ice cover monitoring includes satellite imagery, field sampling, and decades of charts.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="what-does-wide-data-look-like" class="level1">
+<h1>What Does “Wide” Data Look Like?</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<pre><code>        1973 1974 1975 ... 2024 2025
+Nov-10    NA   NA   NA       NA   NA
+Nov-11    NA   NA   NA       NA   NA
+...
+Jan-15   2.1  4.0  1.8      8.2  6.5
+...</code></pre>
+<ul>
+<li><strong>One row</strong> per calendar day-of-winter (Nov 10 → ~May)</li>
+<li><strong>One column per year</strong> — 53 columns, one for each ice season since 1973</li>
+<li>Lots of <code>NA</code> — many days simply had no ice that year or that month</li>
+</ul>
+<p>This format is <strong>perfect for a human</strong> scanning a printed table. It’s <strong>terrible for R and ggplot</strong>.</p>
+</div><div class="column" style="width:40%;">
+<p><strong>Why this breaks tidy tools:</strong></p>
+<ul>
+<li><code>ggplot()</code> wants one column to map to <code>x</code>, one to <code>y</code></li>
+<li>Here, “year” is hiding as 53 separate <strong>column names</strong>, not as data values</li>
+<li><code>group_by(year)</code> is impossible — there’s no <code>year</code> column to group by!</li>
+</ul>
+<p>📖 R4DS Ch. 5.2 — “every value in its own cell”</p>
+</div>
+</div>
+</section>
+<section id="load-libraries-and-read-the-raw-file" class="level1">
+<h1>Load Libraries and Read the Raw File</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load packages at the top — always -------------------</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># data manipulation + ggplot2</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)      <span class="co"># clean_names() and friends</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the messy text file directly from the web -------</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>url <span class="ot">&lt;-</span> <span class="st">"https://www.glerl.noaa.gov/data/ice/glicd/daily/sup.txt"</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>ice_raw <span class="ot">&lt;-</span> <span class="fu">read.table</span>(</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  url,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">header =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">na.strings =</span> <span class="fu">c</span>(<span class="st">"-999"</span>, <span class="st">"-99.00"</span>, <span class="st">"NA"</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames_to_column</span>(<span class="at">var =</span> <span class="st">"date"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ice_raw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 55
+  date   X1973 X1974 X1975 X1976 X1977 X1978 X1979 X1980 X1981 X1982 X1983 X1984
+  &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 Nov-10    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA
+2 Nov-11    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA
+3 Nov-12    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA
+4 Nov-13    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA
+5 Nov-14    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA
+6 Nov-15    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA
+# ℹ 42 more variables: X1985 &lt;dbl&gt;, X1986 &lt;dbl&gt;, X1987 &lt;dbl&gt;, X1988 &lt;dbl&gt;,
+#   X1989 &lt;dbl&gt;, X1990 &lt;dbl&gt;, X1991 &lt;dbl&gt;, X1992 &lt;dbl&gt;, X1993 &lt;dbl&gt;,
+#   X1994 &lt;dbl&gt;, X1995 &lt;dbl&gt;, X1996 &lt;dbl&gt;, X1997 &lt;dbl&gt;, X1998 &lt;dbl&gt;,
+#   X1999 &lt;dbl&gt;, X2000 &lt;dbl&gt;, X2001 &lt;dbl&gt;, X2002 &lt;dbl&gt;, X2003 &lt;dbl&gt;,
+#   X2004 &lt;dbl&gt;, X2005 &lt;dbl&gt;, X2006 &lt;dbl&gt;, X2007 &lt;dbl&gt;, X2008 &lt;dbl&gt;,
+#   X2009 &lt;dbl&gt;, X2010 &lt;dbl&gt;, X2011 &lt;dbl&gt;, X2012 &lt;dbl&gt;, X2013 &lt;dbl&gt;,
+#   X2014 &lt;dbl&gt;, X2015 &lt;dbl&gt;, X2016 &lt;dbl&gt;, X2017 &lt;dbl&gt;, X2018 &lt;dbl&gt;, …</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>What’s happening here:</strong></p>
+<ul>
+<li><code>read.table()</code> (base R) handles this better than <code>read_csv()</code> since the file isn’t comma-separated</li>
+<li><code>na.strings</code> tells R which placeholder values actually mean “missing”</li>
+<li>The day-of-winter labels (<code>Nov-10</code>, <code>Nov-11</code>…) were row names, not a real column — <code>rownames_to_column()</code> fixes that</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Look at the column names: <code>X1973</code>, <code>X1974</code>… R adds an <code>X</code> because column names can’t start with a number!</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="pivot_longer-collapsing-wide-to-long" class="level1">
+<h1><code>pivot_longer()</code> — Collapsing Wide to Long</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Collapse all year columns into year + ice_cover ------</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ice_long <span class="ot">&lt;-</span> ice_raw <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols         =</span> <span class="sc">-</span>date,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to     =</span> <span class="st">"year"</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_prefix =</span> <span class="st">"X"</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to    =</span> <span class="st">"ice_cover"</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>ice_long <span class="ot">&lt;-</span> ice_long <span class="sc">%&gt;%</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(year, date)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ice_long)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 3
+  date   year  ice_cover
+  &lt;chr&gt;  &lt;chr&gt;     &lt;dbl&gt;
+1 Apr-01 1973        3  
+2 Apr-02 1973        2.7
+3 Apr-03 1973        2.4
+4 Apr-04 1973        2  
+5 Apr-05 1973        1.7
+6 Apr-06 1973        1.4</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Reading the arguments:</strong></p>
+<ul>
+<li><code>cols = -date</code> — pivot <em>every column except</em> <code>date</code></li>
+<li><code>names_to = "year"</code> — the old <strong>column names</strong> become values in a new <code>year</code> column</li>
+<li><code>names_prefix = "X"</code> — strip the <code>X</code> that R glued onto the numbers</li>
+<li><code>values_to = "ice_cover"</code> — the old <strong>cell values</strong> become a new <code>ice_cover</code> column</li>
+</ul>
+<p>📖 R4DS Ch. 5.3 — <code>pivot_longer()</code> for wide-to-long</p>
+</div>
+</div>
+</section>
+<section id="before-and-after-same-data-different-shape" class="level1">
+<h1>Before and After: Same Data, Different Shape</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>Wide (<code>ice_raw</code>):</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>date</th>
+<th>X1973</th>
+<th>X1974</th>
+<th>X1975</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Nov-10</td>
+<td>NA</td>
+<td>NA</td>
+<td>NA</td>
+</tr>
+<tr class="even">
+<td>Jan-15</td>
+<td>2.1</td>
+<td>4.0</td>
+<td>1.8</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Long (<code>ice_long</code>):</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>date</th>
+<th>year</th>
+<th>ice_cover</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Jan-15</td>
+<td>1973</td>
+<td>2.1</td>
+</tr>
+<tr class="even">
+<td>Jan-15</td>
+<td>1974</td>
+<td>4.0</td>
+</tr>
+<tr class="odd">
+<td>Jan-15</td>
+<td>1975</td>
+<td>1.8</td>
+</tr>
+</tbody>
+</table>
+</div><div class="column" style="width:40%;">
+<p><strong>Same information. Completely different shape.</strong></p>
+<ul>
+<li>Wide: 53 columns, ~190 rows</li>
+<li>Long: 3 columns, ~190 × 53 rows</li>
+<li>The long version has <strong>one row per observation</strong> — exactly what <code>ggplot()</code> and <code>group_by()</code> expect</li>
+</ul>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This is the single most important reshaping skill in all of data science — almost every messy dataset needs this.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="a-tricky-real-world-wrinkle-winters-cross-the-new-year" class="level1">
+<h1>A Tricky Real-World Wrinkle: Winters Cross the New Year</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>The problem:</strong> an ice season runs <strong>Nov → May</strong>, but NOAA labels the whole season by the year <strong>winter ends in</strong>. So <code>Nov-10</code> under column <code>1974</code> actually happened in <strong>November 1973</strong>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Assign Nov/Dec to the PREVIOUS calendar year ----------</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>ice_clean <span class="ot">&lt;-</span> ice_long <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">year          =</span> <span class="fu">as.numeric</span>(year),</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">calendar_year =</span> <span class="fu">if_else</span>(</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_starts</span>(date, <span class="st">"Nov|Dec"</span>),</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>      year <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>      year</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">full_date =</span> <span class="fu">ymd</span>(<span class="fu">paste</span>(calendar_year, date, <span class="at">sep =</span> <span class="st">"-"</span>)),</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">month     =</span> <span class="fu">month</span>(full_date, <span class="at">label =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(ice_cover, full_date)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ice_clean)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 6
+  date    year ice_cover calendar_year full_date  month
+  &lt;chr&gt;  &lt;dbl&gt;     &lt;dbl&gt;         &lt;dbl&gt; &lt;date&gt;     &lt;ord&gt;
+1 Apr-01  1973       3            1973 1973-04-01 Apr  
+2 Apr-02  1973       2.7          1973 1973-04-02 Apr  
+3 Apr-03  1973       2.4          1973 1973-04-03 Apr  
+4 Apr-04  1973       2            1973 1973-04-04 Apr  
+5 Apr-05  1973       1.7          1973 1973-04-05 Apr  
+6 Apr-06  1973       1.4          1973 1973-04-06 Apr  </code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Reading the logic:</strong></p>
+<ul>
+<li><code>str_starts(date, "Nov|Dec")</code> — does this row’s day-of-winter text start with “Nov” or “Dec”?</li>
+<li>If yes, subtract 1 from <code>year</code> to get the real calendar year</li>
+<li><code>ymd()</code> (from <code>lubridate</code>) glues the pieces into one real R <code>Date</code></li>
+<li><code>drop_na()</code> removes rows with no real date or no ice reading</li>
+</ul>
+<p>📖 R4DS Ch. 17 — working with dates and times</p>
+</div>
+</div>
+</section>
+<section id="summarize-now-that-were-long" class="level1">
+<h1>Summarize Now That We’re Long</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mean ice cover per year-month --------------------------</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>monthly_avg <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, month) <span class="sc">%&gt;%</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_ice =</span> <span class="fu">mean</span>(ice_cover, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups  =</span> <span class="st">"drop"</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>monthly_avg <span class="ot">&lt;-</span> monthly_avg <span class="sc">%&gt;%</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">month_date =</span> <span class="fu">ymd</span>(<span class="fu">paste</span>(year, month, <span class="st">"01"</span>, <span class="at">sep =</span> <span class="st">"-"</span>)))</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(monthly_avg)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 4
+   year month mean_ice month_date
+  &lt;dbl&gt; &lt;ord&gt;    &lt;dbl&gt; &lt;date&gt;    
+1  1973 Jan       18.1 1973-01-01
+2  1973 Feb       32.8 1973-02-01
+3  1973 Mar       28.2 1973-03-01
+4  1973 Apr        2.2 1973-04-01
+5  1973 Dec       12.0 1973-12-01
+6  1974 Jan       24.1 1974-01-01</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>This should look familiar.</strong></p>
+<ul>
+<li>Exactly the same <code>group_by() %&gt;% summarize()</code> pattern from Lecture 06’s Duluth weather data</li>
+<li>We could <strong>not</strong> have written this on the wide data — there was no <code>year</code> or <code>month</code> column to group by until we pivoted</li>
+</ul>
+<p>The reshape wasn’t just cosmetic — it <strong>unlocked</strong> every tidyverse tool we already know.</p>
+</div>
+</div>
+</section>
+<section id="pivot_wider-going-back-the-other-direction" class="level1">
+<h1><code>pivot_wider()</code> — Going Back the Other Direction</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Turn long data into a year-by-month summary table ------</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>ice_pivot_table <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">id_cols    =</span> year,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> month,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> ice_cover,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_fn  =</span> mean</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(ice_pivot_table)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 54 × 9
+    year   Apr   Dec   Feb   Jan   Mar   May   Nov   Jun
+   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+ 1  1973  2.2  12.0   32.8 18.1   28.2 NA       NA    NA
+ 2  1974 23.9   8.4   58.4 24.1   64.0  3.3     NA    NA
+ 3  1975  8.70 NA     35.9 10.7   17.2 NA       NA    NA
+ 4  1976  6.52  5.48  27.8 15.4   32.3 NA       NA    NA
+ 5  1977 24.2  19.1   92.0 61.1   78.0  2.15    NA    NA
+ 6  1978  9.67  5.98  55.4 17.3   63.7  2.57    NA    NA
+ 7  1979 48.5   3.31  85.4 36.8   87.6 21.3     NA    NA
+ 8  1980 15.6  NA     58.8  8.95  41.9 NA       NA    NA
+ 9  1981 11.7  14.2   74.5 30.7   41.3 NA       NA    NA
+10  1982 14.5   1.91  66.5 25.2   54.1  2.5     NA    NA
+# ℹ 44 more rows</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong><code>pivot_wider()</code> is the mirror image of <code>pivot_longer()</code>:</strong></p>
+<ul>
+<li><code>id_cols = year</code> — one row per year</li>
+<li><code>names_from = month</code> — month values become new column headers</li>
+<li><code>values_from = ice_cover</code> — fills the cells</li>
+<li><code>values_fn = mean</code> — averages if multiple days land in the same year-month cell</li>
+</ul>
+<p>This recreates an Excel-style pivot table — but computed, not copy-pasted.</p>
+<p>📖 R4DS Ch. 5.4 — <code>pivot_wider()</code></p>
+</div>
+</div>
+</section>
+<section id="why-learn-both-directions" class="level1">
+<h1>Why Learn Both Directions?</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 41%">
+<col style="width: 58%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Direction</th>
+<th>When to use it</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>pivot_longer()</code></td>
+<td>Data arrives wide (one column per year/site/etc.) and you need it tidy for <code>ggplot()</code> or <code>group_by()</code></td>
+</tr>
+<tr class="even">
+<td><code>pivot_wider()</code></td>
+<td>You have tidy long data but need a <strong>human-readable summary table</strong> — for a report, a colleague, or Excel</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Real data rarely arrives tidy.</strong> Spreadsheets from agencies, field data sheets, and government text files are almost always shaped for human eyes, not for R.</p>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>You will use <code>pivot_longer()</code> constantly in your own research.</strong> This is one of the most-used functions in the entire tidyverse.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="noaas-own-spaghetti-plot" class="level1">
+<h1>NOAA’s Own “Spaghetti Plot”</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p>NOAA publishes a live version of this exact plot every winter, comparing the <strong>current year</strong> (black), the <strong>historical average</strong> (red), and <strong>every past year</strong> (thin blue lines):</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.glerl.noaa.gov/data/ice/spaghetti/sup_ice_compare.png" class="img-fluid figure-img"></p>
+<figcaption>NOAA’s live Lake Superior ice cover comparison — current season vs.&nbsp;historical average vs.&nbsp;all past years.</figcaption>
+</figure>
+</div>
+<p>Today, we’ll build <strong>our own version</strong> of this plot from the raw data we just tidied.</p>
+</div><div class="column" style="width:40%;">
+<p><strong>Why “spaghetti plot”?</strong></p>
+<ul>
+<li>Dozens of thin overlapping lines look like noodles</li>
+<li>Each line is one year’s entire ice season, Nov → May</li>
+<li>The pattern that emerges — or doesn’t — tells the real climate story</li>
+</ul>
+<p>This is a great example of how the <strong>same chart type</strong> appears in real published science.</p>
+</div>
+</div>
+</section>
+<section id="prep-put-every-winter-on-one-shared-axis" class="level1">
+<h1>Prep: Put Every Winter on One Shared Axis</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Force every date onto one fake shared year -------------</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>ice_plot_data <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot_date =</span> <span class="fu">if_else</span>(</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">month</span>(full_date) <span class="sc">&gt;=</span> <span class="dv">10</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">update</span>(full_date, <span class="at">year =</span> <span class="dv">1999</span>),</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>      <span class="fu">update</span>(full_date, <span class="at">year =</span> <span class="dv">2000</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Historical average for each day-of-winter ---------------</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>historical_avg <span class="ot">&lt;-</span> ice_plot_data <span class="sc">%&gt;%</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(plot_date) <span class="sc">%&gt;%</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_ice =</span> <span class="fu">mean</span>(ice_cover, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>current_yr         <span class="ot">&lt;-</span> <span class="fu">max</span>(ice_plot_data<span class="sc">$</span>year)</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>past_years         <span class="ot">&lt;-</span> ice_plot_data <span class="sc">%&gt;%</span> <span class="fu">filter</span>(year <span class="sc">&lt;</span> current_yr)</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>current_year_data  <span class="ot">&lt;-</span> ice_plot_data <span class="sc">%&gt;%</span> <span class="fu">filter</span>(year <span class="sc">==</span> current_yr)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>The trick:</strong> every winter spans two real calendar years (e.g.&nbsp;Nov 1973–May 1974). To overlay them, we relabel every date onto <strong>one fake shared year</strong> (1999 for fall, 2000 for spring) — only the month/day matters for the x-axis.</p>
+<p>This is a common trick for any <strong>seasonal, cyclical</strong> time series.</p>
+</div>
+</div>
+</section>
+<section id="build-the-spaghetti-plot" class="level1">
+<h1>Build the Spaghetti Plot</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>ice_spaghetti_plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> past_years,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> plot_date, <span class="at">y =</span> ice_cover, <span class="at">group =</span> year),</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"blue"</span>, <span class="at">alpha =</span> <span class="fl">0.15</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> historical_avg,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> plot_date, <span class="at">y =</span> avg_ice),</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"red"</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> current_year_data,</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> plot_date, <span class="at">y =</span> ice_cover),</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"black"</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_labels =</span> <span class="st">"%b"</span>, <span class="at">date_breaks =</span> <span class="st">"1 month"</span>) <span class="sc">+</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">title    =</span> <span class="st">"Lake Superior Average Ice Cover"</span>,</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="fu">paste</span>(<span class="st">"Comparing"</span>, current_yr, <span class="st">"to Historical Data"</span>),</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Ice Cover (%)"</span></span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>ice_spaghetti_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="07_lecture_powerpoint_files/figure-revealjs/spaghetti-plot-07-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Three layers, three <code>geom_line()</code> calls:</strong></p>
+<ul>
+<li>Thin, transparent blue lines — every past year, faded so patterns (not individual years) stand out</li>
+<li>Thick red line — the 50+ year historical average</li>
+<li>Thick black line — this year, drawn last so it’s on top</li>
+</ul>
+<p>Compare your version to NOAA’s published plot — did we recreate it?</p>
+</div>
+</div>
+</section>
+<section id="a-new-question-is-maximum-ice-cover-changing" class="level1">
+<h1>A New Question: Is Maximum Ice Cover Changing?</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>So far:</strong> we’ve visualized the <em>shape</em> of each ice season.</p>
+<p><strong>New question:</strong> has the <strong>peak</strong> (maximum) ice cover of each winter changed over the last 50 years?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find the single highest ice-cover day each year --------</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>max_ice_per_year <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_max</span>(<span class="at">order_by =</span> ice_cover, <span class="at">n =</span> <span class="dv">1</span>, <span class="at">with_ties =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(max_ice_per_year <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(ice_cover))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 6
+# Groups:   year [6]
+  date    year ice_cover calendar_year full_date  month
+  &lt;chr&gt;  &lt;dbl&gt;     &lt;dbl&gt;         &lt;dbl&gt; &lt;date&gt;     &lt;ord&gt;
+1 Jan-22  2012       8.2          2012 2012-01-22 Jan  
+2 Mar-17  2002      10.3          2002 2002-03-17 Mar  
+3 Jan-16  1998      11.1          1998 1998-01-16 Jan  
+4 Feb-19  2024      12            2024 2024-02-19 Feb  
+5 Jan-25  1987      14.5          1987 1987-01-25 Jan  
+6 Mar-02  2006      16.7          2006 2006-03-02 Mar  </code></pre>
+</div>
+</div>
+<p><code>slice_max()</code> keeps only the single row with the highest value in each group — here, one row per year: the date and value of that winter’s ice peak.</p>
+</div><div class="column" style="width:40%;">
+<p><strong>This also gives us the “ice-on/ice-off” story:</strong></p>
+<ul>
+<li>The <strong>date</strong> of each year’s maximum is itself meaningful — an early peak (Jan) vs.&nbsp;a late peak (Mar/Apr) tells you something about how long the ice season lasted</li>
+<li>1998’s max ice cover was only ~11%, on Jan 16 — a nearly ice-free winter</li>
+<li>1979’s max was ~97%, on Feb 25 — almost total coverage</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="model-the-trend-in-maximum-ice-cover" class="level1">
+<h1>Model the Trend in Maximum Ice Cover</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit a regression: max ice cover by year -----------------</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>max_ice_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(ice_cover <span class="sc">~</span> year, <span class="at">data =</span> max_ice_per_year)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(max_ice_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = ice_cover ~ year, data = max_ice_per_year)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-53.692 -24.810   3.811  20.982  48.599 
+
+Coefficients:
+             Estimate Std. Error t value Pr(&gt;|t|)   
+(Intercept) 1427.4557   498.1910   2.865  0.00600 **
+year          -0.6841     0.2492  -2.746  0.00827 **
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 28.54 on 52 degrees of freedom
+Multiple R-squared:  0.1266,    Adjusted R-squared:  0.1098 
+F-statistic: 7.539 on 1 and 52 DF,  p-value: 0.008274</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>max_ice_plot <span class="ot">&lt;-</span> max_ice_per_year <span class="sc">%&gt;%</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> ice_cover)) <span class="sc">+</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Lake Superior — Annual Maximum Ice Cover"</span>,</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"Max Ice Cover (%)"</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>max_ice_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="07_lecture_powerpoint_files/figure-revealjs/max-ice-plot-07-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Same <code>lm()</code> syntax as Lecture 06</strong> — only now <code>X = year</code> and <code>Y = ice_cover</code> (the yearly peak, not a daily or monthly mean).</p>
+<ul>
+<li>The slope tells us °C-equivalent: percentage points of max ice cover, per year</li>
+<li>Notice the <strong>huge year-to-year scatter</strong> — Great Lakes ice cover is famously variable, driven by short-term weather patterns like ENSO and the polar vortex, not just a steady climate trend</li>
+</ul>
+<p>This is real data — the story is messier (and more honest) than a clean line.</p>
+</div>
+</div>
+</section>
+<section id="what-we-learned-today" class="level1">
+<h1>What We Learned Today</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>Concepts:</strong></p>
+<ul>
+<li>Real-world data is often <strong>wide</strong> — shaped for human eyes, not for R</li>
+<li><code>pivot_longer()</code> collapses many columns into key-value pairs — unlocking <code>group_by()</code>, <code>summarize()</code>, and <code>ggplot()</code></li>
+<li><code>pivot_wider()</code> does the reverse — builds a readable summary table from tidy data</li>
+<li>Seasonal data that <strong>crosses the calendar year boundary</strong> needs careful date logic</li>
+<li><code>slice_max()</code> pulls out the single extreme value per group — useful for “ice-on/ice-off” type questions</li>
+<li>The same <code>lm()</code> workflow from Lecture 06 applies to <em>any</em> time-indexed variable, including a yearly maximum</li>
+</ul>
+<p><strong>R skills:</strong></p>
+<ul>
+<li><code>read.table()</code> + <code>rownames_to_column()</code> for messy text files</li>
+<li><code>pivot_longer()</code> / <code>pivot_wider()</code></li>
+<li><code>str_starts()</code>, <code>if_else()</code>, <code>ymd()</code>, <code>update()</code> for date wrangling</li>
+<li><code>slice_max(order_by = ..., n = 1)</code></li>
+</ul>
+</div><div class="column" style="width:40%;">
+<p><strong>References:</strong></p>
+<ul>
+<li>📖 R4DS Ch. 5 — Data tidying</li>
+<li>📖 R4DS Ch. 17 — Dates and times</li>
+<li>📖 Data Carpentry — R for Ecologists</li>
+</ul>
+<p><strong>Data source:</strong></p>
+<ul>
+<li>NOAA-GLERL Great Lakes Ice Cover Database<br>
+<code>glerl.noaa.gov/data/ice</code></li>
+</ul>
+<p><strong>Up next — Homework:</strong></p>
+<ul>
+<li>Apply the same wide-to-long pivot workflow to a Great Lake of your choice</li>
+<li>Compare your lake’s maximum ice trend to Lake Superior’s</li>
+</ul>
+</div>
+</div>
 
 
 </section>
 
 </main> <!-- /main -->
+
+<script>
+  // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+  // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+  // slide changes (different for each slide format).
+  (function () {
+    // dispatch for htmlwidgets
+    function fireSlideEnter() {
+      const event = window.document.createEvent("Event");
+      event.initEvent("slideenter", true, true);
+      window.document.dispatchEvent(event);
+    }
+
+    function fireSlideChanged(previousSlide, currentSlide) {
+      fireSlideEnter();
+
+      // dispatch for shiny
+      if (window.jQuery) {
+        if (previousSlide) {
+          window.jQuery(previousSlide).trigger("hidden");
+        }
+        if (currentSlide) {
+          window.jQuery(currentSlide).trigger("shown");
+        }
+      }
+    }
+
+    // hookup for slidy
+    if (window.w3c_slidy) {
+      window.w3c_slidy.add_observer(function (slide_num) {
+        // slide_num starts at position 1
+        fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+      });
+    }
+
+  })();
+</script>
+
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right
