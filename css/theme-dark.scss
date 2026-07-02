@@ -37,19 +37,22 @@ $text-muted:     #b3b3b3;                // 8.5:1 on body-bg
 $secondary:      #b3b3b3;
 
 // Borders, rules, tables
-$border-color:        #4d4d4d;           // brightened from #3a3a3a (was only 1.6:1, i.e.
-$hr-color:             #4d4d4d;          // barely visible — borders need >=3:1 as a UI element)
+$border-color:        #4d4d4d;           // brightened from #3a3a3a (was only 1.6:1 — barely
+$hr-color:             #4d4d4d;          // visible — non-text UI elements need >=3:1)
 $table-color:          $body-color;
 $table-bg:             transparent;
 $table-border-color:   #4d4d4d;
 $table-striped-bg:     rgba(255, 255, 255, 0.05);
 $table-hover-bg:       rgba(255, 255, 255, 0.08);
 
-// Inline code / code blocks
+// Inline code / code blocks / R-output blocks
 $code-color:           #f2b4a0;          // ~10:1 on body-bg
 $code-bg:              #1e1e1e;
+$pre-bg:               #1e1e1e;          // <- was missing before; this is why R output /
+$pre-color:            $body-color;      //    warning blocks were rendering with a white bg
 $code-block-bg-alpha:  -0.9;
-$pre-color:            $body-color;
+$kbd-bg:               #2a2a2a;
+$kbd-color:            $body-color;
 
 // Navigation chrome
 $footer-bg:  #181818;
@@ -100,6 +103,40 @@ figcaption,
   color: $text-muted !important;
 }
 
+// ---------------------------------------------------------------------
+// Title block: Quarto's title-banner template dims the title/description
+// with a reduced opacity intended for a LIGHT background (a semi-transparent
+// dark grey on white reads as a soft grey subtitle). On a dark background
+// the same trick makes light text fade almost to invisible against the
+// dark bg — which is what "the title barely shows up" looks like.
+// Force full opacity and explicit color here.
+// ---------------------------------------------------------------------
+.quarto-title-banner,
+.quarto-title-block {
+  opacity: 1 !important;
+
+  .title,
+  h1.title,
+  .quarto-title-meta,
+  .description,
+  p.subtitle,
+  .subtitle {
+    opacity: 1 !important;
+  }
+}
+
+.quarto-title-banner .title,
+h1.title {
+  color: $body-color !important;
+}
+
+.quarto-title-banner .description,
+.quarto-title-block .description,
+p.subtitle,
+.subtitle {
+  color: $text-muted !important;
+}
+
 // Table cells sometimes ship with an explicit dark text color
 table > :not(caption) > * > * {
   color: $body-color;
@@ -144,6 +181,30 @@ input:focus-visible,
 .nav-link:focus-visible {
   outline: 2px solid #ffd166;   // 12.3:1 on body-bg
   outline-offset: 2px;
+}
+
+// ---------------------------------------------------------------------
+// R/knitr code-output blocks (warnings, messages, printed results).
+// These commonly render inside <pre> tags that Quarto/knitr styles
+// directly with a hardcoded white background + dark text, independent
+// of $code-bg — that's the white box you saw around the readLines
+// warning. Force them to match the rest of the page.
+// ---------------------------------------------------------------------
+pre,
+pre code,
+.cell-output pre,
+.cell-output-stdout pre,
+.cell-output-stderr pre,
+.cell-output pre code,
+div.sourceCode pre {
+  background-color: $code-bg !important;
+  color: $body-color !important;
+  border-color: $border-color !important;
+}
+
+.cell-output-stderr pre,
+.cell-output-stderr pre code {
+  color: #ffcb6b !important;   // warnings — 11:1 on $code-bg
 }
 
 // ---------------------------------------------------------------------
