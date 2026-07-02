@@ -1,7 +1,0 @@
----
-title: "Lecture 15 - Class Activity ANCOVA"
-author: "Bill Perry"
-format:
-  html: default
-  docx: default
----

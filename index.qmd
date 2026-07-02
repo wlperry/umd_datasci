@@ -4,14 +4,17 @@ page-layout: full
 ---
 
 This page contains the schedule and links for lectures, activities, homework,
-and common_code. It is generated automatically from `_schedule.yml` — to
-reorder weeks or modules, edit that file. This page never needs to change.
+common code, and assignments. It is generated automatically from
+`_schedule.yml` — to reorder weeks or modules, or add/remove a link, edit
+that file. This page itself never needs to change.
 
 ```{r}
 #| echo: false
 #| output: asis
 
-if (!requireNamespace("yaml", quietly = TRUE)) install.packages("yaml")
+if (!requireNamespace("yaml", quietly = TRUE)) {
+  install.packages("yaml")
+}
 library(yaml)
 
 schedule <- yaml::read_yaml("_schedule.yml")
@@ -21,18 +24,20 @@ schedule <- yaml::read_yaml("_schedule.yml")
 
 # label + emoji for each kind of link, in the order they should appear
 link_types <- list(
-  lecture     = list(emoji = "🖥️", label = "Lecture"),
-  activity    = list(emoji = "📋", label = "Activity"),
-  homework    = list(emoji = "💻", label = "Homework"),
-  assignment  = list(emoji = "📝", label = "Assignment"),
+  lecture = list(emoji = "🖥️", label = "Lecture"),
+  activity = list(emoji = "📋", label = "Activity"),
+  homework = list(emoji = "💻", label = "Homework"),
   common_code = list(emoji = "📖", label = "Common Code")
 )
 
 cat('::::::::::::::::::: column-screen-inset-right\n\n')
 
 for (wk in schedule$weeks) {
-
-  heading <- paste0("Week ", wk$week, if (nzchar(wk$title %||% "")) paste0(": ", wk$title) else "")
+  heading <- paste0(
+    "Week ",
+    wk$week,
+    if (nzchar(wk$title %||% "")) paste0(": ", wk$title) else ""
+  )
   cat("###", heading, "\n\n")
   cat('::: {layout-ncol="2"}\n\n')
 
@@ -53,5 +58,16 @@ for (wk in schedule$weeks) {
   cat(":::\n\n---\n\n")
 }
 
-cat(':::::::::::::::::::\n')
+cat(':::::::::::::::::::\n\n')
+
+# --- Common Code reference section (flat list, not week-based) ---
+if (!is.null(schedule$common_code) && length(schedule$common_code) > 0) {
+  cat("### Common Code you might reference\n\n")
+  cat('::: {layout-ncol="2"}\n\n')
+  for (item in schedule$common_code) {
+    cat("####", item$title, "\n\n")
+    cat(sprintf("- [📖 Common Code](%s)\n\n", item$path))
+  }
+  cat(":::\n\n")
+}
 ```

@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Bill Perry">
+<meta name="dcterms.date" content="2026-07-02">
+<meta name="description" content="Doing linear regressions and plotting">
+
+<title>Worksheet 05 — Linear Regression – UMD Biostatistics</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-ae532494dbd7d4d6d090035c48330fca.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-f39bb0724306431b68be313e475d755b.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-ae532494dbd7d4d6d090035c48330fca.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../css/main.css">
+<meta property="og:title" content="Worksheet 05 — Linear Regression – UMD Biostatistics">
+<meta property="og:description" content="Doing linear regressions and plotting">
+<meta property="og:site_name" content="UMD Biostatistics">
+</head>
+
+<body class="nav-sidebar docked quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Worksheet 05 — Linear Regression</li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+      <a href="../../index.html" class="sidebar-logo-link">
+      <img src="../../images/course-hex.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="../../images/course-hex.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
+      </a>
+      <div class="sidebar-tools-main">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="https://wlperry.github.io/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">← Back to Homepage</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="false">
+ <span class="menu-text">Course Information</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Schedule</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../admin/syllabus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Syllabus</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../admin/overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../links.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Helpful Links</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
+ <span class="menu-text">Course Materials</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../lectures/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lectures</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../activities/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Activities</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../homeworks/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Homeworks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../common_code/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Common Code</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#in-class-activity-5-regression-predicting-leaf-area" id="toc-in-class-activity-5-regression-predicting-leaf-area" class="nav-link active" data-scroll-target="#in-class-activity-5-regression-predicting-leaf-area">In-class Activity 5: Regression — Predicting Leaf Area</a>
+  <ul class="collapse">
+  <li><a href="#recap-from-worksheet-04" id="toc-recap-from-worksheet-04" class="nav-link" data-scroll-target="#recap-from-worksheet-04">Recap from Worksheet 04</a></li>
+  <li><a href="#todays-objectives" id="toc-todays-objectives" class="nav-link" data-scroll-target="#todays-objectives">Today’s Objectives</a></li>
+  </ul></li>
+  <li><a href="#part-1-load-libraries-and-data" id="toc-part-1-load-libraries-and-data" class="nav-link" data-scroll-target="#part-1-load-libraries-and-data">Part 1 · Load libraries and data</a>
+  <ul class="collapse">
+  <li><a href="#libraries" id="toc-libraries" class="nav-link" data-scroll-target="#libraries">Libraries</a></li>
+  <li><a href="#the-calibration-dataset" id="toc-the-calibration-dataset" class="nav-link" data-scroll-target="#the-calibration-dataset">The calibration dataset</a></li>
+  </ul></li>
+  <li><a href="#part-2-inspect-the-data" id="toc-part-2-inspect-the-data" class="nav-link" data-scroll-target="#part-2-inspect-the-data">Part 2 · Inspect the data</a></li>
+  <li><a href="#part-3-first-scatter-plot" id="toc-part-3-first-scatter-plot" class="nav-link" data-scroll-target="#part-3-first-scatter-plot">Part 3 · First scatter plot</a></li>
+  <li><a href="#part-4-fit-the-regression-with-lm" id="toc-part-4-fit-the-regression-with-lm" class="nav-link" data-scroll-target="#part-4-fit-the-regression-with-lm">Part 4 · Fit the regression with <code>lm()</code></a></li>
+  <li><a href="#part-5-decode-the-summary-output-line-by-line" id="toc-part-5-decode-the-summary-output-line-by-line" class="nav-link" data-scroll-target="#part-5-decode-the-summary-output-line-by-line">Part 5 · Decode the <code>summary()</code> output line by line</a></li>
+  <li><a href="#part-6-extract-the-calibration-equation" id="toc-part-6-extract-the-calibration-equation" class="nav-link" data-scroll-target="#part-6-extract-the-calibration-equation">Part 6 · Extract the calibration equation</a></li>
+  <li><a href="#part-7-extract-and-interpret-r²" id="toc-part-7-extract-and-interpret-r²" class="nav-link" data-scroll-target="#part-7-extract-and-interpret-r²">Part 7 · Extract and interpret R²</a></li>
+  <li><a href="#part-8-plot-the-calibration-curve" id="toc-part-8-plot-the-calibration-curve" class="nav-link" data-scroll-target="#part-8-plot-the-calibration-curve">Part 8 · Plot the calibration curve</a>
+  <ul class="collapse">
+  <li><a href="#save-the-plot" id="toc-save-the-plot" class="nav-link" data-scroll-target="#save-the-plot">Save the plot</a></li>
+  </ul></li>
+  <li><a href="#part-9-check-assumptions-residual-plot" id="toc-part-9-check-assumptions-residual-plot" class="nav-link" data-scroll-target="#part-9-check-assumptions-residual-plot">Part 9 · Check assumptions — residual plot</a></li>
+  <li><a href="#part-10-check-assumptions-qq-plot-and-shapiro-wilk" id="toc-part-10-check-assumptions-qq-plot-and-shapiro-wilk" class="nav-link" data-scroll-target="#part-10-check-assumptions-qq-plot-and-shapiro-wilk">Part 10 · Check assumptions — QQ plot and Shapiro-Wilk</a></li>
+  <li><a href="#part-11-predict-leaf-area-from-tracing-mass" id="toc-part-11-predict-leaf-area-from-tracing-mass" class="nav-link" data-scroll-target="#part-11-predict-leaf-area-from-tracing-mass">Part 11 · Predict leaf area from tracing mass</a>
+  <ul class="collapse">
+  <li><a href="#method-1-direct-calculation" id="toc-method-1-direct-calculation" class="nav-link" data-scroll-target="#method-1-direct-calculation">Method 1 — Direct calculation</a></li>
+  <li><a href="#method-2-using-predict-with-intervals" id="toc-method-2-using-predict-with-intervals" class="nav-link" data-scroll-target="#method-2-using-predict-with-intervals">Method 2 — Using <code>predict()</code> with intervals</a></li>
+  </ul></li>
+  <li><a href="#part-12-write-a-scientific-results-paragraph" id="toc-part-12-write-a-scientific-results-paragraph" class="nav-link" data-scroll-target="#part-12-write-a-scientific-results-paragraph">Part 12 · Write a scientific results paragraph</a></li>
+  <li><a href="#part-13-review-and-checkpoint" id="toc-part-13-review-and-checkpoint" class="nav-link" data-scroll-target="#part-13-review-and-checkpoint">Part 13 · Review and checkpoint</a></li>
+  <li><a href="#part-14-going-further" id="toc-part-14-going-further" class="nav-link" data-scroll-target="#part-14-going-further">Part 14 · Going further</a>
+  <ul class="collapse">
+  <li><a href="#explore-the-fit-at-each-area-group" id="toc-explore-the-fit-at-each-area-group" class="nav-link" data-scroll-target="#explore-the-fit-at-each-area-group">Explore the fit at each area group</a></li>
+  <li><a href="#prediction-for-a-real-leaf-tracing" id="toc-prediction-for-a-real-leaf-tracing" class="nav-link" data-scroll-target="#prediction-for-a-real-leaf-tracing">Prediction for a real leaf tracing</a></li>
+  <li><a href="#extrapolation-warning" id="toc-extrapolation-warning" class="nav-link" data-scroll-target="#extrapolation-warning">Extrapolation warning</a></li>
+  <li><a href="#connect-to-worksheet-04" id="toc-connect-to-worksheet-04" class="nav-link" data-scroll-target="#connect-to-worksheet-04">Connect to Worksheet 04</a></li>
+  </ul></li>
+  <li><a href="#what-your-figures-folder-should-contain-after-this-worksheet" id="toc-what-your-figures-folder-should-contain-after-this-worksheet" class="nav-link" data-scroll-target="#what-your-figures-folder-should-contain-after-this-worksheet">What your <code>figures/</code> folder should contain after this worksheet</a></li>
+  <li><a href="#getting-unstuck" id="toc-getting-unstuck" class="nav-link" data-scroll-target="#getting-unstuck">Getting unstuck</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="regression_activity.docx"><i class="bi bi-file-word"></i>MS Word</a></li></ul></div></nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Worksheet 05 — Linear Regression</h1>
+<p class="subtitle lead">Building a calibration curve to predict leaf area from paper tracing mass</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">r-basics</div>
+    <div class="quarto-category">project-setup</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>Doing linear regressions and plotting</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Bill Perry </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 2, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="in-class-activity-5-regression-predicting-leaf-area" class="level1">
+<h1>In-class Activity 5: Regression — Predicting Leaf Area</h1>
+<section id="recap-from-worksheet-04" class="level3">
+<h3 class="anchored" data-anchor-id="recap-from-worksheet-04">Recap from Worksheet 04</h3>
+<ul>
+<li><strong>Stated hypotheses</strong> — H₀: μ_shady = μ_sunny (no difference in mean leaf weight); Hₐ: μ_shady ≠ μ_sunny</li>
+<li><strong>Checked normality</strong> — histogram, QQ plot, Shapiro-Wilk on each group’s <code>weight_g</code></li>
+<li><strong>Checked variance</strong> — Levene’s test; used Welch’s (<code>var.equal = FALSE</code>) regardless of result</li>
+<li><strong>Ran the t-test</strong> — <code>t.test(weight_g ~ side, data = tree_df, var.equal = FALSE, alternative = "two.sided")</code></li>
+<li><strong>Read output</strong> — t-statistic, Welch-Satterthwaite df, <em>p</em>-value, 95% CI, group means</li>
+<li><strong>Result</strong> — shady leaves were significantly <strong>heavier</strong> than sunny leaves (<em>p</em> &lt; 0.001)</li>
+<li><strong>But:</strong> weight in grams tells us about <em>mass</em> — not directly about <em>leaf surface area</em></li>
+</ul>
+</section>
+<section id="todays-objectives" class="level3">
+<h3 class="anchored" data-anchor-id="todays-objectives">Today’s Objectives</h3>
+<ol type="1">
+<li>Load and inspect the paper calibration data</li>
+<li>Make a scatter plot and visually assess linearity</li>
+<li>Fit a linear regression with <code>lm()</code> and read every line of <code>summary()</code></li>
+<li>Extract slope, intercept, and R² from the model</li>
+<li>Check all four regression assumptions (linearity, equal variance, normality of residuals)</li>
+<li>Use the calibration equation to <strong>predict leaf area</strong> from a tracing mass</li>
+<li>Use <code>predict()</code> with confidence and prediction intervals</li>
+<li>Write a complete results paragraph following W&amp;S Chapter 17 conventions</li>
+</ol>
+<blockquote class="blockquote">
+<h1 id="how-to-use-this-worksheet"><strong>How to use this worksheet</strong></h1>
+<ul>
+<li>Work through each part in order. Type the code into a new R script in Positron and run it line by line.
+<ul>
+<li><p>Code blocks marked <strong>▶ Run this</strong> should be executed as written.</p></li>
+<li><p>Blocks marked <strong>✏️ Your turn</strong> ask you to write, modify, or interpret.</p></li>
+<li><p>The <strong>Going further</strong> section is optional.</p></li>
+</ul></li>
+</ul>
+</blockquote>
+<hr>
+</section>
+</section>
+<section id="part-1-load-libraries-and-data" class="level1">
+<h1>Part 1 · Load libraries and data</h1>
+<section id="libraries" class="level3">
+<h3 class="anchored" data-anchor-id="libraries">Libraries</h3>
+<p><strong>▶ Run this at the top of your script:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load packages at the top — always ----------------------</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)      <span class="co"># reading Excel files</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># data manipulation + ggplot2</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(skimr)       <span class="co"># fast dataset overview</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="the-calibration-dataset" class="level3">
+<h3 class="anchored" data-anchor-id="the-calibration-dataset">The calibration dataset</h3>
+<p>The file <code>paper_area_weights.xlsx</code> contains 118 paper squares of <strong>known area</strong> (1–567 cm²) with their measured masses in grams. We will fit a regression to convert mass → area, then apply it to leaf tracings.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the paper calibration data -----------------------</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>paper_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/paper_area_weights.xlsx"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Run <code>dim(paper_df)</code>. How many rows and columns does the dataset have?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Write your code here:</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Rows:
+Columns:
+Column names and their roles:
+  area_cm2 →  (response / explanatory / circle one)
+  mass_g   →  (response / explanatory / circle one)</code></pre>
+<hr>
+</section>
+</section>
+<section id="part-2-inspect-the-data" class="level1">
+<h1>Part 2 · Inspect the data</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick overview with skim --------------------------------</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">skim</span>(paper_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># How many squares were measured at each area level? -----</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>paper_df <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(area_cm2) <span class="sc">%&gt;%</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n          =</span> <span class="fu">n</span>(),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_mass  =</span> <span class="fu">round</span>(<span class="fu">mean</span>(mass_g), <span class="dv">5</span>),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_mass   =</span> <span class="fu">round</span>(<span class="fu">min</span>(mass_g),  <span class="dv">5</span>),</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_mass   =</span> <span class="fu">round</span>(<span class="fu">max</span>(mass_g),  <span class="dv">5</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Fill in the table from the output above:</p>
+<pre><code>area_cm2   mean mass (g)
+--------   -------------
+1          
+4          
+16         
+64         
+100        
+400        </code></pre>
+<p>✏️ <strong>Your turn:</strong> Is there a clear pattern — as area increases, what happens to mass? Is this what you expected from your knowledge of paper?</p>
+<pre><code>Your answer:</code></pre>
+<hr>
+</section>
+<section id="part-3-first-scatter-plot" class="level1">
+<h1>Part 3 · First scatter plot</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Scatter plot — check the relationship visually ---------</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>scatter_09_plot <span class="ot">&lt;-</span> paper_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">y =</span> area_cm2)) <span class="sc">+</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Paper Mass vs. Known Area"</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">x     =</span> <span class="st">"Mass (g)"</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">y     =</span> <span class="st">"Area (cm²)"</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>scatter_09_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Describe the relationship. Is it linear? Is the variance (spread of points) roughly constant across the range of mass values?</p>
+<pre><code>Shape of relationship (linear / curved):
+Variance (constant / increases / decreases with X):
+Any obvious outliers?  Y / N</code></pre>
+<p>✏️ <strong>Your turn:</strong> In this study, which variable is the explanatory (X) and which is the response (Y)? Why does that direction make sense for our goal of predicting leaf area?</p>
+<pre><code>Explanatory (X):
+Response (Y):
+Reason for this direction:</code></pre>
+<blockquote class="blockquote">
+<p>💡 <strong>Key idea:</strong> In regression, <em>X</em> is what you measure (mass — easy with a balance), and <em>Y</em> is what you want to know (area — harder to measure on a complex leaf shape). We measure X to predict Y.</p>
+</blockquote>
+<hr>
+</section>
+<section id="part-4-fit-the-regression-with-lm" class="level1">
+<h1>Part 4 · Fit the regression with <code>lm()</code></h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the least-squares linear model --------------------</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># lm(response ~ predictor, data = data_frame)</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>paper_lm_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(area_cm2 <span class="sc">~</span> mass_g, <span class="at">data =</span> paper_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Full summary — every number matters -------------------</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(paper_lm_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Copy the Coefficients table output here:</p>
+<pre><code>Paste the Coefficients section of the summary() output:</code></pre>
+<hr>
+</section>
+<section id="part-5-decode-the-summary-output-line-by-line" class="level1">
+<h1>Part 5 · Decode the <code>summary()</code> output line by line</h1>
+<p>✏️ <strong>Your turn:</strong> Match each piece of output to its meaning. Fill in the blanks:</p>
+<pre><code>(Intercept) estimate = _____
+  → This is "a" in Ŷ = a + bX. 
+    It is the predicted area when mass = _____.
+    Does this make physical sense? (a piece of paper with zero mass has zero area)  Y / N
+
+mass_g estimate = _____
+  → This is "b" (the slope).
+    It means: for every additional 1 gram of paper, area increases by _____ cm².
+    Biologically, 1 gram of this paper stock has _____ cm² of surface area.
+
+Std. Error for mass_g = _____
+  → The uncertainty in the slope estimate.
+
+t value for mass_g = _____
+  → slope / SE.  This tests H₀: β = _____.
+
+Pr(&gt;|t|) for mass_g = _____
+  → The p-value for the slope test. Is it significant at α = 0.05?  Y / N
+
+Multiple R-squared = _____
+  → _____ % of the variation in area is explained by mass.
+
+F-statistic = _____  on _____ and _____ df
+  → Overall test of the model.  p = _____</code></pre>
+<blockquote class="blockquote">
+<p>📖 <strong>Whitlock &amp; Schluter §17.3 p.&nbsp;551–553:</strong> The slope is tested with a t-statistic: t = b / SE_b, with df = n − 2. If H₀: β = 0 is rejected, mass significantly predicts area.</p>
+</blockquote>
+<hr>
+</section>
+<section id="part-6-extract-the-calibration-equation" class="level1">
+<h1>Part 6 · Extract the calibration equation</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pull intercept and slope from the model ---------------</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>a_intercept <span class="ot">&lt;-</span> <span class="fu">coef</span>(paper_lm_model)[<span class="dv">1</span>]</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>b_slope     <span class="ot">&lt;-</span> <span class="fu">coef</span>(paper_lm_model)[<span class="dv">2</span>]</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Intercept (a) ="</span>, <span class="fu">round</span>(a_intercept, <span class="dv">4</span>), <span class="st">"cm²</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Slope (b)     ="</span>, <span class="fu">round</span>(b_slope, <span class="dv">2</span>), <span class="st">"cm²/g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Write the calibration equation for predicting area from mass:</p>
+<pre><code>area_cm2 = _____ × mass_g + _____</code></pre>
+<p>✏️ <strong>Your turn:</strong> Use the equation by hand to predict the area of a paper tracing that weighs 0.120 g. Show your work:</p>
+<pre><code>area = _____ × 0.120 + _____
+     = _____  cm²</code></pre>
+<hr>
+</section>
+<section id="part-7-extract-and-interpret-r²" class="level1">
+<h1>Part 7 · Extract and interpret R²</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pull R-squared from the model summary -----------------</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>r2_val <span class="ot">&lt;-</span> <span class="fu">summary</span>(paper_lm_model)<span class="sc">$</span>r.squared</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"R² ="</span>, <span class="fu">round</span>(r2_val, <span class="dv">6</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> What does R² = 0.9999 mean in plain language for our calibration?</p>
+<pre><code>Your answer:</code></pre>
+<p>✏️ <strong>Your turn:</strong> In ecology, you might see regression results with R² = 0.45. Is that a useful result? What does it mean?</p>
+<pre><code>Your answer:</code></pre>
+<blockquote class="blockquote">
+<p>📖 <strong>Whitlock &amp; Schluter §17.4 p.&nbsp;555:</strong> <em>“R² measures the fraction of variation in Y that is explained by X.”</em> A high R² indicates a tight fit; a low R² indicates high scatter around the line — but a low R² does not mean the relationship is not real or useful.</p>
+</blockquote>
+<hr>
+</section>
+<section id="part-8-plot-the-calibration-curve" class="level1">
+<h1>Part 8 · Plot the calibration curve</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Regression line with 95% confidence band --------------</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>calibration_plot <span class="ot">&lt;-</span> paper_df <span class="sc">%&gt;%</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">y =</span> area_cm2)) <span class="sc">+</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">size =</span> <span class="fl">1.8</span>) <span class="sc">+</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">color =</span> <span class="st">"steelblue"</span>, <span class="at">fill =</span> <span class="st">"lightblue"</span>) <span class="sc">+</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">title    =</span> <span class="st">"Paper Calibration Curve"</span>,</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="fu">paste0</span>(<span class="st">"area = "</span>, <span class="fu">round</span>(b_slope, <span class="dv">2</span>),</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>                      <span class="st">" × mass + "</span>, <span class="fu">round</span>(a_intercept, <span class="dv">3</span>),</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"  |  R² = "</span>, <span class="fu">round</span>(r2_val, <span class="dv">4</span>)),</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">x        =</span> <span class="st">"Paper Mass (g)"</span>,</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">y        =</span> <span class="st">"Area (cm²)"</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>calibration_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Where is the shaded confidence band <em>narrowest</em>? Where is it <em>widest</em>? Why does the width vary?</p>
+<pre><code>Narrowest at:
+Widest at:
+Why it varies:</code></pre>
+<section id="save-the-plot" class="level3">
+<h3 class="anchored" data-anchor-id="save-the-plot">Save the plot</h3>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figures/paper_calibration_curve.png"</span>,</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot   =</span> calibration_plot,</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">width  =</span> <span class="dv">5</span>, <span class="at">height =</span> <span class="dv">5</span>, <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="part-9-check-assumptions-residual-plot" class="level1">
+<h1>Part 9 · Check assumptions — residual plot</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Add fitted values and residuals to the data ----------</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>paper_resid_df <span class="ot">&lt;-</span> paper_df <span class="sc">%&gt;%</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">fitted    =</span> <span class="fu">fitted</span>(paper_lm_model),</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">residuals =</span> <span class="fu">residuals</span>(paper_lm_model)</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Residuals vs Fitted — checks linearity and equal variance</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>resid_09_plot <span class="ot">&lt;-</span> paper_resid_df <span class="sc">%&gt;%</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> fitted, <span class="at">y =</span> residuals)) <span class="sc">+</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Residuals vs Fitted Values"</span>,</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x     =</span> <span class="st">"Fitted Values (cm²)"</span>,</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y     =</span> <span class="st">"Residuals (cm²)"</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>resid_09_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Describe the residual plot. Do the points form a random cloud around zero, or is there a pattern?</p>
+<pre><code>Pattern or random cloud?:
+Any evidence of non-linearity (curved pattern)?  Y / N
+Any evidence of unequal variance (funnel shape)?  Y / N</code></pre>
+<blockquote class="blockquote">
+<p>⚠️ <strong>Watch out!</strong> A funnel shape (residuals getting larger at higher fitted values) means variance is <em>not</em> constant — a violation of the equal variance assumption. A curved pattern means the relationship is not linear.</p>
+<p>📖 <strong>Whitlock &amp; Schluter §17.5 p.&nbsp;559 (Figure 17.5-4):</strong> <em>“A residual plot should show a roughly symmetric cloud of points with no pattern.”</em></p>
+</blockquote>
+<hr>
+</section>
+<section id="part-10-check-assumptions-qq-plot-and-shapiro-wilk" class="level1">
+<h1>Part 10 · Check assumptions — QQ plot and Shapiro-Wilk</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># QQ plot of residuals — checks normality assumption ---</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>qq_resid_09_plot <span class="ot">&lt;-</span> paper_resid_df <span class="sc">%&gt;%</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">sample =</span> residuals)) <span class="sc">+</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq</span>() <span class="sc">+</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq_line</span>(<span class="at">color =</span> <span class="st">"red"</span>, <span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Normal QQ Plot of Residuals"</span>,</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x     =</span> <span class="st">"Theoretical Quantiles"</span>,</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y     =</span> <span class="st">"Sample Quantiles"</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>qq_resid_09_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Shapiro-Wilk test on residuals — NOT on raw data -----</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(paper_lm_model))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Record the Shapiro-Wilk result:</p>
+<pre><code>W = _____   p = _____
+Decision (normal / not normal):</code></pre>
+<p>✏️ <strong>Your turn:</strong> An important distinction — in regression, normality is checked on the <strong>residuals</strong>, not on Y or X directly. Why does that matter?</p>
+<pre><code>Your answer:</code></pre>
+<hr>
+</section>
+<section id="part-11-predict-leaf-area-from-tracing-mass" class="level1">
+<h1>Part 11 · Predict leaf area from tracing mass</h1>
+<section id="method-1-direct-calculation" class="level3">
+<h3 class="anchored" data-anchor-id="method-1-direct-calculation">Method 1 — Direct calculation</h3>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Direct calculation using the calibration equation ----</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>mass_sunny <span class="ot">&lt;-</span> <span class="fl">0.092</span>   <span class="co"># g — example sunny leaf tracing</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>mass_shady <span class="ot">&lt;-</span> <span class="fl">0.138</span>   <span class="co"># g — example shady leaf tracing</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>area_sunny <span class="ot">&lt;-</span> b_slope <span class="sc">*</span> mass_sunny <span class="sc">+</span> a_intercept</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>area_shady <span class="ot">&lt;-</span> b_slope <span class="sc">*</span> mass_shady <span class="sc">+</span> a_intercept</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Sunny tracing:"</span>, mass_sunny, <span class="st">"g →"</span>,</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">round</span>(area_sunny, <span class="dv">2</span>), <span class="st">"cm²</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Shady tracing:"</span>, mass_shady, <span class="st">"g →"</span>,</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">round</span>(area_shady, <span class="dv">2</span>), <span class="st">"cm²</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Does the shady leaf have a larger predicted area? In Worksheet 04 we found shady leaves were significantly <em>heavier</em>. Does a larger predicted area match that finding? What does this tell you about the relationship between leaf weight and leaf area?</p>
+<pre><code>Sunny predicted area:
+Shady predicted area:
+Larger side:
+Does larger area match the heavier weight from Worksheet 04?  Y / N
+What does this tell you about the relationship between weight and area in leaves?</code></pre>
+</section>
+<section id="method-2-using-predict-with-intervals" class="level3">
+<h3 class="anchored" data-anchor-id="method-2-using-predict-with-intervals">Method 2 — Using <code>predict()</code> with intervals</h3>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># predict() gives uncertainty around predictions ------</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>new_masses <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">mass_g =</span> <span class="fu">c</span>(<span class="fl">0.092</span>, <span class="fl">0.138</span>))</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 95% confidence interval for the MEAN area</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(paper_lm_model,</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">newdata  =</span> new_masses,</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">interval =</span> <span class="st">"confidence"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mass_g =</span> <span class="fu">c</span>(<span class="fl">0.092</span>, <span class="fl">0.138</span>), <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 95% prediction interval for a SINGLE observation</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(paper_lm_model,</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">newdata  =</span> new_masses,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">interval =</span> <span class="st">"prediction"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mass_g =</span> <span class="fu">c</span>(<span class="fl">0.092</span>, <span class="fl">0.138</span>), <span class="at">.before =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> The prediction interval is wider than the confidence interval. In your own words, explain why — what additional source of uncertainty does a prediction interval capture?</p>
+<pre><code>Your answer:</code></pre>
+<blockquote class="blockquote">
+<p>📖 <strong>Whitlock &amp; Schluter §17.2 p.&nbsp;549:</strong> <em>“Confidence bands measure the precision of the predicted mean Y for each value of X. Prediction intervals measure the precision of the predicted single Y-values for each X.”</em></p>
+</blockquote>
+<hr>
+</section>
+</section>
+<section id="part-12-write-a-scientific-results-paragraph" class="level1">
+<h1>Part 12 · Write a scientific results paragraph</h1>
+<p>✏️ <strong>Your turn:</strong> Write a complete results paragraph using the information below. Follow the format from Lecture 05.</p>
+<p><strong>Information to include:</strong> - What the regression tested - F-statistic, df₁, df₂, and p-value (from the F-statistic line in <code>summary()</code>) - R² - The calibration equation (slope and intercept) - 95% confidence interval for the slope (use <code>confint(paper_lm_model)</code>) - Brief mention of assumption checks</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get the 95% CI for the slope -------------------------</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="fu">confint</span>(paper_lm_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Write your results paragraph here:</code></pre>
+<hr>
+</section>
+<section id="part-13-review-and-checkpoint" class="level1">
+<h1>Part 13 · Review and checkpoint</h1>
+<p>At this point you should be able to:</p>
+<ul class="task-list">
+<li><label><input type="checkbox">Identify the response (Y) and explanatory (X) variables for a regression problem</label></li>
+<li><label><input type="checkbox">Make a scatter plot and assess linearity visually</label></li>
+<li><label><input type="checkbox">Fit a linear regression with <code>lm(Y ~ X, data)</code> and call <code>summary()</code></label></li>
+<li><label><input type="checkbox">Extract slope, intercept, and R² from the model</label></li>
+<li><label><input type="checkbox">Interpret slope, intercept, t-value, p-value, and R² in biological terms</label></li>
+<li><label><input type="checkbox">Add fitted values and residuals to a data frame with <code>fitted()</code> and <code>residuals()</code></label></li>
+<li><label><input type="checkbox">Check the residual vs fitted plot for linearity and equal variance</label></li>
+<li><label><input type="checkbox">Check the QQ plot and Shapiro-Wilk on <strong>residuals</strong> for normality</label></li>
+<li><label><input type="checkbox">Use <code>coef(model)</code> to write the prediction equation</label></li>
+<li><label><input type="checkbox">Use <code>predict(model, newdata, interval = "prediction")</code> for predictions with uncertainty</label></li>
+<li><label><input type="checkbox">Write a complete scientific results paragraph with F, df, p, R², and equation</label></li>
+</ul>
+<p>✏️ <strong>Your turn — before you move on:</strong> Run your entire script with <strong>Ctrl/Cmd + Shift + Enter</strong>. Does it run from top to bottom without errors?</p>
+<pre><code>Ran cleanly?  Y / N
+If not, what error appeared:</code></pre>
+<hr>
+</section>
+<section id="part-14-going-further" class="level1">
+<h1>Part 14 · Going further</h1>
+<blockquote class="blockquote">
+<p>This section is optional — work through it if you finish early or want to push deeper.</p>
+</blockquote>
+<section id="explore-the-fit-at-each-area-group" class="level3">
+<h3 class="anchored" data-anchor-id="explore-the-fit-at-each-area-group">Explore the fit at each area group</h3>
+<p><strong>▶ Try this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># How well does the model fit within each area group? --</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>paper_df <span class="sc">%&gt;%</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">predicted =</span> <span class="fu">fitted</span>(paper_lm_model),</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">residual  =</span> <span class="fu">residuals</span>(paper_lm_model)</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(area_cm2) <span class="sc">%&gt;%</span></span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">n             =</span> <span class="fu">n</span>(),</span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_resid    =</span> <span class="fu">round</span>(<span class="fu">mean</span>(residual), <span class="dv">4</span>),</span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_abs_resid =</span> <span class="fu">round</span>(<span class="fu">max</span>(<span class="fu">abs</span>(residual)), <span class="dv">4</span>)</span>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Are the residuals larger at bigger area values? What does that pattern (or lack of it) tell you about the equal-variance assumption?</p>
+<pre><code>Your observation:</code></pre>
+</section>
+<section id="prediction-for-a-real-leaf-tracing" class="level3">
+<h3 class="anchored" data-anchor-id="prediction-for-a-real-leaf-tracing">Prediction for a real leaf tracing</h3>
+<p>Suppose you traced a leaf onto the same type of paper used in the calibration, cut it out, and weighed it. The tracing weighs <strong>0.175 g</strong>.</p>
+<p><strong>▶ Try this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Predict area for your leaf tracing -------------------</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>my_tracing <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">mass_g =</span> <span class="fl">0.175</span>)</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(paper_lm_model,</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">newdata  =</span> my_tracing,</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">interval =</span> <span class="st">"prediction"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(<span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> What is the predicted leaf area? What is the 95% prediction interval? How confident are you in this prediction?</p>
+<pre><code>Predicted area:
+95% prediction interval:  _____ to _____ cm²
+Confidence in prediction:</code></pre>
+</section>
+<section id="extrapolation-warning" class="level3">
+<h3 class="anchored" data-anchor-id="extrapolation-warning">Extrapolation warning</h3>
+<p>The calibration data ranges from 1 to 567 cm². Suppose a very large leaf tracing weighs 5.2 g.</p>
+<p>✏️ <strong>Your turn:</strong> Would you trust a prediction for a tracing mass of 5.2 g? Why or why not? (Hint: what is the largest mass in the calibration data?)</p>
+<pre><code>Max mass in calibration data:
+Is 5.2 g within the calibration range?  Y / N
+Should you predict at 5.2 g?  Y / N
+Why:</code></pre>
+<blockquote class="blockquote">
+<p>📖 <strong>Whitlock &amp; Schluter §17.2 p.&nbsp;550:</strong> <em>“Extrapolation is the prediction of Y at values of X beyond the range of X-values in the data. Extrapolation is problematic because there is no way to ensure the relationship between X and Y continues to be linear.”</em></p>
+</blockquote>
+</section>
+<section id="connect-to-worksheet-04" class="level3">
+<h3 class="anchored" data-anchor-id="connect-to-worksheet-04">Connect to Worksheet 04</h3>
+<p>In Worksheet 04 you ran a Welch’s t-test comparing leaf <strong>weight</strong> (grams) between sunny and shady sides and found a significant difference (<em>p</em> &lt; 0.001). Now you have a calibration curve that converts tracing weight to <strong>area</strong> (cm²) — a more biologically meaningful measurement. You could use the regression equation as a <code>mutate()</code> step to add predicted area to a leaf data frame, then redo the t-test on <em>area</em> rather than weight.</p>
+<p><strong>▶ Sketch the code (do not necessarily run it — you would need actual tracing masses):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># How you WOULD apply the calibration to the leaf data</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="co"># (assuming trace_df has columns: side, tracing_mass_g)</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="co"># trace_df &lt;- trace_df %&gt;%</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a><span class="co">#   mutate(predicted_area_cm2 = b_slope * tracing_mass_g + a_intercept)</span></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a><span class="co"># t.test(predicted_area_cm2 ~ side, data = trace_df,</span></span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a><span class="co">#        var.equal = FALSE, alternative = "two.sided")</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> What is the advantage of working in units of <strong>area</strong> (cm²) rather than raw <strong>weight</strong> (g) when comparing sunny vs.&nbsp;shady leaves?</p>
+<pre><code>Your answer:</code></pre>
+<hr>
+</section>
+</section>
+<section id="what-your-figures-folder-should-contain-after-this-worksheet" class="level1">
+<h1>What your <code>figures/</code> folder should contain after this worksheet</h1>
+<pre><code>figures/
+├── paper_calibration_curve.png     ← from Part 8</code></pre>
+<hr>
+</section>
+<section id="getting-unstuck" class="level1">
+<h1>Getting unstuck</h1>
+<ol type="1">
+<li><strong><code>lm()</code> error:</strong> the formula must be <code>lm(Y ~ X, data)</code> — response on the left, predictor on the right. Check column names with <code>names(paper_df)</code>.</li>
+<li><strong><code>coef()</code> gives two values:</strong> <code>coef(model)[1]</code> is the intercept, <code>coef(model)[2]</code> is the slope for the first predictor.</li>
+<li><strong><code>residuals()</code> vs raw data:</strong> always apply <code>shapiro.test()</code> and <code>ggplot(aes(sample = residuals))</code> to <code>residuals(model)</code>, not to the raw Y column.</li>
+<li><strong><code>predict()</code> needs a tibble:</strong> <code>newdata</code> must be a data frame or tibble with the exact same column name as the predictor (<code>mass_g</code>). A typo here is the most common error.</li>
+<li><strong><code>geom_smooth(se = TRUE)</code> shows confidence band, not prediction interval.</strong> For prediction intervals, use <code>predict()</code> manually.</li>
+<li><strong>Cheat sheets</strong> — <a href="https://posit.co/resources/cheatsheets/" class="uri">https://posit.co/resources/cheatsheets/</a></li>
+</ol>
+<blockquote class="blockquote">
+<p>💡 <strong>Key idea:</strong> The five-step logic of regression (plot → fit → check assumptions → interpret → predict) is the same framework you’ll use for multiple regression, ANOVA, and every other linear model in your career.</p>
+</blockquote>
+<hr>
+<p><em>End of Worksheet 05. Next: Worksheet 06 — applying the calibration curve to measured leaf tracings and comparing sunny vs.&nbsp;shady leaf areas with a t-test.</em></p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/wlperry\.github\.io\/ecostats_2026");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 UMD Biostatistics</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/wlperry">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="mailto:wlperry@d.umn.edu">
+      <i class="bi bi-envelope-heart-fill" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
