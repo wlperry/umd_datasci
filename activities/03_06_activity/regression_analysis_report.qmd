@@ -1,0 +1,180 @@
+---
+order: 6
+week: 3
+# =====================================================================
+#  regression_analysis_report.qmd
+#  THE "MARKDOWN WAY" of doing the SAME regression analysis.
+#  This is the twin of regression_analysis_script.R — identical code,
+#  but wrapped in writing so that pressing Render produces a finished
+#  Word report with the numbers and figures already in place.
+# =====================================================================
+title: "Paper Calibration Curve: Predicting Leaf Area from Mass"
+subtitle: "The same analysis as regression_analysis_script.R — but as a report"
+author: "Your Name Here"
+date: today
+
+format:
+  docx:
+    toc: true
+    number-sections: true
+    fig-width: 6
+    fig-height: 4
+    fig-format: png
+  html: default          # bonus: the same file also makes a web page
+
+# Hide the code by default so the report reads like a report.
+# Flip echo to true if you want a teaching handout that shows the code.
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r libraries}
+# Load all packages in one chunk at the top ----------------------------
+library(readxl)
+library(tidyverse)
+library(skimr)
+```
+
+```{r load-data}
+# Read the paper calibration data --------------------------------------
+paper_df <- read_excel("data/paper_area_weights.xlsx")
+```
+
+# Introduction
+
+To estimate leaf surface area without a leaf-area meter, we built a
+**calibration curve**. Paper of uniform stock has a constant area-per-gram, so
+the **mass** of a paper square is a near-perfect linear predictor of its
+**area**. Once we know that relationship, we can trace a leaf onto the same
+paper, weigh the tracing, and convert its mass to area.
+
+- **Explanatory variable (X):** paper mass (g) — easy to measure on a balance
+- **Response variable (Y):** paper area (cm²) — what we want to predict
+
+# Methods
+
+We weighed 118 paper squares of known area (1–567 cm²) and fit a simple linear
+regression, `area_cm2 ~ mass_g`, with `lm()`. We checked the four regression
+assumptions using a residuals-vs-fitted plot and a normal Q–Q plot with a
+Shapiro–Wilk test on the residuals. All work was done in R with the tidyverse;
+this report was written in Quarto so every number and figure below is computed
+directly from the data.
+
+# Results
+
+```{r fit-model}
+# Fit the least-squares regression line --------------------------------
+paper_lm_model <- lm(area_cm2 ~ mass_g, data = paper_df)
+```
+
+```{r pull-values}
+# Pull the values we want to write into the text below -----------------
+a_intercept <- coef(paper_lm_model)[1]
+b_slope     <- coef(paper_lm_model)[2]
+r2_val      <- summary(paper_lm_model)$r.squared
+
+f_stat <- summary(paper_lm_model)$fstatistic
+f_val  <- round(f_stat[1], 1)
+df1    <- f_stat[2]
+df2    <- f_stat[3]
+p_val  <- pf(f_stat[1], df1, df2, lower.tail = FALSE)
+```
+
+Paper mass was an extremely strong predictor of paper area
+(linear regression: F(`r df1`, `r df2`) = `r f_val`,
+*p* < `r signif(p_val, 1)`, R² = `r round(r2_val, 4)`). The calibration
+equation was:
+
+$$\widehat{\text{area}} = `r round(b_slope, 2)` \times \text{mass} + `r round(a_intercept, 3)`$$
+
+In words, every additional gram of paper corresponds to about
+**`r round(b_slope, 1)` cm²** of area.
+
+::: {.callout-note appearance="simple"}
+Notice that **F, *p*, R², the slope, and the intercept above were never typed by
+hand** — they are inserted with inline code like `` `r round(b_slope, 2)` ``.
+Change the data file and re-render, and every one of these updates itself. That
+is the difference from the `.R` script, where you would copy each number into
+Word yourself.
+:::
+
+## The calibration curve
+
+```{r calibration-plot}
+#| fig-cap: "Figure 1. Paper area vs. mass with the least-squares line and 95% confidence band."
+calibration_plot <- paper_df %>%
+  ggplot(aes(x = mass_g, y = area_cm2)) +
+  geom_point(alpha = 0.5, size = 1.8) +
+  geom_smooth(method = "lm", se = TRUE,
+              color = "steelblue", fill = "lightblue") +
+  labs(
+    subtitle = paste0("area = ", round(b_slope, 2),
+                      " × mass + ", round(a_intercept, 3),
+                      "  |  R² = ", round(r2_val, 4)),
+    x = "Paper Mass (g)",
+    y = "Area (cm²)"
+  ) +
+  theme_minimal()
+
+calibration_plot
+```
+
+## Assumption checks
+
+```{r resid-df}
+paper_resid_df <- paper_df %>%
+  mutate(
+    fitted    = fitted(paper_lm_model),
+    residuals = residuals(paper_lm_model)
+  )
+```
+
+```{r resid-plot}
+#| fig-cap: "Figure 2. Residuals vs. fitted values — a random band with no funnel or curve supports linearity and equal variance."
+paper_resid_df %>%
+  ggplot(aes(x = fitted, y = residuals)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(x = "Fitted Values (cm²)", y = "Residuals (cm²)") +
+  theme_minimal()
+```
+
+```{r shapiro}
+# Shapiro-Wilk on the RESIDUALS (not the raw data)
+shapiro_out <- shapiro.test(residuals(paper_lm_model))
+```
+
+A Shapiro–Wilk test on the residuals gave W = `r round(shapiro_out$statistic, 3)`,
+*p* = `r signif(shapiro_out$p.value, 2)`.
+
+## Predicting leaf area
+
+```{r predict}
+# Predict area for two example leaf tracings ---------------------------
+mass_sunny <- 0.092
+mass_shady <- 0.138
+
+area_sunny <- b_slope * mass_sunny + a_intercept
+area_shady <- b_slope * mass_shady + a_intercept
+```
+
+Applying the equation to two example tracings, a sunny-side tracing of
+`r mass_sunny` g predicts an area of **`r round(area_sunny, 1)` cm²**, while a
+heavier shady-side tracing of `r mass_shady` g predicts
+**`r round(area_shady, 1)` cm²** — consistent with our earlier finding that
+shady leaves are larger.
+
+# Discussion
+
+*Write one short paragraph here.* Did the calibration fit well (look at R² and
+Figure 1)? Did the residual plot and Shapiro–Wilk support the assumptions? Why
+is working in **area** (cm²) more biologically meaningful than raw **mass** (g)
+when comparing sunny and shady leaves? This is where you paste the results
+paragraph you drafted in the worksheet.
+
+# References
+
+- Whitlock, M. & Schluter, D. *The Analysis of Biological Data* (2nd ed.), Ch. 17.
+- Wickham, H. *R for Data Science (2nd ed.)* — <https://r4ds.hadley.nz/>

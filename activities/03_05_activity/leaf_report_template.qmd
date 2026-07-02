@@ -1,0 +1,122 @@
+---
+order: 5
+week: 3
+# =====================================================================
+#  YAML FRONT MATTER  —  the "recipe" for your report
+#  Everything between the --- lines controls the finished document.
+#  Change the values in "quotes"; leave the keys (the words before :) alone.
+# =====================================================================
+title: "Leaf Morphology: Sunny vs. Shady Sides of a Tree"
+subtitle: "A reproducible report built in Quarto"
+author: "Your Name Here"
+date: today
+
+format:
+  docx:                     # <- this line makes a Microsoft Word (.docx) file
+    toc: true               # add a Table of Contents
+    toc-depth: 2            # include level-1 and level-2 headings in the TOC
+    number-sections: true   # number your sections (1, 1.1, 2, ...)
+    highlight-style: github # nice colours for any code you choose to show
+    fig-width: 6            # default figure width (inches)
+    fig-height: 4           # default figure height (inches)
+    fig-format: png         # always PNG figures (our class standard)
+    # reference-doc: custom-reference.docx   # (advanced) use your own Word styles
+
+# These settings apply to EVERY code chunk unless a chunk overrides them.
+execute:
+  echo: false      # HIDE the code in the report — readers want results, not R
+  warning: false   # hide warnings
+  message: false   # hide package start-up messages
+---
+
+```{=html}
+<!--
+HOW TO USE THIS TEMPLATE
+1. Save this file in your project's `documents/` folder.
+2. Put your data file in the `data/` folder.
+3. Edit the YAML above (your name, title).
+4. Fill in the writing under each heading and run/adjust the code chunks.
+5. Press Render (Ctrl/Cmd + Shift + K) to build the Word document.
+Tip: keep chunks small and uniquely named so errors are easy to find.
+-->
+```
+
+```{r libraries}
+# --- Load all packages at the top, in ONE library chunk -----------------
+library(readxl)     # read Excel files
+library(tidyverse)  # wrangling + ggplot2
+```
+
+```{r load-data}
+# --- Read the leaf data from the data/ folder ---------------------------
+# Swap in your own file name here:
+tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
+```
+
+# Introduction
+
+Leaves on the shady side of a tree may grow **larger** to capture more of the limited light. In this study we measured leaf weight on the *sunny* and *shady* sides of a tree and tested whether the two sides differ.
+
+- **Null hypothesis (H₀):** there is no difference in mean leaf weight between sides.
+- **Alternate hypothesis (Hₐ):** mean leaf weight differs between sides.
+
+# Methods
+
+We recorded the weight (g) of leaves sampled from each side of the tree. All analysis was done in R with the tidyverse, and this report was produced in Quarto so that every number and figure below is computed directly from the raw data.
+
+# Results
+
+```{r summary-table}
+# --- Descriptive statistics for each side -------------------------------
+summary_df <- tree_df %>%
+  group_by(side) %>%
+  summarize(
+    n       = sum(!is.na(weight_g)),                 # correct n (ignores NA)
+    mean_wt = round(mean(weight_g, na.rm = TRUE), 2),
+    sd_wt   = round(sd(weight_g,  na.rm = TRUE), 2),
+    se_wt   = round(sd_wt / sqrt(n), 2)
+  )
+```
+
+```{r summary-values}
+# --- Pull single values so we can use them in the sentences below -------
+mean_shady <- summary_df$mean_wt[summary_df$side == "shady"]
+mean_sunny <- summary_df$mean_wt[summary_df$side == "sunny"]
+```
+
+Table 1 shows the summary statistics for each side of the tree.
+
+```{r print-table}
+#| echo: false
+# Print the summary table into the report
+knitr::kable(summary_df, caption = "Table 1. Leaf weight (g) by side of tree.")
+```
+
+On average, shady-side leaves weighed **`r mean_shady` g** and sunny-side leaves weighed **`r mean_sunny` g**. *(Notice: those numbers are inserted with inline code — change the data and the sentence updates itself.)*
+
+```{r leaf-plot}
+#| echo: false
+#| fig-cap: "Figure 1. Leaf weight by side of tree, with individual leaves shown."
+# --- Boxplot with the raw points overlaid -------------------------------
+leaf_box_plot <- tree_df %>%
+  ggplot(aes(x = side, y = weight_g, fill = side)) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+  geom_point(
+    position = position_jitter(width = 0.15, seed = 42),
+    alpha = 0.6, size = 2.5
+  ) +
+  labs(x = "Side of tree", y = "Leaf weight (g)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+leaf_box_plot
+```
+
+# Discussion
+
+Write one short paragraph here: did the data support the hypothesis? Were shady leaves heavier? Mention the size of the difference and anything you noticed in Figure 1. In Lecture 05 you will add the formal t-test result to this section.
+
+# References
+
+- Wickham, H. *R for Data Science (2nd ed.)* — <https://r4ds.hadley.nz/>
+- Data Carpentry — <https://datacarpentry.github.io/R-ecology-lesson/>
