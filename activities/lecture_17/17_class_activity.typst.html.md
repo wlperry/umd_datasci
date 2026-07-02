@@ -1,0 +1,7 @@
+---
+title: "Lecture 17 - Class Activity PCA"
+author: "Bill Perry"
+format:
+  html: default
+  docx: default
+---
