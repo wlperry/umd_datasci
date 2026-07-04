@@ -117,6 +117,30 @@ We use a **two-tailed** test — we will detect a difference in *either* directi
 :::
 :::::
 
+# How to Use These Slides — Predict · Type · Run
+
+:::::: columns
+::: {.column width="60%"}
+This lecture runs in **four short chunks**. After each chunk you switch to the **activity worksheet** and type the code yourself.
+
+**For every code block, do three things:**
+
+1.  **Predict** — before it runs, say what you think the output will be
+2.  **Type** it out by hand — do not copy-paste
+3.  **Run** it and compare to your prediction
+:::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Why bother? (the evidence)**
+
+-   **Predicting first** forces your brain to *retrieve* what it knows. The gap between your guess and the real answer is what makes the idea stick — vital for slippery ideas like *p*-values.
+-   **Typing by hand** builds the finger-memory and error-spotting that copy-paste skips.
+-   **Chunk → immediate practice** keeps a new idea in working memory long enough to form a lasting schema.
+:::
+::::
+::::::
+
 # Load Libraries and Data
 
 ```{r load-libs-04}
@@ -139,6 +163,10 @@ Install once: `install.packages("car")`
 :::
 
 # What We Know So Far
+
+::: callout-note
+**🔮 Predict first:** The two group means differ by about 4 g. With only 10 leaves per side — commit now to a yes/no: is that gap big enough to be *statistically significant*? You'll find out in Chunk 3.
+:::
 
 ::::: columns
 ::: {.column width="60%"}
@@ -166,6 +194,14 @@ recap_df
 - **We need a formal test to quantify the probability.**
 :::
 :::::
+
+# 🧩 Chunk 1 of 4 · Why We Test & the t-Statistic
+
+**We will cover:** why comparing means isn't enough, what a two-sample t-test is, why we default to Welch's, and the formula in action.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 1–3** (load data, state hypotheses, recap the descriptive stats).
+:::
 
 # Why Comparing Means Is Not Enough
 
@@ -269,6 +305,10 @@ In R: **`var.equal = FALSE`**
 
 # The Welch's Formula in Action
 
+::: callout-note
+**🔮 Predict first:** t = difference ÷ SE-of-the-difference, and the difference is 4 g. Do you expect |t| to land nearer 1, 5, or 10? Predict before the numbers appear.
+:::
+
 ::::: columns
 ::: {.column width="60%"}
 ```{r formula-manual}
@@ -307,6 +347,18 @@ cat("t-statistic:        ", round(t_manual, 3), "\n")
 The observed difference is \~10 standard errors above zero — very far from what we'd expect if H₀ were true.
 :::
 :::::
+
+# 🛑 Pause — Do Activity Parts 1–3 Now
+
+Load the data, write your hypotheses *before* looking at any results, and recompute the group means / SD / SE. Predict each output, type it, run it.
+
+# 🧩 Chunk 2 of 4 · Framework, Hypotheses & Assumptions
+
+**We will cover:** the five-step framework, stating H₀ / Hₐ, and checking normality (histogram, QQ, Shapiro-Wilk) and equal variance (Levene's).
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 4–7** (histogram, QQ, Shapiro, Levene).
+:::
 
 # Five Steps to a Hypothesis Test
 
@@ -437,6 +489,10 @@ If points follow the line roughly, we are comfortable proceeding with the t-test
 
 # Step 3 — Check Normality: Shapiro-Wilk Test
 
+::: callout-note
+**🔮 Predict first:** Shapiro-Wilk's H₀ is "the data are normal." From the histogram and QQ plot you just saw, predict for each side: will *p* be **above** or **below** 0.05?
+:::
+
 :::::: columns
 ::: {.column width="60%"}
 ```{r shapiro-sunny}
@@ -494,7 +550,57 @@ Welch's is valid whether or not the variances are equal. We run Levene's to *und
 :::
 :::::
 
+# Live Demo — Watch It Break (on purpose)
+
+:::::: columns
+::: {.column width="60%"}
+Suppose I forgot `library(car)` and run Levene's:
+
+``` r
+leveneTest(weight_g ~ side, data = tree_df)
+```
+
+R stops with:
+
+``` 
+Error in leveneTest(weight_g ~ side, data = tree_df) :
+  could not find function "leveneTest"
+```
+
+The fix — load the package that *contains* the function:
+
+``` r
+library(car)
+leveneTest(weight_g ~ side, data = tree_df)
+```
+:::
+
+:::: {.column width="40%"}
+::: callout-tip
+**✅ Why show a broken run?**
+
+"could not find function" almost always means a missing `library()` — not a typo. Watching me diagnose it here means you'll fix it in seconds when it happens to you.
+:::
+::::
+::::::
+
+# 🛑 Pause — Do Activity Parts 4–7 Now
+
+Check every assumption *before* you test: histogram, QQ plot, Shapiro-Wilk, and Levene's. Predict each p-value before you run it.
+
+# 🧩 Chunk 3 of 4 · Run & Interpret the Test
+
+**We will cover:** running Welch's `t.test()`, reading every line of the output, and making a formal reject / fail-to-reject decision.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 8–11** (run, decode, calculate t by hand, decide).
+:::
+
 # Step 5 — Run the Welch's t-Test
+
+::: callout-note
+**🔮 Predict first:** Write down a guess for the *p*-value before you run `t.test()` — above or below 0.05? Then see how close you were.
+:::
 
 ::::: columns
 ::: {.column width="60%"}
@@ -599,6 +705,18 @@ We set α = 0.05 *before* the test. If *p* \< α, we reject H₀.
 - Report the effect size (difference in means) alongside *p*
 ::::
 ::::::
+
+# 🛑 Pause — Do Activity Parts 8–11 Now
+
+Run the test, decode t / df / p / CI, reproduce t by hand, and state your decision in formal language. Predict the p-value first.
+
+# 🧩 Chunk 4 of 4 · Visualize & Report
+
+**We will cover:** embedding the test result in a boxplot and a mean ± SE plot, writing a scientific results sentence, and saving publication-quality figures.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 12–13** (plots and the results sentence).
+:::
 
 # Visualize the Result — Boxplot
 
@@ -785,6 +903,10 @@ Both plots are now in your `figures/` folder with the test statistics embedded i
 :::
 ::::
 ::::::
+
+# 🛑 Pause — Do Activity Parts 12–13 Now
+
+Build both figures with the statistics embedded in the subtitle, then write your results sentence. Predict what the subtitle will say before you run it.
 
 # What We Learned Today
 

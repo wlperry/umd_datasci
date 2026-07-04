@@ -43,6 +43,14 @@ library(tidyverse)
 tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
 ```
 
+<!--
+HOW TO READ THIS WORKED EXAMPLE (active reading)
+Don't just skim it. Before you press Render, PREDICT what each computed value and
+figure will show, then render and compare. Better still, retype a chunk or two by
+hand. The PREDICT comments below mark good places to pause. None of these comment
+lines appear in the rendered Word document.
+-->
+
 # Introduction
 
 Leaves on the **shady** side of a tree may grow larger and heavier to capture
@@ -65,41 +73,47 @@ every value below is computed directly from the raw data.
 
 # Results
 
+<!-- 🔮 PREDICT before you Render: what mean weight do you expect for shady vs sunny leaves in Table 1? Jot a guess, then render and compare. -->
+
 ```{r summary-table}
 # Descriptive statistics per side --------------------------------------
 summary_df <- tree_df %>%
   group_by(side) %>%
   summarize(
-    n       = sum(!is.na(weight_g)),
+    n = sum(!is.na(weight_g)),
     mean_wt = round(mean(weight_g, na.rm = TRUE), 2),
-    sd_wt   = round(sd(weight_g,   na.rm = TRUE), 2),
-    se_wt   = round(sd_wt / sqrt(n), 2)
+    sd_wt = round(sd(weight_g, na.rm = TRUE), 2),
+    se_wt = round(sd_wt / sqrt(n), 2)
   )
 ```
 
 ```{r print-table}
-knitr::kable(summary_df,
-             caption = "Table 1. Leaf weight (g) by side of tree (mean, SD, SE).")
+knitr::kable(
+  summary_df,
+  caption = "Table 1. Leaf weight (g) by side of tree (mean, SD, SE)."
+)
 ```
 
 ```{r run-test}
 # Welch's two-sample t-test --------------------------------------------
 leaf_ttest_model <- t.test(
   weight_g ~ side,
-  data        = tree_df,
-  var.equal   = FALSE,
+  data = tree_df,
+  var.equal = FALSE,
   alternative = "two.sided"
 )
 
 # Pull the pieces we want to write into the sentences below
-t_val   <- round(leaf_ttest_model$statistic, 2)
-df_val  <- round(leaf_ttest_model$parameter, 1)
-p_val   <- signif(leaf_ttest_model$p.value, 2)
-mean_sh <- round(leaf_ttest_model$estimate[1], 2)   # shady (alphabetical first)
-mean_su <- round(leaf_ttest_model$estimate[2], 2)   # sunny
-se_sh   <- summary_df$se_wt[summary_df$side == "shady"]
-se_su   <- summary_df$se_wt[summary_df$side == "sunny"]
+t_val <- round(leaf_ttest_model$statistic, 2)
+df_val <- round(leaf_ttest_model$parameter, 1)
+p_val <- signif(leaf_ttest_model$p.value, 2)
+mean_sh <- round(leaf_ttest_model$estimate[1], 2) # shady (alphabetical first)
+mean_su <- round(leaf_ttest_model$estimate[2], 2) # sunny
+se_sh <- summary_df$se_wt[summary_df$side == "shady"]
+se_su <- summary_df$se_wt[summary_df$side == "sunny"]
 ```
+
+<!-- 🔮 PREDICT before you Render: what t, df, and p-value will fill the sentence below, and which side is heavier? Write your guesses, then render and check. -->
 
 Shady-side leaves were significantly **heavier** than sunny-side leaves
 (Welch's two-sample t-test: t(`r df_val`) = `r t_val`, *p* = `r p_val`).
@@ -118,8 +132,11 @@ In a plain script you would retype all of these by hand.
 leaf_box_plot <- tree_df %>%
   ggplot(aes(x = side, y = weight_g, fill = side)) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +
-  geom_point(position = position_jitter(width = 0.15, seed = 42),
-             alpha = 0.6, size = 2.5) +
+  geom_point(
+    position = position_jitter(width = 0.15, seed = 42),
+    alpha = 0.6,
+    size = 2.5
+  ) +
   labs(
     subtitle = paste0("Welch's t-test: t = ", t_val, ", p = ", p_val),
     x = "Side of tree",

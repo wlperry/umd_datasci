@@ -42,6 +42,14 @@ library(skimr)
 paper_df <- read_excel("data/paper_area_weights.xlsx")
 ```
 
+<!--
+HOW TO READ THIS WORKED EXAMPLE (active reading)
+Don't just skim. Before you press Render, PREDICT what each computed value and
+figure will show, then render and compare. Better still, retype a chunk or two by
+hand. The PREDICT comments below mark good places to pause. None of these comment
+lines appear in the rendered Word document.
+-->
+
 # Introduction
 
 To estimate leaf surface area without a leaf-area meter, we built a
@@ -72,15 +80,17 @@ paper_lm_model <- lm(area_cm2 ~ mass_g, data = paper_df)
 ```{r pull-values}
 # Pull the values we want to write into the text below -----------------
 a_intercept <- coef(paper_lm_model)[1]
-b_slope     <- coef(paper_lm_model)[2]
-r2_val      <- summary(paper_lm_model)$r.squared
+b_slope <- coef(paper_lm_model)[2]
+r2_val <- summary(paper_lm_model)$r.squared
 
 f_stat <- summary(paper_lm_model)$fstatistic
-f_val  <- round(f_stat[1], 1)
-df1    <- f_stat[2]
-df2    <- f_stat[3]
-p_val  <- pf(f_stat[1], df1, df2, lower.tail = FALSE)
+f_val <- round(f_stat[1], 1)
+df1 <- f_stat[2]
+df2 <- f_stat[3]
+p_val <- pf(f_stat[1], df1, df2, lower.tail = FALSE)
 ```
+
+<!-- 🔮 PREDICT before you Render: what F, p, and R² will fill the sentence below, and what slope (cm² per gram)? Write your guesses, then render and check. -->
 
 Paper mass was an extremely strong predictor of paper area
 (linear regression: F(`r df1`, `r df2`) = `r f_val`,
@@ -107,12 +117,21 @@ Word yourself.
 calibration_plot <- paper_df %>%
   ggplot(aes(x = mass_g, y = area_cm2)) +
   geom_point(alpha = 0.5, size = 1.8) +
-  geom_smooth(method = "lm", se = TRUE,
-              color = "steelblue", fill = "lightblue") +
+  geom_smooth(
+    method = "lm",
+    se = TRUE,
+    color = "steelblue",
+    fill = "lightblue"
+  ) +
   labs(
-    subtitle = paste0("area = ", round(b_slope, 2),
-                      " × mass + ", round(a_intercept, 3),
-                      "  |  R² = ", round(r2_val, 4)),
+    subtitle = paste0(
+      "area = ",
+      round(b_slope, 2),
+      " × mass + ",
+      round(a_intercept, 3),
+      "  |  R² = ",
+      round(r2_val, 4)
+    ),
     x = "Paper Mass (g)",
     y = "Area (cm²)"
   ) +
@@ -126,7 +145,7 @@ calibration_plot
 ```{r resid-df}
 paper_resid_df <- paper_df %>%
   mutate(
-    fitted    = fitted(paper_lm_model),
+    fitted = fitted(paper_lm_model),
     residuals = residuals(paper_lm_model)
   )
 ```
@@ -159,6 +178,8 @@ mass_shady <- 0.138
 area_sunny <- b_slope * mass_sunny + a_intercept
 area_shady <- b_slope * mass_shady + a_intercept
 ```
+
+<!-- 🔮 PREDICT before you Render: which tracing gives the larger predicted area — the 0.092 g sunny or the 0.138 g shady? Guess the two areas, then render. -->
 
 Applying the equation to two example tracings, a sunny-side tracing of
 `r mass_sunny` g predicts an area of **`r round(area_sunny, 1)` cm²**, while a

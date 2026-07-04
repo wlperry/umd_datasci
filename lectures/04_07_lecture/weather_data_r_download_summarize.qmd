@@ -90,6 +90,38 @@ By the end you'll have downloaded a real NOAA climate record and estimated how m
 :::
 ::::::
 
+# How to Use These Slides — Predict · Type · Run
+
+:::::: columns
+::: {.column width="60%"}
+This lecture runs in **four short chunks**. After each chunk you switch to the **activity** and type the code yourself.
+
+**For every code block, do three things:**
+
+1.  **Predict** — before it runs, say what you think the output will be
+2.  **Type** it out by hand — do not copy-paste
+3.  **Run** it and compare to your prediction
+:::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Why bother? (the evidence)**
+
+-   **Predicting first** forces your brain to *retrieve* what it knows — the gap between guess and answer is what makes it stick.
+-   **Typing by hand** builds the finger-memory and error-spotting that copy-paste skips.
+-   **Chunk → immediate practice** keeps a new idea in working memory long enough to form a lasting schema.
+:::
+::::
+::::::
+
+# 🧩 Chunk 1 of 4 · Download & Explore Raw Data
+
+**We will cover:** where GSOD data comes from, downloading it with `get_GSOD()`, trimming columns, and plotting the raw daily record.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 1–3** (download, trim, and raw-plot the Duluth data).
+:::
+
 # Where Does This Data Come From?
 
 ::::: columns
@@ -185,7 +217,46 @@ head(dlh_temp_df)
 :::
 :::::
 
+# Live Demo — Watch It Break (on purpose)
+
+:::::: columns
+::: {.column width="60%"}
+NOAA's column names are UPPERCASE. I'll forget that:
+
+``` r
+# The column is TEMP, but I type temp
+dlh_temp_df %>% select(temp)
+```
+
+R errors:
+
+``` 
+Error in `select()`:
+! Can't select columns that don't exist.
+✖ Column `temp` doesn't exist.
+```
+
+The fix — match the exact case:
+
+``` r
+dlh_temp_df %>% select(TEMP)   # names(dlh_temp_df) shows the real names
+```
+:::
+
+:::: {.column width="40%"}
+::: callout-tip
+**✅ Why show a broken run?**
+
+R is **case-sensitive** — `temp` ≠ `TEMP`. When a column "doesn't exist," run `names(df)` and check capitalization. Downloaded data rarely uses the names you'd guess.
+:::
+::::
+::::::
+
 # First Look — Plot the Raw Daily Data
+
+::: callout-note
+**🔮 Predict first:** This plots ~28,000 daily points. Before you see it — will a long-term *warming* trend be visible, or will something else dominate the picture?
+:::
 
 ::::: columns
 ::: {.column width="60%"}
@@ -217,6 +288,18 @@ raw_temp_plot
 **The problem:** raw daily data shows you *everything* — which means it can hide the *one thing* you're looking for.
 :::
 :::::
+
+# 🛑 Pause — Do Activity Parts 1–3 Now
+
+Download the Duluth record with `get_GSOD()`, trim to the columns you need, and plot the raw daily temperatures. Predict what the raw plot will look like before you run it.
+
+# 🧩 Chunk 2 of 4 · Summarize to Reveal the Trend
+
+**We will cover:** why summarizing helps, and `group_by() %>% summarize()` at the monthly and yearly levels — watching the story get clearer.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 4–5** (summarize by month, then by year).
+:::
 
 # The Fix — Summarize the Story Out of the Noise
 
@@ -354,7 +437,23 @@ This is the power of `group_by() %>% summarize()`: the right level of summary re
 :::
 :::::
 
+# 🛑 Pause — Do Activity Parts 4–5 Now
+
+Summarize the daily data to monthly and yearly means, and plot each. Predict how many rows each summary has, and what trend appears, before you run it.
+
+# 🧩 Chunk 3 of 4 · Model the Rate of Change
+
+**We will cover:** reusing `lm(TEMP ~ YEAR)` to estimate the warming slope, and converting it to °C per decade.
+
+::: callout-tip
+**🖐 After this chunk: Activity Part 6** (fit the trend model and read the slope).
+:::
+
 # What Is the Rate of Change? — Reusing `lm()`
+
+::: callout-note
+**🔮 Predict first:** If Duluth is warming, will the slope of `TEMP ~ YEAR` be **positive or negative**? Guess the size too — closer to 0.02 or 2 °C per year?
+:::
 
 ::::: columns
 ::: {.column width="60%"}
@@ -427,6 +526,18 @@ This is why we chose the **yearly** summary for our headline result.
 :::
 :::::
 
+# 🛑 Pause — Do Activity Part 6 Now
+
+Fit `lm(TEMP ~ YEAR)` on the yearly means, pull the slope, and convert it to °C per decade. Predict the sign and rough size before you run `summary()`.
+
+# 🧩 Chunk 4 of 4 · Seasons — Is Winter Warming Faster?
+
+**We will cover:** building a season with `case_when()`, summarizing by year within season, plotting both, and fitting a separate `lm()` per season to compare rates.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 7–11** (season variable, per-season models, and the results paragraph).
+:::
+
 # A New Question — Is Every Season Warming the Same?
 
 ::::: columns
@@ -455,6 +566,10 @@ Make a prediction now: which season do you think is warming faster — winter or
 :::::
 
 # Building a Season Variable with `case_when()`
+
+::: callout-note
+**🔮 Predict first:** `case_when()` labels each day summer / winter / shoulder. Before the `count()` runs — which category will have the **most** rows, and why?
+:::
 
 ::::: columns
 ::: {.column width="60%"}
@@ -555,6 +670,10 @@ season_temp_plot
 
 # Fit a Separate Model for Each Season
 
+::: callout-note
+**🔮 Predict first:** Commit now — which season warms faster in Duluth, **summer or winter**? Write your guess before the two slopes print.
+:::
+
 ::::: columns
 ::: {.column width="60%"}
 ```{r summer-model-06}
@@ -586,6 +705,10 @@ cat("Winter warming rate:", round(winter_slope * 10, 3), "°C/decade\n")
 **Spoiler from the climate science literature:** in most northern locations, **winter warms faster than summer** — fewer extreme-cold days, shorter ice seasons. Does Duluth's data agree?
 :::
 :::::
+
+# 🛑 Pause — Do Activity Parts 7–11 Now
+
+Build the season variable, summarize and plot both seasons, fit a model for each, and write your results paragraph. Predict which season warms faster before you run the models.
 
 # What We Learned Today
 

@@ -1,5 +1,5 @@
 ---
-title: "Lecture 07 — Wide, Long, and Wild: Pivoting Real Data"
+title: "Lecture 09 — Wide, Long, and Wild: Pivoting Real Data"
 subtitle: "Reshaping Lake Superior ice cover data with pivot_longer() and pivot_wider()"
 author: "Bill Perry"
 date: today
@@ -7,8 +7,8 @@ date: today
 # --- Fields the SITE reads for ordering / listings / homepage ---
 # These are the ONLY things you need to edit to move this lecture around.
 # The folder name and filename never have to change.
-order: 8
-week: 4
+order: 9
+week: 5
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
   Lake Superior Ice Data and how to pivot and summarize data.
@@ -87,6 +87,38 @@ By the end you'll have reshaped real NOAA ice data and built the same kind of pl
 :::
 ::::::
 
+# How to Use These Slides — Predict · Type · Run
+
+:::::: columns
+::: {.column width="60%"}
+This lecture runs in **four short chunks**. After each chunk you switch to the **activity** and type the code yourself.
+
+**For every code block, do three things:**
+
+1.  **Predict** — before it runs, say what you think the output will be
+2.  **Type** it out by hand — do not copy-paste
+3.  **Run** it and compare to your prediction
+:::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Why bother? (the evidence)**
+
+-   **Predicting first** forces your brain to *retrieve* what it knows — the gap between guess and answer is what makes it stick.
+-   **Typing by hand** builds the finger-memory and error-spotting that copy-paste skips.
+-   **Chunk → immediate practice** keeps a new idea in working memory long enough to form a lasting schema.
+:::
+::::
+::::::
+
+# 🧩 Chunk 1 of 4 · Why Wide Data Is a Problem
+
+**We will cover:** where the ice data comes from, why "wide" data breaks tidy tools, and reading the messy text file into R.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 1–2** (read the raw file and inspect its wide shape).
+:::
+
 # Meet the Data: Lake Superior Ice Cover
 
 :::::: columns
@@ -109,6 +141,10 @@ This is a **plain text file living on a government server** — not a tidy CSV. 
 ::::::
 
 # What Does "Wide" Data Look Like?
+
+::: callout-note
+**🔮 Predict first:** This table has one column per year — 53 of them. Before the next slides: can `ggplot()` use this shape directly? If not, what has to change first?
+:::
 
 ::::: columns
 ::: {.column width="60%"}
@@ -178,7 +214,23 @@ Look at the column names: `X1973`, `X1974`... R adds an `X` because column names
 ::::
 ::::::
 
+# 🛑 Pause — Do Activity Parts 1–2 Now
+
+Read `sup.txt` straight from the web with `read.table()`, turn the row labels into a real `date` column, and look at the wide shape. Predict how many columns it has before you run it.
+
+# 🧩 Chunk 2 of 4 · Reshape with pivot_longer & Fix Dates
+
+**We will cover:** `pivot_longer()` to make the data tidy, the before/after shape, and the tricky winters-cross-the-new-year date fix.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 3–4** (pivot to long, then fix the calendar-year wrinkle).
+:::
+
 # `pivot_longer()` — Collapsing Wide to Long
+
+::: callout-note
+**🔮 Predict first:** `ice_raw` is ~190 rows × 53 columns. After `pivot_longer()` collapses every year column, how many **columns** will `ice_long` have, and roughly how many **rows**?
+:::
 
 ::::: columns
 ::: {.column width="60%"}
@@ -210,6 +262,41 @@ head(ice_long)
 📖 R4DS Ch. 5.3 — `pivot_longer()` for wide-to-long
 :::
 :::::
+
+# Live Demo — Watch It Break (on purpose)
+
+:::::: columns
+::: {.column width="60%"}
+Suppose I forgot `rownames_to_column()`, so there is no `date` column yet:
+
+``` r
+# Try to pivot every column except date...
+ice_raw %>% pivot_longer(cols = -date, names_to = "year")
+```
+
+R stops:
+
+``` 
+Error in `pivot_longer()`:
+! Can't select columns that don't exist.
+✖ Column `date` doesn't exist.
+```
+
+The fix — make the row labels a real column first:
+
+``` r
+ice_raw <- ice_raw %>% rownames_to_column(var = "date")
+```
+:::
+
+:::: {.column width="40%"}
+::: callout-tip
+**✅ Why show a broken run?**
+
+"Column `date` doesn't exist" means you referenced a column R can't see — here because the day labels were still **row names**, not data. Reading the message points you straight to the fix.
+:::
+::::
+::::::
 
 # Before and After: Same Data, Different Shape
 
@@ -280,6 +367,18 @@ head(ice_clean)
 📖 R4DS Ch. 17 — working with dates and times
 :::
 :::::
+
+# 🛑 Pause — Do Activity Parts 3–4 Now
+
+Pivot the data long with `pivot_longer()`, then fix the winters that cross the new year with `if_else()` + `ymd()`. Predict the new shape before you run it.
+
+# 🧩 Chunk 3 of 4 · Summarize & Pivot Back Wider
+
+**We will cover:** `group_by() %>% summarize()` on the newly-tidy data, and `pivot_wider()` to build a readable year-by-month table.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 5–6** (summarize by month, then make a pivot table).
+:::
 
 # Summarize Now That We're Long
 
@@ -361,6 +460,18 @@ This recreates an Excel-style pivot table — but computed, not copy-pasted.
 :::
 ::::
 ::::::
+
+# 🛑 Pause — Do Activity Parts 5–6 Now
+
+Summarize mean ice cover by year-month, then use `pivot_wider()` to build the Excel-style table. Predict how many rows and columns the wide table will have.
+
+# 🧩 Chunk 4 of 4 · Visualize & Model the Trend
+
+**We will cover:** rebuilding NOAA's spaghetti plot, pulling each year's peak ice with `slice_max()`, and modeling whether maximum ice cover is declining.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 7–9** (spaghetti plot, yearly maximum, trend model).
+:::
 
 # NOAA's Own "Spaghetti Plot"
 
@@ -468,6 +579,10 @@ Compare your version to NOAA's published plot — did we recreate it?
 
 # A New Question: Is Maximum Ice Cover Changing?
 
+::: callout-note
+**🔮 Predict first:** Commit now — over 50+ years, is Lake Superior's *maximum* winter ice cover **declining, flat, or rising**? Write your guess before the model runs.
+:::
+
 ::::: columns
 ::: {.column width="60%"}
 **So far:** we've visualized the *shape* of each ice season.
@@ -496,6 +611,10 @@ head(max_ice_per_year %>% arrange(ice_cover))
 :::::
 
 # Model the Trend in Maximum Ice Cover
+
+::: callout-note
+**🔮 Predict first:** Given the huge year-to-year scatter in Great Lakes ice, do you expect the slope's p-value to be **below or above 0.05**? Predict before you read `summary()`.
+:::
 
 ::::: columns
 ::: {.column width="60%"}
@@ -533,6 +652,10 @@ max_ice_plot
 This is real data — the story is messier (and more honest) than a clean line.
 :::
 :::::
+
+# 🛑 Pause — Do Activity Parts 7–9 Now
+
+Build the spaghetti plot, pull each winter's peak with `slice_max()`, and fit `lm(ice_cover ~ year)`. Predict the trend's direction and significance before you run it.
 
 # What We Learned Today
 
