@@ -1,0 +1,676 @@
+---
+title: "Lecture 05 — From Script to Report"
+subtitle: "Why Quarto? Code chunks, Markdown, and a professional Word document"
+author: "Bill Perry"
+date: today
+
+# --- Fields the SITE reads for ordering / listings / homepage ---
+# order 4.5 slots this BETWEEN Lecture 04 (t-test) and Lecture 05 (regression)
+# so none of your existing lecture numbers have to change.
+order: 5
+week: 3
+type: lecture             # lecture | activity | homework | assignment | common_code
+description: >
+  Why we write analyses as Quarto documents instead of loose scripts:
+  literate programming, code chunks, Markdown, and rendering our leaf
+  analysis to a professional Word document.
+categories: [quarto, reproducibility, markdown]
+
+format:
+  revealjs:
+    output-ext: "slides.html"
+    theme: simple
+    slide-number: true
+    fig-format: png
+    fig-width: 5
+    fig-height: 3.8
+    code-overflow: wrap
+    highlight-style: github
+  docx: default
+  pptx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r setup}
+#| echo: false
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Where we left off (Lecture 04)
+
+- **Wrangling** — `filter()`, `select()`, `mutate()`, `arrange()`
+- **Descriptive stats** — mean, median, SD, SE with `group_by()` + `summarize()`
+- **Welch's t-test** — shady leaves significantly heavier than sunny
+- **Figures** — boxplots and mean ± SE, saved as PNG
+- Everything so far lives in a **`.R` script**
+
+::: callout-note
+**✅ Key idea from Lecture 04**
+
+You now have a complete analysis and a real result. Today we turn that pile of code into a **report a human can read**.
+:::
+
+# Goals for today
+
+:::::: columns
+:::: {.column width="60%"}
+- Understand **why** a script alone is not enough
+- Meet **Quarto** — code and writing in one file
+- Learn the three ingredients:
+  - **YAML front matter** — the recipe at the top
+  - **Markdown** — formatted text, no clicking
+  - **Code chunks** — R that runs and shows its output
+- **Render** our leaf analysis to a **professional Word document**
+
+::: callout-tip
+**🖐 Try it yourself**
+
+By the end you will click **Render** and get a finished Word report of *our* leaf study.
+:::
+::::
+
+::: {.column width="40%"}
+**Tools today:**
+
+- No new packages — just Positron + Quarto (built in)
+
+**References:**
+
+- 📖 [R4DS Ch 28 — Quarto](https://r4ds.hadley.nz/quarto)
+- 📖 [R4DS Ch 29 — Quarto formats](https://r4ds.hadley.nz/quarto-formats)
+- 🌐 [quarto.org — get started](https://quarto.org/docs/get-started/)
+:::
+::::::
+
+# How to Use These Slides — Predict · Type · Render
+
+:::::: columns
+::: {.column width="60%"}
+This lecture runs in **four short chunks**. After each chunk you switch to the **activity** and build your own report.
+
+**For every snippet, do three things:**
+
+1.  **Predict** — before you Render, say what the document will show
+2.  **Type** it out by hand — do not copy-paste
+3.  **Render** and compare to your prediction
+:::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Why bother? (the evidence)**
+
+-   **Predicting first** forces you to *retrieve* how Markdown and chunks behave. The surprise when you're wrong is what makes it stick.
+-   **Typing by hand** builds muscle memory for YAML indentation and chunk syntax — exactly where beginners slip.
+-   **Chunk → immediate practice** keeps each new idea in working memory long enough to form a lasting schema.
+:::
+::::
+::::::
+
+# 🧩 Chunk 1 of 4 · Why Quarto?
+
+**We will cover:** the pain of script-plus-copy-paste, literate programming, and reproducibility — the real payoff.
+
+::: callout-tip
+**🖐 After this chunk:** open the finished example **`t_test_report.qmd`**, Render it, then start **Activity Step 1**.
+:::
+
+# Part 1 · The problem with scripts
+
+### What happens after the analysis?
+
+::::::: columns
+:::: {.column width="60%"}
+Your `.R` script is great for *running* code. But when the lab report is due you have to:
+
+- Run the script
+- **Copy** each number into Word by hand
+- **Export** every plot, then drag it in
+- Re-do *all of it* when the data changes
+
+::: callout-warning
+**⚠️ Watch out!**
+
+Every hand-copied number is a chance for a typo. Change one data point and the whole report is out of date.
+:::
+::::
+
+:::: {.column width="40%"}
+::: callout-note
+**📊 Coming from Excel?**
+
+This is the same pain as pasting a chart into Word, then editing the spreadsheet and forgetting to update the chart.
+:::
+::::
+:::::::
+
+# The idea: keep code and writing together
+
+::::::: columns
+:::: {.column width="60%"}
+**Literate programming** — write the *story* and the *code* in the **same file**.
+
+- Your explanation sits next to the code that made it
+- The numbers and plots are **computed**, never copied
+- Press **Render** → a finished document appears
+
+``` text
+one .qmd file  →  Render  →  Word / HTML / PDF / PowerPoint
+```
+
+::: callout-note
+**📖 New word**
+
+**Quarto** = the tool that turns one plain-text `.qmd` file into a polished document.
+:::
+::::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Key idea**
+
+A script *does* the analysis.
+
+A **Quarto document** does the analysis **and explains it** — and rebuilds itself on demand.
+:::
+::::
+:::::::
+
+# Reproducibility — the real payoff
+
+::::::: columns
+:::: {.column width="60%"}
+Change your data file, press **Render**, and:
+
+- Every mean, SD, and *p*-value **recalculates**
+- Every figure **redraws**
+- Every sentence with a number **updates itself**
+
+This is what scientists mean by **reproducible** — anyone (including future-you) can regenerate your exact results.
+
+::: callout-tip
+**🖐 Try it yourself**
+
+Imagine a reviewer finds one bad leaf measurement. With Quarto the fix is: delete the row, press Render. Done.
+:::
+::::
+
+:::: {.column width="40%"}
+![](images/diagram_pipe.png){width="90%"}
+
+::: callout-note
+Same philosophy as Lecture 02: **never overwrite your raw numbers** — let the document rebuild from them.
+:::
+::::
+:::::::
+
+# 🛑 Pause — See It, Then Do Activity Step 1
+
+Open **`t_test_report.qmd`**, press Render, and watch a script become a finished Word report. Then make your own new `.qmd` (Step 1).
+
+# 🧩 Chunk 2 of 4 · Anatomy of a `.qmd`
+
+**We will cover:** the three ingredients — YAML front matter, Markdown text, and named code chunks.
+
+::: callout-tip
+**🖐 After this chunk: Activity Steps 2–4** (write the YAML, add Markdown, add named chunks).
+:::
+
+# Part 2 · Anatomy of a `.qmd` file
+
+### Three parts, top to bottom
+
+::::::: columns
+:::: {.column width="60%"}
+Every Quarto document has the same three ingredients:
+
+``` text
+1. YAML front matter  ← the recipe (title, output type)
+2. Markdown text      ← your writing, formatted
+3. Code chunks        ← R that runs and shows results
+```
+
+You already *read* these every day — this whole lecture is a `.qmd` file.
+
+::: callout-note
+**📖 New word**
+
+**`.qmd`** = a **Q**uarto **m**ark**d**own file. Plain text you can open anywhere.
+:::
+::::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Key idea**
+
+If you can write a script and write an email, you already know two of the three parts. Only the **YAML** is new.
+:::
+::::
+:::::::
+
+# Ingredient 1 · YAML front matter
+
+::::::: columns
+:::: {.column width="60%"}
+The block at the very top, fenced by three dashes `---`. It is the **recipe** — what to build and how:
+
+``` yaml
+---
+title: "Leaf Morphology Report"
+author: "Your Name"
+date: today
+format: docx
+---
+```
+
+- `title`, `author`, `date` — appear at the top of the report
+- `format: docx` — **make a Word document**
+
+::: callout-warning
+**⚠️ Watch out!**
+
+YAML is **space-sensitive**. Indent with spaces, never tabs. A stray space is the #1 beginner error.
+:::
+::::
+
+:::: {.column width="40%"}
+::: callout-note
+**📖 New word**
+
+**YAML** = "**Y**AML **A**in't **M**arkup **L**anguage." Just a tidy list of `key: value` settings.
+:::
+
+`format:` is the only line you change to get Word vs. HTML vs. PowerPoint.
+::::
+:::::::
+
+# Ingredient 2 · Markdown text
+
+::: callout-note
+**🔮 Predict first:** Look at the Markdown block below. Before it renders, sketch what it becomes — which line is a big heading, which are bullets, what turns bold?
+:::
+
+::::::: columns
+:::: {.column width="60%"}
+Markdown is **formatting with symbols** instead of toolbar buttons:
+
+``` markdown
+# A big heading
+## A smaller heading
+
+Normal text. Make it **bold** or *italic*.
+
+- a bullet
+- another bullet
+
+[a link](https://r4ds.hadley.nz)
+```
+
+You write the symbols; Quarto turns them into real headings, bullets, and links.
+
+::: callout-note
+**📖 New word**
+
+**Markdown** = a simple way to format plain text using a few symbols like `#`, `*`, and `-`.
+:::
+::::
+
+:::: {.column width="40%"}
+::: callout-note
+**📊 Coming from Word?**
+
+`**bold**` is just the *keyboard* version of clicking the **B** button. Same result, no mouse.
+:::
+::::
+:::::::
+
+# Ingredient 3 · Code chunks
+
+::: callout-note
+**🔮 Predict first:** The chunk below runs `mean(c(4, 3, 5, 7))`. What number will land in the document? Predict before you look.
+:::
+
+::::::: columns
+:::: {.column width="60%"}
+A **code chunk** is a fenced block of R that actually **runs** when you render:
+
+```{{r}}
+mean(c(4, 3, 5, 7))
+```
+
+- Opening fence: ```` ```{r} ```` — the `{r}` means "this is R"
+- Closing fence: ```` ``` ````
+- The **code** *and* its **output** land in your document
+
+::: callout-tip
+Shortcut to insert a chunk: **Ctrl/Cmd + Alt + I**
+:::
+::::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Key idea**
+
+This is why we write code chunks: the result you see in the report is **computed live**, so it can never disagree with your code.
+:::
+::::
+:::::::
+
+# Name every chunk (just like your scripts)
+
+::::::: columns
+:::: {.column width="60%"}
+Give each chunk a short **label** after `r`:
+
+```{{r load-data}}
+library(readxl)
+tree_df <- read_excel("data/paper_area_weights.xlsx")
+```
+
+- If rendering fails, Quarto tells you **which named chunk** broke
+- Same habit as our small, named steps in Lectures 03–04
+
+::: callout-warning
+**⚠️ Watch out!**
+
+Chunk labels must be **unique** — no two chunks named `plot`. Same rule as never overwriting a `_plot` object.
+:::
+::::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Key idea**
+
+Small, **named** chunks = easy to find the one line that failed. This is the same debugging strategy from your scripts.
+:::
+::::
+:::::::
+
+# Live Demo — Watch It Break (on purpose)
+
+:::::: columns
+::: {.column width="60%"}
+I'll give **two chunks the same label** and Render:
+
+```{{r plot}}
+tree_box_plot
+```
+
+... the *same* label again ...
+
+```{{r plot}}
+leaf_mean_se_plot
+```
+
+Quarto stops:
+
+``` 
+ERROR: Duplicate chunk label 'plot'
+```
+
+The fix — make every label unique: `plot-box` and `plot-mean-se`.
+:::
+
+:::: {.column width="40%"}
+::: callout-tip
+**✅ Why show a broken render?**
+
+Quarto names the exact problem — *"Duplicate chunk label 'plot'"*. Learning to *read* that message is the whole skill. When it happens to you, you'll go straight to the repeated name.
+:::
+::::
+::::::
+
+# 🛑 Pause — Do Activity Steps 2–4 Now
+
+Type the YAML by hand (spaces, not tabs), add a heading and bullets in Markdown, and create two uniquely named chunks. Predict what each renders before you press Render.
+
+# 🧩 Chunk 3 of 4 · Chunk Options & Inline Code
+
+**We will cover:** `#|` options to control what shows, and inline `` `r ` `` to drop live numbers into sentences.
+
+::: callout-tip
+**🖐 After this chunk: Activity Step 5** (compute a value and drop it into a sentence).
+:::
+
+# Chunk options — control what shows
+
+:::::: columns
+::: {.column width="60%"}
+Lines starting with `#|` are **chunk options**:
+
+```{{r leaf-plot}}
+#| echo: false      # hide the code, show the plot
+#| fig-width: 6
+#tree_box_plot
+```
+
+| Option           | Effect                          |
+|------------------|---------------------------------|
+| `echo: false`    | hide the code, keep the output  |
+| `warning: false` | hide warning messages           |
+| `message: false` | hide package startup messages   |
+| `eval: false`    | show code but do **not** run it |
+:::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Key idea**
+
+For a clean report set `echo: false` — readers see the **results**, not the code. For a teaching handout, keep `echo: true`.
+:::
+
+📖 [R4DS §28.5 — Code chunks](https://r4ds.hadley.nz/quarto#code-chunks)
+::::
+::::::
+
+# Inline code — numbers inside sentences
+
+::: callout-note
+**🔮 Predict first:** If `mean(shady_wt)` is 7.8, what exact sentence will render from the inline-code line below? Say it out loud before you check.
+:::
+
+::::::: columns
+:::: {.column width="60%"}
+Drop a live result **into a sentence** with `` `r ` ``:
+
+``` markdown
+# Shady leaves averaged `# r mean(shady_wt)` g.
+```
+
+renders as:
+
+> Shady leaves averaged **7.8** g.
+
+- The number is **computed**, never typed
+- Fix the data → the sentence fixes itself
+
+::: callout-note
+**✅ Key idea**
+
+This is the magic of Quarto: your *prose* stays true to your *data*, automatically.
+:::
+::::
+
+:::: {.column width="40%"}
+::: callout-warning
+**⚠️ Watch out!**
+
+Inline code only works if the object exists. Load and compute it in a chunk **above** the sentence.
+:::
+::::
+:::::::
+
+# 🛑 Pause — Do Activity Step 5 Now
+
+Compute a group mean, then insert it into a sentence with inline code. Predict the number that will appear before you Render.
+
+# 🧩 Chunk 4 of 4 · Rendering to Word & Beyond
+
+**We will cover:** YAML for a professional Word doc, one file → many outputs, and the render-often workflow.
+
+::: callout-tip
+**🖐 After this chunk: Activity Steps 6–7** (make it professional; one file, three outputs).
+:::
+
+# Part 3 · Rendering to Word
+
+### One YAML block, a professional `.docx`
+
+::::::: columns
+:::: {.column width="60%"}
+This front matter produces a clean, structured Word document:
+
+``` yaml
+---
+title: "Leaf Morphology Report"
+author: "Your Name"
+date: today
+format:
+  docx:
+    toc: true            # table of contents
+    number-sections: true
+    fig-width: 6
+    fig-height: 4
+---
+```
+
+Then press **Render** (or **Ctrl/Cmd + Shift + K**).
+
+::: callout-note
+**✅ Key idea**
+
+`toc: true` and `number-sections: true` are what make it look like a *report*, not a printout.
+:::
+::::
+
+:::: {.column width="40%"}
+::: callout-tip
+**🖐 Try it yourself**
+
+The activity gives you a ready-made template with exactly this front matter. You just add your writing and render.
+:::
+
+📖 [R4DS Ch 29 — Quarto formats](https://r4ds.hadley.nz/quarto-formats)
+::::
+:::::::
+
+# Same file, many outputs
+
+:::::: columns
+::: {.column width="60%"}
+The best part: **one `.qmd`, many documents**. Just list formats:
+
+``` yaml
+format:
+  docx: default     # Word report
+  html: default     # web page
+  pptx: default     # PowerPoint
+```
+
+- Hand in the **Word** file
+- Post the **HTML** to a site
+- Present the **PowerPoint** in lab
+
+All from the **same** analysis — no re-doing anything.
+:::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Key idea**
+
+This is exactly how *these lecture slides* are built. One file → slides, Word, and PowerPoint.
+:::
+::::
+::::::
+
+# The render workflow
+
+::::::: columns
+:::: {.column width="60%"}
+Every time, it is the same three moves:
+
+1.  **Write** — add Markdown text and named code chunks
+2.  **Render** — Ctrl/Cmd + Shift + K
+3.  **Read** the output; fix the named chunk if it errors
+
+Quarto runs your code **top to bottom in a fresh session** — so the order of your chunks matters.
+
+::: callout-warning
+**⚠️ Watch out!**
+
+If it renders differently than the console, it is almost always **chunk order**: load libraries and data **first**.
+:::
+::::
+
+:::: {.column width="40%"}
+::: callout-tip
+Render **often** — after every few chunks — so a break is easy to trace. Same as running your script line by line.
+:::
+::::
+:::::::
+
+# 🛑 Pause — Do Activity Steps 6–7 Now
+
+Upgrade the YAML for a TOC and numbered sections, copy in the template's table and figure, then render to Word, HTML, and PowerPoint.
+
+# Wrap-up · What you can now do
+
+::::::: columns
+:::: {.column width="60%"}
+- Explain **why** a Quarto report beats a bare script
+- Recognize the three parts: **YAML**, **Markdown**, **code chunks**
+- Write and **name** a code chunk, set `echo`/`warning` options
+- Put a **live number in a sentence** with inline code
+- Set up YAML to render a **professional Word document**
+- Render one file to **Word, HTML, and PowerPoint**
+
+::: callout-tip
+**🖐 Before next class**
+
+Open the activity template, drop in your Lecture 04 t-test, and render it to Word.
+:::
+::::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Key idea**
+
+You turned a script into a **reproducible report**. From here on, every analysis can be a document that rebuilds itself.
+:::
+
+**Up next — Lecture 06:**
+
+- Linear regression with `lm()`
+- ...written up in your new Quarto report!
+::::
+:::::::
+
+# Getting unstuck
+
+::::::: columns
+:::: {.column width="60%"}
+When Render breaks (it will — that is normal):
+
+- Read which **named chunk** failed — it is in the message
+- Did you load `library(...)` and the **data** in a chunk *above*?
+- Check the **YAML**: spaces not tabs, `---` on its own line
+- Is every chunk label **unique**?
+- Render often so the break is easy to find
+
+::: callout-note
+**✅ Key idea**
+
+A Quarto error names the chunk. That is a gift — go straight to that block.
+:::
+::::
+
+:::: {.column width="40%"}
+::: callout-note
+**📊 Reference**
+
+The Quarto guide is excellent and searchable: [quarto.org/docs/guide](https://quarto.org/docs/guide/)
+:::
+::::
+:::::::

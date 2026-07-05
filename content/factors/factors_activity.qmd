@@ -1,0 +1,449 @@
+---
+order: 10
+week: 5
+title: "Worksheet 10 — Factors: Ordering and Cleaning Categorical Data"
+subtitle: "Reorder, rename, and lump penguin categories with forcats — for cleaner plots and models"
+author: "Bill Perry"
+date: today
+
+type: activity
+description: >
+  Hands-on companion to the factors lecture. Over two days students inspect the
+  penguin factors, reorder them for readable plots, rename and lump levels, set
+  the ANOVA reference with fct_relevel(), drop unused levels, and dodge the
+  as.numeric() trap.
+categories: [factors, forcats, tidyverse]
+
+format:
+  html: default
+  docx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# Factors — Taking Control of Categorical Data
+
+### Recap from the ANOVA worksheet
+
+- Fit a one-way ANOVA on penguin body mass by species
+- Found all three species differ; Gentoo heaviest
+- Every plot showed species in **alphabetical** order — today we fix that
+
+### Today's Objectives (a 2-day worksheet)
+
+1.  Inspect factors and their levels
+2.  Reorder levels for readable bar charts and boxplots
+3.  Rename, collapse, and lump levels
+4.  Set the reference group for an ANOVA and drop unused levels
+
+> # **How to use this worksheet**
+>
+> - Work through the parts in order. Type the code into a new R script in Positron and run it line by line.
+> - Blocks marked **▶ Run this** should be executed as written.
+> - Blocks marked **✏️ Your turn** ask you to write, modify, or interpret.
+> - **Day 1 = Parts 1–6. Day 2 = Parts 7–12.**
+
+::: callout-note
+## 🔮 Predict before you run — and type, don't paste
+
+Before each **▶ Run this** block, *predict* the order the plot will use or the output you'll see. Then type the code yourself. With factors the whole game is the *order of the levels* — predicting it first is how you learn to control it, and typing builds the muscle memory for the `fct_` family.
+:::
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 1 — What a factor is *(Day 1, after lecture Chunk 1)*
+>
+> Parts 1–3: load the penguins and inspect their factors.
+
+# Part 1 · Load libraries and data
+
+**▶ Run this at the top of your script:**
+
+``` r
+# Load packages + data -----------------------------------
+library(tidyverse)      # includes forcats
+library(palmerpenguins)
+
+# Swap this line to use a different dataset later --------
+penguins_df <- penguins %>% drop_na(species, body_mass_g)
+```
+
+> ⚠️ **Watch out!** `forcats` loads with `library(tidyverse)` — you do NOT need a separate `library(forcats)`.
+
+------------------------------------------------------------------------
+
+# Part 2 · Inspect the factors
+
+**▶ Run this:**
+
+``` r
+class(penguins_df$species)     # is it a factor?
+levels(penguins_df$species)    # the ordered levels
+fct_count(penguins_df$species) # count per level
+```
+
+✏️ **Your turn:** Record what you found.
+
+```
+Is species a factor?  Y / N
+Levels, in order:
+Which species has the most rows?
+```
+
+✏️ **Your turn:** Run the same three lines on `island`. How many levels does it have, and what are they?
+
+``` r
+# Write your code here:
+```
+
+```
+island levels:
+```
+
+------------------------------------------------------------------------
+
+# Part 3 · See the default (alphabetical) order
+
+> 🔮 **Predict first:** In what order will the three species bars appear if you give no ordering instruction?
+
+**▶ Run this:**
+
+``` r
+# ggplot uses the factor's level order = alphabetical ---
+penguins_df %>%
+  ggplot(aes(x = species)) +
+  geom_bar() +
+  theme_minimal()
+```
+
+✏️ **Your turn:** Was your prediction right? Why is alphabetical rarely the order you actually want?
+
+```
+Order shown:
+Why alphabetical is a poor default here:
+```
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 2 — Reorder for readable plots *(Day 1, after lecture Chunk 2)*
+>
+> Parts 4–6: reorder bars and boxplots by frequency and by value.
+
+# Part 4 · Order bars by frequency with `fct_infreq()`
+
+**▶ Run this:**
+
+``` r
+# Most common species first ------------------------------
+penguins_df %>%
+  mutate(species = fct_infreq(species)) %>%
+  ggplot(aes(x = species)) +
+  geom_bar() +
+  theme_minimal()
+```
+
+✏️ **Your turn:** Add `fct_rev()` to flip it to least-common-first. Write the one changed line.
+
+``` r
+# Write your modified mutate() line here:
+```
+
+------------------------------------------------------------------------
+
+# Part 5 · Order a boxplot by value with `fct_reorder()`
+
+> 🔮 **Predict first:** We'll order species by their median body mass. Which species ends up last (heaviest)?
+
+**▶ Run this:**
+
+``` r
+# Order species by median body mass ----------------------
+penguins_df %>%
+  mutate(species = fct_reorder(species, body_mass_g, .fun = median)) %>%
+  ggplot(aes(x = species, y = body_mass_g, fill = species)) +
+  geom_boxplot(alpha = 0.6) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+✏️ **Your turn:** What order did the species come out in? Does the plot read more clearly than the alphabetical one?
+
+```
+New order (lightest -> heaviest):
+Clearer?  Y / N
+```
+
+✏️ **Your turn:** Change `.fun = median` to `.fun = mean`. Did the order change? Why might mean and median give the same order here?
+
+```
+Your answer:
+```
+
+------------------------------------------------------------------------
+
+# Part 6 · An ordered ranking plot
+
+**▶ Run this:**
+
+``` r
+# Mean mass per species, biggest bar on top --------------
+penguins_df %>%
+  group_by(species) %>%
+  summarize(mean_mass = mean(body_mass_g)) %>%
+  mutate(species = fct_reorder(species, mean_mass) %>% fct_rev()) %>%
+  ggplot(aes(x = mean_mass, y = species)) +
+  geom_col(fill = "steelblue") +
+  labs(x = "Mean mass (g)", y = NULL) +
+  theme_minimal()
+```
+
+✏️ **Your turn:** What does `fct_rev()` do here? Remove it and describe what changes.
+
+```
+Your answer:
+```
+
+> 🛑 **End of Day 1.** You can now inspect and reorder factors. Day 2 covers renaming, lumping, and models.
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 3 — Rename, collapse, lump *(Day 2, after lecture Chunk 3)*
+>
+> Parts 7–9: clean up level labels.
+
+# Part 7 · Rename levels with `fct_recode()`
+
+**▶ Run this:**
+
+``` r
+# Give levels report-ready names -------------------------
+penguins_df %>%
+  mutate(species = fct_recode(species,
+    "Adélie penguin"    = "Adelie",
+    "Chinstrap penguin" = "Chinstrap",
+    "Gentoo penguin"    = "Gentoo"
+  )) %>%
+  count(species)
+```
+
+✏️ **Your turn:** In `fct_recode()`, which name goes on the left — the new one or the old one?
+
+```
+Your answer:
+```
+
+------------------------------------------------------------------------
+
+# Part 8 · Collapse and lump levels
+
+**▶ Run this (collapse species into size groups):**
+
+``` r
+penguins_df %>%
+  mutate(size_group = fct_collapse(species,
+    "smaller" = c("Adelie", "Chinstrap"),
+    "larger"  = "Gentoo"
+  )) %>%
+  count(size_group)
+```
+
+**▶ Run this (lump islands, keep the top 2):**
+
+``` r
+penguins %>%
+  drop_na(island) %>%
+  mutate(island = fct_lump_n(island, n = 2)) %>%
+  count(island)
+```
+
+✏️ **Your turn:** After lumping, what is the third island called, and how many rows landed in it?
+
+```
+Lumped level name:
+n in that level:
+```
+
+------------------------------------------------------------------------
+
+# Part 9 · The `as.numeric()` trap
+
+> 🔮 **Predict first:** `years` below is a factor holding "2010", "2011", "2012". What will `as.numeric(years)` return?
+
+**▶ Run this:**
+
+``` r
+years <- factor(c("2010", "2011", "2012"))
+as.numeric(years)                 # what comes out?
+as.numeric(as.character(years))   # and this?
+```
+
+✏️ **Your turn:** Explain the difference in one sentence.
+
+```
+as.numeric(years) gave:
+as.numeric(as.character(years)) gave:
+Why they differ:
+```
+
+> 💡 **Key idea:** a factor is stored as integer **codes** with a labels table. `as.numeric()` returns the codes — always go through `as.character()` first when a factor holds real numbers.
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 4 — Factors in models & cleanup *(Day 2, after lecture Chunk 4)*
+>
+> Parts 10–12: set the reference, drop ghosts, build the final figure.
+
+# Part 10 · Set the ANOVA reference with `fct_relevel()`
+
+> 🔮 **Predict first:** If we make Gentoo the reference group instead of Adelie, will the overall ANOVA *p*-value change, or only the coefficients?
+
+**▶ Run this:**
+
+``` r
+# Default reference = Adelie -----------------------------
+coef(lm(body_mass_g ~ species, data = penguins_df))
+
+# Make Gentoo the reference ------------------------------
+penguins_relevel <- penguins_df %>%
+  mutate(species = fct_relevel(species, "Gentoo"))
+
+coef(lm(body_mass_g ~ species, data = penguins_relevel))
+```
+
+✏️ **Your turn:** Compare the two coefficient sets.
+
+```
+What the (Intercept) represents now:
+Did the coefficients change?  Y / N
+Would the overall F-test / p-value change?  Y / N
+```
+
+------------------------------------------------------------------------
+
+# Part 11 · Drop unused levels
+
+**▶ Run this:**
+
+``` r
+# Filter out Gentoo — does the level disappear? ----------
+two_species <- penguins_df %>% filter(species != "Gentoo")
+levels(two_species$species)          # Gentoo still listed?
+
+two_species <- two_species %>% mutate(species = fct_drop(species))
+levels(two_species$species)          # now?
+```
+
+✏️ **Your turn:** Why does `filter()` leave the level behind, and what problem would that "ghost" level cause in a boxplot?
+
+```
+Your answer:
+```
+
+------------------------------------------------------------------------
+
+# Part 12 · Put it all together
+
+**▶ Run this:**
+
+``` r
+# Reordered + relabeled in one pipeline ------------------
+penguins_df %>%
+  mutate(
+    species = fct_recode(species, "Adélie" = "Adelie"),
+    species = fct_reorder(species, body_mass_g, .fun = median)
+  ) %>%
+  ggplot(aes(x = species, y = body_mass_g, fill = species)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_point(position = position_jitter(width = 0.15, seed = 42),
+             alpha = 0.3, size = 1.4) +
+  labs(x = NULL, y = "Body mass (g)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+``` r
+# Save it -----------------------------------------------
+ggsave("figures/penguin_mass_by_species_ordered.png",
+       width = 5, height = 5, units = "in", dpi = 300)
+```
+
+✏️ **Your turn:** Which two `fct_` functions are doing the work in this figure, and what does each one do?
+
+```
+Function 1:                 does:
+Function 2:                 does:
+```
+
+------------------------------------------------------------------------
+
+# Part 13 · Review and checkpoint
+
+At this point you should be able to:
+
+- [ ] Explain what a factor is and why level order matters
+- [ ] Inspect levels with `levels()` and `fct_count()`
+- [ ] Reorder with `fct_infreq()`, `fct_reorder()`, `fct_rev()`
+- [ ] Rename with `fct_recode()`, merge with `fct_collapse()`, lump with `fct_lump_n()`
+- [ ] Set a model reference with `fct_relevel()` and drop ghosts with `fct_drop()`
+- [ ] Explain why `as.numeric()` on a factor is a trap
+
+✏️ **Your turn — before you move on:** Run your whole script top to bottom. Does it run cleanly?
+
+```
+Ran cleanly?  Y / N
+If not, what error appeared:
+```
+
+------------------------------------------------------------------------
+
+# Part 14 · Going further
+
+> Optional — do this if you finish early.
+
+### Reorder within groups on a line plot
+
+**▶ Try this:**
+
+``` r
+# fct_reorder2: order legend to match the line ends ------
+penguins_df %>%
+  group_by(species, year = factor(year)) %>%
+  summarize(mean_mass = mean(body_mass_g), .groups = "drop") %>%
+  mutate(species = fct_reorder2(species, year, mean_mass)) %>%
+  ggplot(aes(x = year, y = mean_mass, color = species, group = species)) +
+  geom_line(linewidth = 1) +
+  theme_minimal()
+```
+
+✏️ **Your turn:** How does `fct_reorder2()` decide the legend order, and why is that nice for line plots?
+
+```
+Your answer:
+```
+
+### Your own data
+
+✏️ **Your turn:** If you swap penguins for your project data, which categorical column would you turn into an ordered factor, and what would you order it by?
+
+```
+Your answer:
+```
+
+------------------------------------------------------------------------
+
+# Getting unstuck
+
+1.  **`could not find function "fct_reorder"`** → `library(tidyverse)` (forcats is inside it).
+2.  **Reordering "didn't work"** → you must reorder **inside `mutate()`** and then plot the result; reordering a copy doesn't change the original.
+3.  **A blank gap on the axis** → a ghost level from `filter()`; add `fct_drop()`.
+4.  **Weird numbers from a factor** → you hit the `as.numeric()` trap; use `as.numeric(as.character(x))`.
+5.  **`fct_recode` did nothing** → check the OLD name spelling; unknown old names are silently ignored.
+6.  **Cheat sheet** — <https://rstudio.github.io/cheatsheets/factors.pdf>
+
+> 💡 **Key idea:** factors are how you make categorical variables behave — in plots and in models. Reorder for the reader, relabel for the report, relevel for the baseline.
+
+------------------------------------------------------------------------
+
+*End of Worksheet 10. Next: Worksheet 11 — joins, combining your data with a second table.*

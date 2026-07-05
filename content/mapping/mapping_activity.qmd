@@ -1,0 +1,415 @@
+---
+order: 13
+week: 7
+title: "Worksheet 13 — Mapping Bigfoot Sightings"
+subtitle: "Turn latitude/longitude into maps with sf and geom_sf, then build a per-state choropleth"
+author: "Bill Perry"
+date: today
+
+type: activity
+description: >
+  Hands-on companion to the mapping lecture. Over two days students load 4,500+
+  Bigfoot sightings, make them spatial with sf, plot points on a US map, and
+  join sighting counts to state polygons to build a choropleth.
+categories: [maps, sf, spatial]
+
+format:
+  html: default
+  docx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# Mapping Bigfoot 🦶
+
+### Before you start — get the data
+
+Download **`bfro_reports_geocoded.csv`** from Kaggle
+(<https://www.kaggle.com/datasets/thedevastator/unlocking-mysteries-of-bigfoot-through-sightings>)
+and save it into your project's `data/` folder. It has ~4,586 sightings with `latitude`, `longitude`, `state`, `season`, and `classification`.
+
+### Today's Objectives (a 2-day worksheet)
+
+1.  Make latitude/longitude into a spatial `sf` object
+2.  Draw sighting points on a map of US states
+3.  Count sightings per state and **join** them to the map
+4.  Shade a choropleth and reproject it for a proper US look
+
+> # **How to use this worksheet**
+>
+> - Work through the parts in order. Type the code into a new R script and run it line by line.
+> - Blocks marked **▶ Run this** should be executed as written.
+> - Blocks marked **✏️ Your turn** ask you to write, modify, or interpret.
+> - **Day 1 = Parts 1–6. Day 2 = Parts 7–12.**
+
+::: callout-note
+## 🔮 Predict before you run — and type, don't paste
+
+Before each map draws, *predict* where the points or the dark states will be. Then type the code yourself. Predicting the pattern ("Pacific Northwest?") is what makes a map mean something when it appears — and typing builds the `sf` + `geom_sf` habits.
+:::
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 1 — Make it spatial *(Day 1, after lecture Chunk 1)*
+>
+> Parts 1–3: load the sightings, clean coordinates, and build an `sf` object.
+
+# Part 1 · Load libraries and data
+
+**▶ Run this:**
+
+``` r
+library(tidyverse)
+library(sf)     # spatial data frames
+library(maps)   # ready-made state outlines
+
+# Swap this path for your download -----------------------
+bigfoot_df <- read_csv("data/bfro_reports_geocoded.csv")
+
+bigfoot_df %>%
+  select(title, state, latitude, longitude, classification, season) %>%
+  head()
+```
+
+✏️ **Your turn:** How many rows and columns does the raw file have? Run `dim(bigfoot_df)`.
+
+```
+Rows:            Columns:
+What does one row represent?
+```
+
+------------------------------------------------------------------------
+
+# Part 2 · Clean the coordinates
+
+**▶ Run this:**
+
+``` r
+# Drop missing coords + keep the lower 48 ----------------
+bigfoot_df <- bigfoot_df %>%
+  filter(!is.na(latitude), !is.na(longitude)) %>%
+  filter(longitude > -125, longitude < -66,
+         latitude  >   24, latitude  <  50)
+
+nrow(bigfoot_df)
+```
+
+✏️ **Your turn:** How many rows remain? Why must we drop missing coordinates *before* the next step?
+
+```
+Rows remaining:
+Why drop NA coords first:
+```
+
+------------------------------------------------------------------------
+
+# Part 3 · Build the `sf` object
+
+> 🔮 **Predict first:** You're about to plot 4,000+ points with NO basemap. What shape will the cloud of points make?
+
+**▶ Run this:**
+
+``` r
+# Turn lon/lat into a geometry column --------------------
+bigfoot_sf <- bigfoot_df %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+ggplot(bigfoot_sf) +
+  geom_sf(alpha = 0.2, size = 0.5) +
+  theme_minimal()
+```
+
+✏️ **Your turn:** In `coords = c("longitude", "latitude")`, which comes first — x or y? What did the bare points end up looking like?
+
+```
+First coordinate is (x / y):
+The points look like:
+```
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 2 — Points on a real map *(Day 1, after lecture Chunk 2)*
+>
+> Parts 4–6: add a US basemap and layer the sightings on top.
+
+# Part 4 · Get US states as `sf`
+
+**▶ Run this:**
+
+``` r
+# Built-in state outlines -> sf --------------------------
+states_sf <- st_as_sf(
+  maps::map("state", plot = FALSE, fill = TRUE)
+) %>%
+  st_set_crs(4326)
+
+states_sf %>% head(3)
+```
+
+✏️ **Your turn:** What is in the `ID` column, and what case are the state names in? (You'll need this for the join later.)
+
+```
+ID column holds:
+Case (UPPER / lower / Title):
+```
+
+------------------------------------------------------------------------
+
+# Part 5 · Layer the sightings on the map
+
+> 🔮 **Predict first:** Which region will have the densest cluster of points? Write your guess.
+
+**▶ Run this:**
+
+``` r
+# Basemap first, points on top ---------------------------
+ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey75") +
+  geom_sf(data = bigfoot_sf, aes(color = classification),
+          alpha = 0.3, size = 0.6) +
+  labs(title = "Bigfoot Sightings Across the Lower 48",
+       color = "Report class") +
+  theme_void()
+```
+
+✏️ **Your turn:** Was your prediction right? Why does the order of the two `geom_sf()` layers matter?
+
+```
+Densest region:
+Why layer order matters:
+```
+
+------------------------------------------------------------------------
+
+# Part 6 · Make it yours
+
+✏️ **Your turn:** Change `theme_void()` to `theme_minimal()`. What comes back? Which looks better for a map, and why?
+
+``` r
+# Write your modified plot here:
+```
+
+```
+What theme_minimal() adds:
+Better for a map and why:
+```
+
+> 🛑 **End of Day 1.** You can put points on a map. Day 2: the choropleth.
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 3 — Choropleth by state *(Day 2, after lecture Chunk 3)*
+>
+> Parts 7–9: count per state, join to the map, shade it.
+
+# Part 7 · Count sightings per state
+
+> 🔮 **Predict first:** Which state has the most Bigfoot reports? Commit before you run `count()`.
+
+**▶ Run this:**
+
+``` r
+# Sightings per state, lowercased to match the map -------
+sightings_by_state <- bigfoot_df %>%
+  mutate(state = str_to_lower(state)) %>%
+  count(state, name = "sightings") %>%
+  arrange(desc(sightings))
+
+head(sightings_by_state)
+```
+
+✏️ **Your turn:** Record the top three, and why we lowercase the state names now.
+
+```
+Top 3 states:
+Why str_to_lower():
+```
+
+------------------------------------------------------------------------
+
+# Part 8 · Join counts to the map
+
+**▶ Run this:**
+
+``` r
+# Join sightings onto the state polygons -----------------
+states_map <- states_sf %>%
+  mutate(state = str_remove(ID, ":.*")) %>%   # drop ":north" etc.
+  left_join(sightings_by_state, by = "state")
+
+# Peek — every state should now have a sightings number
+states_map %>% st_drop_geometry() %>% head()
+```
+
+✏️ **Your turn:** What would happen to the map if you did NOT lowercase the state names before joining? (Try it — join `count(bigfoot_df, state)` directly.)
+
+```
+Your prediction / what happened:
+```
+
+------------------------------------------------------------------------
+
+# Part 9 · Shade the choropleth
+
+**▶ Run this:**
+
+``` r
+# The map IS the bar chart -------------------------------
+ggplot(states_map) +
+  geom_sf(aes(fill = sightings), color = "white") +
+  scale_fill_viridis_c(option = "magma", direction = -1) +
+  labs(title = "Bigfoot Sightings by State", fill = "Sightings") +
+  theme_void()
+```
+
+✏️ **Your turn:** Does the darkest state match your Part 7 prediction? Name one state that surprised you.
+
+```
+Darkest state:
+A surprise:
+```
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 4 — Polish & explore *(Day 2, after lecture Chunk 4)*
+>
+> Parts 10–12: reproject, explore by season, and save.
+
+# Part 10 · Reproject for a proper US look
+
+**▶ Run this:**
+
+``` r
+# Albers Equal-Area (EPSG:5070) --------------------------
+ggplot(states_map) +
+  geom_sf(aes(fill = sightings), color = "white") +
+  scale_fill_viridis_c(option = "magma", direction = -1) +
+  coord_sf(crs = 5070) +
+  labs(title = "Bigfoot Sightings by State (Albers)", fill = "Sightings") +
+  theme_void()
+```
+
+✏️ **Your turn:** Compare this to the Part 9 map. What changed about the shape of the country?
+
+```
+Your answer:
+```
+
+------------------------------------------------------------------------
+
+# Part 11 · Explore by season
+
+> 🔮 **Predict first:** Which season has the most reported sightings? Why might that be (think about who is outside)?
+
+**▶ Run this:**
+
+``` r
+# One small map per season -------------------------------
+bigfoot_sf %>%
+  filter(season %in% c("Spring","Summer","Fall","Winter")) %>%
+  ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+  geom_sf(alpha = 0.2, size = 0.4, color = "firebrick") +
+  facet_wrap(~ season) +
+  coord_sf(crs = 5070) +
+  theme_void()
+```
+
+✏️ **Your turn:** Which season dominates? Is that about Bigfoot, or about *people*?
+
+```
+Busiest season:
+What it really tells you:
+```
+
+------------------------------------------------------------------------
+
+# Part 12 · Save your map
+
+**▶ Run this:**
+
+``` r
+choropleth_plot <- ggplot(states_map) +
+  geom_sf(aes(fill = sightings), color = "white") +
+  scale_fill_viridis_c(option = "magma", direction = -1) +
+  coord_sf(crs = 5070) +
+  labs(title = "Bigfoot Sightings by State", fill = "Sightings") +
+  theme_void()
+
+ggsave("figures/bigfoot_choropleth.png",
+       plot = choropleth_plot,
+       width = 7, height = 5, units = "in", dpi = 300)
+```
+
+------------------------------------------------------------------------
+
+# Part 13 · Review and checkpoint
+
+You should now be able to:
+
+- [ ] Explain points, polygons, and CRS
+- [ ] Build an `sf` object with `st_as_sf(coords = ..., crs = 4326)`
+- [ ] Draw a basemap + points with `geom_sf()` (basemap first!)
+- [ ] Count per group and `left_join()` the counts to polygons
+- [ ] Shade a choropleth with `geom_sf(aes(fill = ...))`
+- [ ] Reproject with `coord_sf(crs = 5070)`
+
+✏️ **Your turn — before you move on:** Run your whole script top to bottom. Does it run cleanly?
+
+```
+Ran cleanly?  Y / N
+If not, what error appeared:
+```
+
+------------------------------------------------------------------------
+
+# Part 14 · Going further
+
+> Optional — do this if you finish early.
+
+### Class A only
+
+**▶ Try this:** map only the clearest ("Class A") sightings.
+
+``` r
+bigfoot_sf %>%
+  filter(classification == "Class A") %>%
+  ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+  geom_sf(alpha = 0.3, size = 0.5, color = "darkgreen") +
+  coord_sf(crs = 5070) +
+  theme_void()
+```
+
+✏️ **Your turn:** Does restricting to Class A change the geographic pattern?
+
+```
+Your answer:
+```
+
+### Per-capita thinking
+
+✏️ **Your turn:** Washington and California have many sightings — but they're also big, populous states. What extra data would you need to make this a *fair* comparison between states?
+
+```
+Your answer:
+```
+
+------------------------------------------------------------------------
+
+# Getting unstuck
+
+1.  **`st_as_sf` error about missing coordinates** → filter out `NA` lat/long first (Part 2).
+2.  **Points and states don't line up** → both need the same CRS; set the states to `st_set_crs(4326)`.
+3.  **Whole choropleth is grey** → your join keys don't match (case!). Lowercase both sides.
+4.  **Empty states in the choropleth** → a state name spelled differently in the two tables; check with `anti_join()`.
+5.  **`could not find function "st_as_sf"`** → `install.packages("sf")`, then `library(sf)`.
+6.  **Cheat sheet** — <https://r-spatial.github.io/sf/>
+
+> 💡 **Key idea:** every map is the same recipe — get geometry, get data, **join** them, and shade or plot. You just did it with Bigfoot; the homework does it with real species from GBIF.
+
+------------------------------------------------------------------------
+
+*End of Worksheet 13. Homework: map your own species from GBIF with `rgbif`.*

@@ -1,0 +1,216 @@
+---
+order: 13
+week: 7
+title: "Homework 13 — Map Your Own Species with GBIF"
+subtitle: "Download real occurrence records with rgbif and map where a species lives"
+author: "Bill Perry"
+date: today
+
+type: homework
+description: >
+  Students choose a species, download its real occurrence records straight into
+  R with the rgbif package, clean the coordinates, and map them with sf and
+  geom_sf — the same recipe as the Bigfoot lecture, on data they pick.
+categories: [maps, sf, gbif, rgbif]
+
+format:
+  html: default
+  docx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# Map Your Own Species 🌍
+
+In the lecture you mapped Bigfoot sightings. Bigfoot is (probably) not real — but
+**GBIF** is: the Global Biodiversity Information Facility holds **billions** of real
+species-occurrence records, each with a latitude and longitude. The `rgbif`
+package pulls them straight into R. This week you pick a species and map where it
+actually lives.
+
+::: callout-tip
+## 📥 What you'll turn in
+
+A rendered Quarto document (HTML **or** Word) that contains:
+
+1.  The species you chose and its scientific name
+2.  A **map** of its occurrences on the US states basemap
+3.  Short answers to the four questions in Part 5
+
+Submit the `.qmd` **and** the rendered file to Canvas.
+:::
+
+------------------------------------------------------------------------
+
+## Part 1 · Pick a species
+
+You need the **scientific name** (Genus species). Find it on <https://www.gbif.org>
+by searching the common name, or use one of these fun starters:
+
+| Common name | Scientific name |
+|-------------------------|----------------------------------|
+| Monarch butterfly | *Danaus plexippus* |
+| Bald eagle | *Haliaeetus leucocephalus* |
+| American black bear | *Ursus americanus* |
+| Eastern red-backed salamander | *Plethodon cinereus* |
+| Coyote | *Canis latrans* |
+| Venus flytrap | *Dionaea muscipula* |
+
+✏️ **Your choice:**
+
+```
+Common name:
+Scientific name (Genus species):
+Why you picked it:
+```
+
+------------------------------------------------------------------------
+
+## Part 2 · Download occurrences with `rgbif`
+
+Install `rgbif` once, then load your packages.
+
+**▶ Run this (install once, in the Console):**
+
+``` r
+install.packages("rgbif")
+```
+
+**▶ Run this at the top of your script:**
+
+``` r
+library(tidyverse)
+library(sf)
+library(maps)
+library(rgbif)     # download GBIF occurrence records
+```
+
+**▶ Adapt this** — put YOUR scientific name in:
+
+``` r
+# Pull up to 1500 US records that HAVE coordinates ------
+gbif_result <- occ_search(
+  scientificName = "Danaus plexippus",   # <- change to your species
+  country        = "US",
+  hasCoordinate  = TRUE,
+  limit          = 1500
+)
+
+occ_df <- gbif_result$data   # the records live in $data
+nrow(occ_df)
+```
+
+> ⚠️ **Watch out!** If `occ_df` has 0 rows, your name may be misspelled. Check it
+> with `name_backbone(name = "Danaus plexippus")`, or search the name on gbif.org.
+
+------------------------------------------------------------------------
+
+## Part 3 · Clean and make it spatial
+
+GBIF coordinate columns are `decimalLatitude` and `decimalLongitude`.
+
+**▶ Run this:**
+
+``` r
+# Keep rows with real coordinates in the lower 48 -------
+occ_df <- occ_df %>%
+  filter(!is.na(decimalLatitude), !is.na(decimalLongitude)) %>%
+  filter(decimalLongitude > -125, decimalLongitude < -66,
+         decimalLatitude  >   24, decimalLatitude  <  50)
+
+# Build the sf object (x = longitude first!) -----------
+occ_sf <- occ_df %>%
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = 4326)
+
+nrow(occ_sf)
+```
+
+✏️ **Your turn:**
+
+```
+Records with usable US coordinates:
+```
+
+------------------------------------------------------------------------
+
+## Part 4 · Map it
+
+**▶ Run this:**
+
+``` r
+# US states basemap (same as the lecture) --------------
+states_sf <- st_as_sf(maps::map("state", plot = FALSE, fill = TRUE)) %>%
+  st_set_crs(4326)
+
+# Points on the map ------------------------------------
+species_map <- ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+  geom_sf(data = occ_sf, color = "darkgreen", alpha = 0.3, size = 0.7) +
+  coord_sf(crs = 5070) +
+  labs(title = "Occurrences of Danaus plexippus",   # <- your species
+       caption = "Data: GBIF via rgbif") +
+  theme_void()
+
+species_map
+```
+
+``` r
+# Save it ----------------------------------------------
+ggsave("figures/my_species_map.png",
+       plot = species_map, width = 7, height = 5, units = "in", dpi = 300)
+```
+
+------------------------------------------------------------------------
+
+## Part 5 · Interpret (answer these)
+
+✏️ **Your turn — write 1–2 sentences each:**
+
+```
+1. Where in the US does your species occur? Does the pattern match what you
+   expected (range, habitat, climate)?
+
+2. GBIF records come mostly from where PEOPLE look (cities, parks, universities).
+   How might that sampling bias shape your map?
+
+3. How is this map the SAME recipe as the Bigfoot map from class? Name the shared
+   steps (get geometry -> get data -> ... -> plot).
+
+4. One thing you'd explore next if you had another week (e.g., color by year,
+   a per-state choropleth, or a different region).
+```
+
+------------------------------------------------------------------------
+
+## Stretch (optional, +extra)
+
+Turn your points into a **per-state choropleth**, exactly like the Bigfoot lecture:
+count records per state (`stateProvince`, lowercased), `left_join()` to `states_sf`,
+and shade with `geom_sf(aes(fill = n))`.
+
+``` r
+# Sketch — adapt the lecture's choropleth code ---------
+occ_df %>%
+  mutate(state = str_to_lower(stateProvince)) %>%
+  count(state, name = "records")
+# ... then left_join() to states_sf and geom_sf(aes(fill = records))
+```
+
+------------------------------------------------------------------------
+
+# Getting unstuck
+
+1.  **0 records** → check the scientific name with `name_backbone(name = "...")`.
+2.  **`could not find function "occ_search"`** → `library(rgbif)`.
+3.  **Empty map** → your coordinate filter may be too tight, or the species isn't in the US — widen the box or drop the `country = "US"` filter.
+4.  **Points off the map** → confirm `coords = c("decimalLongitude", "decimalLatitude")` — longitude (x) first.
+5.  **GBIF docs / rgbif** — <https://www.gbif.org/tool/81747/rgbif>
+
+> 💡 **Key idea:** you just downloaded real biodiversity data from a global database
+> and mapped it — the exact workflow ecologists use in published papers.
+
+------------------------------------------------------------------------
+
+*Homework 13. Bring your map to class — we'll compare species ranges.*

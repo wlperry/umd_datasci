@@ -1,0 +1,453 @@
+---
+title: "Lecture 12 — Joins: Combining Two Tables"
+subtitle: "Keys, mutating joins, and filtering joins with real Bigfoot report data"
+author: "Bill Perry"
+date: today
+
+# --- Fields the SITE reads for ordering / listings / homepage ---
+order: 12
+week: 6
+type: lecture             # lecture | activity | homework | assignment | common_code
+description: >
+  Real projects spread data across several tables. This 2-day lecture teaches
+  joins: what a key is, how to join two tables when the key columns are named
+  differently, the mutating joins (left/inner/full), and the filtering joins
+  (semi/anti) — by combining the Bigfoot report text with its coordinates to
+  build exactly the dataset we map next week.
+categories: [joins, tidyverse, wrangling]
+
+format:
+  revealjs:
+    output-ext: "slides.html"
+    theme: simple
+    slide-number: true
+    fig-format: png
+    fig-width: 5
+    fig-height: 3.8
+    code-overflow: wrap
+    highlight-style: github
+  docx: default
+  pptx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r setup}
+#| echo: false
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Where we left off — ANOVA & Factors
+
+- **One-way ANOVA** — compared a numeric response across several groups
+- **Factors** — reordered and relabeled those groups for clean plots
+- So far every analysis used **one** table
+
+::: callout-note
+**✅ Transition**
+
+Real data almost never lives in a single table. Today's dataset comes in **two**: one file has the Bigfoot report **text** (where, when, what), a second has the **coordinates**. Neither alone lets you map a sighting. **Joins** stitch them together on a shared **key** — and the result is exactly the file we'll map next week. 🦶
+:::
+
+# Goals for today (a 2-day lecture)
+
+::::: columns
+:::: {.column width="60%"}
+- Understand a **key** — the column that links two tables
+- Join when the key columns have **different names**
+- The **mutating joins** — `left_join()`, `inner_join()`, `full_join()`
+- The **filtering joins** — `semi_join()`, `anti_join()`
+- Build the combined report + coordinates table
+::::
+
+:::: {.column width="40%"}
+**Tools today:**
+
+- `tidyverse` (dplyr)
+
+**Data (two tables):**
+
+- `bfro_reports.csv` — the report text + class
+- `bfro_locations.csv` — the coordinates
+
+**Reference:**
+
+- 📖 [R4DS Ch. 19 — Joins](https://r4ds.hadley.nz/joins)
+- 📖 `common_code/13_joins`
+
+::: callout-tip
+**Day 1:** keys + `left_join`. **Day 2:** the join family + filtering joins.
+:::
+::::
+:::::
+
+# How to Use These Slides — Predict · Type · Run
+
+::::: columns
+:::: {.column width="60%"}
+This lecture runs in **four chunks over two days**. After each chunk you switch to the **activity** and type the code yourself.
+
+**For every join, do three things:**
+
+1.  **Predict** — before it runs, say how many rows you'll get
+2.  **Type** the code by hand — do not copy-paste
+3.  **Run** it and compare to your prediction
+::::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Why bother?**
+
+-   **Predicting the row count** is the whole skill — a join that returns the wrong number of rows is the #1 data bug.
+-   **Typing** builds the `*_join()` muscle memory.
+-   **Chunk → practice** keeps each join type distinct.
+:::
+::::
+:::::
+
+# 🧩 Chunk 1 of 4 · Two Tables & a Key *(Day 1)*
+
+**We will cover:** why data comes in multiple tables, and what a key is.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 1–3** (load both tables, find the key).
+:::
+
+# The Problem — Data in Two Tables
+
+::::: columns
+:::: {.column width="60%"}
+```{r load-12}
+# Load BOTH Bigfoot tables ---------------------------
+library(tidyverse)
+
+reports_df   <- read_csv("data/bfro_reports.csv")
+locations_df <- read_csv("data/bfro_locations.csv")
+
+dim(reports_df)      # the text: where/when/what
+dim(locations_df)    # the coordinates
+```
+::::
+
+:::: {.column width="40%"}
+- **`reports_df`** — one row per sighting report: year, season, state, county, class, and the written account
+- **`locations_df`** — one row per report that got geocoded: a latitude and longitude
+- To map a sighting you need **both** — its class *and* its coordinates
+::::
+:::::
+
+# What Is a Key?
+
+::::: columns
+:::: {.column width="60%"}
+```{r peek-12}
+# The columns that identify a report -----------------
+reports_df %>% select(REPORT_NUMBER, YEAR, STATE, REPORT_CLASS) %>% head(3)
+
+locations_df %>% select(number, latitude, longitude) %>% head(3)
+```
+::::
+
+:::: {.column width="40%"}
+A **key** is the column that uniquely identifies a row and links the tables.
+
+- In `reports_df` it's **`REPORT_NUMBER`**
+- In `locations_df` it's **`number`**
+- **Same idea, different name** — we'll tell the join that
+
+::: callout-note
+**📖 Vocabulary**
+
+The key must be **unique** in the table you're looking things up in (`locations_df`).
+:::
+::::
+:::::
+
+# Clean the Key Before Joining
+
+::::: columns
+:::: {.column width="60%"}
+```{r keys-12}
+# Two fixes: drop duplicate reports, match key type --
+reports_df <- reports_df %>%
+  distinct(REPORT_NUMBER, .keep_all = TRUE) %>%   # one row per report
+  mutate(REPORT_NUMBER = as.integer(REPORT_NUMBER))
+
+n_distinct(reports_df$REPORT_NUMBER)
+n_distinct(locations_df$number)
+```
+::::
+
+:::: {.column width="40%"}
+- `distinct()` — keep one row per report number
+- `as.integer()` — `REPORT_NUMBER` was stored like `30680.0`; `number` is `30680`. **Keys must be the same type** to match
+
+::: callout-warning
+**⚠️ Watch out!** A join silently fails to match if the keys are different **types** (text vs number) or **formats** — clean them first.
+:::
+::::
+:::::
+
+# 🛑 Pause — Do Activity Parts 1–3 Now
+
+Load both tables, find the key in each, and clean it. Predict how many reports have coordinates before we join.
+
+# 🧩 Chunk 2 of 4 · Your First Join — `left_join()` *(Day 1)*
+
+**We will cover:** joining the two tables when the key columns are named differently.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 4–6** (run the left join, read the result).
+:::
+
+# `left_join()` — Keep Every Report
+
+::: callout-note
+**🔮 Predict first:** `reports_df` has ~5,000 reports; only ~4,000 were geocoded. After a `left_join`, how many **rows** will we have, and how many will have a latitude?
+:::
+
+::::: columns
+:::: {.column width="60%"}
+```{r leftjoin-12}
+# Match on differently-named keys with by = c() ------
+bigfoot_df <- reports_df %>%
+  left_join(locations_df, by = c("REPORT_NUMBER" = "number"))
+
+nrow(bigfoot_df)                    # every report is kept
+sum(!is.na(bigfoot_df$latitude))    # how many got coordinates
+```
+::::
+
+:::: {.column width="40%"}
+- `by = c("REPORT_NUMBER" = "number")` — "match my `REPORT_NUMBER` to their `number`"
+- **`left_join` keeps every row on the left** (all reports)
+- Reports with no location get `NA` coordinates — they simply weren't geocoded
+
+📖 R4DS §19.3 — mutating joins
+::::
+:::::
+
+# Live Demo — Watch It Break (a silent wrong join)
+
+::::: columns
+:::: {.column width="60%"}
+If I forget `by = ...`, dplyr looks for a **shared column name** — and both tables happen to have an **`index`** column:
+
+``` r
+reports_df %>% left_join(locations_df)
+#> Joining with `by = join_by(index)`
+```
+
+That matches **row 1 to row 1, row 2 to row 2** — nonsense! `index` is just a row number, not a report ID. You get coordinates glued to the wrong reports, with **no error**.
+
+The fix — always name the real key:
+
+``` r
+reports_df %>% left_join(locations_df, by = c("REPORT_NUMBER" = "number"))
+```
+::::
+
+:::: {.column width="40%"}
+::: callout-important
+**✅ Why show a silent wrong join?**
+
+When dplyr prints *"Joining with `by = ...`"* and you didn't choose that column — **stop**. Auto-joining on an accidental shared name (`index`, `id`, `x`) is a classic silent bug. Name your key every time.
+:::
+::::
+:::::
+
+# 🛑 End of Day 1 · Start Day 2 Here
+
+::::: columns
+:::: {.column width="60%"}
+**Day 1 recap — you can now:**
+
+- Explain a key and why it must be unique and same-type
+- Join two tables whose key columns are named differently
+- Use `left_join()` to keep every row on the left
+::::
+
+:::: {.column width="40%"}
+**Day 2 — the rest of the family:**
+
+- `inner_join` vs `left_join` vs `full_join`
+- `semi_join` and `anti_join` to **filter** instead of add columns
+::::
+:::::
+
+# 🧩 Chunk 3 of 4 · The Join Family *(Day 2)*
+
+**We will cover:** `inner_join`, `left_join`, and `full_join`, and how to choose.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 7–9** (compare the three joins).
+:::
+
+# Inner vs. Left vs. Full
+
+::: callout-note
+**🔮 Predict first:** Which will have **more** rows — an `inner_join` (only matches) or a `left_join` (all reports)? By roughly how many?
+:::
+
+::::: columns
+:::: {.column width="60%"}
+```{r family-12}
+# Same key, three different rules --------------------
+inner <- inner_join(reports_df, locations_df, by = c("REPORT_NUMBER" = "number"))
+left  <- left_join (reports_df, locations_df, by = c("REPORT_NUMBER" = "number"))
+full  <- full_join (reports_df, locations_df, by = c("REPORT_NUMBER" = "number"))
+
+c(inner = nrow(inner), left = nrow(left), full = nrow(full))
+```
+::::
+
+:::: {.column width="40%"}
+| Join | Keeps |
+|-------------|-------------------------------|
+| `inner_join` | only rows that **match** in both |
+| `left_join` | **all** rows from the left (reports) |
+| `full_join` | **all** rows from **both** tables |
+
+`inner` drops the reports with no coordinates; `full` even keeps locations with no report.
+::::
+:::::
+
+# Which Join Should You Use?
+
+::::: columns
+:::: {.column width="60%"}
+- **`left_join`** — the default. Keep everything on your main table, add what you can. *(Use this for the map: keep all reports.)*
+- **`inner_join`** — only rows with a match. *(Use when missing data would ruin the analysis.)*
+- **`full_join`** — keep everything from both. *(Use to audit what's missing on each side.)*
+::::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Key idea**
+
+Start from the question: *"Which rows do I refuse to lose?"* That answer picks your join. For mapping we refuse to lose reports, so `left_join`.
+:::
+
+📖 R4DS §19.3–19.4
+::::
+:::::
+
+# 🛑 Pause — Do Activity Parts 7–9 Now
+
+Run all three joins, compare the row counts, and decide which one you'd use to build a map. Predict each count first.
+
+# 🧩 Chunk 4 of 4 · Filtering Joins & the Payoff *(Day 2)*
+
+**We will cover:** `semi_join` and `anti_join` — joins that **filter** rather than add columns.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 10–12** (find the missing reports, build the map table).
+:::
+
+# `anti_join()` — What Didn't Match?
+
+::: callout-note
+**🔮 Predict first:** How many reports have **no** coordinates? (Hint: total reports minus the number that got a latitude in Chunk 2.)
+:::
+
+::::: columns
+:::: {.column width="60%"}
+```{r anti-12}
+# Reports that have NO location ----------------------
+missing_coords <- reports_df %>%
+  anti_join(locations_df, by = c("REPORT_NUMBER" = "number"))
+
+nrow(missing_coords)
+missing_coords %>% count(STATE, sort = TRUE) %>% head(4)
+```
+::::
+
+:::: {.column width="40%"}
+- **`anti_join`** keeps the left rows with **no** match — perfect for "what's missing?"
+- It **adds no columns** — it filters
+- Here: the reports we could never map, and where they cluster
+
+📖 R4DS §19.5 — filtering joins
+::::
+:::::
+
+# `semi_join()` — Keep Only What Matched
+
+::::: columns
+:::: {.column width="60%"}
+```{r semi-12}
+# Keep only reports that DO have a location ----------
+mappable_reports <- reports_df %>%
+  semi_join(locations_df, by = c("REPORT_NUMBER" = "number"))
+
+nrow(mappable_reports)
+```
+::::
+
+:::: {.column width="40%"}
+- **`semi_join`** keeps left rows that **have** a match — again, **no new columns**
+- Think of `semi`/`anti` as a **filter driven by another table**
+- `semi_join` result = the rows an `inner_join` would keep, but without the extra columns
+::::
+:::::
+
+# The Payoff — Build the Map-Ready Table
+
+::::: columns
+:::: {.column width="60%"}
+```{r payoff-12}
+# Reports + coordinates, ready to map next week ------
+bigfoot_mappable <- reports_df %>%
+  left_join(locations_df, by = c("REPORT_NUMBER" = "number")) %>%
+  filter(!is.na(latitude), !is.na(longitude))
+
+bigfoot_mappable %>%
+  select(REPORT_NUMBER, STATE, SEASON, REPORT_CLASS, latitude, longitude) %>%
+  head()
+```
+::::
+
+:::: {.column width="40%"}
+This joined table — report text **plus** coordinates — is essentially `bfro_reports_geocoded.csv`, the file you'll turn into a map in **Lecture 13**.
+
+**You just built a real dataset from two raw ones.** That's the everyday work of data science.
+::::
+:::::
+
+# 🛑 Pause — Do Activity Parts 10–12 Now
+
+Use `anti_join` to find the un-geocoded reports, `semi_join` to keep the mappable ones, and build the combined table. Predict the counts first.
+
+# What We Learned Today
+
+::::: columns
+:::: {.column width="60%"}
+**Concepts:**
+
+- A **key** links two tables; it must be **unique** and the **same type**
+- Join differently-named keys with `by = c("a" = "b")`
+- **Mutating joins** add columns: `left` (all left), `inner` (matches), `full` (all)
+- **Filtering joins** keep rows: `semi` (has a match), `anti` (no match)
+- Always **name your key** — a printed `by = ...` you didn't choose is a bug
+
+**R skills:**
+
+- `left_join()`, `inner_join()`, `full_join()`
+- `semi_join()`, `anti_join()`
+- `distinct()` + `as.integer()` for key hygiene
+::::
+
+:::: {.column width="40%"}
+**References:**
+
+- 📖 [R4DS Ch. 19 — Joins](https://r4ds.hadley.nz/joins)
+- 📖 `common_code/13_joins`
+
+**Up next — Lecture 13:**
+
+- **Mapping** — turn this joined table into a map with `sf` and `geom_sf()`
+- Where *is* Bigfoot, anyway?
+::::
+:::::

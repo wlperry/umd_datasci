@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-html/tabby.min.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.9.38">
+
+  <meta name="author" content="Bill Perry">
+  <meta name="dcterms.date" content="2026-07-05">
+  <title>UMD DAta Science Biology – Worksheet 12 — Joins: Combining Two Bigfoot Tables</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="../../site_libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="../../site_libs/revealjs/dist/reveal.css">
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      { color: #003b4f; background-color: #f1f3f5; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #003b4f; } /* Normal */
+    code span.al { color: #ad0000; } /* Alert */
+    code span.an { color: #5e5e5e; } /* Annotation */
+    code span.at { color: #657422; } /* Attribute */
+    code span.bn { color: #ad0000; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #003b4f; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #20794d; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #5e5e5e; } /* Comment */
+    code span.cv { color: #5e5e5e; font-style: italic; } /* CommentVar */
+    code span.do { color: #5e5e5e; font-style: italic; } /* Documentation */
+    code span.dt { color: #ad0000; } /* DataType */
+    code span.dv { color: #ad0000; } /* DecVal */
+    code span.er { color: #ad0000; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #ad0000; } /* Float */
+    code span.fu { color: #4758ab; } /* Function */
+    code span.im { color: #00769e; } /* Import */
+    code span.in { color: #5e5e5e; } /* Information */
+    code span.kw { color: #003b4f; font-weight: bold; } /* Keyword */
+    code span.op { color: #5e5e5e; } /* Operator */
+    code span.ot { color: #003b4f; } /* Other */
+    code span.pp { color: #ad0000; } /* Preprocessor */
+    code span.sc { color: #5e5e5e; } /* SpecialChar */
+    code span.ss { color: #20794d; } /* SpecialString */
+    code span.st { color: #20794d; } /* String */
+    code span.va { color: #111111; } /* Variable */
+    code span.vs { color: #20794d; } /* VerbatimString */
+    code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="../../site_libs/revealjs/dist/theme/quarto-b8eef193cd4aecd129dcd97c8f413977.css">
+  <link rel="stylesheet" href="../../css/main.css">
+  <link href="../../site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+<meta property="og:title" content="Worksheet 12 — Joins: Combining Two Bigfoot Tables – UMD DAta Science Biology">
+<meta property="og:description" content="Hands-on companion to the joins lecture. Over two days students combine the Bigfoot report text (bfro_reports.csv) with its coordinates (bfro_locations.csv) using left/inner/full joins and semi/anti joins, and build the exact table they will map next week.">
+<meta property="og:site_name" content="UMD DAta Science Biology">
+</head>
+<body class="quarto-light">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">Worksheet 12 — Joins: Combining Two Bigfoot Tables</h1>
+  <p class="subtitle">Keys, mutating joins, and filtering joins to build a map-ready dataset</p>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Bill Perry 
+</div>
+</div>
+</div>
+
+  <p class="date">2026-07-05</p>
+</section>
+<section class="scrollable">
+<section id="joins-two-bigfoot-tables-into-one" class="title-slide slide level1 center">
+<h1>Joins — Two Bigfoot Tables into One 🦶</h1>
+
+</section>
+<h3 id="before-you-start-the-data">Before you start — the data</h3>
+<p>Two files live in your <code>data/</code> folder:</p>
+<ul>
+<li><strong><code>bfro_reports.csv</code></strong> — one row per sighting report (year, season, state, class, the written account), keyed by <code>REPORT_NUMBER</code></li>
+<li><strong><code>bfro_locations.csv</code></strong> — the coordinates for reports that were geocoded, keyed by <code>number</code></li>
+</ul>
+<h3 id="todays-objectives-a-2-day-worksheet">Today’s Objectives (a 2-day worksheet)</h3>
+<ol type="1">
+<li>Find the key that links the two tables</li>
+<li>Join them with <code>left_join()</code> when the key columns are named differently</li>
+<li>Compare <code>inner</code>, <code>left</code>, and <code>full</code> joins</li>
+<li>Use <code>semi_join()</code> / <code>anti_join()</code> to filter, and build the map-ready table</li>
+</ol>
+<blockquote>
+<h1 id="how-to-use-this-worksheet"><strong>How to use this worksheet</strong></h1>
+<ul>
+<li>Work through the parts in order. Type the code into a new R script and run it line by line.</li>
+<li>Blocks marked <strong>▶ Run this</strong> should be executed as written.</li>
+<li>Blocks marked <strong>✏️ Your turn</strong> ask you to write, modify, or interpret.</li>
+<li><strong>Day 1 = Parts 1–6. Day 2 = Parts 7–12.</strong></li>
+</ul>
+</blockquote>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>🔮 Predict before you run — and type, don’t paste</strong></p>
+</div>
+<div class="callout-content">
+<p>Before every join, <em>predict the number of rows</em> you’ll get. Then type the code and check. A join that returns the wrong row count is the single most common data bug — predicting first is how you catch it.</p>
+</div>
+</div>
+</div>
+<section class="slide level2">
+
+<blockquote>
+<h2 id="chunk-1-two-tables-a-key-day-1-after-lecture-chunk-1">🧩 Chunk 1 — Two tables &amp; a key <em>(Day 1, after lecture Chunk 1)</em></h2>
+<p>Parts 1–3: load both tables and clean the key.</p>
+</blockquote>
+</section></section>
+<section>
+<section id="part-1-load-both-tables" class="title-slide slide level1 center">
+<h1>Part 1 · Load both tables</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a></a></span>
+<span id="cb1-3"><a></a>reports_df   <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_reports.csv"</span>)</span>
+<span id="cb1-4"><a></a>locations_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_locations.csv"</span>)</span>
+<span id="cb1-5"><a></a></span>
+<span id="cb1-6"><a></a><span class="fu">dim</span>(reports_df)</span>
+<span id="cb1-7"><a></a><span class="fu">dim</span>(locations_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong></p>
+<pre><code>reports_df:   rows =        cols =
+locations_df: rows =        cols =
+Which table has more rows? Why might that be?</code></pre>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="part-2-find-the-key" class="title-slide slide level1 center">
+<h1>Part 2 · Find the key</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a></a>reports_df   <span class="sc">%&gt;%</span> <span class="fu">select</span>(REPORT_NUMBER, YEAR, STATE, REPORT_CLASS) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">3</span>)</span>
+<span id="cb3-2"><a></a>locations_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(number, latitude, longitude) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> What column links the two tables, and what is it called in each?</p>
+<pre><code>Key in reports_df:
+Key in locations_df:
+Are the names the same?  Y / N</code></pre>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="part-3-clean-the-key" class="title-slide slide level1 center">
+<h1>Part 3 · Clean the key</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a></a><span class="co"># One row per report + match the key type ----------------</span></span>
+<span id="cb5-2"><a></a>reports_df <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a></a>  <span class="fu">distinct</span>(REPORT_NUMBER, <span class="at">.keep_all =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-4"><a></a>  <span class="fu">mutate</span>(<span class="at">REPORT_NUMBER =</span> <span class="fu">as.integer</span>(REPORT_NUMBER))</span>
+<span id="cb5-5"><a></a></span>
+<span id="cb5-6"><a></a><span class="fu">n_distinct</span>(reports_df<span class="sc">$</span>REPORT_NUMBER)</span>
+<span id="cb5-7"><a></a><span class="fu">n_distinct</span>(locations_df<span class="sc">$</span>number)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> <code>REPORT_NUMBER</code> was stored like <code>30680.0</code> but <code>number</code> is <code>30680</code>. Why must we fix that before joining?</p>
+<pre><code>Your answer:</code></pre>
+</section>
+<section class="slide level2">
+
+<blockquote>
+<h2 id="chunk-2-your-first-join-day-1-after-lecture-chunk-2">🧩 Chunk 2 — Your first join <em>(Day 1, after lecture Chunk 2)</em></h2>
+<p>Parts 4–6: the left join and the accidental-key trap.</p>
+</blockquote>
+</section></section>
+<section>
+<section id="part-4-the-left-join" class="title-slide slide level1 center">
+<h1>Part 4 · The left join</h1>
+<blockquote>
+<p>🔮 <strong>Predict first:</strong> After a <code>left_join</code>, how many rows will you have (all reports? only matched?), and roughly how many will have a latitude?</p>
+</blockquote>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a></a>bigfoot_df <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
+<span id="cb7-2"><a></a>  <span class="fu">left_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<span id="cb7-3"><a></a></span>
+<span id="cb7-4"><a></a><span class="fu">nrow</span>(bigfoot_df)                 <span class="co"># rows kept</span></span>
+<span id="cb7-5"><a></a><span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(bigfoot_df<span class="sc">$</span>latitude)) <span class="co"># rows with coordinates</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong></p>
+<pre><code>Total rows after left_join:
+Rows WITH coordinates:
+Rows with NA coordinates:</code></pre>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="part-5-the-accidental-key-trap" class="title-slide slide level1 center">
+<h1>Part 5 · The accidental-key trap</h1>
+<p><strong>▶ Run this (on purpose — watch the message):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a></a><span class="co"># Forget by = ... and see what dplyr does ----------------</span></span>
+<span id="cb9-2"><a></a>reports_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(locations_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> What column did dplyr announce it was joining on? Why is joining on <code>index</code> completely wrong here?</p>
+<pre><code>dplyr joined on:
+Why that's wrong:</code></pre>
+<blockquote>
+<p>⚠️ <strong>Watch out!</strong> When dplyr prints <em>“Joining with <code>by = ...</code>”</em> and you didn’t choose that column, stop and name your real key.</p>
+</blockquote>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="part-6-name-the-key-every-time" class="title-slide slide level1 center">
+<h1>Part 6 · Name the key every time</h1>
+<p><strong>▶ Run this (the correct join):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a></a>bigfoot_df <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
+<span id="cb11-2"><a></a>  <span class="fu">left_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<span id="cb11-3"><a></a></span>
+<span id="cb11-4"><a></a>bigfoot_df <span class="sc">%&gt;%</span></span>
+<span id="cb11-5"><a></a>  <span class="fu">select</span>(REPORT_NUMBER, STATE, REPORT_CLASS, latitude, longitude) <span class="sc">%&gt;%</span></span>
+<span id="cb11-6"><a></a>  <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Look at the first rows — do any already show <code>NA</code> for latitude/longitude? What does that mean about those reports?</p>
+<pre><code>Your answer:</code></pre>
+<blockquote>
+<p>🛑 <strong>End of Day 1.</strong> You can join two tables on a named key. Day 2: the rest of the join family.</p>
+</blockquote>
+</section>
+<section class="slide level2">
+
+<blockquote>
+<h2 id="chunk-3-the-join-family-day-2-after-lecture-chunk-3">🧩 Chunk 3 — The join family <em>(Day 2, after lecture Chunk 3)</em></h2>
+<p>Parts 7–9: inner vs left vs full.</p>
+</blockquote>
+</section></section>
+<section>
+<section id="part-7-run-all-three-joins" class="title-slide slide level1 center">
+<h1>Part 7 · Run all three joins</h1>
+<blockquote>
+<p>🔮 <strong>Predict first:</strong> Rank these three by row count, most to fewest: <code>inner_join</code>, <code>left_join</code>, <code>full_join</code>.</p>
+</blockquote>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a></a>inner <span class="ot">&lt;-</span> <span class="fu">inner_join</span>(reports_df, locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<span id="cb13-2"><a></a>left  <span class="ot">&lt;-</span> <span class="fu">left_join</span> (reports_df, locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<span id="cb13-3"><a></a>full  <span class="ot">&lt;-</span> <span class="fu">full_join</span> (reports_df, locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<span id="cb13-4"><a></a></span>
+<span id="cb13-5"><a></a><span class="fu">c</span>(<span class="at">inner =</span> <span class="fu">nrow</span>(inner), <span class="at">left =</span> <span class="fu">nrow</span>(left), <span class="at">full =</span> <span class="fu">nrow</span>(full))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong></p>
+<pre><code>inner rows =        left rows =        full rows =
+Was your ranking right?  Y / N</code></pre>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="part-8-what-each-join-dropped-or-kept" class="title-slide slide level1 center">
+<h1>Part 8 · What each join dropped or kept</h1>
+<p>✏️ <strong>Your turn:</strong> Fill in what each join does, in your own words.</p>
+<pre><code>inner_join keeps:
+left_join keeps:
+full_join keeps:
+Which reports does inner_join DROP that left_join keeps?</code></pre>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="part-9-pick-the-right-join" class="title-slide slide level1 center">
+<h1>Part 9 · Pick the right join</h1>
+<p>✏️ <strong>Your turn:</strong> You want to make a <strong>map of all sightings</strong>, keeping every report even if some can’t be placed. Which join do you use, and why?</p>
+<pre><code>Join:
+Why:</code></pre>
+<blockquote>
+<p>💡 <strong>Key idea:</strong> start from “which rows do I refuse to lose?” — that answer picks the join.</p>
+</blockquote>
+</section>
+<section class="slide level2">
+
+<blockquote>
+<h2 id="chunk-4-filtering-joins-the-payoff-day-2-after-lecture-chunk-4">🧩 Chunk 4 — Filtering joins &amp; the payoff <em>(Day 2, after lecture Chunk 4)</em></h2>
+<p>Parts 10–12: anti/semi joins and the map-ready table.</p>
+</blockquote>
+</section></section>
+<section>
+<section id="part-10-anti_join-whats-missing" class="title-slide slide level1 center">
+<h1>Part 10 · <code>anti_join()</code> — what’s missing</h1>
+<blockquote>
+<p>🔮 <strong>Predict first:</strong> How many reports have NO coordinates? (Total reports minus the number with a latitude from Part 4.)</p>
+</blockquote>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a></a>missing_coords <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
+<span id="cb17-2"><a></a>  <span class="fu">anti_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<span id="cb17-3"><a></a></span>
+<span id="cb17-4"><a></a><span class="fu">nrow</span>(missing_coords)</span>
+<span id="cb17-5"><a></a>missing_coords <span class="sc">%&gt;%</span> <span class="fu">count</span>(STATE, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong></p>
+<pre><code>Reports with no coordinates:
+Did anti_join ADD any columns, or just filter rows?</code></pre>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="part-11-semi_join-keep-only-matches" class="title-slide slide level1 center">
+<h1>Part 11 · <code>semi_join()</code> — keep only matches</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a></a>mappable_reports <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
+<span id="cb19-2"><a></a>  <span class="fu">semi_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<span id="cb19-3"><a></a></span>
+<span id="cb19-4"><a></a><span class="fu">nrow</span>(mappable_reports)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> How is <code>semi_join</code> different from <code>inner_join</code>? (Hint: look at the <em>columns</em>, not just the rows.)</p>
+<pre><code>Your answer:</code></pre>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="part-12-build-the-map-ready-table" class="title-slide slide level1 center">
+<h1>Part 12 · Build the map-ready table</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a></a><span class="co"># Reports + coordinates, ready for next week's map -------</span></span>
+<span id="cb21-2"><a></a>bigfoot_mappable <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
+<span id="cb21-3"><a></a>  <span class="fu">left_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb21-4"><a></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(latitude), <span class="sc">!</span><span class="fu">is.na</span>(longitude))</span>
+<span id="cb21-5"><a></a></span>
+<span id="cb21-6"><a></a>bigfoot_mappable <span class="sc">%&gt;%</span></span>
+<span id="cb21-7"><a></a>  <span class="fu">select</span>(REPORT_NUMBER, STATE, SEASON, REPORT_CLASS, latitude, longitude) <span class="sc">%&gt;%</span></span>
+<span id="cb21-8"><a></a>  <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a></a><span class="co"># Save it for the mapping lecture ------------------------</span></span>
+<span id="cb22-2"><a></a><span class="fu">write_csv</span>(bigfoot_mappable, <span class="st">"data/bigfoot_joined.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> How many rows are in your map-ready table? How does this compare to the original <code>reports_df</code>?</p>
+<pre><code>Map-ready rows:
+Difference from reports_df, and why:</code></pre>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="part-13-review-and-checkpoint" class="title-slide slide level1 center">
+<h1>Part 13 · Review and checkpoint</h1>
+<p>You should now be able to:</p>
+<ul class="task-list">
+<li><label><input type="checkbox">Explain what a key is and why it must be unique and same-type</label></li>
+<li><label><input type="checkbox">Join two tables whose key columns are named differently (<code>by = c("a" = "b")</code>)</label></li>
+<li><label><input type="checkbox">Use <code>left_join</code>, <code>inner_join</code>, <code>full_join</code> and predict their row counts</label></li>
+<li><label><input type="checkbox">Use <code>anti_join</code> to find unmatched rows and <code>semi_join</code> to keep matched rows</label></li>
+<li><label><input type="checkbox">Recognize the accidental-<code>index</code>-join bug</label></li>
+</ul>
+<p>✏️ <strong>Your turn — before you move on:</strong> Run your whole script top to bottom. Does it run cleanly?</p>
+<pre><code>Ran cleanly?  Y / N
+If not, what error appeared:</code></pre>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="part-14-going-further" class="title-slide slide level1 center">
+<h1>Part 14 · Going further</h1>
+<blockquote>
+<p>Optional — do this if you finish early.</p>
+</blockquote>
+</section>
+<h3 id="add-the-report-class-to-a-map-count">Add the report class to a map count</h3>
+<p><strong>▶ Try this:</strong> join, then count sightings per state per class.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a></a>bigfoot_df <span class="sc">%&gt;%</span></span>
+<span id="cb25-2"><a></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(latitude)) <span class="sc">%&gt;%</span></span>
+<span id="cb25-3"><a></a>  <span class="fu">count</span>(STATE, REPORT_CLASS) <span class="sc">%&gt;%</span></span>
+<span id="cb25-4"><a></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n)) <span class="sc">%&gt;%</span></span>
+<span id="cb25-5"><a></a>  <span class="fu">head</span>(<span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Which state + class combination has the most reports?</p>
+<pre><code>Your answer:</code></pre>
+<h3 id="locations-with-no-report">Locations with no report</h3>
+<p>✏️ <strong>Your turn:</strong> Use an <code>anti_join</code> the <em>other</em> direction to find locations that have no matching report. How many are there, and what might explain them?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a></a><span class="co"># Write your anti_join here (locations first this time):</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Locations with no report:
+Possible explanation:</code></pre>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="getting-unstuck" class="title-slide slide level1 center scrollable">
+<h1>Getting unstuck</h1>
+<ol type="1">
+<li><strong><code>by</code> must be supplied / weird match</strong> → the key columns are named differently; use <code>by = c("REPORT_NUMBER" = "number")</code>.</li>
+<li><strong>Zero matches</strong> → check the key <strong>type</strong> (<code>as.integer()</code> on <code>REPORT_NUMBER</code>) — text won’t match a number.</li>
+<li><strong>Way too many rows after a join</strong> → a duplicated key fans out the rows; <code>distinct()</code> the lookup key first.</li>
+<li><strong>dplyr announced <code>by = join_by(index)</code></strong> → you forgot to name your key; both tables share an <code>index</code> column.</li>
+<li><strong>Cheat sheet</strong> — <a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="uri">https://dplyr.tidyverse.org/reference/mutate-joins.html</a></li>
+</ol>
+<blockquote>
+<p>💡 <strong>Key idea:</strong> joins are how real datasets get built — one table of <em>what</em>, another of <em>where</em>, combined on a key. You just made the file you’ll map next week.</p>
+</blockquote>
+</section>
+<section class="slide level2">
+
+<p><em>End of Worksheet 12. Next: Worksheet 13 — mapping the sightings you just assembled.</em></p>
+
+
+</section></section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<div class="footer footer-default">
+
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="../../site_libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="../../site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="../../site_libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="../../site_libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="../../site_libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="../../site_libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="../../site_libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="../../site_libs/revealjs/plugin/search/search.js"></script>
+  <script src="../../site_libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="../../site_libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': false,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'smaller': true,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'fade',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'none',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1280,
+
+        height: 720,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        // Bounds for smallest/largest possible scale to apply to content
+        minScale: 0.2,
+
+        maxScale: 2,
+
+        math: {
+          mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copied!");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copied!");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+          const outerScaffold = trigger.parentElement.cloneNode(true);
+          const codeEl = outerScaffold.querySelector('code');
+          for (const childEl of codeEl.children) {
+            if (isCodeAnnotation(childEl)) {
+              childEl.remove();
+            }
+          }
+          return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp("https:\/\/wlperry\.github\.io\/umd_datasci");
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>
