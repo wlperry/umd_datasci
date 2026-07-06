@@ -21,23 +21,21 @@ execute:
 
 # Writing your own functions
 
-If you copy-paste the same block of code more than twice, write a function.
-Functions reduce errors, make your intent clear, and let you update logic in
-one place rather than hunting through twenty scripts.
+If you copy-paste the same block of code more than twice, write a function. Functions reduce errors, make your intent clear, and let you update logic in one place rather than hunting through twenty scripts.
 
 > ⬇️ **Download the companion R script:** [`16_functions.R`](16_functions.R)
 
-```r
+``` r
 library(tidyverse)
 library(palmerpenguins)
 library(broom)
 ```
 
----
+------------------------------------------------------------------------
 
 # 1 · The basic structure
 
-```r
+``` r
 my_function <- function(argument1, argument2) {
   # body — code that uses the arguments
   result <- argument1 + argument2
@@ -47,22 +45,19 @@ my_function <- function(argument1, argument2) {
 my_function(3, 4)   # 7
 ```
 
-::: {.callout-note}
+::: callout-note
 ## `return()` is optional
 
-R automatically returns the last expression in the function body. Most
-tidyverse-style functions omit `return()` and just end with the value they
-want to return. Use `return()` when you want to exit a function early.
+R automatically returns the last expression in the function body. Most tidyverse-style functions omit `return()` and just end with the value they want to return. Use `return()` when you want to exit a function early.
 :::
 
----
+------------------------------------------------------------------------
 
 # 2 · A useful first function — standard error
 
-You have written `sd(x, na.rm = TRUE) / sqrt(sum(!is.na(x)))` in every
-script. Write it once:
+You have written `sd(x, na.rm = TRUE) / sqrt(sum(!is.na(x)))` in every script. Write it once:
 
-```r
+``` r
 std_error <- function(x) {
   sd(x, na.rm = TRUE) / sqrt(sum(!is.na(x)))
 }
@@ -71,13 +66,13 @@ std_error(penguins$body_mass_g)    # 37.2
 std_error(c(4, 3, 5, NA, 7))       # 0.85
 ```
 
----
+------------------------------------------------------------------------
 
 # 3 · Default arguments
 
 Provide defaults so callers can skip arguments they rarely change:
 
-```r
+``` r
 describe_var <- function(x, digits = 2) {
   tibble(
     n    = sum(!is.na(x)),
@@ -93,13 +88,13 @@ describe_var(penguins$body_mass_g)            # uses digits = 2
 describe_var(penguins$flipper_length_mm, 1)   # override to 1 decimal
 ```
 
----
+------------------------------------------------------------------------
 
 # 4 · Functions that return a ggplot
 
 Wrap a standard exploratory plot so you can reuse it for any pair of columns:
 
-```r
+``` r
 plot_by_group <- function(df, x_var, y_var,
                            x_lab = x_var, y_lab = y_var,
                            title = NULL) {
@@ -122,21 +117,19 @@ plot_by_group(penguins |> drop_na(),
               x_var = "island", y_var = "flipper_length_mm")
 ```
 
-::: {.callout-note}
+::: callout-note
 ## `.data[[var]]` — the tidy-eval trick
 
-Inside `aes()`, you cannot use a string variable directly (`aes(x = x_var)`
-would look for a column literally called `x_var`). Use `.data[[x_var]]` to
-tell ggplot to look up the column whose name is stored in `x_var`.
+Inside `aes()`, you cannot use a string variable directly (`aes(x = x_var)` would look for a column literally called `x_var`). Use `.data[[x_var]]` to tell ggplot to look up the column whose name is stored in `x_var`.
 :::
 
----
+------------------------------------------------------------------------
 
 # 5 · Input validation with `stop()`
 
 Give clear error messages when someone passes the wrong type of input:
 
-```r
+``` r
 std_error_safe <- function(x) {
   if (!is.numeric(x)) {
     stop("x must be numeric, not ", class(x), call. = FALSE)
@@ -148,20 +141,19 @@ std_error_safe <- function(x) {
 }
 ```
 
-::: {.callout-tip}
+::: callout-tip
 ## `call. = FALSE` in `stop()`
 
-Adding `call. = FALSE` prevents R from printing the internal function call
-in the error message — the output is cleaner and more user-friendly.
+Adding `call. = FALSE` prevents R from printing the internal function call in the error message — the output is cleaner and more user-friendly.
 :::
 
----
+------------------------------------------------------------------------
 
 # 6 · Using your function with `across()`
 
 Once defined, your function plugs straight into `summarise(across(...))`:
 
-```r
+``` r
 penguins |>
   drop_na() |>
   group_by(species) |>
@@ -175,13 +167,13 @@ penguins |>
   )
 ```
 
----
+------------------------------------------------------------------------
 
 # 7 · A complete analysis function
 
 Wrap the entire pipeline — summarise, plot, optionally save:
 
-```r
+``` r
 penguin_summary_plot <- function(df, group_var, response_var,
                                   output_path = NULL) {
   smry <- df |>
@@ -215,14 +207,14 @@ penguin_summary_plot(penguins, "island",  "flipper_length_mm",
                      output_path = "figures/island_flipper.pdf")
 ```
 
----
+------------------------------------------------------------------------
 
 # 8 · Organising functions in a project
 
-::: {.callout-tip}
+::: callout-tip
 ## Store functions in `functions/utils.R`, source at the top
 
-```
+```         
 my_project/
 ├── functions/
 │   └── utils.R          ← your reusable functions live here
@@ -235,7 +227,7 @@ my_project/
 
 At the top of every analysis script:
 
-```r
+``` r
 source("functions/utils.R")
 source("themes/r_themes_for_3_sizes.R")
 ```
@@ -243,12 +235,12 @@ source("themes/r_themes_for_3_sizes.R")
 One file to update, every script benefits.
 :::
 
----
+------------------------------------------------------------------------
 
 # Quick reference
 
 | Task | Code |
-|---|---|
+|------------------------------------|------------------------------------|
 | Define a function | `my_fn <- function(x, digits = 2) { ... }` |
 | Use string as column name in aes | `.data[[var_name]]` |
 | Validate input type | `if (!is.numeric(x)) stop("message", call. = FALSE)` |
@@ -256,6 +248,6 @@ One file to update, every script benefits.
 | Source from file | `source("functions/utils.R")` |
 | Optional argument | `function(x, path = NULL)` → `if (!is.null(path)) { ... }` |
 
----
-*End of Common Code 16 — Writing Functions.*
-*Next: Common Code 17 — Quarto document basics.*
+------------------------------------------------------------------------
+
+*End of Common Code 16 — Writing Functions.* *Next: Common Code 17 — Quarto document basics.*
