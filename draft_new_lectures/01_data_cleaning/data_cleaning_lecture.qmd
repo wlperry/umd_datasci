@@ -1,0 +1,483 @@
+---
+title: "Lecture 03B — Cleaning Messy Data"
+subtitle: "From a real messy spreadsheet to a trustworthy data frame"
+author: "Bill Perry"
+date: today
+
+# --- Fields the SITE reads for ordering / listings / homepage ---
+# DRAFT MODULE — not yet wired into _schedule.yml. Suggested slot: right after
+# Wrangling (module 03), before T-Tests (module 04). Renumber when you fold
+# this in.
+order: 3.5
+week: 2
+type: lecture             # lecture | activity | homework | assignment | common_code
+description: >
+  Every real dataset arrives messy. Learn to spot and fix inconsistent
+  capitalization, stray whitespace, fake NA codes, duplicate rows, and
+  numbers stored as text before you ever try to analyze anything.
+categories: [tidyverse, data-cleaning]
+
+format:
+  revealjs:
+    output-ext: "slides.html"
+    theme: simple
+    slide-number: true
+    fig-format: png
+    fig-width: 5
+    fig-height: 3.8
+    code-overflow: wrap
+    highlight-style: github
+  docx: default
+  pptx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r setup}
+#| echo: false
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Where we left off (Lecture 03 — Wrangling)
+
+- `filter()`, `select()`, `mutate()`, `arrange()` — the core verbs
+- Mean, median, variance, SD, SE — and `sum(!is.na())` for a correct *n*
+- `group_by()` + `summarize()`, and `skim()` for a fast overview
+- Boxplots with jittered points; mean ± SE plots with `stat_summary()`
+
+::: callout-note
+**✅ Key idea from Lecture 03**
+
+Wrangling verbs assume your data is already trustworthy — every value is the right type, spelled consistently, and really means what it says. Today's data is **not** that clean. We fix it first.
+:::
+
+# Goals for Today
+
+:::::: columns
+:::: {.column width="60%"}
+**The real-world problem:**
+
+- Field data entered by hand is never perfect
+- Typos, inconsistent capitalization, stray spaces
+- Missing values coded a dozen different ways
+- Numbers accidentally typed as text
+- Rows entered twice by mistake
+
+**What we'll learn:**
+
+- How to *see* messiness with `skim()` and `count()`
+- Fix text inconsistency: `str_trim()`, `str_to_lower()`
+- Fix fake NA codes: `na = c(...)`, `na_if()`
+- Fix numbers-as-text: `parse_number()`
+- Find and remove duplicates: `distinct()`
+- Flag, don't silently delete, suspicious values
+
+::: callout-tip
+**🖐 Try it yourself**
+
+By the end you will take a genuinely messy leaf dataset and turn it into a clean `_df` you would trust enough to analyze.
+:::
+::::
+
+::: {.column width="40%"}
+**Our tools today:**
+
+- `tidyverse` (`stringr`, `readr`, `dplyr`)
+- `janitor`
+
+**References:**
+
+- 📖 [R4DS Ch 18](https://r4ds.hadley.nz/missing-values) — Missing Values
+- 📖 [R4DS Ch 17](https://r4ds.hadley.nz/factors) — Strings & Factors basics
+- 🌐 [Data Carpentry — Data Cleaning](https://datacarpentry.github.io/R-ecology-lesson/)
+
+**Naming conventions:**
+
+- data frames → `_df`
+- plots → `_plot`
+- raw vs. clean → `raw_df` then `clean_df`
+:::
+::::::
+
+# How to Use These Slides — Predict · Type · Run
+
+:::::: columns
+::: {.column width="60%"}
+This lecture runs in **four short chunks**. After each chunk, switch to the activity worksheet and type the code yourself against the real messy file.
+
+**For every code block, do three things:**
+
+1.  **Predict** — before it runs, say what you think the output will be
+2.  **Type** it out by hand — do not copy-paste
+3.  **Run** it and compare to your prediction
+:::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Why this lecture matters most**
+
+Every other lecture in this course assumes clean data. In real research, **cleaning is where most of your time actually goes** — often 50–80% of a project. Skipping this step is the single most common way student projects get silently wrong answers.
+:::
+::::
+::::::
+
+# Load Libraries and the Messy Data
+
+```{r load-libs-cleaning}
+# Load all packages at the top of every script ----------
+library(tidyverse) # dplyr, stringr, readr, ggplot2
+library(janitor)   # clean_names() and friends
+```
+
+```{r load-messy-data}
+# Read the RAW file exactly as it was entered ------------
+leaf_raw_df <- read_csv("data/messy_leaf_data.csv")
+```
+
+::: callout-note
+**Install once — load every session**
+
+- Run in the Console one time only: `install.packages("janitor")`
+- Then every session: `library(janitor)` activates it.
+:::
+
+# 🧩 Chunk 1 of 4 · Finding the Mess
+
+**We will cover:** `glimpse()`, `skim()`, and `count()` as your mess-detectors, and `clean_names()` for column names.
+
+::: callout-tip
+**🖐 After this chunk you will do Activity Parts 1–2.**
+:::
+
+# Rule \#1 — Never Trust a Spreadsheet on Sight
+
+::::: columns
+::: {.column width="60%"}
+```{r first-look}
+# Always look before you touch anything --------------
+glimpse(leaf_raw_df)
+```
+
+```{r dim-check}
+dim(leaf_raw_df)
+```
+:::
+
+::: {.column width="40%"}
+::: callout-warning
+**⚠️ Watch out!**
+
+Notice `weight_g` is `<chr>` (text), not `<dbl>` (numeric) — a huge red flag. Something in that column is not a plain number.
+:::
+
+📖 [R4DS §18 — Missing Values](https://r4ds.hadley.nz/missing-values)
+:::
+:::::
+
+# Column Names — `clean_names()`
+
+::::: columns
+::: {.column width="60%"}
+```{r clean-names-demo}
+# janitor::clean_names() standardizes column names ----
+names(leaf_raw_df)
+
+leaf_raw_df <- leaf_raw_df %>% clean_names()
+
+names(leaf_raw_df)
+```
+:::
+
+::: {.column width="40%"}
+- Forces lowercase, `snake_case`, no spaces or symbols
+- Our names already happened to be tidy — but real spreadsheets rarely are (`"Weight (g)"`, `"Tree ID"`, `"% Cover"`)
+- **Always run this first** — it costs nothing and prevents backtick nightmares like `` `Tree ID` ``
+:::
+:::::
+
+# Rule \#2 — Count Categories, Never Assume
+
+::: callout-note
+**🔮 Predict first:** How many *distinct* values do you think `side` has? There are only two real sides — sunny and shady. Guess the number `count()` will show, then run it.
+:::
+
+::::: columns
+::: {.column width="60%"}
+```{r count-side-messy}
+# count() shows every distinct value AND its frequency -
+leaf_raw_df %>% count(side)
+```
+:::
+
+::: {.column width="40%"}
+::: callout-warning
+**⚠️ Watch out!**
+
+`"Sunny"`, `"sunny "`, `"sunny"`, `" SHADY"`, `"Shady"` are all **different strings** to R — capitalization and whitespace count. Two categories became eight.
+:::
+
+`count()` is the single fastest way to catch a messy categorical column — run it on every `<chr>` column before you trust it.
+:::
+:::::
+
+# 🧩 Chunk 2 of 4 · Fixing Text — Case & Whitespace
+
+**We will cover:** `str_trim()`, `str_to_lower()`, and rebuilding a clean `side` column.
+
+::: callout-tip
+**🖐 After this chunk: Activity Part 3.**
+:::
+
+# `str_trim()` — Killing Invisible Spaces
+
+::::: columns
+::: {.column width="60%"}
+```{r str-trim-demo}
+# str_trim() removes leading/trailing whitespace -------
+x <- c("sunny", " sunny", "sunny ", "  sunny  ")
+x
+str_trim(x)
+```
+:::
+
+::: {.column width="40%"}
+- Whitespace is **invisible** in a printed value — you cannot see the bug by eye
+- `" sunny"` and `"sunny"` look identical in `head()` but are different strings
+- `str_trim()` removes spaces from both ends
+:::
+:::::
+
+# `str_to_lower()` — Killing Case Differences
+
+::::: columns
+::: {.column width="60%"}
+```{r str-lower-demo}
+# str_to_lower() forces everything to lowercase --------
+y <- c("Sunny", "SUNNY", "sunny", "SHADY", "Shady")
+str_to_lower(y)
+```
+:::
+
+::: {.column width="40%"}
+- Combine both fixes in one `mutate()` step
+- Order does not matter here, but always do this **before** you `count()` or `group_by()`
+
+📖 [R4DS §17 — Strings](https://r4ds.hadley.nz/strings)
+:::
+:::::
+
+# Fixing `side` — Putting It Together
+
+::: callout-note
+**🔮 Predict first:** After trimming and lowercasing, how many distinct values should `count(side)` show?
+:::
+
+::::: columns
+::: {.column width="60%"}
+```{r fix-side}
+# Trim whitespace and force lowercase in one mutate ----
+leaf_clean_df <- leaf_raw_df %>%
+  mutate(side = str_trim(side)) %>%
+  mutate(side = str_to_lower(side))
+
+leaf_clean_df %>% count(side)
+```
+:::
+
+::: {.column width="40%"}
+::: callout-note
+**✅ Key idea**
+
+Two clean categories, exactly as the field notebook intended. This single `mutate()` pair is one of the most common lines you will ever write in R.
+:::
+:::::
+
+# 🧩 Chunk 3 of 4 · Fixing Fake Missing Values
+
+**We will cover:** the many disguises of "missing," `na_if()`, and telling `read_csv()` about them up front.
+
+::: callout-tip
+**🖐 After this chunk: Activity Part 4.**
+:::
+
+# Missing Data Wears Many Disguises
+
+::::: columns
+::: {.column width="60%"}
+```{r na-disguises}
+# Look at the raw weight_g column as text --------------
+leaf_raw_df %>% count(weight_g) %>% arrange(weight_g)
+```
+:::
+
+::: {.column width="40%"}
+::: callout-warning
+**⚠️ Watch out!**
+
+Real "missing" shows up as `NA`, `"N/A"`, `-999`, `999`, and true blank cells — **all in the same column**. R only recognizes a true blank or the literal text `NA` as missing by default. `-999` and `999` look like perfectly valid numbers to R.
+:::
+:::::
+
+# Fixing It at the Source — `read_csv(na = ...)`
+
+::::: columns
+::: {.column width="60%"}
+```{r read-csv-na-fix}
+# Tell read_csv about every missing-value code you saw -
+leaf_raw_df <- read_csv(
+  "data/messy_leaf_data.csv",
+  na = c("", "NA", "N/A", "-999", "999")
+)
+
+leaf_raw_df %>% count(is.na(weight_g))
+```
+:::
+
+::: {.column width="40%"}
+- **Best practice:** fix missing-value codes at `read_csv()` time, before anything else
+- You must first `count()` a column to *discover* what its missing codes even are — R cannot guess for you
+- `-999` and `999` were both used **in the same column** — inspect every numeric-looking column this way
+:::
+:::::
+
+# `na_if()` — Fixing It After the Fact
+
+::::: columns
+::: {.column width="60%"}
+```{r na-if-demo}
+# na_if() converts a specific value to a true NA -------
+z <- c(5.2, 4.8, -999, 7.9, 999)
+
+na_if(z, -999) %>% na_if(999)
+```
+:::
+
+::: {.column width="40%"}
+::: callout-tip
+Use `na_if()` inside `mutate()` when you discover a sentinel value **after** loading, or when only one column (not the whole file) uses that code.
+:::
+:::::
+
+# 🧩 Chunk 4 of 4 · Numbers-as-Text, Duplicates & Outliers
+
+**We will cover:** `parse_number()`, `distinct()`, and flagging (not deleting) suspicious values.
+
+::: callout-tip
+**🖐 After this chunk: Activity Parts 5–7.**
+:::
+
+# `parse_number()` — Rescuing Numbers Trapped in Text
+
+::: callout-note
+**🔮 Predict first:** `weight_g` is `<chr>` because one entry is `"5.5g"`. What do you think `parse_number("5.5g")` returns?
+:::
+
+::::: columns
+::: {.column width="60%"}
+```{r parse-number-demo}
+# parse_number() extracts the numeric part of text -----
+parse_number("5.5g")
+parse_number("$12.50")
+parse_number("14 cm")
+
+leaf_clean_df <- leaf_raw_df %>%
+  mutate(weight_g = parse_number(weight_g))
+
+glimpse(leaf_clean_df)
+```
+:::
+
+::: {.column width="40%"}
+- `parse_number()` strips currency symbols, units, and commas, keeping the digits
+- After this, `weight_g` is finally `<dbl>` — a real number you can compute a mean on
+
+📖 [R4DS §18](https://r4ds.hadley.nz/missing-values)
+:::
+:::::
+
+# Finding Duplicate Rows — `distinct()` and `duplicated()`
+
+::::: columns
+::: {.column width="60%"}
+```{r find-duplicates}
+# Check for exact duplicate rows -----------------------
+sum(duplicated(leaf_raw_df))
+
+leaf_raw_df %>%
+  filter(duplicated(leaf_raw_df) | duplicated(leaf_raw_df, fromLast = TRUE))
+```
+
+```{r remove-duplicates}
+# distinct() keeps only the first copy of each row -----
+leaf_clean_df <- leaf_raw_df %>% distinct()
+
+nrow(leaf_raw_df)
+nrow(leaf_clean_df)
+```
+:::
+
+::: {.column width="40%"}
+::: callout-note
+**✅ Key idea**
+
+`duplicated()` flags rows so you can **look at them before deleting** — always inspect first. `distinct()` then removes exact repeats, keeping one copy.
+:::
+:::::
+
+# Flagging Outliers Instead of Deleting Them
+
+::::: columns
+::: {.column width="60%"}
+```{r flag-outlier}
+# Flag, don't silently delete, suspicious values -------
+leaf_flagged_df <- leaf_clean_df %>%
+  mutate(weight_flag = if_else(weight_g > 20, "check this value", "ok"))
+
+leaf_flagged_df %>%
+  filter(weight_flag == "check this value")
+```
+:::
+
+::: {.column width="40%"}
+::: callout-warning
+**⚠️ Watch out!**
+
+A `52` where every other leaf is `4`–`8` g is almost certainly a decimal-point typo for `5.2` — but you were not there when it was measured. **Flag and go back to the field notebook**; do not silently delete or "fix" a number you are only guessing at.
+:::
+:::::
+
+# 🛑 Pause — Do Activity Parts 1–7 Now
+
+Take the raw messy file all the way through: detect the mess, fix text, fix fake NAs, rescue numbers-as-text, remove duplicates, and flag outliers.
+
+# What We Learned Today
+
+::::: columns
+::: {.column width="60%"}
+- **See the mess first:** `glimpse()`, `skim()`, `count()` on every `<chr>` column
+- **Column names:** `janitor::clean_names()`
+- **Text inconsistency:** `str_trim()` + `str_to_lower()`
+- **Fake missing codes:** `na = c(...)` at `read_csv()`, or `na_if()` after
+- **Numbers trapped in text:** `parse_number()`
+- **Duplicate rows:** `duplicated()` to inspect, `distinct()` to remove
+- **Suspicious values:** flag with `mutate()`, never delete silently
+:::
+
+::: {.column width="40%"}
+**References:**
+
+- 📖 [R4DS §18](https://r4ds.hadley.nz/missing-values) — Missing Values
+- 📖 [R4DS §17](https://r4ds.hadley.nz/strings) — Strings
+- 🌐 [Data Carpentry — Cleaning](https://datacarpentry.github.io/R-ecology-lesson/)
+
+**Golden rule:**
+
+> Never overwrite your raw file. `raw_df` stays untouched; every fix creates or updates `clean_df`.
+
+**Up next — Lecture 04:**
+
+- Two-sample t-test, now on data you actually trust
+:::
+:::::

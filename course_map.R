@@ -7,7 +7,9 @@
 #   Rscript course_map.R      (or  source("course_map.R")  in the console)
 # =====================================================================
 
-if (!requireNamespace("yaml", quietly = TRUE)) install.packages("yaml")
+if (!requireNamespace("yaml", quietly = TRUE)) {
+  install.packages("yaml")
+}
 library(yaml)
 
 s <- yaml::read_yaml("_schedule.yml")
@@ -16,8 +18,10 @@ s <- yaml::read_yaml("_schedule.yml")
 md <- c(
   "# Course Map — UMD Data Science Biology",
   "",
-  sprintf("*Generated from `_schedule.yml` on %s. Do not edit by hand — edit `_schedule.yml` and re-run `Rscript course_map.R`.*",
-          format(Sys.Date())),
+  sprintf(
+    "*Generated from `_schedule.yml` on %s. Do not edit by hand — edit `_schedule.yml` and re-run `Rscript course_map.R`.*",
+    format(Sys.Date())
+  ),
   "",
   "| # | Week | Topic | Folder (`content/`) | L | A | H |",
   "|--:|:----:|-------|---------------------|:-:|:-:|:-:|"
@@ -26,34 +30,48 @@ md <- c(
 for (wk in s$weeks) {
   for (m in wk$modules) {
     folder <- if (!is.null(m$lecture)) basename(dirname(m$lecture)) else ""
-    topic  <- m$topic %||% ""
-    if (!nzchar(topic)) topic <- "_(placeholder)_"
-    md <- c(md, sprintf(
-      "| %s | %s | %s | `%s` | %s | %s | %s |",
-      m$number, wk$week, topic, folder,
-      if (!is.null(m$lecture))  "L" else "·",
-      if (!is.null(m$activity)) "A" else "·",
-      if (!is.null(m$homework)) "H" else "·"
-    ))
+    topic <- m$topic %||% ""
+    if (!nzchar(topic)) {
+      topic <- "_(placeholder)_"
+    }
+    md <- c(
+      md,
+      sprintf(
+        "| %s | %s | %s | `%s` | %s | %s | %s |",
+        m$number,
+        wk$week,
+        topic,
+        folder,
+        if (!is.null(m$lecture)) "L" else "·",
+        if (!is.null(m$activity)) "A" else "·",
+        if (!is.null(m$homework)) "H" else "·"
+      )
+    )
   }
 }
 
 # Common-code reference library (separate from the weekly schedule)
 if (!is.null(s$common_code) && length(s$common_code) > 0) {
-  md <- c(md, "",
-          "## Common Code (reference library — NOT the weekly schedule)",
-          "",
-          "| # | Topic | Path |",
-          "|--:|-------|------|")
+  md <- c(
+    md,
+    "",
+    "## Common Code (reference library — NOT the weekly schedule)",
+    "",
+    "| # | Topic | Path |",
+    "|--:|-------|------|"
+  )
   for (i in seq_along(s$common_code)) {
     cc <- s$common_code[[i]]
     md <- c(md, sprintf("| %02d | %s | `%s` |", i, cc$title, cc$path))
   }
 }
 
-md <- c(md, "",
-        "**L** = lecture · **A** = activity · **H** = homework.  ",
-        "Rows with _(placeholder)_ topics are future modules still to be built.")
+md <- c(
+  md,
+  "",
+  "**L** = lecture · **A** = activity · **H** = homework.  ",
+  "Rows with _(placeholder)_ topics are future modules still to be built."
+)
 
 writeLines(md, "COURSE_MAP.md")
 cat(paste(md, collapse = "\n"), "\n\nWrote COURSE_MAP.md\n")
