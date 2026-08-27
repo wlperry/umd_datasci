@@ -23,13 +23,20 @@ md <- c(
     format(Sys.Date())
   ),
   "",
-  "| # | Week | Topic | Folder (`content/`) | L | A | H |",
+  "| # | Week | Topic | Folder (`content/`) | L | A | E |",
   "|--:|:----:|-------|---------------------|:-:|:-:|:-:|"
 )
 
+has_extension <- function(activity_path) {
+  if (is.null(activity_path) || !file.exists(activity_path)) {
+    return(FALSE)
+  }
+  any(grepl("^#+\\s+Extension", readLines(activity_path, warn = FALSE)))
+}
+
 for (wk in s$weeks) {
   for (m in wk$modules) {
-    folder <- if (!is.null(m$lecture)) basename(dirname(m$lecture)) else ""
+    folder <- if (!is.null(m$lecture)) sprintf("`%s`", basename(dirname(m$lecture))) else "—"
     topic <- m$topic %||% ""
     if (!nzchar(topic)) {
       topic <- "_(placeholder)_"
@@ -37,14 +44,14 @@ for (wk in s$weeks) {
     md <- c(
       md,
       sprintf(
-        "| %s | %s | %s | `%s` | %s | %s | %s |",
+        "| %s | %s | %s | %s | %s | %s | %s |",
         m$number,
         wk$week,
         topic,
         folder,
         if (!is.null(m$lecture)) "L" else "·",
         if (!is.null(m$activity)) "A" else "·",
-        if (!is.null(m$homework)) "H" else "·"
+        if (has_extension(m$activity)) "E" else "·"
       )
     )
   }
@@ -69,8 +76,9 @@ if (!is.null(s$common_code) && length(s$common_code) > 0) {
 md <- c(
   md,
   "",
-  "**L** = lecture · **A** = activity · **H** = homework.  ",
-  "Rows with _(placeholder)_ topics are future modules still to be built."
+  "**L** = lecture · **A** = activity · **E** = activity has an out-of-class Extension.  ",
+  "Rows with _(placeholder)_ topics are open / flex / holiday slots.  ",
+  "Parked topics (not on the schedule) live in `content/_parked/`."
 )
 
 writeLines(md, "COURSE_MAP.md")

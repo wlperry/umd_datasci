@@ -1,20 +1,21 @@
 ---
-title: "Lecture 13 — One-Way ANOVA I: Setting Up the Test"
-subtitle: "Why not many t-tests, the F-statistic, fitting the model, and checking assumptions"
+title: "Lecture — One-Way ANOVA I: Setting Up the Test"
+subtitle: "Why not many t-tests, the F-statistic, ordering groups with factors, fitting the model, and checking assumptions"
 author: "Bill Perry"
 date: today
 
 # --- Fields the SITE reads for ordering / listings / homepage ---
 # order/week are auto-stamped from _schedule.yml by sync_order_from_schedule.R
-order: 13
-week: 7
+order: 15
+week: 8
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
   From two groups to many: why we don't run many t-tests, how the F-statistic
-  partitions variance, fitting a one-way ANOVA as a linear model, and checking
-  its assumptions — normality of residuals and equal variance — on the Palmer
-  penguins data.
-categories: [anova, tidyverse, statistics]
+  partitions variance, using factors to order groups for a readable plot and to
+  set the ANOVA reference level, fitting a one-way ANOVA as a linear model, and
+  checking its assumptions — normality of residuals and equal variance — on the
+  Palmer penguins data.
+categories: [anova, factors, tidyverse, statistics]
 
 format:
   revealjs:
@@ -58,6 +59,7 @@ The t-test compared **two** groups. But biology is full of **three-or-more** gro
 - Understand **why** we don't just run many t-tests
 - See how the **F-statistic** compares *between-* vs *within-*group variance
 - State ANOVA **hypotheses** (H₀: all means equal)
+- Use **factors** to order groups for a readable plot and set the reference level
 - Fit the model with `lm()`
 - **Check assumptions** — normality of residuals, equal variance
 ::::
@@ -65,7 +67,7 @@ The t-test compared **two** groups. But biology is full of **three-or-more** gro
 :::: {.column width="40%"}
 **Tools today:**
 
-- `palmerpenguins`, `tidyverse`
+- `palmerpenguins`, `tidyverse` (includes `forcats`)
 - `car` — Levene's test
 
 **Textbook:**
@@ -248,21 +250,80 @@ mass_box_plot
 
 - The picture usually tells the story before the *p*-value confirms it
 - Look for separation between boxes and roughly similar spread
+- But notice the **order**: Adelie, Chinstrap, Gentoo — that's alphabetical, not by mass
 
 📖 R4DS §9 — Layers
 ::::
 :::::
 
-# 🛑 Pause — Do Activity Parts 1–3 Now
+# `species` Is a Factor — and Factors Have an Order
 
-Load the penguins, plot body mass by species, and write your hypotheses. Predict which species differ before you run anything.
+::::: columns
+:::: {.column width="60%"}
+```{r factor-inspect-10}
+class(penguins_df$species)   # "factor"
+levels(penguins_df$species)  # the stored order
+```
+
+- A **factor** is a categorical column with a fixed, *ordered* set of **levels**
+- `ggplot` (and `lm`) draw groups in **level order**
+- The default level order is **alphabetical** — almost never the order you want
+::::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Key idea**
+
+Alphabetical order hides the pattern. Ordering the groups by the thing you are
+testing — here, body mass — makes the boxplot tell the story at a glance.
+:::
+
+`forcats` (the `fct_*` family) ships with `library(tidyverse)`.
+::::
+:::::
+
+# Order the Boxplot by Body Mass — `fct_reorder()`
+
+::::: columns
+:::: {.column width="60%"}
+```{r fct-reorder-10}
+#| fig-format: png
+#| fig-alt: "The same penguin body-mass boxplot, now with species ordered from lightest to heaviest median mass: Adelie, Chinstrap, Gentoo happen to already be in that order here, but the reordering is now explicit and data-driven."
+penguins_df %>%
+  mutate(species = fct_reorder(species, body_mass_g, .fun = median)) %>%
+  ggplot(aes(x = species, y = body_mass_g, fill = species)) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+  labs(x = "Species (ordered by median mass)", y = "Body Mass (g)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+::::
+
+:::: {.column width="40%"}
+- `fct_reorder(f, x, .fun = median)` — reorder factor `f` by a summary of `x`
+- Do it **inside `mutate()`**, then plot the result
+- One line; the plot now reads lightest → heaviest
+
+::: callout-tip
+The full `forcats` family — rename levels, merge them, lump rare ones — is in
+**Common Code 15 · Factors**. Today we only need *ordering* and, next, the
+*reference level*.
+:::
+::::
+:::::
+
+# 🛑 Pause — Do Activity Parts 1–4 Now
+
+Load the penguins, plot body mass by species, reorder the boxplot with
+`fct_reorder()`, and write your hypotheses. Predict which species differ before
+you run anything.
 
 # 🧩 Chunk 2 of 2 · Fit the Model & Check Assumptions
 
 **We will cover:** fitting the model, then checking normality of the residuals and equal variance across groups.
 
 ::: callout-tip
-**🖐 After this chunk: Activity Parts 4–6** (fit, QQ + Shapiro on residuals, Levene's test).
+**🖐 After this chunk: Activity Parts 5–8** (fit, set the reference level, QQ + Shapiro on residuals, Levene's test).
 :::
 
 # Fit the Model
@@ -287,6 +348,36 @@ mass_model <- lm(body_mass_g ~ species, data = penguins_df)
 :::
 
 📖 W&S §15.2
+::::
+:::::
+
+# Which Group Is the Baseline? — `fct_relevel()`
+
+::::: columns
+:::: {.column width="60%"}
+```{r fct-relevel-10}
+# The (Intercept) is the FIRST level = Adelie ---------
+coef(mass_model)
+
+# Make Gentoo the reference instead --------------------
+penguins_relevel <- penguins_df %>%
+  mutate(species = fct_relevel(species, "Gentoo"))
+
+coef(lm(body_mass_g ~ species, data = penguins_relevel))
+```
+::::
+
+:::: {.column width="40%"}
+- `lm` picks the **first factor level** as the baseline; every coefficient is a
+  difference *from that group*
+- `fct_relevel(species, "Gentoo")` moves Gentoo to the front → coefficients are
+  now differences from Gentoo
+
+::: callout-important
+Releveling changes **which comparisons the coefficients show**. It does **not**
+change the overall **F** or *p*-value — the ANOVA question ("do any means
+differ?") is the same no matter which group you call the baseline.
+:::
 ::::
 :::::
 
@@ -352,9 +443,11 @@ Same spirit as Welch's **t**-test — robust when spreads differ.
 ::::
 :::::
 
-# 🛑 Pause — Do Activity Parts 4–6 Now
+# 🛑 Pause — Do Activity Parts 5–8 Now
 
-Fit `lm(body_mass_g ~ species)`, check the residual QQ plot + Shapiro, and run Levene's test. Predict each result before you run it.
+Fit `lm(body_mass_g ~ species)`, set the reference level with `fct_relevel()`,
+check the residual QQ plot + Shapiro, and run Levene's test. Predict each result
+before you run it.
 
 # What We Learned Today
 
@@ -364,14 +457,17 @@ Fit `lm(body_mass_g ~ species)`, check the residual QQ plot + Shapiro, and run L
 
 - Many t-tests inflate the false-positive rate — **ANOVA asks once**
 - **F** = between-group ÷ within-group variance (signal ÷ noise)
+- A **factor**'s level order sets the plot order and the model baseline
 - ANOVA is a linear model with a categorical predictor — same `lm()` as regression
 - Assumptions: **normal residuals**, **equal variance** (Levene)
 
 **R skills:**
 
+- `fct_reorder()` to order groups by the response; `fct_relevel()` to set the baseline
 - `lm(Y ~ group)`
 - `plot(model)` diagnostics, `shapiro.test(residuals())`
 - `leveneTest()`
+- rest of the `fct_*` family → **Common Code 15 · Factors**
 ::::
 
 :::: {.column width="40%"}

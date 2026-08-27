@@ -1,7 +1,7 @@
 ---
 order: 10
 week: 5
-title: "Worksheet 10 - T-Tests II: Running & Reporting the Test"
+title: "Worksheet — T-Tests II: Running, Reporting & Extension"
 subtitle: "Running Welch's t-test, reading the output, and writing it up"
 author: "Bill Perry"
 date: today
@@ -23,7 +23,7 @@ execute:
 
 # In-class Activity 10: Running & Reporting the Test
 
-### Recap from Worksheet 09
+### Recap from the T-Tests I worksheet
 
 - Stated H₀ and Hₐ formally (two-tailed, α = 0.05)
 - Checked normality with a histogram and Shapiro-Wilk
@@ -42,7 +42,7 @@ execute:
 > - Work through each part in order — the steps build on each other. Type the code into your script in Positron and run it line by line.
 > - Code blocks marked **▶ Run this** should be executed as written.
 > - Blocks marked **✏️ Your turn** ask you to write, modify, or interpret something.
-> - The **Going further** section is optional if you finish early.
+> - The **Extension** at the end is done out of class (~30–40 min) and turned in with the worksheet.
 
 ------------------------------------------------------------------------
 
@@ -77,7 +77,7 @@ recap_df <- tree_df %>%
 recap_df
 ```
 
-✏️ **Your turn:** From Worksheet 09, what was your decision about normality and variance? Were you clear to proceed with Welch's?
+✏️ **Your turn:** From the T-Tests I worksheet, what was your decision about normality and variance? Were you clear to proceed with Welch's?
 
 ```
 Normality decision:
@@ -273,82 +273,80 @@ If not, what error appeared:
 
 ------------------------------------------------------------------------
 
-# Part 7 · Going further
+# Extension — out of class (~30–40 min)
 
-> This section is optional — work through it if you finish early or want to push deeper.
+*Turn this in with your worksheet. In class we ran a **two-tailed** test on leaf
+weight. The extension changes two things: a **new variable you choose** and a
+**one-tailed (directional) hypothesis** — which behaves differently and is easy
+to misuse.*
 
-### Test a second variable: `height_cm`
+::: callout-important
+The prediction and explanation in **E2 and E3 must be handwritten** on paper,
+photographed, and embedded in your submission (`![caption](my_photo.jpg)`).
+Typed answers to E2/E3 get **at most half credit, even if correct**.
+:::
 
-**▶ Try this:**
+## E1 · A directional test on a new variable (3 pts)
 
-``` r
-# Run the same t-test pipeline for height_cm ---------
-
-# 1. Stats recap
-tree_df %>%
-  group_by(side) %>%
-  summarize(
-    n        = sum(!is.na(height_cm)),
-    mean_ht  = round(mean(height_cm, na.rm = TRUE), 2),
-    sd_ht    = round(sd(height_cm,   na.rm = TRUE), 2),
-    se_ht    = round(sd_ht / sqrt(n), 2)
-  )
-```
+Pick **one** variable you did **not** test in class: `height_cm` or `width_cm`.
+Write down which you picked and, *before running anything*, a **directional**
+hypothesis — e.g. "shady leaves are **larger**", i.e. Hₐ: μ_shady > μ_sunny.
 
 ``` r
-# 2. Shapiro-Wilk for height_cm
-tree_df %>% filter(side == "sunny") %>% pull(height_cm) %>% shapiro.test()
-tree_df %>% filter(side == "shady") %>% pull(height_cm) %>% shapiro.test()
-```
-
-``` r
-# 3. Levene's test for height_cm
-leveneTest(height_cm ~ side, data = tree_df)
-```
-
-``` r
-# 4. Welch's t-test for height_cm
-height_ttest_model <- t.test(
-  height_cm ~ side,
+# Replace ___ with "height_cm" or "width_cm".
+# alternative is "greater"/"less" for the FIRST group alphabetically
+# ("shady" comes before "sunny"), so "shady larger" = "greater".
+one_tail_model <- t.test(
+  ___ ~ side,
   data        = tree_df,
   var.equal   = FALSE,
-  alternative = "two.sided"
+  alternative = "greater"      # <- directional; change if your Ha points the other way
 )
-height_ttest_model
+one_tail_model
+
+# For comparison, the two-tailed version of the SAME test
+t.test(___ ~ side, data = tree_df, var.equal = FALSE)$p.value
 ```
 
-✏️ **Your turn:** Is leaf height also significantly different between sides? Fill in the results:
+✏️ **Record:**
 
 ```
-t = _____   df = _____   p = _____
-Decision:
-One-sentence conclusion:
+Variable chosen:
+Directional Ha (in symbols):
+One-tailed p-value:
+Two-tailed p-value:
+Ratio (two-tailed / one-tailed) ≈
+Decision at alpha = 0.05:
 ```
 
-### Change the confidence level
+## E2 · Predict, then check — ✍️ by hand (3 pts)
 
-By default `t.test()` reports a 95% CI (`conf.level = 0.95`). Try 99%:
+**Before running E1**, on paper:
 
-**▶ Try this:**
+1.  Predict the relationship between the one-tailed and two-tailed *p*-values for
+    the same data. Which is smaller, and roughly by how much?
+2.  Predict whether your chosen variable will differ significantly between sides,
+    and why.
 
-``` r
-# Run the weight t-test with 99% confidence interval --
-t.test(
-  weight_g ~ side,
-  data       = tree_df,
-  var.equal  = FALSE,
-  alternative = "two.sided",
-  conf.level  = 0.99        # 99% CI instead of 95%
-)
-```
+Then run E1 and, by hand, write your actual one- and two-tailed *p*-values and
+whether your predictions held.
 
-✏️ **Your turn:** How did the 99% CI compare to the 95% CI? Why is the 99% CI wider?
+## E3 · Explain it — ✍️ by hand, with YOUR numbers (3 pts)
 
-```
-95% CI was: _____ to _____
-99% CI was: _____ to _____
-Why wider:
-```
+Using your real output:
+
+1.  Explain *why* the one-tailed *p*-value is (about) half the two-tailed one —
+    in terms of where the rejection region sits on the *t* distribution.
+2.  A one-tailed test is only legitimate if the direction was chosen **before**
+    seeing the data. Explain, in plain language, what goes wrong if a researcher
+    runs a two-tailed test, sees *p* = 0.08, and then switches to the one-tailed
+    test that "works".
+3.  If your one-tailed result is significant but the two-tailed result is not,
+    which would you report in a paper, and why?
+
+> Optional, no points: rerun E1 with `conf.level = 0.99` and note how the CI
+> changes — and why a one-tailed `t.test()` reports a **one-sided** CI
+> (`-Inf` or `Inf` at one end).
 
 ------------------------------------------------------------------------
 
@@ -378,4 +376,4 @@ project/
 
 ------------------------------------------------------------------------
 
-*End of Worksheet 10. Next: Worksheet 11 — regression.*
+*End of the T-Tests II worksheet. Next: regression.*
