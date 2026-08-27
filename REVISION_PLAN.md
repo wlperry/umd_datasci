@@ -73,27 +73,32 @@ Update these as you go. `[x]` = done, `[~]` = in progress, `[ ]` = not started.
 - [x] B7. `content/factors/` parked in `content/_parked/factors/`
 - [x] B8. Render-checked (lecture 23/23 chunks; activity clean)
 
-### Part C — Homework → Extension (one row per module; see §5.3)
-- [ ] C-01 introduction
-- [ ] C-02 meeting_r
-- [ ] C-03 ggplot_1
-- [ ] C-04 ggplot_2
-- [ ] C-05 wrangling
-- [ ] C-06 summary_stats
-- [ ] C-07 quarto
-- [ ] C-09 t_tests (I)
-- [x] C-10 t_tests_2 (II)  — one-tailed test on a chosen variable + handwritten E2/E3 (`8828aff`)
-- [ ] C-11 regression
-- [ ] C-12 weather
-- [x] C-13 one_way_anova (I)  — no extension; ANOVA is two-part, extension is on II
-- [x] C-14 one_way_anova_2 (II)  — one-sex-subset ANOVA + handwritten E2/E3 (`8828aff`)
-- [ ] C-15 final_project  ← **keep as a real project deliverable, not an extension** (confirm)
-- [ ] C-16 pivoting (Lake Superior Ice)
-- [ ] C-17 joins
-- [ ] C-19 mapping
-- [ ] C-21 ancova (when built)
-- [ ] C-23 pca_2 (when built)
-- [ ] Cx. Site plumbing after homeworks removed (see §5.4)
+### Part C — Homework → Extension  ✅ all scheduled modules done
+- [x] C-01 introduction — first solo R session: plot + handwritten boxplot prediction + your-own-leaf
+- [x] C-02 meeting_r — your-own-mean size cutoff + handwritten predict/interpret
+- [x] C-03 ggplot_1 — your own colour + combo mean±SE + facet; handwritten
+- [x] C-04 ggplot_2 — your own variable pair + zoom window (xlim vs coord_cartesian); handwritten
+- [x] C-05 wrangling — three `case_when()` categories, your cutoffs; handwritten
+- [x] C-06 summary_stats — IQR / range / coefficient of variation; handwritten
+- [x] C-07 quarto — cross-refs (`@tbl-`/`@fig-`) + a self-authored callout + `echo:false` prediction (no inline code)
+- [—] C-09 t_tests (I) — no extension (two-part topic; extension is on II)
+- [x] C-10 t_tests_2 (II) — one-tailed test on a chosen variable + handwritten E2/E3
+- [x] C-11 regression — calibrate a paper object you cut yourself; handwritten
+- [x] C-12 weather — your-own-city GSOD warming rate vs Duluth; predict-first
+- [—] C-13 one_way_anova (I) — no extension (two-part; extension is on II)
+- [x] C-14 one_way_anova_2 (II) — one-sex-subset ANOVA + handwritten E2/E3
+- [x] C-15 final_project — "Going further" → Extension (backup dataset + handwritten question pressure-test)
+- [x] C-16 pivoting — run the ice workflow on a different Great Lake; predict-first
+- [x] C-17 joins — completeness check; ONLY the handwritten "most surprising thing" is graded
+- [x] C-19 mapping — map a species you pick via `rgbif`/GBIF; predict-first + bias explain
+- [ ] C-21 ancova / C-23 pca_2 — parked; add an Extension when the module is authored
+
+### Standard Extension shape used
+`# Extension — out of class (~30–40 min)` inserted before `# Getting unstuck`
+(kept any existing "Going further" playground where it added value). Each has
+**E1** (do-it, ~3–4 pts), **E2** (predict-then-check, ✍️ handwritten, 3 pts),
+**E3** (explain-with-your-own-numbers, ✍️ handwritten, 2–3 pts), with the
+half-credit-if-typed callout. `_metadata`/format unchanged.
 
 ---
 

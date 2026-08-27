@@ -4,29 +4,29 @@
 
 | # | Week | Topic | Folder (`content/`) | L | A | E |
 |--:|:----:|-------|---------------------|:-:|:-:|:-:|
-| 01 | 1 | Introduction — Start with R | `introduction` | L | A | · |
-| 02 | 1 | Project Design and Graphing Data | `meeting_r` | L | A | · |
-| 03 | 2 | GGplot I — Grouped Summaries and Facets | `ggplot_1` | L | A | · |
-| 04 | 2 | GGplot II — More Geoms, Coordinates, and Themes | `ggplot_2` | L | A | · |
-| 05 | 3 | Wrangling Data | `wrangling` | L | A | · |
-| 06 | 3 | Summary Statistics | `summary_stats` | L | A | · |
-| 07 | 4 | Quarto and Markdown Reports | `quarto` | L | A | · |
+| 01 | 1 | Introduction — Start with R | `introduction` | L | A | E |
+| 02 | 1 | Project Design and Graphing Data | `meeting_r` | L | A | E |
+| 03 | 2 | GGplot I — Grouped Summaries and Facets | `ggplot_1` | L | A | E |
+| 04 | 2 | GGplot II — More Geoms, Coordinates, and Themes | `ggplot_2` | L | A | E |
+| 05 | 3 | Wrangling Data | `wrangling` | L | A | E |
+| 06 | 3 | Summary Statistics | `summary_stats` | L | A | E |
+| 07 | 4 | Quarto and Markdown Reports | `quarto` | L | A | E |
 | 08 | 4 | Flex / Catch-up | `catchup` | L | · | · |
 | 09 | 5 | T-Tests I — Setting Up the Test | `t_tests` | L | A | · |
 | 10 | 5 | T-Tests II — Running, Reporting & Extension | `t_tests_2` | L | A | E |
-| 11 | 6 | Regressions | `regression` | L | A | · |
-| 12 | 6 | Weather Data & Regressions | `weather` | L | A | · |
-| 13 | 7 | Intro to the Final Project | `final_project` | L | A | · |
+| 11 | 6 | Regressions | `regression` | L | A | E |
+| 12 | 6 | Weather Data & Regressions | `weather` | L | A | E |
+| 13 | 7 | Intro to the Final Project | `final_project` | L | A | E |
 | 14 | 7 | Finding Data & Examples for Your Project | — | · | · | · |
 | 15 | 8 | One-Way ANOVA I — Setting Up the Test (with Factors) | `one_way_anova` | L | A | · |
 | 16 | 8 | One-Way ANOVA II — Running, Reporting & Extension | `one_way_anova_2` | L | A | E |
-| 17 | 9 | Lake Superior Ice | `pivoting` | L | A | · |
+| 17 | 9 | Lake Superior Ice | `pivoting` | L | A | E |
 | 18 | 9 | Holiday — Fall Break (no class) | — | · | · | · |
 | 19 | 10 | Final Project Pitches | — | · | · | · |
 | 20 | 10 | Final Project Pitches | — | · | · | · |
-| 21 | 11 | Joins — Fishers & the Weasel Family | `joins` | L | A | · |
+| 21 | 11 | Joins — Fishers & the Weasel Family | `joins` | L | A | E |
 | 22 | 11 | Flex day | — | · | · | · |
-| 23 | 12 | Mapping — Bigfoot & GBIF | `mapping` | L | A | · |
+| 23 | 12 | Mapping — Bigfoot & GBIF | `mapping` | L | A | E |
 | 24 | 12 | Flex day | — | · | · | · |
 | 25 | 13 | Flex day | — | · | · | · |
 | 26 | 13 | Holiday — Thanksgiving (no class) | — | · | · | · |
