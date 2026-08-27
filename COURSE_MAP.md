@@ -1,45 +1,39 @@
 # Course Map — UMD Data Science Biology
 
-*Generated from `_schedule.yml` on 2026-08-25. Do not edit by hand — edit `_schedule.yml` and re-run `Rscript course_map.R`.*
+*Generated from `_schedule.yml` on 2026-08-27. Do not edit by hand — edit `_schedule.yml` and re-run `Rscript course_map.R`.*
 
-| # | Week | Topic | Folder (`content/`) | L | A | H |
+| # | Week | Topic | Folder (`content/`) | L | A | E |
 |--:|:----:|-------|---------------------|:-:|:-:|:-:|
-| 01 | 1 | Introduction - Start with R | `introduction` | L | A | H |
-| 02 | 1 | Project Design and Graphing Data | `meeting_r` | L | A | H |
-| 03 | 2 | GGPlot I — Grouped Summaries and Facets | `ggplot_1` | L | A | H |
-| 04 | 2 | GGPlot II — More Geoms, Coordinates, and Themes | `ggplot_2` | L | A | H |
-| 05 | 3 | Wrangling | `wrangling` | L | A | H |
-| 06 | 3 | Summary Statistics | `summary_stats` | L | A | H |
-| 07 | 4 | Quarto and Markdown Reports | `quarto` | L | A | H |
+| 01 | 1 | Introduction — Start with R | `introduction` | L | A | · |
+| 02 | 1 | Project Design and Graphing Data | `meeting_r` | L | A | · |
+| 03 | 2 | GGplot I — Grouped Summaries and Facets | `ggplot_1` | L | A | · |
+| 04 | 2 | GGplot II — More Geoms, Coordinates, and Themes | `ggplot_2` | L | A | · |
+| 05 | 3 | Wrangling Data | `wrangling` | L | A | · |
+| 06 | 3 | Summary Statistics | `summary_stats` | L | A | · |
+| 07 | 4 | Quarto and Markdown Reports | `quarto` | L | A | · |
 | 08 | 4 | Flex / Catch-up | `catchup` | L | · | · |
 | 09 | 5 | T-Tests I — Setting Up the Test | `t_tests` | L | A | · |
-| 10 | 5 | T-Tests II — Running & Reporting the Test | `t_tests_2` | L | A | H |
-| 11 | 6 | Regressions | `regression` | L | A | H |
-| 12 | 6 | Downloading and Summarizing Weather Data | `weather` | L | A | H |
-| 13 | 7 | One-Way ANOVA I — Setting Up the Test | `one_way_anova` | L | A | · |
-| 14 | 7 | One-Way ANOVA II — Running & Reporting the Test | `one_way_anova_2` | L | A | H |
-| 15 | 8 | Intro to the Final Project | `final_project` | L | A | H |
-| 16 | 8 | Lake Superior Ice | `pivoting` | L | A | H |
-| 17 | 9 | Factors | `factors` | L | A | H |
-| 18 | 9 | Joins | `joins` | L | A | H |
-| 19 | 10 | Mapping — Bigfoot & GBIF | `mapping` | L | A | H |
-| 20 | 10 | _(placeholder)_ | `generalized_linear_models` | L | A | · |
-| 21 | 11 | _(placeholder)_ | `ancova` | L | A | H |
-| 22 | 11 | _(placeholder)_ | `pca` | L | A | · |
-| 23 | 12 | _(placeholder)_ | `pca_2` | L | A | H |
-| 24 | 12 | _(placeholder)_ | `multivariate_community_analysis` | L | A | · |
-| 25 | 13 | Review | `logistic_regression` | L | · | · |
-| 26 | 13 | _(placeholder)_ | `tbd_20` | L | · | · |
-| 27 | 14 | _(placeholder)_ | `tbd_21` | L | · | · |
-| 28 | 14 | _(placeholder)_ | `tbd_22` | L | · | · |
-| 29 | 15 | _(placeholder)_ | `tbd_23` | L | · | · |
-| 30 | 15 | _(placeholder)_ | `tbd_24` | L | · | · |
-| 31 | 16 | _(placeholder)_ | `tbd_25` | L | · | · |
-| 32 | 16 | _(placeholder)_ | `tbd_26` | L | · | · |
-| 33 | 17 | _(placeholder)_ | `tbd_27` | L | · | · |
-| 34 | 17 | _(placeholder)_ | `tbd_28` | L | · | · |
-| 35 | 18 | _(placeholder)_ | `tbd_29` | L | · | · |
-| 36 | 18 | _(placeholder)_ | `tbd_30` | L | · | · |
+| 10 | 5 | T-Tests II — Running, Reporting & Extension | `t_tests_2` | L | A | · |
+| 11 | 6 | Regressions | `regression` | L | A | · |
+| 12 | 6 | Weather Data & Regressions | `weather` | L | A | · |
+| 13 | 7 | Intro to the Final Project | `final_project` | L | A | · |
+| 14 | 7 | Finding Data & Examples for Your Project | — | · | · | · |
+| 15 | 8 | One-Way ANOVA I — Setting Up the Test (with Factors) | `one_way_anova` | L | A | · |
+| 16 | 8 | One-Way ANOVA II — Running, Reporting & Extension | `one_way_anova_2` | L | A | · |
+| 17 | 9 | Lake Superior Ice | `pivoting` | L | A | · |
+| 18 | 9 | Holiday — Fall Break (no class) | — | · | · | · |
+| 19 | 10 | Final Project Pitches | — | · | · | · |
+| 20 | 10 | Final Project Pitches | — | · | · | · |
+| 21 | 11 | Joins — Fishers & the Weasel Family | `joins` | L | A | · |
+| 22 | 11 | Flex day | — | · | · | · |
+| 23 | 12 | Mapping — Bigfoot & GBIF | `mapping` | L | A | · |
+| 24 | 12 | Flex day | — | · | · | · |
+| 25 | 13 | Flex day | — | · | · | · |
+| 26 | 13 | Holiday — Thanksgiving (no class) | — | · | · | · |
+| 27 | 14 | Flex day | — | · | · | · |
+| 28 | 14 | Flex day | — | · | · | · |
+| 29 | 15 | Final Project Presentations — Posters | — | · | · | · |
+| 30 | 15 | Flex day | — | · | · | · |
 
 ## Common Code (reference library — NOT the weekly schedule)
 
@@ -64,5 +58,6 @@
 | 17 | purrr | `common_code/17_purr/purr.qmd` |
 | 18 | Quarto Markdown Basics | `common_code/18_quarto_basics/quarto_basics.qmd` |
 
-**L** = lecture · **A** = activity · **H** = homework.  
-Rows with _(placeholder)_ topics are future modules still to be built.
+**L** = lecture · **A** = activity · **E** = activity has an out-of-class Extension.  
+Rows with _(placeholder)_ topics are open / flex / holiday slots.  
+Parked topics (not on the schedule) live in `content/_parked/`.
