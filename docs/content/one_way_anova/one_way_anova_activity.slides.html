@@ -12,7 +12,7 @@
 
   <meta name="author" content="Bill Perry">
   <meta name="dcterms.date" content="2026-08-27">
-  <title>UMD DAta Science Biology – Worksheet 13 — One-Way ANOVA I: Setting Up the Test</title>
+  <title>UMD DAta Science Biology – Worksheet — One-Way ANOVA I: Setting Up the Test (with Factors)</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -197,7 +197,7 @@
       margin-right: 0; 
     }
   </style>
-<meta property="og:title" content="Worksheet 13 — One-Way ANOVA I: Setting Up the Test – UMD DAta Science Biology">
+<meta property="og:title" content="Worksheet — One-Way ANOVA I: Setting Up the Test (with Factors) – UMD DAta Science Biology">
 <meta property="og:description" content="Hands-on companion to One-Way ANOVA I. Students explore the Palmer penguins data, fit a one-way ANOVA, and check its assumptions — normality of residuals and equal variance.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
@@ -206,8 +206,8 @@
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h1 class="title">Worksheet 13 — One-Way ANOVA I: Setting Up the Test</h1>
-  <p class="subtitle">Exploring the penguins, fitting the model, and checking assumptions</p>
+  <h1 class="title">Worksheet — One-Way ANOVA I: Setting Up the Test (with Factors)</h1>
+  <p class="subtitle">Exploring the penguins, ordering groups with factors, fitting the model, and checking assumptions</p>
 
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
@@ -233,8 +233,9 @@ Bill Perry
 <h3 id="todays-objectives">Today’s Objectives</h3>
 <ol type="1">
 <li>Load and explore the Palmer penguins data</li>
+<li>Order the groups with a <strong>factor</strong> (<code>fct_reorder</code>) for a readable boxplot</li>
 <li>State the ANOVA null and alternate hypotheses</li>
-<li>Fit a one-way ANOVA and check its assumptions</li>
+<li>Fit a one-way ANOVA, set its reference level (<code>fct_relevel</code>), and check its assumptions</li>
 </ol>
 <blockquote>
 <h1 id="how-to-use-this-worksheet"><strong>How to use this worksheet</strong></h1>
@@ -242,7 +243,7 @@ Bill Perry
 <li>Work through the parts in order. Type the code into a new R script in Positron and run it line by line.</li>
 <li>Blocks marked <strong>▶ Run this</strong> should be executed as written.</li>
 <li>Blocks marked <strong>✏️ Your turn</strong> ask you to write, modify, or interpret.</li>
-<li>The <strong>Going further</strong> section is optional.</li>
+<li>There’s no separate homework — the out-of-class <strong>Extension</strong> is on the ANOVA II worksheet.</li>
 </ul>
 </blockquote>
 <div class="callout callout-note callout-titled callout-style-default">
@@ -261,8 +262,8 @@ Bill Perry
 <section class="slide level2">
 
 <blockquote>
-<h2 id="chunk-1-explore-hypothesize-after-lecture-chunk-1">🧩 Chunk 1 — Explore &amp; hypothesize <em>(after lecture Chunk 1)</em></h2>
-<p>Parts 1–3: load the penguins, plot body mass by species, and write your hypotheses.</p>
+<h2 id="chunk-1-explore-order-hypothesize-after-lecture-chunk-1">🧩 Chunk 1 — Explore, order, hypothesize <em>(after lecture Chunk 1)</em></h2>
+<p>Parts 1–4: load the penguins, plot body mass by species, reorder the boxplot with a factor, and write your hypotheses.</p>
 </blockquote>
 </section></section>
 <section>
@@ -313,14 +314,47 @@ Are the groups balanced (equal n)?  Y / N</code></pre>
 <p>✏️ <strong>Your turn:</strong> Describe what you see.</p>
 <pre><code>Heaviest species:
 Lightest species:
-Do the spreads (box heights) look similar across species?  Y / N</code></pre>
+Do the spreads (box heights) look similar across species?  Y / N
+What order are the species in on the x-axis, and why?</code></pre>
 </section>
 <section class="slide level2">
 
 </section></section>
 <section>
-<section id="part-3-state-your-hypotheses" class="title-slide slide level1 center">
-<h1>Part 3 · State your hypotheses</h1>
+<section id="part-3-order-the-boxplot-with-a-factor" class="title-slide slide level1 center">
+<h1>Part 3 · Order the boxplot with a factor</h1>
+<blockquote>
+<p>🔮 <strong>Predict first:</strong> <code>species</code> is a <strong>factor</strong>. Run <code>levels(penguins_df$species)</code> — what order are the levels in? Is that the order you want on the plot?</p>
+</blockquote>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a aria-label="1"></a><span class="co"># What order does R store the species levels in? --------</span></span>
+<span id="cb6-2"><a aria-label="2"></a><span class="fu">class</span>(penguins_df<span class="sc">$</span>species)</span>
+<span id="cb6-3"><a aria-label="3"></a><span class="fu">levels</span>(penguins_df<span class="sc">$</span>species)</span>
+<span id="cb6-4"><a aria-label="4"></a></span>
+<span id="cb6-5"><a aria-label="5"></a><span class="co"># Reorder species by MEDIAN body mass, then plot --------</span></span>
+<span id="cb6-6"><a aria-label="6"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb6-7"><a aria-label="7"></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_reorder</span>(species, body_mass_g, <span class="at">.fun =</span> median)) <span class="sc">%&gt;%</span></span>
+<span id="cb6-8"><a aria-label="8"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
+<span id="cb6-9"><a aria-label="9"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb6-10"><a aria-label="10"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species (ordered by median mass)"</span>, <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb6-11"><a aria-label="11"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb6-12"><a aria-label="12"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Answer.</p>
+<pre><code>Stored level order:
+Order after fct_reorder():
+Does the reordered plot read more clearly?  Y / N</code></pre>
+<p>✏️ <strong>Your turn:</strong> <code>fct_reorder()</code> has to go <strong>inside <code>mutate()</code></strong>. What happens if you just call <code>fct_reorder()</code> on its own and then plot <code>penguins_df</code>?</p>
+<pre><code>Your answer:</code></pre>
+<blockquote>
+<p>💡 <strong>Key idea:</strong> the whole <code>fct_*</code> family (rename, merge, lump levels) lives in <strong>Common Code 15 · Factors</strong>. Today you only need <code>fct_reorder()</code> here and <code>fct_relevel()</code> in Part 6.</p>
+</blockquote>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="part-4-state-your-hypotheses" class="title-slide slide level1 center">
+<h1>Part 4 · State your hypotheses</h1>
 <p>✏️ <strong>Your turn:</strong> Write the ANOVA hypotheses in words and symbols.</p>
 <pre><code>H₀ (null) in words:
 
@@ -331,22 +365,22 @@ In symbols:  H₀: μ_Adelie = μ_Chinstrap = μ_Gentoo
 
 Significance level α:</code></pre>
 <blockquote>
-<p>💡 <strong>Key idea:</strong> Hₐ only says “at least one differs” — it does <strong>not</strong> say which. Finding which is the job of the post-hoc test in Part 9.</p>
+<p>💡 <strong>Key idea:</strong> Hₐ only says “at least one differs” — it does <strong>not</strong> say which. Finding which is the job of the post-hoc test in <em>ANOVA II</em>.</p>
 </blockquote>
 </section>
 <section class="slide level2">
 
 <blockquote>
 <h2 id="chunk-2-fit-check-assumptions-after-lecture-chunk-2">🧩 Chunk 2 — Fit &amp; check assumptions <em>(after lecture Chunk 2)</em></h2>
-<p>Parts 4–6: fit the model, check residual normality, check equal variance.</p>
+<p>Parts 5–8: fit the model, set the reference level, check residual normality, check equal variance.</p>
 </blockquote>
 </section></section>
 <section>
-<section id="part-4-fit-the-model" class="title-slide slide level1 center">
-<h1>Part 4 · Fit the model</h1>
+<section id="part-5-fit-the-model" class="title-slide slide level1 center">
+<h1>Part 5 · Fit the model</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a><span class="co"># ANOVA is a linear model with a categorical X ----------</span></span>
-<span id="cb7-2"><a aria-label="2"></a>mass_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a aria-label="1"></a><span class="co"># ANOVA is a linear model with a categorical X ----------</span></span>
+<span id="cb10-2"><a aria-label="2"></a>mass_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn:</strong> This is the same <code>lm()</code> syntax as the regression worksheet. What is different about the X variable this time?</p>
 <pre><code>Your answer:</code></pre>
 </section>
@@ -354,17 +388,45 @@ Significance level α:</code></pre>
 
 </section></section>
 <section>
-<section id="part-5-assumption-1-normality-of-residuals" class="title-slide slide level1 center">
-<h1>Part 5 · Assumption 1 — normality of residuals</h1>
+<section id="part-6-set-the-reference-level-with-fct_relevel" class="title-slide slide level1 center">
+<h1>Part 6 · Set the reference level with <code>fct_relevel()</code></h1>
+<blockquote>
+<p>🔮 <strong>Predict first:</strong> <code>lm()</code> uses the <strong>first</strong> factor level as the baseline. If you move Gentoo to the front, will the overall F-test / p-value change, or only the coefficients?</p>
+</blockquote>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="co"># Coefficients are differences FROM the first level -----</span></span>
+<span id="cb12-2"><a aria-label="2"></a><span class="fu">coef</span>(mass_model)</span>
+<span id="cb12-3"><a aria-label="3"></a></span>
+<span id="cb12-4"><a aria-label="4"></a><span class="co"># Make Gentoo the reference, refit, compare ------------</span></span>
+<span id="cb12-5"><a aria-label="5"></a>penguins_relevel <span class="ot">&lt;-</span> penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb12-6"><a aria-label="6"></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_relevel</span>(species, <span class="st">"Gentoo"</span>))</span>
+<span id="cb12-7"><a aria-label="7"></a></span>
+<span id="cb12-8"><a aria-label="8"></a>mass_model_gentoo <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_relevel)</span>
+<span id="cb12-9"><a aria-label="9"></a><span class="fu">coef</span>(mass_model_gentoo)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Compare the two coefficient sets.</p>
+<pre><code>What (Intercept) represents in mass_model:
+What (Intercept) represents in mass_model_gentoo:
+Did the coefficient values change?  Y / N
+Would the overall F-statistic / p-value change?  Y / N</code></pre>
+<blockquote>
+<p>💡 <strong>Key idea:</strong> releveling changes <em>which comparison the coefficients show</em>, not <em>whether any means differ</em>. Use it to make the baseline a group your reader cares about (a control, a reference site).</p>
+</blockquote>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="part-7-assumption-1-normality-of-residuals" class="title-slide slide level1 center">
+<h1>Part 7 · Assumption 1 — normality of residuals</h1>
 <blockquote>
 <p>🔮 <strong>Predict first:</strong> <code>plot(mass_model)</code> gives the same four panels as the regression worksheet. Which panel checks normality?</p>
 </blockquote>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># plot() on an lm object gives all four diagnostics -------</span></span>
-<span id="cb9-2"><a aria-label="2"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
-<span id="cb9-3"><a aria-label="3"></a><span class="fu">plot</span>(mass_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a aria-label="1"></a><span class="co"># Formal test on the residuals ---------------------------</span></span>
-<span id="cb10-2"><a aria-label="2"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(mass_model))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a aria-label="1"></a><span class="co"># plot() on an lm object gives all four diagnostics -------</span></span>
+<span id="cb14-2"><a aria-label="2"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
+<span id="cb14-3"><a aria-label="3"></a><span class="fu">plot</span>(mass_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a aria-label="1"></a><span class="co"># Formal test on the residuals ---------------------------</span></span>
+<span id="cb15-2"><a aria-label="2"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(mass_model))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn:</strong> Record and interpret.</p>
 <pre><code>Do the Normal Q-Q points (panel 2) track the dashed line?  Y / mostly / no
 Shapiro-Wilk p-value =</code></pre>
@@ -375,14 +437,14 @@ Shapiro-Wilk p-value =</code></pre>
 
 </section></section>
 <section>
-<section id="part-6-assumption-2-equal-variance" class="title-slide slide level1 center">
-<h1>Part 6 · Assumption 2 — equal variance</h1>
+<section id="part-8-assumption-2-equal-variance" class="title-slide slide level1 center">
+<h1>Part 8 · Assumption 2 — equal variance</h1>
 <blockquote>
 <p>🔮 <strong>Predict first:</strong> From the box heights in Part 2, predict — will Levene’s test say the variances are equal (<em>p</em> &gt; 0.05) or unequal?</p>
 </blockquote>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># Levene's test — H0: all groups have equal variance ----</span></span>
-<span id="cb13-2"><a aria-label="2"></a><span class="fu">leveneTest</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a aria-label="1"></a><span class="co"># Levene's test — H0: all groups have equal variance ----</span></span>
+<span id="cb18-2"><a aria-label="2"></a><span class="fu">leveneTest</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn:</strong> Record and decide.</p>
 <pre><code>Levene's F =            p =
 Variances equal?  Y / N
@@ -397,6 +459,7 @@ If NOT equal, which test would you use instead? (hint: Welch)</code></pre>
 <p>At this point you should be able to:</p>
 <ul class="task-list">
 <li><label><input type="checkbox">Explain why many t-tests inflate the false-positive rate</label></li>
+<li><label><input type="checkbox">Order groups with <code>fct_reorder()</code> and set a model baseline with <code>fct_relevel()</code></label></li>
 <li><label><input type="checkbox">State ANOVA hypotheses with μ notation</label></li>
 <li><label><input type="checkbox">Fit <code>lm(Y ~ group)</code> and check residual normality + equal variance</label></li>
 </ul>
@@ -412,13 +475,15 @@ If not, what error appeared:</code></pre>
 <h1>Getting unstuck</h1>
 <ol type="1">
 <li><strong><code>could not find function "penguins"</code></strong> → <code>library(palmerpenguins)</code>.</li>
+<li><strong><code>could not find function "fct_reorder"</code></strong> → <code>library(tidyverse)</code> (forcats is inside it).</li>
+<li><strong>Reordering “did nothing”</strong> → you must reorder <strong>inside <code>mutate()</code></strong> and plot the result; reordering a copy doesn’t change the original.</li>
 <li><strong>Levene says unequal variance</strong> → use <code>oneway.test(y ~ group, var.equal = FALSE)</code> (Welch’s ANOVA).</li>
-<li><strong>Cheat sheets</strong> — <a href="https://posit.co/resources/cheatsheets/" class="uri">https://posit.co/resources/cheatsheets/</a></li>
+<li><strong>Cheat sheets</strong> — <a href="https://posit.co/resources/cheatsheets/" class="uri">https://posit.co/resources/cheatsheets/</a> · Factors: <a href="https://rstudio.github.io/cheatsheets/factors.pdf" class="uri">https://rstudio.github.io/cheatsheets/factors.pdf</a></li>
 </ol>
 </section>
 <section class="slide level2">
 
-<p><em>End of Worksheet 13. Next: Worksheet 14 — running the ANOVA and finding which species differ.</em></p>
+<p><em>End of the ANOVA I worksheet. Next: One-Way ANOVA II — running the test, post-hoc comparisons, and the out-of-class Extension.</em></p>
 
 
 </section></section>

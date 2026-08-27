@@ -12,7 +12,7 @@
 
   <meta name="author" content="Bill Perry">
   <meta name="dcterms.date" content="2026-08-27">
-  <title>UMD DAta Science Biology – Worksheet 13 — Mapping Bigfoot Sightings</title>
+  <title>UMD DAta Science Biology – Worksheet — Mapping Bigfoot Sightings</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -197,7 +197,7 @@
       margin-right: 0; 
     }
   </style>
-<meta property="og:title" content="Worksheet 13 — Mapping Bigfoot Sightings – UMD DAta Science Biology">
+<meta property="og:title" content="Worksheet — Mapping Bigfoot Sightings – UMD DAta Science Biology">
 <meta property="og:description" content="Hands-on companion to the mapping lecture. Over two days students load ~4,600 Bigfoot sightings, make them spatial with sf, plot points on a US map, and join sighting counts to state polygons to build a choropleth.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
@@ -206,7 +206,7 @@
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h1 class="title">Worksheet 13 — Mapping Bigfoot Sightings</h1>
+  <h1 class="title">Worksheet — Mapping Bigfoot Sightings</h1>
   <p class="subtitle">Turn latitude/longitude into maps with sf and geom_sf, then build a per-state choropleth</p>
 
 <div class="quarto-title-authors">
@@ -545,6 +545,63 @@ If not, what error appeared:</code></pre>
 
 </section></section>
 <section>
+<section id="extension-out-of-class-3040-min" class="title-slide slide level1 center">
+<h1>Extension — out of class (~30–40 min)</h1>
+<p><em>Turn this in with your worksheet. In class you mapped Bigfoot reports. Now you map a <strong>real species you pick</strong>, pulled live from GBIF with <code>rgbif</code>.</em></p>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>E2 and E3 must be handwritten</strong> on paper, photographed, and embedded (<code>![caption](my_photo.jpg)</code>). Typed answers get <strong>at most half credit, even if correct</strong> — E2 is your prediction <em>before</em> you download.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="e1-map-your-own-species-4-pts" class="slide level2">
+<h2>E1 · Map your own species (4 pts)</h2>
+<p>Pick any species with a scientific name (a plant, bird, mammal, insect — your choice). Then, with the same recipe as class:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a aria-label="1"></a><span class="fu">library</span>(rgbif)</span>
+<span id="cb28-2"><a aria-label="2"></a><span class="fu">library</span>(sf)</span>
+<span id="cb28-3"><a aria-label="3"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb28-4"><a aria-label="4"></a></span>
+<span id="cb28-5"><a aria-label="5"></a><span class="co"># 1. up to ~1500 US records that have coordinates</span></span>
+<span id="cb28-6"><a aria-label="6"></a>occ <span class="ot">&lt;-</span> <span class="fu">occ_data</span>(<span class="at">scientificName =</span> <span class="st">"Genus species"</span>,</span>
+<span id="cb28-7"><a aria-label="7"></a>                <span class="at">country =</span> <span class="st">"US"</span>, <span class="at">hasCoordinate =</span> <span class="cn">TRUE</span>, <span class="at">limit =</span> <span class="dv">1500</span>)<span class="sc">$</span>data</span>
+<span id="cb28-8"><a aria-label="8"></a></span>
+<span id="cb28-9"><a aria-label="9"></a><span class="co"># 2. keep real coordinates, build the sf object (x = longitude first!)</span></span>
+<span id="cb28-10"><a aria-label="10"></a>sp_sf <span class="ot">&lt;-</span> occ <span class="sc">%&gt;%</span></span>
+<span id="cb28-11"><a aria-label="11"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(decimalLongitude), <span class="sc">!</span><span class="fu">is.na</span>(decimalLatitude)) <span class="sc">%&gt;%</span></span>
+<span id="cb28-12"><a aria-label="12"></a>  <span class="fu">st_as_sf</span>(<span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"decimalLongitude"</span>, <span class="st">"decimalLatitude"</span>), <span class="at">crs =</span> <span class="dv">4326</span>)</span>
+<span id="cb28-13"><a aria-label="13"></a></span>
+<span id="cb28-14"><a aria-label="14"></a><span class="co"># 3. points on the same states basemap you used in class</span></span>
+<span id="cb28-15"><a aria-label="15"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb28-16"><a aria-label="16"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> states_sf, <span class="at">fill =</span> <span class="st">"grey96"</span>, <span class="at">color =</span> <span class="st">"grey80"</span>) <span class="sc">+</span></span>
+<span id="cb28-17"><a aria-label="17"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> sp_sf, <span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">0.6</span>, <span class="at">color =</span> <span class="st">"darkgreen"</span>) <span class="sc">+</span></span>
+<span id="cb28-18"><a aria-label="18"></a>  <span class="fu">coord_sf</span>(<span class="at">crs =</span> <span class="dv">5070</span>) <span class="sc">+</span></span>
+<span id="cb28-19"><a aria-label="19"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Save the map to <code>figures/</code> at <code>dpi = 300</code>. Record your species and how many records you got.</p>
+</section>
+<section id="e2-predict-then-check-by-hand-3-pts" class="slide level2">
+<h2>E2 · Predict, then check — ✍️ by hand (3 pts)</h2>
+<p><strong>Before running E1:</strong> sketch, on a rough US outline, where you expect your species to occur and why (climate, habitat, range you know). Then run E1 and write 2–3 sentences comparing your prediction to the real map — and note whether anything looks like a <em>sampling</em> artifact rather than real range (a dense blob around one city, a hard line at a state border).</p>
+</section>
+<section id="e3-explain-it-by-hand-3-pts" class="slide level2 scrollable">
+<h2>E3 · Explain it — ✍️ by hand (3 pts)</h2>
+<ol type="1">
+<li>GBIF records are where people <em>reported</em> the species, not where it truly lives. Give one concrete way that could bias <em>your</em> map.</li>
+<li>Washington and California had many Bigfoot reports partly because they are big and populous. What extra data would make a state-to-state comparison of <em>your</em> species fair?</li>
+<li>The choropleth recipe (polygons → counts → <code>left_join()</code> → <code>geom_sf(fill=)</code>) didn’t change from Bigfoot to your species. In your own words, why is that recipe dataset-independent?</li>
+</ol>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
 <section id="getting-unstuck" class="title-slide slide level1 center scrollable">
 <h1>Getting unstuck</h1>
 <ol type="1">
@@ -556,12 +613,12 @@ If not, what error appeared:</code></pre>
 <li><strong>Cheat sheet</strong> — <a href="https://r-spatial.github.io/sf/" class="uri">https://r-spatial.github.io/sf/</a></li>
 </ol>
 <blockquote>
-<p>💡 <strong>Key idea:</strong> the choropleth recipe doesn’t change with the dataset — get polygons, get counts, <code>left_join()</code> them on a matching key, then shade with <code>geom_sf()</code>. You just ran it on Bigfoot sightings; the homework runs the same four steps on a species from GBIF.</p>
+<p>💡 <strong>Key idea:</strong> the choropleth recipe doesn’t change with the dataset — get polygons, get counts, <code>left_join()</code> them on a matching key, then shade with <code>geom_sf()</code>. You just ran it on Bigfoot sightings; the Extension runs the same four steps on a species you pick from GBIF.</p>
 </blockquote>
 </section>
 <section class="slide level2">
 
-<p><em>End of Worksheet 13. Homework: map your own species from GBIF with <code>rgbif</code>.</em></p>
+<p><em>End of the Mapping worksheet.</em></p>
 
 
 </section></section>

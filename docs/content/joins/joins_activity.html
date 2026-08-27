@@ -8,9 +8,9 @@
 
 <meta name="author" content="Bill Perry">
 <meta name="dcterms.date" content="2026-08-27">
-<meta name="description" content="Hands-on companion to the joins lecture. Over two days students combine the Bigfoot report text (bfro_reports.csv) with its coordinates (bfro_locations.csv) using left/inner/full joins and semi/anti joins, and build the exact table they will map next week.">
+<meta name="description" content="Hands-on companion to the joins lecture. Over two days students combine a table of released fishers (fisher_individuals.csv) with a table of field capture/collar events (fisher_captures.csv) using left/inner/full joins and semi/anti joins, and build one analysis-ready table.">
 
-<title>Worksheet 17 — Joins: Combining Two Bigfoot Tables – UMD DAta Science Biology</title>
+<title>Worksheet — Joins: Combining Two Fisher Monitoring Tables – UMD DAta Science Biology</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -119,8 +119,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <link rel="stylesheet" href="../../css/main.css">
-<meta property="og:title" content="Worksheet 17 — Joins: Combining Two Bigfoot Tables – UMD DAta Science Biology">
-<meta property="og:description" content="Hands-on companion to the joins lecture. Over two days students combine the Bigfoot report text (bfro_reports.csv) with its coordinates (bfro_locations.csv) using left/inner/full joins and semi/anti joins, and build the exact table they will map next week.">
+<meta property="og:title" content="Worksheet — Joins: Combining Two Fisher Monitoring Tables – UMD DAta Science Biology">
+<meta property="og:description" content="Hands-on companion to the joins lecture. Over two days students combine a table of released fishers (fisher_individuals.csv) with a table of field capture/collar events (fisher_captures.csv) using left/inner/full joins and semi/anti joins, and build one analysis-ready table.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 
@@ -295,7 +295,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Worksheet 17 — Joins: Combining Two Bigfoot Tables</li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Worksheet — Joins: Combining Two Fisher Monitoring Tables</li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -388,12 +388,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../homeworks/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Homeworks</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../common_code/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Common Code</span></a>
   </div>
@@ -414,18 +408,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Worksheet 17 — Joins: Combining Two Bigfoot Tables</h1>
-<p class="subtitle lead">Keys, mutating joins, and filtering joins to build a map-ready dataset</p>
+<h1 class="title">Worksheet — Joins: Combining Two Fisher Monitoring Tables</h1>
+<p class="subtitle lead">Keys, mutating joins, and filtering joins on a fisher reintroduction dataset</p>
   <div class="quarto-categories">
     <div class="quarto-category">joins</div>
     <div class="quarto-category">tidyverse</div>
     <div class="quarto-category">wrangling</div>
+    <div class="quarto-category">mustelids</div>
   </div>
   </div>
 
 <div>
   <div class="description">
-    <p>Hands-on companion to the joins lecture. Over two days students combine the Bigfoot report text (bfro_reports.csv) with its coordinates (bfro_locations.csv) using left/inner/full joins and semi/anti joins, and build the exact table they will map next week.</p>
+    <p>Hands-on companion to the joins lecture. Over two days students combine a table of released fishers (fisher_individuals.csv) with a table of field capture/collar events (fisher_captures.csv) using left/inner/full joins and semi/anti joins, and build one analysis-ready table.</p>
   </div>
 </div>
 
@@ -454,14 +449,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="joins-two-bigfoot-tables-into-one" class="level1">
-<h1>Joins — Two Bigfoot Tables into One 🦶</h1>
+<section id="joins-two-fisher-monitoring-tables-into-one" class="level1">
+<h1>Joins — Two Fisher Monitoring Tables into One</h1>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>About the data (constructed for teaching)
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Fishers (<em>Pekania pennanti</em>) — a large forest weasel — have been reintroduced to several US states from Canadian source populations. Monitoring produces exactly the shape of data joins are for: one table of the <strong>animals released</strong>, and a separate table of every <strong>field capture / collar event</strong>. The two files here are <strong>simulated</strong> — patterned on real programs (e.g.&nbsp;the Washington Cascades translocations), but the numbers are invented. Use them to learn joins.</p>
+</div>
+</div>
 <section id="before-you-start-the-data" class="level3">
 <h3 class="anchored" data-anchor-id="before-you-start-the-data">Before you start — the data</h3>
 <p>Two files live in your <code>data/</code> folder:</p>
 <ul>
-<li><strong><code>bfro_reports.csv</code></strong> — one row per sighting report (year, season, state, class, the written account), keyed by <code>REPORT_NUMBER</code></li>
-<li><strong><code>bfro_locations.csv</code></strong> — the coordinates for reports that were geocoded, keyed by <code>number</code></li>
+<li><strong><code>fisher_individuals.csv</code></strong> — one row per released fisher: <code>sex</code>, <code>age_class</code>, <code>source</code>, <code>site</code> (release site), <code>release_date</code>. Keyed by <code>fisher_id</code>.</li>
+<li><strong><code>fisher_captures.csv</code></strong> — one row per field capture event: <code>capture_date</code>, <code>site</code> (capture site), <code>mass_kg</code>, <code>collar_id</code>. Keyed by <code>animal_id</code>.</li>
 </ul>
 </section>
 <section id="todays-objectives-a-2-day-worksheet" class="level3">
@@ -470,7 +478,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Find the key that links the two tables</li>
 <li>Join them with <code>left_join()</code> when the key columns are named differently</li>
 <li>Compare <code>inner</code>, <code>left</code>, and <code>full</code> joins</li>
-<li>Use <code>semi_join()</code> / <code>anti_join()</code> to filter, and build the map-ready table</li>
+<li>Use <code>semi_join()</code> / <code>anti_join()</code> to filter, and build one analysis-ready table</li>
 </ol>
 <blockquote class="blockquote">
 <h1 id="how-to-use-this-worksheet"><strong>How to use this worksheet</strong></h1>
@@ -491,7 +499,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Before every join, write down the row count you expect from <code>reports_df</code> and <code>locations_df</code> — then type the join and see if you were right. <code>reports_df</code> has thousands of rows and only some were ever geocoded, so a wrong guess almost always means you misjudged how many reports actually have coordinates, not that R did something strange.</p>
+<p>Before every join, write down the row count you expect. <code>fisher_captures.csv</code> has more rows than <code>fisher_individuals.csv</code> (a fisher can be recaptured many times), and a few capture events are of <strong>unmarked</strong> animals with no matching individual — a wrong guess almost always means you misjudged the matching, not that R did something strange.</p>
 </div>
 </div>
 <hr>
@@ -506,39 +514,41 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><strong>▶ Run this:</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>reports_df   <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_reports.csv"</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>locations_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_locations.csv"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>individuals_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/fisher_individuals.csv"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>captures_df    <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/fisher_captures.csv"</span>)</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(reports_df)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(locations_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(individuals_df)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(captures_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn:</strong></p>
-<pre><code>reports_df:   rows =        cols =
-locations_df: rows =        cols =
+<pre><code>individuals_df: rows =        cols =
+captures_df:    rows =        cols =
 Which table has more rows? Why might that be?</code></pre>
 <hr>
 </section>
 <section id="part-2-find-the-key" class="level1">
 <h1>Part 2 · Find the key</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>reports_df   <span class="sc">%&gt;%</span> <span class="fu">select</span>(REPORT_NUMBER, YEAR, STATE, REPORT_CLASS) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">3</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>locations_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(number, latitude, longitude) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>individuals_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(fisher_id, sex, site, release_date) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">3</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>captures_df    <span class="sc">%&gt;%</span> <span class="fu">select</span>(animal_id, capture_date, site, mass_kg) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn:</strong> What column links the two tables, and what is it called in each?</p>
-<pre><code>Key in reports_df:
-Key in locations_df:
-Are the names the same?  Y / N</code></pre>
+<pre><code>Key in individuals_df:
+Key in captures_df:
+Are the names the same?  Y / N
+Both tables ALSO have a `site` column — do those mean the same thing? (look again)</code></pre>
 <hr>
 </section>
 <section id="part-3-clean-the-key" class="level1">
 <h1>Part 3 · Clean the key</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># One row per report + match the key type ----------------</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>reports_df <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(REPORT_NUMBER, <span class="at">.keep_all =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">REPORT_NUMBER =</span> <span class="fu">as.integer</span>(REPORT_NUMBER))</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">n_distinct</span>(reports_df<span class="sc">$</span>REPORT_NUMBER)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="fu">n_distinct</span>(locations_df<span class="sc">$</span>number)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> <code>REPORT_NUMBER</code> was stored like <code>30680.0</code> but <code>number</code> is <code>30680</code>. Why must we fix that before joining?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The capture key is lowercase ("f07"); the individual key is "F07" ----</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>captures_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(animal_id) <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>captures_df <span class="ot">&lt;-</span> captures_df <span class="sc">%&gt;%</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">animal_id =</span> <span class="fu">str_to_upper</span>(animal_id))</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="fu">n_distinct</span>(individuals_df<span class="sc">$</span>fisher_id)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="fu">n_distinct</span>(captures_df<span class="sc">$</span>animal_id)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> <code>animal_id</code> was stored as <code>f07</code> but <code>fisher_id</code> is <code>F07</code>. Why must we fix the case before joining? What is the <code>UNK</code> value, and why is it not a real fisher?</p>
 <pre><code>Your answer:</code></pre>
 <hr>
 <blockquote class="blockquote">
@@ -549,43 +559,47 @@ Are the names the same?  Y / N</code></pre>
 <section id="part-4-the-left-join" class="level1">
 <h1>Part 4 · The left join</h1>
 <blockquote class="blockquote">
-<p>🔮 <strong>Predict first:</strong> After a <code>left_join</code>, how many rows will you have (all reports? only matched?), and roughly how many will have a latitude?</p>
+<p>🔮 <strong>Predict first:</strong> You will keep <strong>every capture event</strong> and attach who the animal is. How many rows will the result have, and roughly how many will have a missing <code>sex</code> (because the animal was unmarked)?</p>
 </blockquote>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>bigfoot_df <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>captures_joined <span class="ot">&lt;-</span> captures_df <span class="sc">%&gt;%</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(individuals_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"animal_id"</span> <span class="ot">=</span> <span class="st">"fisher_id"</span>))</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(bigfoot_df)                 <span class="co"># rows kept</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(bigfoot_df<span class="sc">$</span>latitude)) <span class="co"># rows with coordinates</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(captures_joined)                <span class="co"># rows kept</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">is.na</span>(captures_joined<span class="sc">$</span>sex))      <span class="co"># capture events we can't attribute</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn:</strong></p>
 <pre><code>Total rows after left_join:
-Rows WITH coordinates:
-Rows with NA coordinates:</code></pre>
+Rows WITH an identified individual:
+Rows with NA individual info:</code></pre>
+<blockquote class="blockquote">
+<p>Note the join gives you two <code>site</code> columns — <code>site.x</code> (capture site) and <code>site.y</code> (release site). Real fishers move; those are genuinely different.</p>
+</blockquote>
 <hr>
 </section>
 <section id="part-5-the-accidental-key-trap" class="level1">
 <h1>Part 5 · The accidental-key trap</h1>
 <p><strong>▶ Run this (on purpose — watch the message):</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Forget by = ... and see what dplyr does ----------------</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>reports_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(locations_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> What column did dplyr announce it was joining on? Why is joining on <code>index</code> completely wrong here?</p>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>captures_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(individuals_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> What column did dplyr announce it was joining on? Why is joining on <code>site</code> completely wrong here? (What does it match — a capture event to the <em>right animal</em>, or to <em>every animal released at that site</em>?)</p>
 <pre><code>dplyr joined on:
-Why that's wrong:</code></pre>
+Why that's wrong:
+Row count of this accidental join vs. Part 4's correct join:</code></pre>
 <blockquote class="blockquote">
-<p>⚠️ <strong>Watch out!</strong> When dplyr prints <em>“Joining with <code>by = ...</code>”</em> and you didn’t choose that column, stop and name your real key.</p>
+<p>⚠️ <strong>Watch out!</strong> When dplyr prints <em>“Joining with <code>by = join_by(site)</code>”</em> and you didn’t choose that column, stop and name your real key.</p>
 </blockquote>
 <hr>
 </section>
 <section id="part-6-name-the-key-every-time" class="level1">
 <h1>Part 6 · Name the key every time</h1>
 <p><strong>▶ Run this (the correct join):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>bigfoot_df <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>captures_joined <span class="ot">&lt;-</span> captures_df <span class="sc">%&gt;%</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(individuals_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"animal_id"</span> <span class="ot">=</span> <span class="st">"fisher_id"</span>))</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>bigfoot_df <span class="sc">%&gt;%</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(REPORT_NUMBER, STATE, REPORT_CLASS, latitude, longitude) <span class="sc">%&gt;%</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>captures_joined <span class="sc">%&gt;%</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(capture_event, animal_id, capture_date, sex, age_class) <span class="sc">%&gt;%</span></span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Look at the first rows — do any already show <code>NA</code> for latitude/longitude? What does that mean about those reports?</p>
+<p>✏️ <strong>Your turn:</strong> Look at the first rows — do any already show <code>NA</code> for <code>sex</code>? What does that mean about that capture event?</p>
 <pre><code>Your answer:</code></pre>
 <blockquote class="blockquote">
 <p>🛑 <strong>End of Day 1.</strong> You can join two tables on a named key. Day 2: the rest of the join family.</p>
@@ -602,14 +616,17 @@ Why that's wrong:</code></pre>
 <p>🔮 <strong>Predict first:</strong> Rank these three by row count, most to fewest: <code>inner_join</code>, <code>left_join</code>, <code>full_join</code>.</p>
 </blockquote>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>inner <span class="ot">&lt;-</span> <span class="fu">inner_join</span>(reports_df, locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>left  <span class="ot">&lt;-</span> <span class="fu">left_join</span> (reports_df, locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>full  <span class="ot">&lt;-</span> <span class="fu">full_join</span> (reports_df, locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">inner =</span> <span class="fu">nrow</span>(inner), <span class="at">left =</span> <span class="fu">nrow</span>(left), <span class="at">full =</span> <span class="fu">nrow</span>(full))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>key <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"animal_id"</span> <span class="ot">=</span> <span class="st">"fisher_id"</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>inner <span class="ot">&lt;-</span> <span class="fu">inner_join</span>(captures_df, individuals_df, <span class="at">by =</span> key)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>left  <span class="ot">&lt;-</span> <span class="fu">left_join</span> (captures_df, individuals_df, <span class="at">by =</span> key)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>full  <span class="ot">&lt;-</span> <span class="fu">full_join</span> (captures_df, individuals_df, <span class="at">by =</span> key)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">inner =</span> <span class="fu">nrow</span>(inner), <span class="at">left =</span> <span class="fu">nrow</span>(left), <span class="at">full =</span> <span class="fu">nrow</span>(full))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn:</strong></p>
 <pre><code>inner rows =        left rows =        full rows =
-Was your ranking right?  Y / N</code></pre>
+Was your ranking right?  Y / N
+Why does full have MORE rows than left? (which fishers does it add back?)</code></pre>
 <hr>
 </section>
 <section id="part-8-what-each-join-dropped-or-kept" class="level1">
@@ -618,66 +635,75 @@ Was your ranking right?  Y / N</code></pre>
 <pre><code>inner_join keeps:
 left_join keeps:
 full_join keeps:
-Which reports does inner_join DROP that left_join keeps?</code></pre>
+Which capture events does inner_join DROP that left_join keeps?
+Which fishers does full_join ADD that neither inner nor left includes?</code></pre>
 <hr>
 </section>
 <section id="part-9-pick-the-right-join" class="level1">
 <h1>Part 9 · Pick the right join</h1>
-<p>✏️ <strong>Your turn:</strong> You want to make a <strong>map of all sightings</strong>, keeping every report even if some can’t be placed. Which join do you use, and why?</p>
+<p>✏️ <strong>Your turn:</strong> You want a table of <strong>every capture event</strong> for a survival analysis, keeping the event even if the animal was unmarked. Which join do you use, and why?</p>
 <pre><code>Join:
 Why:</code></pre>
 <blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> figure out which rows you can’t afford to drop first — a report with no coordinates is still a report, so mapping calls for <code>left_join</code>, not <code>inner_join</code>.</p>
+<p>💡 <strong>Key idea:</strong> decide which rows you can’t afford to drop first — an unmarked-animal capture is still a capture, so an event-level analysis calls for <code>left_join</code> (captures on the left), not <code>inner_join</code>.</p>
 </blockquote>
 <hr>
 <blockquote class="blockquote">
 <h2 id="chunk-4-filtering-joins-the-payoff-day-2-after-lecture-chunk-4" class="anchored" data-anchor-id="part-9-pick-the-right-join">🧩 Chunk 4 — Filtering joins &amp; the payoff <em>(Day 2, after lecture Chunk 4)</em></h2>
-<p>Parts 10–12: anti/semi joins and the map-ready table.</p>
+<p>Parts 10–12: anti/semi joins and the analysis-ready table.</p>
 </blockquote>
 </section>
 <section id="part-10-anti_join-whats-missing" class="level1">
 <h1>Part 10 · <code>anti_join()</code> — what’s missing</h1>
 <blockquote class="blockquote">
-<p>🔮 <strong>Predict first:</strong> How many reports have NO coordinates? (Total reports minus the number with a latitude from Part 4.)</p>
+<p>🔮 <strong>Predict first (two ways):</strong> (a) how many <strong>capture events</strong> have no matching individual? (b) how many <strong>released fishers</strong> were never recaptured?</p>
 </blockquote>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>missing_coords <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">anti_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(missing_coords)</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>missing_coords <span class="sc">%&gt;%</span> <span class="fu">count</span>(STATE, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># (a) capture events of unmarked animals</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>unmarked <span class="ot">&lt;-</span> captures_df <span class="sc">%&gt;%</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">anti_join</span>(individuals_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"animal_id"</span> <span class="ot">=</span> <span class="st">"fisher_id"</span>))</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(unmarked)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="co"># (b) released fishers with no capture record — anti_join the OTHER direction</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>never_seen <span class="ot">&lt;-</span> individuals_df <span class="sc">%&gt;%</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">anti_join</span>(captures_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"fisher_id"</span> <span class="ot">=</span> <span class="st">"animal_id"</span>))</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>never_seen <span class="sc">%&gt;%</span> <span class="fu">select</span>(fisher_id, sex, site, release_date)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn:</strong></p>
-<pre><code>Reports with no coordinates:
+<pre><code>Capture events with no individual:
+Released fishers never recaptured:
 Did anti_join ADD any columns, or just filter rows?</code></pre>
 <hr>
 </section>
 <section id="part-11-semi_join-keep-only-matches" class="level1">
 <h1>Part 11 · <code>semi_join()</code> — keep only matches</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>mappable_reports <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">semi_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(mappable_reports)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Released fishers that WERE recaptured at least once</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>recaptured <span class="ot">&lt;-</span> individuals_df <span class="sc">%&gt;%</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">semi_join</span>(captures_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"fisher_id"</span> <span class="ot">=</span> <span class="st">"animal_id"</span>))</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(recaptured)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn:</strong> How is <code>semi_join</code> different from <code>inner_join</code>? (Hint: look at the <em>columns</em>, not just the rows.)</p>
-<pre><code>Your answer:</code></pre>
+<pre><code>Your answer:
+recaptured rows + never_seen rows should equal nrow(individuals_df) — does it?</code></pre>
 <hr>
 </section>
-<section id="part-12-build-the-map-ready-table" class="level1">
-<h1>Part 12 · Build the map-ready table</h1>
+<section id="part-12-build-one-analysis-ready-table" class="level1">
+<h1>Part 12 · Build one analysis-ready table</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Reports + coordinates, ready for next week's map -------</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>bigfoot_mappable <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(latitude), <span class="sc">!</span><span class="fu">is.na</span>(longitude))</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>bigfoot_mappable <span class="sc">%&gt;%</span></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(REPORT_NUMBER, STATE, SEASON, REPORT_CLASS, latitude, longitude) <span class="sc">%&gt;%</span></span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save it for the mapping lecture ------------------------</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(bigfoot_mappable, <span class="st">"data/bigfoot_joined.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> How many rows are in your map-ready table? How does this compare to the original <code>reports_df</code>?</p>
-<pre><code>Map-ready rows:
-Difference from reports_df, and why:</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Every KNOWN-individual capture, with the fisher's attributes attached ---</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>fisher_analysis <span class="ot">&lt;-</span> captures_df <span class="sc">%&gt;%</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(individuals_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"animal_id"</span> <span class="ot">=</span> <span class="st">"fisher_id"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">days_since_release =</span> <span class="fu">as.numeric</span>(capture_date <span class="sc">-</span> release_date)) <span class="sc">%&gt;%</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(animal_id, sex, age_class, capture_date, days_since_release,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">capture_site =</span> site.x, <span class="at">release_site =</span> site.y, mass_kg)</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>fisher_analysis <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save it for later ------------------------------------</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(fisher_analysis, <span class="st">"data/fisher_joined.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> How many rows are in your analysis table? Why is it smaller than <code>captures_df</code>, and why did we use <code>inner_join</code> here instead of <code>left_join</code>?</p>
+<pre><code>Analysis-table rows:
+Difference from captures_df, and why:
+Why inner_join and not left_join for THIS table:</code></pre>
 <hr>
 </section>
 <section id="part-13-review-and-checkpoint" class="level1">
@@ -688,7 +714,7 @@ Difference from reports_df, and why:</code></pre>
 <li><label><input type="checkbox">Join two tables whose key columns are named differently (<code>by = c("a" = "b")</code>)</label></li>
 <li><label><input type="checkbox">Use <code>left_join</code>, <code>inner_join</code>, <code>full_join</code> and predict their row counts</label></li>
 <li><label><input type="checkbox">Use <code>anti_join</code> to find unmatched rows and <code>semi_join</code> to keep matched rows</label></li>
-<li><label><input type="checkbox">Recognize the accidental-<code>index</code>-join bug</label></li>
+<li><label><input type="checkbox">Recognize the accidental-<code>site</code>-join bug</label></li>
 </ul>
 <p>✏️ <strong>Your turn — before you move on:</strong> Run your whole script top to bottom. Does it run cleanly?</p>
 <pre><code>Ran cleanly?  Y / N
@@ -700,40 +726,81 @@ If not, what error appeared:</code></pre>
 <blockquote class="blockquote">
 <p>Optional — do this if you finish early.</p>
 </blockquote>
-<section id="add-the-report-class-to-a-map-count" class="level3">
-<h3 class="anchored" data-anchor-id="add-the-report-class-to-a-map-count">Add the report class to a map count</h3>
-<p><strong>▶ Try this:</strong> join, then count sightings per state per class.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>bigfoot_df <span class="sc">%&gt;%</span></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(latitude)) <span class="sc">%&gt;%</span></span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(STATE, REPORT_CLASS) <span class="sc">%&gt;%</span></span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n)) <span class="sc">%&gt;%</span></span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Which state + class combination has the most reports?</p>
+<section id="capture-effort-by-site-and-sex" class="level3">
+<h3 class="anchored" data-anchor-id="capture-effort-by-site-and-sex">Capture effort by site and sex</h3>
+<p><strong>▶ Try this:</strong> join, then count capture events per release site per sex.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>captures_df <span class="sc">%&gt;%</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(individuals_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"animal_id"</span> <span class="ot">=</span> <span class="st">"fisher_id"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(site.y, sex) <span class="sc">%&gt;%</span>        <span class="co"># site.y = release site</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Which release site + sex combination has the most capture events? Does that tell you about the animals, or about where crews spent time?</p>
 <pre><code>Your answer:</code></pre>
 </section>
-<section id="locations-with-no-report" class="level3">
-<h3 class="anchored" data-anchor-id="locations-with-no-report">Locations with no report</h3>
-<p>✏️ <strong>Your turn:</strong> Use an <code>anti_join</code> the <em>other</em> direction to find locations that have no matching report. How many are there, and what might explain them?</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Write your anti_join here (locations first this time):</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>Locations with no report:
-Possible explanation:</code></pre>
+<section id="recapture-count-per-fisher" class="level3">
+<h3 class="anchored" data-anchor-id="recapture-count-per-fisher">Recapture count per fisher</h3>
+<p><strong>▶ Try this:</strong> how many times was each <em>identified</em> fisher caught?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>captures_df <span class="sc">%&gt;%</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">semi_join</span>(individuals_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"animal_id"</span> <span class="ot">=</span> <span class="st">"fisher_id"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(animal_id, <span class="at">sort =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Most-recaptured fisher and its count:
+Number of fishers caught exactly once:</code></pre>
+<hr>
+</section>
+</section>
+<section id="extension-out-of-class-3040-min" class="level1">
+<h1>Extension — out of class (~30–40 min)</h1>
+<p><em>Turn this in with your worksheet. In class you joined two tables that were each incomplete on their own. Now you check <strong>how complete</strong> the join really is — and then tell me the <strong>one thing that surprised you most</strong>.</em></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Only E3 (the “most surprising thing”) is graded.</strong> E1 and E2 are the work that gets you there — do them, but the grade is on the write-up. E3 must be <strong>handwritten</strong>, photographed, and embedded (<code>![caption](my_photo.jpg)</code>).</p>
+</div>
+</div>
+<section id="e1-how-complete-is-the-join-not-graded-do-it-anyway" class="level2">
+<h2 class="anchored" data-anchor-id="e1-how-complete-is-the-join-not-graded-do-it-anyway">E1 · How complete is the join? (not graded — do it anyway)</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Capture events with NO matching individual (unmarked animals)</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>no_id <span class="ot">&lt;-</span> <span class="fu">anti_join</span>(captures_df, individuals_df,</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"animal_id"</span> <span class="ot">=</span> <span class="st">"fisher_id"</span>))</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="dv">100</span> <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">nrow</span>(no_id) <span class="sc">/</span> <span class="fu">nrow</span>(captures_df))   <span class="co"># % of events we can attribute</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Released fishers never recaptured</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a><span class="fu">anti_join</span>(individuals_df, captures_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"fisher_id"</span> <span class="ot">=</span> <span class="st">"animal_id"</span>))</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a><span class="co"># The wrong join: no `by =` at all</span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="fu">left_join</span>(captures_df, individuals_df)        <span class="co"># what does dplyr say it joined on?</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Note the attributable percentage, how many fishers were never seen again, and what column dplyr picks when you leave <code>by =</code> out (and why that answer is wrong).</p>
+</section>
+<section id="e2-one-more-join-your-choice-not-graded-do-it-anyway" class="level2">
+<h2 class="anchored" data-anchor-id="e2-one-more-join-your-choice-not-graded-do-it-anyway">E2 · One more join, your choice (not graded — do it anyway)</h2>
+<p>Either: summarize the joined table a new way (mean <code>mass_kg</code> by sex; capture count by month), <strong>or</strong> bring in a small table of your own (even 3–4 rows you type with <code>tibble()</code> — e.g.&nbsp;a home-range size per <code>fisher_id</code>) and join it on the key. Keep it small.</p>
+</section>
+<section id="e3-the-most-surprising-thing-by-hand-graded" class="level2">
+<h2 class="anchored" data-anchor-id="e3-the-most-surprising-thing-by-hand-graded">E3 · The most surprising thing — ✍️ by hand (graded)</h2>
+<p>In a short paragraph, hand-written: across everything you did in this worksheet and E1–E2, <strong>what surprised you most about joining these two tables?</strong> Be specific — name the numbers or the rows that surprised you, and say why you expected something different. “Nothing surprised me” is not an answer; if the joins went smoothly, the surprise might be how many capture events could not be tied to a known animal, or how many released fishers were never seen again.</p>
 <hr>
 </section>
 </section>
 <section id="getting-unstuck" class="level1">
 <h1>Getting unstuck</h1>
 <ol type="1">
-<li><strong><code>by</code> must be supplied / weird match</strong> → the key columns are named differently; use <code>by = c("REPORT_NUMBER" = "number")</code>.</li>
-<li><strong>Zero matches</strong> → check the key <strong>type</strong> (<code>as.integer()</code> on <code>REPORT_NUMBER</code>) — text won’t match a number.</li>
-<li><strong>Way too many rows after a join</strong> → a duplicated key fans out the rows; <code>distinct()</code> the lookup key first.</li>
-<li><strong>dplyr announced <code>by = join_by(index)</code></strong> → you forgot to name your key; both tables share an <code>index</code> column.</li>
+<li><strong><code>by</code> must be supplied / weird match</strong> → the key columns are named differently; use <code>by = c("animal_id" = "fisher_id")</code>.</li>
+<li><strong>Zero matches</strong> → check the key <strong>case</strong> (<code>str_to_upper()</code> on <code>animal_id</code>) — <code>"f07"</code> won’t match <code>"F07"</code>.</li>
+<li><strong>Way too many rows after a join</strong> → you joined on <code>site</code> by accident; a shared key that isn’t unique fans the rows out. Always name the real key.</li>
+<li><strong>dplyr announced <code>by = join_by(site)</code></strong> → you forgot to name your key; both tables share a <code>site</code> column that means different things.</li>
 <li><strong>Cheat sheet</strong> — <a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="uri">https://dplyr.tidyverse.org/reference/mutate-joins.html</a></li>
 </ol>
 <blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> <code>bfro_reports.csv</code> and <code>bfro_locations.csv</code> were each incomplete on their own — one had no coordinates, the other had no context. <code>bigfoot_joined.csv</code> is what you get once a shared key ties them together, and it’s what you’ll load for the mapping worksheet.</p>
+<p>💡 <strong>Key idea:</strong> <code>fisher_individuals.csv</code> and <code>fisher_captures.csv</code> were each incomplete on their own — one had no field history, the other had no animal attributes. <code>fisher_joined.csv</code> is what you get once a shared key ties them together.</p>
 </blockquote>
 <hr>
-<p><em>End of Worksheet 12. Next: Worksheet 13 — mapping the sightings you just assembled.</em></p>
+<p><em>End of the Joins worksheet.</em></p>
 
 
 </section>

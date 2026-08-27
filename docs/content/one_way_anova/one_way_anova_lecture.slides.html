@@ -12,7 +12,7 @@
 
   <meta name="author" content="Bill Perry">
   <meta name="dcterms.date" content="2026-08-27">
-  <title>UMD DAta Science Biology – Lecture 13 — One-Way ANOVA I: Setting Up the Test</title>
+  <title>UMD DAta Science Biology – Lecture — One-Way ANOVA I: Setting Up the Test</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -197,8 +197,8 @@
       margin-right: 0; 
     }
   </style>
-<meta property="og:title" content="Lecture 13 — One-Way ANOVA I: Setting Up the Test – UMD DAta Science Biology">
-<meta property="og:description" content="From two groups to many: why we don’t run many t-tests, how the F-statistic partitions variance, fitting a one-way ANOVA as a linear model, and checking its assumptions — normality of residuals and equal variance — on the Palmer penguins data.">
+<meta property="og:title" content="Lecture — One-Way ANOVA I: Setting Up the Test – UMD DAta Science Biology">
+<meta property="og:description" content="From two groups to many: why we don’t run many t-tests, how the F-statistic partitions variance, using factors to order groups for a readable plot and to set the ANOVA reference level, fitting a one-way ANOVA as a linear model, and checking its assumptions — normality of residuals and equal variance — on the Palmer penguins data.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 <body class="quarto-light">
@@ -206,8 +206,8 @@
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h1 class="title">Lecture 13 — One-Way ANOVA I: Setting Up the Test</h1>
-  <p class="subtitle">Why not many t-tests, the F-statistic, fitting the model, and checking assumptions</p>
+  <h1 class="title">Lecture — One-Way ANOVA I: Setting Up the Test</h1>
+  <p class="subtitle">Why not many t-tests, the F-statistic, ordering groups with factors, fitting the model, and checking assumptions</p>
 
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
@@ -250,13 +250,14 @@ Bill Perry
 <li>Understand <strong>why</strong> we don’t just run many t-tests</li>
 <li>See how the <strong>F-statistic</strong> compares <em>between-</em> vs <em>within-</em>group variance</li>
 <li>State ANOVA <strong>hypotheses</strong> (H₀: all means equal)</li>
+<li>Use <strong>factors</strong> to order groups for a readable plot and set the reference level</li>
 <li>Fit the model with <code>lm()</code></li>
 <li><strong>Check assumptions</strong> — normality of residuals, equal variance</li>
 </ul>
 </div><div class="column" style="width:40%;">
 <p><strong>Tools today:</strong></p>
 <ul>
-<li><code>palmerpenguins</code>, <code>tidyverse</code></li>
+<li><code>palmerpenguins</code>, <code>tidyverse</code> (includes <code>forcats</code>)</li>
 <li><code>car</code> — Levene’s test</li>
 </ul>
 <p><strong>Textbook:</strong></p>
@@ -495,7 +496,7 @@ Bill Perry
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="one_way_anova_lecture_files/figure-html/boxplot-10-1.png" alt="Boxplot of penguin body mass in grams by species (Adelie, Chinstrap, Gentoo) with jittered individual points overlaid, showing Gentoo penguins noticeably heavier than the other two species." width="480"></p>
+<p><img data-src="one_way_anova_lecture_files/figure-revealjs/boxplot-10-1.png" alt="Boxplot of penguin body mass in grams by species (Adelie, Chinstrap, Gentoo) with jittered individual points overlaid, showing Gentoo penguins noticeably heavier than the other two species."></p>
 </figure>
 </div>
 </div>
@@ -505,14 +506,95 @@ Bill Perry
 <ul>
 <li>The picture usually tells the story before the <em>p</em>-value confirms it</li>
 <li>Look for separation between boxes and roughly similar spread</li>
+<li>But notice the <strong>order</strong>: Adelie, Chinstrap, Gentoo — that’s alphabetical, not by mass</li>
 </ul>
 <p>📖 R4DS §9 — Layers</p>
 </div></div>
 </section>
 
-<section id="pause-do-activity-parts-13-now" class="title-slide slide level1 center">
-<h1>🛑 Pause — Do Activity Parts 1–3 Now</h1>
-<p>Load the penguins, plot body mass by species, and write your hypotheses. Predict which species differ before you run anything.</p>
+<section id="species-is-a-factor-and-factors-have-an-order" class="title-slide slide level1 center">
+<h1><code>species</code> Is a Factor — and Factors Have an Order</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="fu">class</span>(penguins_df<span class="sc">$</span>species)   <span class="co"># "factor"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "factor"</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a><span class="fu">levels</span>(penguins_df<span class="sc">$</span>species)  <span class="co"># the stored order</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Adelie"    "Chinstrap" "Gentoo"   </code></pre>
+</div>
+</div>
+<ul>
+<li>A <strong>factor</strong> is a categorical column with a fixed, <em>ordered</em> set of <strong>levels</strong></li>
+<li><code>ggplot</code> (and <code>lm</code>) draw groups in <strong>level order</strong></li>
+<li>The default level order is <strong>alphabetical</strong> — almost never the order you want</li>
+</ul>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>✅ Key idea</strong></p>
+<p>Alphabetical order hides the pattern. Ordering the groups by the thing you are testing — here, body mass — makes the boxplot tell the story at a glance.</p>
+</div>
+</div>
+</div>
+<p><code>forcats</code> (the <code>fct_*</code> family) ships with <code>library(tidyverse)</code>.</p>
+</div></div>
+</section>
+
+<section id="order-the-boxplot-by-body-mass-fct_reorder" class="title-slide slide level1 center">
+<h1>Order the Boxplot by Body Mass — <code>fct_reorder()</code></h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_reorder</span>(species, body_mass_g, <span class="at">.fun =</span> median)) <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
+<span id="cb9-4"><a aria-label="4"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb9-5"><a aria-label="5"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species (ordered by median mass)"</span>, <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb9-6"><a aria-label="6"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb9-7"><a aria-label="7"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="one_way_anova_lecture_files/figure-revealjs/fct-reorder-10-1.png" alt="The same penguin body-mass boxplot, now with species ordered from lightest to heaviest median mass: Adelie, Chinstrap, Gentoo happen to already be in that order here, but the reordering is now explicit and data-driven."></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<ul>
+<li><code>fct_reorder(f, x, .fun = median)</code> — reorder factor <code>f</code> by a summary of <code>x</code></li>
+<li>Do it <strong>inside <code>mutate()</code></strong>, then plot the result</li>
+<li>One line; the plot now reads lightest → heaviest</li>
+</ul>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p>The full <code>forcats</code> family — rename levels, merge them, lump rare ones — is in <strong>Common Code 15 · Factors</strong>. Today we only need <em>ordering</em> and, next, the <em>reference level</em>.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="pause-do-activity-parts-14-now" class="title-slide slide level1 center">
+<h1>🛑 Pause — Do Activity Parts 1–4 Now</h1>
+<p>Load the penguins, plot body mass by species, reorder the boxplot with <code>fct_reorder()</code>, and write your hypotheses. Predict which species differ before you run anything.</p>
 </section>
 
 <section id="chunk-2-of-2-fit-the-model-check-assumptions" class="title-slide slide level1 center">
@@ -527,7 +609,7 @@ Bill Perry
 <p><strong>Tip</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🖐 After this chunk: Activity Parts 4–6</strong> (fit, QQ + Shapiro on residuals, Levene’s test).</p>
+<p><strong>🖐 After this chunk: Activity Parts 5–8</strong> (fit, set the reference level, QQ + Shapiro on residuals, Levene’s test).</p>
 </div>
 </div>
 </div>
@@ -538,8 +620,8 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="co"># ANOVA is a linear model with a categorical X ---------</span></span>
-<span id="cb5-2"><a aria-label="2"></a>mass_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a aria-label="1"></a><span class="co"># ANOVA is a linear model with a categorical X ---------</span></span>
+<span id="cb10-2"><a aria-label="2"></a>mass_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <ul>
 <li><code>lm(Y ~ X)</code> — the <em>same</em> syntax as regression (Lecture 11)</li>
@@ -565,6 +647,48 @@ Bill Perry
 </div></div>
 </section>
 
+<section id="which-group-is-the-baseline-fct_relevel" class="title-slide slide level1 center">
+<h1>Which Group Is the Baseline? — <code>fct_relevel()</code></h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="co"># The (Intercept) is the FIRST level = Adelie ---------</span></span>
+<span id="cb11-2"><a aria-label="2"></a><span class="fu">coef</span>(mass_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     (Intercept) speciesChinstrap    speciesGentoo 
+      3700.66225         32.42598       1375.35401 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># Make Gentoo the reference instead --------------------</span></span>
+<span id="cb13-2"><a aria-label="2"></a>penguins_relevel <span class="ot">&lt;-</span> penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_relevel</span>(species, <span class="st">"Gentoo"</span>))</span>
+<span id="cb13-4"><a aria-label="4"></a></span>
+<span id="cb13-5"><a aria-label="5"></a><span class="fu">coef</span>(<span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_relevel))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     (Intercept)    speciesAdelie speciesChinstrap 
+        5076.016        -1375.354        -1342.928 </code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<ul>
+<li><code>lm</code> picks the <strong>first factor level</strong> as the baseline; every coefficient is a difference <em>from that group</em></li>
+<li><code>fct_relevel(species, "Gentoo")</code> moves Gentoo to the front → coefficients are now differences from Gentoo</li>
+</ul>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p>Releveling changes <strong>which comparisons the coefficients show</strong>. It does <strong>not</strong> change the overall <strong>F</strong> or <em>p</em>-value — the ANOVA question (“do any means differ?”) is the same no matter which group you call the baseline.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
 <section id="assumption-1-normality-of-the-residuals" class="title-slide slide level1 center">
 <h1>Assumption 1 — Normality of the Residuals</h1>
 <div class="callout callout-note callout-titled callout-style-default">
@@ -583,19 +707,19 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a aria-label="1"></a><span class="co"># Same plot(model) diagnostics as Lecture 11's regression</span></span>
-<span id="cb6-2"><a aria-label="2"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
-<span id="cb6-3"><a aria-label="3"></a><span class="fu">plot</span>(mass_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a aria-label="1"></a><span class="co"># Same plot(model) diagnostics as Lecture 11's regression</span></span>
+<span id="cb15-2"><a aria-label="2"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
+<span id="cb15-3"><a aria-label="3"></a><span class="fu">plot</span>(mass_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="one_way_anova_lecture_files/figure-html/diagnostic-plots-10-1.png" alt="Four base R diagnostic plots for the body mass by species linear model, arranged in a two by two grid: residuals versus fitted values, a normal Q-Q plot of the residuals, a scale-location plot, and a residuals versus leverage plot." width="576"></p>
+<p><img data-src="one_way_anova_lecture_files/figure-revealjs/diagnostic-plots-10-1.png" alt="Four base R diagnostic plots for the body mass by species linear model, arranged in a two by two grid: residuals versus fitted values, a normal Q-Q plot of the residuals, a scale-location plot, and a residuals versus leverage plot."></p>
 </figure>
 </div>
 </div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(mass_model))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a aria-label="1"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(mass_model))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Shapiro-Wilk normality test
@@ -644,8 +768,8 @@ W = 0.99166, p-value = 0.05118</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># Levene's test — H0: all groups have equal variance --</span></span>
-<span id="cb9-2"><a aria-label="2"></a><span class="fu">leveneTest</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a aria-label="1"></a><span class="co"># Levene's test — H0: all groups have equal variance --</span></span>
+<span id="cb18-2"><a aria-label="2"></a><span class="fu">leveneTest</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Levene's Test for Homogeneity of Variance (center = median)
        Df F value   Pr(&gt;F)   
@@ -660,16 +784,16 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <li><em>p</em> &gt; 0.05 → variances similar → classic ANOVA is fine</li>
 <li><em>p</em> &lt; 0.05 → variances differ → use <strong>Welch’s ANOVA</strong>:</li>
 </ul>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="fu">oneway.test</span>(body_mass_g <span class="sc">~</span> species,</span>
-<span id="cb11-2"><a aria-label="2"></a>            <span class="at">data =</span> penguins_df,</span>
-<span id="cb11-3"><a aria-label="3"></a>            <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a aria-label="1"></a><span class="fu">oneway.test</span>(body_mass_g <span class="sc">~</span> species,</span>
+<span id="cb20-2"><a aria-label="2"></a>            <span class="at">data =</span> penguins_df,</span>
+<span id="cb20-3"><a aria-label="3"></a>            <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Same spirit as Welch’s <strong>t</strong>-test — robust when spreads differ.</p>
 </div></div>
 </section>
 
-<section id="pause-do-activity-parts-46-now" class="title-slide slide level1 center">
-<h1>🛑 Pause — Do Activity Parts 4–6 Now</h1>
-<p>Fit <code>lm(body_mass_g ~ species)</code>, check the residual QQ plot + Shapiro, and run Levene’s test. Predict each result before you run it.</p>
+<section id="pause-do-activity-parts-58-now" class="title-slide slide level1 center">
+<h1>🛑 Pause — Do Activity Parts 5–8 Now</h1>
+<p>Fit <code>lm(body_mass_g ~ species)</code>, set the reference level with <code>fct_relevel()</code>, check the residual QQ plot + Shapiro, and run Levene’s test. Predict each result before you run it.</p>
 </section>
 
 <section id="what-we-learned-today" class="title-slide slide level1 center">
@@ -680,14 +804,17 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <ul>
 <li>Many t-tests inflate the false-positive rate — <strong>ANOVA asks once</strong></li>
 <li><strong>F</strong> = between-group ÷ within-group variance (signal ÷ noise)</li>
+<li>A <strong>factor</strong>’s level order sets the plot order and the model baseline</li>
 <li>ANOVA is a linear model with a categorical predictor — same <code>lm()</code> as regression</li>
 <li>Assumptions: <strong>normal residuals</strong>, <strong>equal variance</strong> (Levene)</li>
 </ul>
 <p><strong>R skills:</strong></p>
 <ul>
+<li><code>fct_reorder()</code> to order groups by the response; <code>fct_relevel()</code> to set the baseline</li>
 <li><code>lm(Y ~ group)</code></li>
 <li><code>plot(model)</code> diagnostics, <code>shapiro.test(residuals())</code></li>
 <li><code>leveneTest()</code></li>
+<li>rest of the <code>fct_*</code> family → <strong>Common Code 15 · Factors</strong></li>
 </ul>
 </div><div class="column" style="width:40%;">
 <p><strong>References:</strong></p>
@@ -924,6 +1051,44 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
         ]
       });
     </script>
+    
+    <script>
+      // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+      // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+      // slide changes (different for each slide format).
+      (function () {
+        // dispatch for htmlwidgets
+        function fireSlideEnter() {
+          const event = window.document.createEvent("Event");
+          event.initEvent("slideenter", true, true);
+          window.document.dispatchEvent(event);
+        }
+
+        function fireSlideChanged(previousSlide, currentSlide) {
+          fireSlideEnter();
+
+          // dispatch for shiny
+          if (window.jQuery) {
+            if (previousSlide) {
+              window.jQuery(previousSlide).trigger("hidden");
+            }
+            if (currentSlide) {
+              window.jQuery(currentSlide).trigger("shown");
+            }
+          }
+        }
+
+        // hookup for slidy
+        if (window.w3c_slidy) {
+          window.w3c_slidy.add_observer(function (slide_num) {
+            // slide_num starts at position 1
+            fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+          });
+        }
+
+      })();
+    </script>
+
     <script id="quarto-html-after-body" type="application/javascript">
       window.document.addEventListener("DOMContentLoaded", function (event) {
         const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
