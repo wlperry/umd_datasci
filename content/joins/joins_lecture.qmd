@@ -1,6 +1,6 @@
 ---
-title: "Lecture 17 — Joins: Combining Two Tables"
-subtitle: "Keys, mutating joins, and filtering joins with real Bigfoot report data"
+title: "Lecture — Joins: Combining Two Tables"
+subtitle: "Keys, mutating joins, and filtering joins on a fisher reintroduction dataset"
 author: "Bill Perry"
 date: today
 
@@ -12,9 +12,9 @@ description: >
   Real projects spread data across several tables. This 2-day lecture teaches
   joins: what a key is, how to join two tables when the key columns are named
   differently, the mutating joins (left/inner/full), and the filtering joins
-  (semi/anti) — by combining the Bigfoot report text with its coordinates to
-  build exactly the dataset we map next week.
-categories: [joins, tidyverse, wrangling]
+  (semi/anti) — by combining a table of released fishers with a table of field
+  capture events into one analysis-ready dataset.
+categories: [joins, tidyverse, wrangling, mustelids]
 
 format:
   revealjs:
@@ -39,16 +39,16 @@ execute:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
-# Where we left off — Factors
+# Where we left off
 
-- **Factors** — reordered and relabeled categorical levels for clean plots and models
-- Before that: reshaped messy data (Pivoting), started the final project, and ran a one-way ANOVA
+- **Pivoting** — reshaped wide data to long; **ANOVA** — compared group means; **Factors** — controlled category order
+- Your **final project** is under way — data found, question pitched
 - So far every analysis used **one** table
 
 ::: callout-note
 **✅ Transition**
 
-Real data almost never lives in a single table. Today's dataset comes in **two**: one file has the Bigfoot report **text** (where, when, what), a second has the **coordinates**. Neither alone lets you map a sighting. **Joins** stitch them together on a shared **key** — and the result is exactly the file we'll map next week. 🦶
+Real data almost never lives in a single table. Fishers (*Pekania pennanti*, a large forest weasel) are reintroduced and then monitored: one table lists the **animals released**, another logs every **field capture / collar event**. Neither alone tells you a captured animal's sex or where it came from. **Joins** stitch them on a shared **key**. *(The data are simulated for teaching, patterned on real reintroduction programs.)*
 :::
 
 # Goals for today (a 2-day lecture)
@@ -59,7 +59,7 @@ Real data almost never lives in a single table. Today's dataset comes in **two**
 - Join when the key columns have **different names**
 - The **mutating joins** — `left_join()`, `inner_join()`, `full_join()`
 - The **filtering joins** — `semi_join()`, `anti_join()`
-- Build the combined report + coordinates table
+- Build one combined capture + individual table
 ::::
 
 :::: {.column width="40%"}
@@ -67,10 +67,10 @@ Real data almost never lives in a single table. Today's dataset comes in **two**
 
 - `tidyverse` (dplyr)
 
-**Data (two tables):**
+**Data (two tables, simulated):**
 
-- `bfro_reports.csv` — the report text + class
-- `bfro_locations.csv` — the coordinates
+- `fisher_captures.csv` — one row per capture event
+- `fisher_individuals.csv` — one row per released fisher
 
 **Reference:**
 
@@ -120,21 +120,21 @@ This lecture runs in **four chunks over two days**. After each chunk you switch 
 ::::: columns
 :::: {.column width="60%"}
 ```{r load-12}
-# Load BOTH Bigfoot tables ---------------------------
+# Load BOTH fisher tables ----------------------------
 library(tidyverse)
 
-reports_df   <- read_csv("data/bfro_reports.csv")
-locations_df <- read_csv("data/bfro_locations.csv")
+captures_df    <- read_csv("data/fisher_captures.csv")
+individuals_df <- read_csv("data/fisher_individuals.csv")
 
-dim(reports_df)      # the text: where/when/what
-dim(locations_df)    # the coordinates
+dim(captures_df)       # field events: when/where/mass/collar
+dim(individuals_df)    # released animals: sex/age/source/site
 ```
 ::::
 
 :::: {.column width="40%"}
-- **`reports_df`** — one row per sighting report: year, season, state, county, class, and the written account
-- **`locations_df`** — one row per report that got geocoded: a latitude and longitude
-- To map a sighting you need **both** — its class *and* its coordinates
+- **`captures_df`** — one row per capture event: date, site, mass, collar id
+- **`individuals_df`** — one row per released fisher: sex, age class, source, release site
+- To use a capture you often need **both** — the event *and* who the animal is
 ::::
 :::::
 
@@ -143,24 +143,24 @@ dim(locations_df)    # the coordinates
 ::::: columns
 :::: {.column width="60%"}
 ```{r peek-12}
-# The columns that identify a report -----------------
-reports_df %>% select(REPORT_NUMBER, YEAR, STATE, REPORT_CLASS) %>% head(3)
+# The columns that identify an animal ---------------
+captures_df    %>% select(animal_id, capture_date, site, mass_kg) %>% head(3)
 
-locations_df %>% select(number, latitude, longitude) %>% head(3)
+individuals_df %>% select(fisher_id, sex, site, release_date) %>% head(3)
 ```
 ::::
 
 :::: {.column width="40%"}
-A **key** is the column that uniquely identifies a row and links the tables.
+A **key** is the column that identifies an animal and links the tables.
 
-- In `reports_df` it's **`REPORT_NUMBER`**
-- In `locations_df` it's **`number`**
+- In `captures_df` it's **`animal_id`**
+- In `individuals_df` it's **`fisher_id`**
 - **Same idea, different name** — we'll tell the join that
 
 ::: callout-note
 **📖 Vocabulary**
 
-The key must be **unique** in the table you're looking things up in (`locations_df`).
+The key must be **unique** in the table you look things up in (`individuals_df` — one row per fisher). It is *not* unique in `captures_df` — a fisher can be caught many times.
 :::
 ::::
 :::::
@@ -170,29 +170,30 @@ The key must be **unique** in the table you're looking things up in (`locations_
 ::::: columns
 :::: {.column width="60%"}
 ```{r keys-12}
-# Two fixes: drop duplicate reports, match key type --
-reports_df <- reports_df %>%
-  distinct(REPORT_NUMBER, .keep_all = TRUE) %>%   # one row per report
-  mutate(REPORT_NUMBER = as.integer(REPORT_NUMBER))
+# The capture key is lowercase; the individual key is not
+captures_df %>% count(animal_id) %>% head()
 
-n_distinct(reports_df$REPORT_NUMBER)
-n_distinct(locations_df$number)
+captures_df <- captures_df %>%
+  mutate(animal_id = str_to_upper(animal_id))   # "f07" -> "F07"
+
+n_distinct(individuals_df$fisher_id)
+n_distinct(captures_df$animal_id)   # includes "UNK" — unmarked animals
 ```
 ::::
 
 :::: {.column width="40%"}
-- `distinct()` — keep one row per report number
-- `as.integer()` — `REPORT_NUMBER` was stored like `30680.0`; `number` is `30680`. **Keys must be the same type** to match
+- `str_to_upper()` — `animal_id` was `"f07"`, `fisher_id` is `"F07"`. **Case must match** or the join finds nothing
+- `"UNK"` is not a real fisher — those events have no individual to attach
 
 ::: callout-warning
-**⚠️ Watch out!** A join silently fails to match if the keys are different **types** (text vs number) or **formats** — clean them first.
+**⚠️ Watch out!** A join silently fails to match if the keys differ in **type** (text vs number), **case**, or **format** — clean them first.
 :::
 ::::
 :::::
 
 # 🛑 Pause — Do Activity Parts 1–3 Now
 
-Load both tables, find the key in each, and clean it. Predict how many reports have coordinates before we join.
+Load both tables, find the key in each, and fix its case. Predict how many capture events can be tied to a known fisher.
 
 # 🧩 Chunk 2 of 4 · Your First Join — `left_join()` *(Day 1)*
 
@@ -202,28 +203,28 @@ Load both tables, find the key in each, and clean it. Predict how many reports h
 **🖐 After this chunk: Activity Parts 4–6** (run the left join, read the result).
 :::
 
-# `left_join()` — Keep Every Report
+# `left_join()` — Keep Every Capture Event
 
 ::: callout-note
-**🔮 Predict first:** `reports_df` has ~5,000 reports; only ~4,000 were geocoded. After a `left_join`, how many **rows** will we have, and how many will have a latitude?
+**🔮 Predict first:** `captures_df` has ~45 events; a few are unmarked animals. After a `left_join` (captures on the left), how many **rows** will we have, and how many will have a missing `sex`?
 :::
 
 ::::: columns
 :::: {.column width="60%"}
 ```{r leftjoin-12}
 # Match on differently-named keys with by = c() ------
-bigfoot_df <- reports_df %>%
-  left_join(locations_df, by = c("REPORT_NUMBER" = "number"))
+captures_joined <- captures_df %>%
+  left_join(individuals_df, by = c("animal_id" = "fisher_id"))
 
-nrow(bigfoot_df)                    # every report is kept
-sum(!is.na(bigfoot_df$latitude))    # how many got coordinates
+nrow(captures_joined)                  # every capture event is kept
+sum(is.na(captures_joined$sex))        # events we can't attribute
 ```
 ::::
 
 :::: {.column width="40%"}
-- `by = c("REPORT_NUMBER" = "number")` — "match my `REPORT_NUMBER` to their `number`"
-- **`left_join` keeps every row on the left** (all reports)
-- Reports with no location get `NA` coordinates — they simply weren't geocoded
+- `by = c("animal_id" = "fisher_id")` — "match my `animal_id` to their `fisher_id`"
+- **`left_join` keeps every row on the left** (all capture events)
+- Unmarked-animal events get `NA` for sex, age, source
 
 📖 R4DS §19.3 — mutating joins
 ::::
@@ -233,19 +234,19 @@ sum(!is.na(bigfoot_df$latitude))    # how many got coordinates
 
 ::::: columns
 :::: {.column width="60%"}
-If I forget `by = ...`, dplyr looks for a **shared column name** — and both tables happen to have an **`index`** column:
+If I forget `by = ...`, dplyr looks for a **shared column name** — and both tables have a **`site`** column:
 
 ``` r
-reports_df %>% left_join(locations_df)
-#> Joining with `by = join_by(index)`
+captures_df %>% left_join(individuals_df)
+#> Joining with `by = join_by(site)`
 ```
 
-That matches **row 1 to row 1, row 2 to row 2** — nonsense! `index` is just a row number, not a report ID. You get coordinates glued to the wrong reports, with **no error**.
+But `site` means different things: the **capture** site vs the **release** site. Joining on it matches a capture to *every fisher released at that site* — the row count explodes and the animal ids are nonsense. **No error.**
 
 The fix — always name the real key:
 
 ``` r
-reports_df %>% left_join(locations_df, by = c("REPORT_NUMBER" = "number"))
+captures_df %>% left_join(individuals_df, by = c("animal_id" = "fisher_id"))
 ```
 ::::
 
@@ -253,7 +254,7 @@ reports_df %>% left_join(locations_df, by = c("REPORT_NUMBER" = "number"))
 ::: callout-important
 **✅ Why show a silent wrong join?**
 
-Nothing here throws an error, so nothing forces you to notice — `reports_df` and `locations_df` both got the same made-up `index` column at some point, dplyr matches on it happily, and you end up with row 1's coordinates glued to row 1's report regardless of which Bigfoot sighting it actually was. If the message *"Joining with `by = ...`"* names a column you didn't pick, treat it as a bug report, not a status update.
+Nothing throws an error, so nothing forces you to notice. `captures_df` and `individuals_df` both have a `site` column; dplyr matches on it happily and hands you hundreds of rows that pair a capture with the wrong animal. If the message *"Joining with `by = ...`"* names a column you didn't pick, treat it as a bug report, not a status update.
 :::
 ::::
 :::::
@@ -264,7 +265,7 @@ Nothing here throws an error, so nothing forces you to notice — `reports_df` a
 :::: {.column width="60%"}
 **Day 1 recap — you can now:**
 
-- Explain a key and why it must be unique and same-type
+- Explain a key and why it must be unique (in the lookup table) and same case/type
 - Join two tables whose key columns are named differently
 - Use `left_join()` to keep every row on the left
 ::::
@@ -288,16 +289,18 @@ Nothing here throws an error, so nothing forces you to notice — `reports_df` a
 # Inner vs. Left vs. Full
 
 ::: callout-note
-**🔮 Predict first:** Which will have **more** rows — an `inner_join` (only matches) or a `left_join` (all reports)? By roughly how many?
+**🔮 Predict first:** Rank by row count: `inner_join` (only matches), `left_join` (all captures), `full_join` (all captures **and** every released fisher, even the never-recaptured ones).
 :::
 
 ::::: columns
 :::: {.column width="60%"}
 ```{r family-12}
 # Same key, three different rules --------------------
-inner <- inner_join(reports_df, locations_df, by = c("REPORT_NUMBER" = "number"))
-left  <- left_join (reports_df, locations_df, by = c("REPORT_NUMBER" = "number"))
-full  <- full_join (reports_df, locations_df, by = c("REPORT_NUMBER" = "number"))
+key <- c("animal_id" = "fisher_id")
+
+inner <- inner_join(captures_df, individuals_df, by = key)
+left  <- left_join (captures_df, individuals_df, by = key)
+full  <- full_join (captures_df, individuals_df, by = key)
 
 c(inner = nrow(inner), left = nrow(left), full = nrow(full))
 ```
@@ -306,11 +309,11 @@ c(inner = nrow(inner), left = nrow(left), full = nrow(full))
 :::: {.column width="40%"}
 | Join | Keeps |
 |-------------|-------------------------------|
-| `inner_join` | only rows that **match** in both |
-| `left_join` | **all** rows from the left (reports) |
-| `full_join` | **all** rows from **both** tables |
+| `inner_join` | only events with a **known** animal |
+| `left_join` | **all** capture events |
+| `full_join` | all events **and** every released fisher |
 
-`inner` drops the reports with no coordinates; `full` even keeps locations with no report.
+`inner` drops the unmarked-animal events; `full` adds back the fishers that were released but never recaptured.
 ::::
 :::::
 
@@ -318,16 +321,16 @@ c(inner = nrow(inner), left = nrow(left), full = nrow(full))
 
 ::::: columns
 :::: {.column width="60%"}
-- **`left_join`** — the default. Keep everything on your main table, add what you can. *(Use this for the map: keep all reports.)*
-- **`inner_join`** — only rows with a match. *(Use when missing data would ruin the analysis.)*
-- **`full_join`** — keep everything from both. *(Use to audit what's missing on each side.)*
+- **`left_join`** — the default. Keep everything on your main table, add what you can. *(Event-level analysis: keep all captures.)*
+- **`inner_join`** — only rows with a match. *(When an unattributed event would ruin the analysis.)*
+- **`full_join`** — keep everything from both. *(To audit what's missing on each side — which fishers vanished.)*
 ::::
 
 :::: {.column width="40%"}
 ::: callout-note
 **✅ Choosing among the three**
 
-Ask which rows you'd be upset to lose. Drop a report from the map and a real sighting vanishes; drop a stray location record and nothing is lost. That's why the map keeps every report — `left_join`, not `inner_join`.
+Ask which rows you'd be upset to lose. Drop an unmarked capture and you undercount effort; drop a never-recaptured fisher from a *survival* analysis and you bias it badly. Match the join to the question.
 :::
 
 📖 R4DS §19.3–19.4
@@ -349,25 +352,28 @@ Run all three joins, compare the row counts, and decide which one you'd use to b
 # `anti_join()` — What Didn't Match?
 
 ::: callout-note
-**🔮 Predict first:** How many reports have **no** coordinates? (Hint: total reports minus the number that got a latitude in Chunk 2.)
+**🔮 Predict first (two ways):** how many capture **events** have no known animal? How many released **fishers** were never recaptured?
 :::
 
 ::::: columns
 :::: {.column width="60%"}
 ```{r anti-12}
-# Reports that have NO location ----------------------
-missing_coords <- reports_df %>%
-  anti_join(locations_df, by = c("REPORT_NUMBER" = "number"))
+# (a) capture events of unmarked animals
+captures_df %>%
+  anti_join(individuals_df, by = c("animal_id" = "fisher_id")) %>%
+  nrow()
 
-nrow(missing_coords)
-missing_coords %>% count(STATE, sort = TRUE) %>% head(4)
+# (b) released fishers with no capture — anti_join the OTHER way
+individuals_df %>%
+  anti_join(captures_df, by = c("fisher_id" = "animal_id")) %>%
+  select(fisher_id, sex, site)
 ```
 ::::
 
 :::: {.column width="40%"}
-- **`anti_join`** keeps the left rows with **no** match — perfect for "what's missing?"
+- **`anti_join`** keeps the left rows with **no** match — "what's missing?"
 - It **adds no columns** — it filters
-- Here: the reports we could never map, and where they cluster
+- Direction matters: run it both ways to see each side's gaps
 
 📖 R4DS §19.5 — filtering joins
 ::::
@@ -378,47 +384,46 @@ missing_coords %>% count(STATE, sort = TRUE) %>% head(4)
 ::::: columns
 :::: {.column width="60%"}
 ```{r semi-12}
-# Keep only reports that DO have a location ----------
-mappable_reports <- reports_df %>%
-  semi_join(locations_df, by = c("REPORT_NUMBER" = "number"))
-
-nrow(mappable_reports)
+# Released fishers that WERE recaptured at least once
+individuals_df %>%
+  semi_join(captures_df, by = c("fisher_id" = "animal_id")) %>%
+  nrow()
 ```
 ::::
 
 :::: {.column width="40%"}
 - **`semi_join`** keeps left rows that **have** a match — again, **no new columns**
 - Think of `semi`/`anti` as a **filter driven by another table**
-- `semi_join` result = the rows an `inner_join` would keep, but without the extra columns
+- `semi` + `anti` on the same table split it in two: recaptured vs never seen
 ::::
 :::::
 
-# The Payoff — Build the Map-Ready Table
+# The Payoff — Build One Analysis-Ready Table
 
 ::::: columns
 :::: {.column width="60%"}
 ```{r payoff-12}
-# Reports + coordinates, ready to map next week ------
-bigfoot_mappable <- reports_df %>%
-  left_join(locations_df, by = c("REPORT_NUMBER" = "number")) %>%
-  filter(!is.na(latitude), !is.na(longitude))
+# Every KNOWN-individual capture, with the animal's attributes
+fisher_analysis <- captures_df %>%
+  inner_join(individuals_df, by = c("animal_id" = "fisher_id")) %>%
+  mutate(days_since_release = as.numeric(capture_date - release_date))
 
-bigfoot_mappable %>%
-  select(REPORT_NUMBER, STATE, SEASON, REPORT_CLASS, latitude, longitude) %>%
+fisher_analysis %>%
+  select(animal_id, sex, age_class, capture_date, days_since_release, mass_kg) %>%
   head()
 ```
 ::::
 
 :::: {.column width="40%"}
-This joined table — report text **plus** coordinates — is essentially `bfro_reports_geocoded.csv`, the file you'll turn into a map in **Lecture 13**.
+**You just built a real dataset from two raw ones.** `fisher_analysis` didn't exist in either source file — every row is a capture event *plus* the animal's sex, age, and days-since-release, ready for a model.
 
-**You just built a real dataset from two raw ones.** `bigfoot_mappable` didn't exist in either source file — it only exists because you joined them on a key, and it's the exact table Lecture 13 opens with.
+Here `inner_join` is right: an event with no known animal can't go into an individual-level analysis.
 ::::
 :::::
 
 # 🛑 Pause — Do Activity Parts 10–12 Now
 
-Use `anti_join` to find the un-geocoded reports, `semi_join` to keep the mappable ones, and build the combined table. Predict the counts first.
+Use `anti_join` both directions to find the gaps, `semi_join` to see who was recaptured, and build the combined table. Predict the counts first.
 
 # What We Learned Today
 
@@ -436,7 +441,7 @@ Use `anti_join` to find the un-geocoded reports, `semi_join` to keep the mappabl
 
 - `left_join()`, `inner_join()`, `full_join()`
 - `semi_join()`, `anti_join()`
-- `distinct()` + `as.integer()` for key hygiene
+- `str_to_upper()` (and `as.integer()`, `str_trim()`) for key hygiene
 ::::
 
 :::: {.column width="40%"}
@@ -445,9 +450,9 @@ Use `anti_join` to find the un-geocoded reports, `semi_join` to keep the mappabl
 - 📖 [R4DS Ch. 19 — Joins](https://r4ds.hadley.nz/joins)
 - 📖 `common_code/13_joins`
 
-**Up next — Lecture 18:**
+**Up next — Mapping:**
 
-- **Mapping** — turn this joined table into a map with `sf` and `geom_sf()`
-- Where *is* Bigfoot, anyway?
+- Turn latitude/longitude into a map with `sf` and `geom_sf()`
+- A different dataset (Bigfoot sightings) — same join thinking
 ::::
 :::::

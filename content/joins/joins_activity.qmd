@@ -1,18 +1,18 @@
 ---
 order: 21
 week: 11
-title: "Worksheet 17 — Joins: Combining Two Bigfoot Tables"
-subtitle: "Keys, mutating joins, and filtering joins to build a map-ready dataset"
+title: "Worksheet — Joins: Combining Two Fisher Monitoring Tables"
+subtitle: "Keys, mutating joins, and filtering joins on a fisher reintroduction dataset"
 author: "Bill Perry"
 date: today
 
 type: activity
 description: >
-  Hands-on companion to the joins lecture. Over two days students combine the
-  Bigfoot report text (bfro_reports.csv) with its coordinates (bfro_locations.csv)
-  using left/inner/full joins and semi/anti joins, and build the exact table they
-  will map next week.
-categories: [joins, tidyverse, wrangling]
+  Hands-on companion to the joins lecture. Over two days students combine a
+  table of released fishers (fisher_individuals.csv) with a table of field
+  capture/collar events (fisher_captures.csv) using left/inner/full joins and
+  semi/anti joins, and build one analysis-ready table.
+categories: [joins, tidyverse, wrangling, mustelids]
 
 format:
   html: default
@@ -23,21 +23,32 @@ execute:
   message: false
 ---
 
-# Joins — Two Bigfoot Tables into One 🦶
+# Joins — Two Fisher Monitoring Tables into One
+
+::: callout-note
+## About the data (constructed for teaching)
+
+Fishers (*Pekania pennanti*) — a large forest weasel — have been reintroduced to
+several US states from Canadian source populations. Monitoring produces exactly
+the shape of data joins are for: one table of the **animals released**, and a
+separate table of every **field capture / collar event**. The two files here are
+**simulated** — patterned on real programs (e.g. the Washington Cascades
+translocations), but the numbers are invented. Use them to learn joins.
+:::
 
 ### Before you start — the data
 
 Two files live in your `data/` folder:
 
-- **`bfro_reports.csv`** — one row per sighting report (year, season, state, class, the written account), keyed by `REPORT_NUMBER`
-- **`bfro_locations.csv`** — the coordinates for reports that were geocoded, keyed by `number`
+- **`fisher_individuals.csv`** — one row per released fisher: `sex`, `age_class`, `source`, `site` (release site), `release_date`. Keyed by `fisher_id`.
+- **`fisher_captures.csv`** — one row per field capture event: `capture_date`, `site` (capture site), `mass_kg`, `collar_id`. Keyed by `animal_id`.
 
 ### Today's Objectives (a 2-day worksheet)
 
 1.  Find the key that links the two tables
 2.  Join them with `left_join()` when the key columns are named differently
 3.  Compare `inner`, `left`, and `full` joins
-4.  Use `semi_join()` / `anti_join()` to filter, and build the map-ready table
+4.  Use `semi_join()` / `anti_join()` to filter, and build one analysis-ready table
 
 > # **How to use this worksheet**
 >
@@ -49,7 +60,11 @@ Two files live in your `data/` folder:
 ::: callout-note
 ## 🔮 Predict before you run — and type, don't paste
 
-Before every join, write down the row count you expect from `reports_df` and `locations_df` — then type the join and see if you were right. `reports_df` has thousands of rows and only some were ever geocoded, so a wrong guess almost always means you misjudged how many reports actually have coordinates, not that R did something strange.
+Before every join, write down the row count you expect. `fisher_captures.csv`
+has more rows than `fisher_individuals.csv` (a fisher can be recaptured many
+times), and a few capture events are of **unmarked** animals with no matching
+individual — a wrong guess almost always means you misjudged the matching, not
+that R did something strange.
 :::
 
 ------------------------------------------------------------------------
@@ -65,18 +80,18 @@ Before every join, write down the row count you expect from `reports_df` and `lo
 ``` r
 library(tidyverse)
 
-reports_df   <- read_csv("data/bfro_reports.csv")
-locations_df <- read_csv("data/bfro_locations.csv")
+individuals_df <- read_csv("data/fisher_individuals.csv")
+captures_df    <- read_csv("data/fisher_captures.csv")
 
-dim(reports_df)
-dim(locations_df)
+dim(individuals_df)
+dim(captures_df)
 ```
 
 ✏️ **Your turn:**
 
 ```
-reports_df:   rows =        cols =
-locations_df: rows =        cols =
+individuals_df: rows =        cols =
+captures_df:    rows =        cols =
 Which table has more rows? Why might that be?
 ```
 
@@ -87,16 +102,17 @@ Which table has more rows? Why might that be?
 **▶ Run this:**
 
 ``` r
-reports_df   %>% select(REPORT_NUMBER, YEAR, STATE, REPORT_CLASS) %>% head(3)
-locations_df %>% select(number, latitude, longitude) %>% head(3)
+individuals_df %>% select(fisher_id, sex, site, release_date) %>% head(3)
+captures_df    %>% select(animal_id, capture_date, site, mass_kg) %>% head(3)
 ```
 
 ✏️ **Your turn:** What column links the two tables, and what is it called in each?
 
 ```
-Key in reports_df:
-Key in locations_df:
+Key in individuals_df:
+Key in captures_df:
 Are the names the same?  Y / N
+Both tables ALSO have a `site` column — do those mean the same thing? (look again)
 ```
 
 ------------------------------------------------------------------------
@@ -106,16 +122,17 @@ Are the names the same?  Y / N
 **▶ Run this:**
 
 ``` r
-# One row per report + match the key type ----------------
-reports_df <- reports_df %>%
-  distinct(REPORT_NUMBER, .keep_all = TRUE) %>%
-  mutate(REPORT_NUMBER = as.integer(REPORT_NUMBER))
+# The capture key is lowercase ("f07"); the individual key is "F07" ----
+captures_df %>% count(animal_id) %>% head()
 
-n_distinct(reports_df$REPORT_NUMBER)
-n_distinct(locations_df$number)
+captures_df <- captures_df %>%
+  mutate(animal_id = str_to_upper(animal_id))
+
+n_distinct(individuals_df$fisher_id)
+n_distinct(captures_df$animal_id)
 ```
 
-✏️ **Your turn:** `REPORT_NUMBER` was stored like `30680.0` but `number` is `30680`. Why must we fix that before joining?
+✏️ **Your turn:** `animal_id` was stored as `f07` but `fisher_id` is `F07`. Why must we fix the case before joining? What is the `UNK` value, and why is it not a real fisher?
 
 ```
 Your answer:
@@ -129,25 +146,30 @@ Your answer:
 
 # Part 4 · The left join
 
-> 🔮 **Predict first:** After a `left_join`, how many rows will you have (all reports? only matched?), and roughly how many will have a latitude?
+> 🔮 **Predict first:** You will keep **every capture event** and attach who the
+> animal is. How many rows will the result have, and roughly how many will have a
+> missing `sex` (because the animal was unmarked)?
 
 **▶ Run this:**
 
 ``` r
-bigfoot_df <- reports_df %>%
-  left_join(locations_df, by = c("REPORT_NUMBER" = "number"))
+captures_joined <- captures_df %>%
+  left_join(individuals_df, by = c("animal_id" = "fisher_id"))
 
-nrow(bigfoot_df)                 # rows kept
-sum(!is.na(bigfoot_df$latitude)) # rows with coordinates
+nrow(captures_joined)                # rows kept
+sum(is.na(captures_joined$sex))      # capture events we can't attribute
 ```
 
 ✏️ **Your turn:**
 
 ```
 Total rows after left_join:
-Rows WITH coordinates:
-Rows with NA coordinates:
+Rows WITH an identified individual:
+Rows with NA individual info:
 ```
+
+> Note the join gives you two `site` columns — `site.x` (capture site) and
+> `site.y` (release site). Real fishers move; those are genuinely different.
 
 ------------------------------------------------------------------------
 
@@ -157,17 +179,18 @@ Rows with NA coordinates:
 
 ``` r
 # Forget by = ... and see what dplyr does ----------------
-reports_df %>% left_join(locations_df)
+captures_df %>% left_join(individuals_df)
 ```
 
-✏️ **Your turn:** What column did dplyr announce it was joining on? Why is joining on `index` completely wrong here?
+✏️ **Your turn:** What column did dplyr announce it was joining on? Why is joining on `site` completely wrong here? (What does it match — a capture event to the *right animal*, or to *every animal released at that site*?)
 
 ```
 dplyr joined on:
 Why that's wrong:
+Row count of this accidental join vs. Part 4's correct join:
 ```
 
-> ⚠️ **Watch out!** When dplyr prints *"Joining with `by = ...`"* and you didn't choose that column, stop and name your real key.
+> ⚠️ **Watch out!** When dplyr prints *"Joining with `by = join_by(site)`"* and you didn't choose that column, stop and name your real key.
 
 ------------------------------------------------------------------------
 
@@ -176,15 +199,15 @@ Why that's wrong:
 **▶ Run this (the correct join):**
 
 ``` r
-bigfoot_df <- reports_df %>%
-  left_join(locations_df, by = c("REPORT_NUMBER" = "number"))
+captures_joined <- captures_df %>%
+  left_join(individuals_df, by = c("animal_id" = "fisher_id"))
 
-bigfoot_df %>%
-  select(REPORT_NUMBER, STATE, REPORT_CLASS, latitude, longitude) %>%
+captures_joined %>%
+  select(capture_event, animal_id, capture_date, sex, age_class) %>%
   head()
 ```
 
-✏️ **Your turn:** Look at the first rows — do any already show `NA` for latitude/longitude? What does that mean about those reports?
+✏️ **Your turn:** Look at the first rows — do any already show `NA` for `sex`? What does that mean about that capture event?
 
 ```
 Your answer:
@@ -205,9 +228,11 @@ Your answer:
 **▶ Run this:**
 
 ``` r
-inner <- inner_join(reports_df, locations_df, by = c("REPORT_NUMBER" = "number"))
-left  <- left_join (reports_df, locations_df, by = c("REPORT_NUMBER" = "number"))
-full  <- full_join (reports_df, locations_df, by = c("REPORT_NUMBER" = "number"))
+key <- c("animal_id" = "fisher_id")
+
+inner <- inner_join(captures_df, individuals_df, by = key)
+left  <- left_join (captures_df, individuals_df, by = key)
+full  <- full_join (captures_df, individuals_df, by = key)
 
 c(inner = nrow(inner), left = nrow(left), full = nrow(full))
 ```
@@ -217,6 +242,7 @@ c(inner = nrow(inner), left = nrow(left), full = nrow(full))
 ```
 inner rows =        left rows =        full rows =
 Was your ranking right?  Y / N
+Why does full have MORE rows than left? (which fishers does it add back?)
 ```
 
 ------------------------------------------------------------------------
@@ -229,46 +255,58 @@ Was your ranking right?  Y / N
 inner_join keeps:
 left_join keeps:
 full_join keeps:
-Which reports does inner_join DROP that left_join keeps?
+Which capture events does inner_join DROP that left_join keeps?
+Which fishers does full_join ADD that neither inner nor left includes?
 ```
 
 ------------------------------------------------------------------------
 
 # Part 9 · Pick the right join
 
-✏️ **Your turn:** You want to make a **map of all sightings**, keeping every report even if some can't be placed. Which join do you use, and why?
+✏️ **Your turn:** You want a table of **every capture event** for a survival
+analysis, keeping the event even if the animal was unmarked. Which join do you
+use, and why?
 
 ```
 Join:
 Why:
 ```
 
-> 💡 **Key idea:** figure out which rows you can't afford to drop first — a report with no coordinates is still a report, so mapping calls for `left_join`, not `inner_join`.
+> 💡 **Key idea:** decide which rows you can't afford to drop first — an
+> unmarked-animal capture is still a capture, so an event-level analysis calls
+> for `left_join` (captures on the left), not `inner_join`.
 
 ------------------------------------------------------------------------
 
 > ## 🧩 Chunk 4 — Filtering joins & the payoff *(Day 2, after lecture Chunk 4)*
 >
-> Parts 10–12: anti/semi joins and the map-ready table.
+> Parts 10–12: anti/semi joins and the analysis-ready table.
 
 # Part 10 · `anti_join()` — what's missing
 
-> 🔮 **Predict first:** How many reports have NO coordinates? (Total reports minus the number with a latitude from Part 4.)
+> 🔮 **Predict first (two ways):**
+> (a) how many **capture events** have no matching individual?
+> (b) how many **released fishers** were never recaptured?
 
 **▶ Run this:**
 
 ``` r
-missing_coords <- reports_df %>%
-  anti_join(locations_df, by = c("REPORT_NUMBER" = "number"))
+# (a) capture events of unmarked animals
+unmarked <- captures_df %>%
+  anti_join(individuals_df, by = c("animal_id" = "fisher_id"))
+nrow(unmarked)
 
-nrow(missing_coords)
-missing_coords %>% count(STATE, sort = TRUE) %>% head(4)
+# (b) released fishers with no capture record — anti_join the OTHER direction
+never_seen <- individuals_df %>%
+  anti_join(captures_df, by = c("fisher_id" = "animal_id"))
+never_seen %>% select(fisher_id, sex, site, release_date)
 ```
 
 ✏️ **Your turn:**
 
 ```
-Reports with no coordinates:
+Capture events with no individual:
+Released fishers never recaptured:
 Did anti_join ADD any columns, or just filter rows?
 ```
 
@@ -279,45 +317,49 @@ Did anti_join ADD any columns, or just filter rows?
 **▶ Run this:**
 
 ``` r
-mappable_reports <- reports_df %>%
-  semi_join(locations_df, by = c("REPORT_NUMBER" = "number"))
+# Released fishers that WERE recaptured at least once
+recaptured <- individuals_df %>%
+  semi_join(captures_df, by = c("fisher_id" = "animal_id"))
 
-nrow(mappable_reports)
+nrow(recaptured)
 ```
 
 ✏️ **Your turn:** How is `semi_join` different from `inner_join`? (Hint: look at the *columns*, not just the rows.)
 
 ```
 Your answer:
+recaptured rows + never_seen rows should equal nrow(individuals_df) — does it?
 ```
 
 ------------------------------------------------------------------------
 
-# Part 12 · Build the map-ready table
+# Part 12 · Build one analysis-ready table
 
 **▶ Run this:**
 
 ``` r
-# Reports + coordinates, ready for next week's map -------
-bigfoot_mappable <- reports_df %>%
-  left_join(locations_df, by = c("REPORT_NUMBER" = "number")) %>%
-  filter(!is.na(latitude), !is.na(longitude))
+# Every KNOWN-individual capture, with the fisher's attributes attached ---
+fisher_analysis <- captures_df %>%
+  inner_join(individuals_df, by = c("animal_id" = "fisher_id")) %>%
+  mutate(days_since_release = as.numeric(capture_date - release_date)) %>%
+  select(animal_id, sex, age_class, capture_date, days_since_release,
+         capture_site = site.x, release_site = site.y, mass_kg)
 
-bigfoot_mappable %>%
-  select(REPORT_NUMBER, STATE, SEASON, REPORT_CLASS, latitude, longitude) %>%
-  head()
+fisher_analysis %>% head()
 ```
 
 ``` r
-# Save it for the mapping lecture ------------------------
-write_csv(bigfoot_mappable, "data/bigfoot_joined.csv")
+# Save it for later ------------------------------------
+write_csv(fisher_analysis, "data/fisher_joined.csv")
 ```
 
-✏️ **Your turn:** How many rows are in your map-ready table? How does this compare to the original `reports_df`?
+✏️ **Your turn:** How many rows are in your analysis table? Why is it smaller
+than `captures_df`, and why did we use `inner_join` here instead of `left_join`?
 
 ```
-Map-ready rows:
-Difference from reports_df, and why:
+Analysis-table rows:
+Difference from captures_df, and why:
+Why inner_join and not left_join for THIS table:
 ```
 
 ------------------------------------------------------------------------
@@ -330,7 +372,7 @@ You should now be able to:
 - [ ] Join two tables whose key columns are named differently (`by = c("a" = "b")`)
 - [ ] Use `left_join`, `inner_join`, `full_join` and predict their row counts
 - [ ] Use `anti_join` to find unmatched rows and `semi_join` to keep matched rows
-- [ ] Recognize the accidental-`index`-join bug
+- [ ] Recognize the accidental-`site`-join bug
 
 ✏️ **Your turn — before you move on:** Run your whole script top to bottom. Does it run cleanly?
 
@@ -345,35 +387,36 @@ If not, what error appeared:
 
 > Optional — do this if you finish early.
 
-### Add the report class to a map count
+### Capture effort by site and sex
 
-**▶ Try this:** join, then count sightings per state per class.
+**▶ Try this:** join, then count capture events per release site per sex.
 
 ``` r
-bigfoot_df %>%
-  filter(!is.na(latitude)) %>%
-  count(STATE, REPORT_CLASS) %>%
-  arrange(desc(n)) %>%
-  head(10)
+captures_df %>%
+  inner_join(individuals_df, by = c("animal_id" = "fisher_id")) %>%
+  count(site.y, sex) %>%        # site.y = release site
+  arrange(desc(n))
 ```
 
-✏️ **Your turn:** Which state + class combination has the most reports?
+✏️ **Your turn:** Which release site + sex combination has the most capture events? Does that tell you about the animals, or about where crews spent time?
 
 ```
 Your answer:
 ```
 
-### Locations with no report
+### Recapture count per fisher
 
-✏️ **Your turn:** Use an `anti_join` the *other* direction to find locations that have no matching report. How many are there, and what might explain them?
+**▶ Try this:** how many times was each *identified* fisher caught?
 
 ``` r
-# Write your anti_join here (locations first this time):
+captures_df %>%
+  semi_join(individuals_df, by = c("animal_id" = "fisher_id")) %>%
+  count(animal_id, sort = TRUE)
 ```
 
 ```
-Locations with no report:
-Possible explanation:
+Most-recaptured fisher and its count:
+Number of fishers caught exactly once:
 ```
 
 ------------------------------------------------------------------------
@@ -393,46 +436,49 @@ gets you there — do them, but the grade is on the write-up. E3 must be
 ## E1 · How complete is the join? (not graded — do it anyway)
 
 ``` r
-# Reports with NO matching location
-no_loc <- anti_join(reports_df, locations_df,
-                    by = c("REPORT_NUMBER" = "number"))
+# Capture events with NO matching individual (unmarked animals)
+no_id <- anti_join(captures_df, individuals_df,
+                   by = c("animal_id" = "fisher_id"))
+100 * (1 - nrow(no_id) / nrow(captures_df))   # % of events we can attribute
 
-# Percent of reports that ARE geocoded
-100 * (1 - nrow(no_loc) / nrow(reports_df))
+# Released fishers never recaptured
+anti_join(individuals_df, captures_df, by = c("fisher_id" = "animal_id"))
 
 # The wrong join: no `by =` at all
-left_join(reports_df, locations_df)   # what does dplyr say it joined on?
+left_join(captures_df, individuals_df)        # what does dplyr say it joined on?
 ```
 
-Note the geocoded percentage, how many reports have no location, and what column
-dplyr picks when you leave `by =` out (and why that answer is wrong).
+Note the attributable percentage, how many fishers were never seen again, and
+what column dplyr picks when you leave `by =` out (and why that answer is wrong).
 
 ## E2 · One more join, your choice (not graded — do it anyway)
 
-Either: join a **third** slice of the data (e.g. counts per state per report
-class), **or** bring in a small table of your own (even 3–4 rows you type with
-`tibble()`) and join it on a shared key. Keep it small.
+Either: summarize the joined table a new way (mean `mass_kg` by sex; capture
+count by month), **or** bring in a small table of your own (even 3–4 rows you
+type with `tibble()` — e.g. a home-range size per `fisher_id`) and join it on
+the key. Keep it small.
 
 ## E3 · The most surprising thing — ✍️ by hand (graded)
 
 In a short paragraph, hand-written: across everything you did in this worksheet
-and E1–E2, **what surprised you most about joining real data?** Be specific —
+and E1–E2, **what surprised you most about joining these two tables?** Be specific —
 name the numbers or the rows that surprised you, and say why you expected
-something different. "Nothing surprised me" is not an answer; if the joins went
-smoothly, the surprise might be *how many* rows silently had no match.
+something different. "Nothing surprised me" is not an answer; if the joins went smoothly, the
+surprise might be how many capture events could not be tied to a known animal,
+or how many released fishers were never seen again.
 
 ------------------------------------------------------------------------
 
 # Getting unstuck
 
-1.  **`by` must be supplied / weird match** → the key columns are named differently; use `by = c("REPORT_NUMBER" = "number")`.
-2.  **Zero matches** → check the key **type** (`as.integer()` on `REPORT_NUMBER`) — text won't match a number.
-3.  **Way too many rows after a join** → a duplicated key fans out the rows; `distinct()` the lookup key first.
-4.  **dplyr announced `by = join_by(index)`** → you forgot to name your key; both tables share an `index` column.
+1.  **`by` must be supplied / weird match** → the key columns are named differently; use `by = c("animal_id" = "fisher_id")`.
+2.  **Zero matches** → check the key **case** (`str_to_upper()` on `animal_id`) — `"f07"` won't match `"F07"`.
+3.  **Way too many rows after a join** → you joined on `site` by accident; a shared key that isn't unique fans the rows out. Always name the real key.
+4.  **dplyr announced `by = join_by(site)`** → you forgot to name your key; both tables share a `site` column that means different things.
 5.  **Cheat sheet** — <https://dplyr.tidyverse.org/reference/mutate-joins.html>
 
-> 💡 **Key idea:** `bfro_reports.csv` and `bfro_locations.csv` were each incomplete on their own — one had no coordinates, the other had no context. `bigfoot_joined.csv` is what you get once a shared key ties them together, and it's what you'll load for the mapping worksheet.
+> 💡 **Key idea:** `fisher_individuals.csv` and `fisher_captures.csv` were each incomplete on their own — one had no field history, the other had no animal attributes. `fisher_joined.csv` is what you get once a shared key ties them together.
 
 ------------------------------------------------------------------------
 
-*End of the Joins worksheet. Next: mapping the data you just assembled.*
+*End of the Joins worksheet.*
