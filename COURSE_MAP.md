@@ -16,14 +16,14 @@
 | 10 | 5 | T-Tests II — Running, Reporting & Extension | `t_tests_2` | L | A | E |
 | 11 | 6 | Regressions | `regression` | L | A | E |
 | 12 | 6 | Weather Data & Regressions | `weather` | L | A | E |
-| 13 | 7 | Intro to the Final Project | `final_project` | L | A | E |
-| 14 | 7 | Finding Data & Examples for Your Project | — | · | · | · |
+| 13 | 7 | Intro to the Final Project | `final_project` | L | · | · |
+| 14 | 7 | Finding Data & Examples for Your Project | `final_project` | · | A | E |
 | 15 | 8 | One-Way ANOVA I — Setting Up the Test (with Factors) | `one_way_anova` | L | A | · |
 | 16 | 8 | One-Way ANOVA II — Running, Reporting & Extension | `one_way_anova_2` | L | A | E |
 | 17 | 9 | Lake Superior Ice | `pivoting` | L | A | E |
 | 18 | 9 | Holiday — Fall Break (no class) | — | · | · | · |
-| 19 | 10 | Final Project Pitches | — | · | · | · |
-| 20 | 10 | Final Project Pitches | — | · | · | · |
+| 19 | 10 | Final Project Pitches (Day 1 of 2) | `final_project_pitch` | · | A | · |
+| 20 | 10 | Final Project Pitches (Day 2 of 2) | — | · | · | · |
 | 21 | 11 | Joins — Fishers & the Weasel Family | `joins` | L | A | E |
 | 22 | 11 | Flex day | — | · | · | · |
 | 23 | 12 | Mapping — Bigfoot & GBIF | `mapping` | L | A | E |
@@ -32,7 +32,7 @@
 | 26 | 13 | Holiday — Thanksgiving (no class) | — | · | · | · |
 | 27 | 14 | Flex day | — | · | · | · |
 | 28 | 14 | Flex day | — | · | · | · |
-| 29 | 15 | Final Project Presentations — Posters | — | · | · | · |
+| 29 | 15 | Final Project Presentations — Posters | `final_project_poster` | · | A | · |
 | 30 | 15 | Flex day | — | · | · | · |
 
 ## Common Code (reference library — NOT the weekly schedule)

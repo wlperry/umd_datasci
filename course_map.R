@@ -36,7 +36,8 @@ has_extension <- function(activity_path) {
 
 for (wk in s$weeks) {
   for (m in wk$modules) {
-    folder <- if (!is.null(m$lecture)) sprintf("`%s`", basename(dirname(m$lecture))) else "—"
+    src <- m$lecture %||% m$activity
+    folder <- if (!is.null(src)) sprintf("`%s`", basename(dirname(src))) else "—"
     topic <- m$topic %||% ""
     if (!nzchar(topic)) {
       topic <- "_(placeholder)_"
