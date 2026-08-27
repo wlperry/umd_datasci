@@ -1,7 +1,7 @@
 ---
 order: 16
 week: 8
-title: "Worksheet 14 — One-Way ANOVA II: Running & Reporting"
+title: "Worksheet — One-Way ANOVA II: Running, Reporting & Extension"
 subtitle: "Reading the F table, finding which species differ, and writing it up"
 author: "Bill Perry"
 date: today
@@ -24,7 +24,7 @@ execute:
 
 # One-Way ANOVA II — Which Species Differ, and How Do We Report It?
 
-### Recap from Worksheet 13
+### Recap from the ANOVA I worksheet
 
 - Fit `mass_model <- lm(body_mass_g ~ species, data = penguins_df)`
 - Checked normality of the residuals (`plot(model)`, Shapiro-Wilk)
@@ -44,7 +44,7 @@ execute:
 > - Work through the parts in order. Type the code into a new R script in Positron and run it line by line.
 > - Blocks marked **▶ Run this** should be executed as written.
 > - Blocks marked **✏️ Your turn** ask you to write, modify, or interpret.
-> - The **Going further** section is optional.
+> - The **Extension** at the end is done out of class (~30–40 min) and turned in with the worksheet.
 
 ::: callout-note
 ## 🔮 Predict before you run — and type, don't paste
@@ -70,7 +70,7 @@ library(car)            # Anova()
 library(emmeans)        # post-hoc pairwise tests
 ```
 
-**▶ Run this** (same model as the end of Worksheet 13):
+**▶ Run this** (same model as the end of the ANOVA I worksheet):
 
 ``` r
 penguins_df <- penguins %>%
@@ -231,44 +231,73 @@ If not, what error appeared:
 
 ------------------------------------------------------------------------
 
-# Part 13 · Going further
+# Extension — out of class (~30–40 min)
 
-> Optional — do this if you finish early or want to push deeper.
+*Turn this in with your worksheet. It runs the **exact** analysis you just did —
+but on **one half** of the data that only you chose, so your F, *p*, and letters
+will be your own.*
 
-### Try a different response variable
+::: callout-important
+The prediction and explanation in **E2 and E3 must be handwritten** on paper,
+photographed, and embedded in your submission (`![caption](my_photo.jpg)`).
+Typed answers to E2/E3 receive **at most half credit, even if correct** — I want
+to see your own reasoning develop on the page.
+:::
 
-**▶ Try this:** repeat the whole workflow for `flipper_length_mm` instead of body mass.
+## E1 · Refit on one sex only (3 pts)
 
-``` r
-# One-way ANOVA on flipper length -----------------------
-flipper_df <- penguins %>% drop_na(flipper_length_mm, species)
-flipper_model <- lm(flipper_length_mm ~ species, data = flipper_df)
-
-Anova(flipper_model, type = "II")
-emmeans(flipper_model, pairwise ~ species)$contrasts
-```
-
-✏️ **Your turn:** Do the species differ in flipper length the same way they differ in mass?
-
-```
-Your answer:
-```
-
-### Compare across islands
-
-**▶ Try this:** use `island` as the grouping variable instead of `species`.
+Everyone above ran the identical analysis on the full dataset, so everyone's
+numbers match. Not anymore. **Pick one sex — `"male"` or `"female"`** — and
+re-run the whole ANOVA on only that half. Write down which you picked *before*
+you start.
 
 ``` r
-island_df <- penguins %>% drop_na(body_mass_g, island)
-island_model <- lm(body_mass_g ~ island, data = island_df)
-Anova(island_model, type = "II")
+# Replace ___ with "male" or "female"
+penguins_sex <- penguins %>%
+  drop_na(body_mass_g, species, sex) %>%
+  filter(sex == "___")
+
+sex_model <- lm(body_mass_g ~ species, data = penguins_sex)
+
+Anova(sex_model, type = "II")                     # new F, df, p
+emmeans(sex_model, pairwise ~ species)$contrasts  # which pairs differ now
 ```
 
-✏️ **Your turn:** Why might comparing by island be misleading here? (Hint: which species live on which islands?)
+✏️ **Record:**
 
 ```
-Your answer:
+Sex chosen:
+n (nrow(penguins_sex)):
+F(__, __) =            p =
+Pairs that differ now (Adelie–Chinstrap / Adelie–Gentoo / Chinstrap–Gentoo):
 ```
+
+## E2 · Predict, then check — ✍️ by hand (3 pts)
+
+**Before running E1**, on paper, write:
+
+1.  Will restricting to one sex change **which** species pairs differ, compared
+    with your full-data result in Part 9?
+2.  Will the F-statistic get **bigger or smaller**, and why? Think about what
+    happens to (a) sample size and (b) within-group spread when you drop half
+    the penguins.
+
+Then run E1 and, still by hand, write your **actual** F and *p* and whether your
+prediction held.
+
+## E3 · Explain it — ✍️ by hand, with YOUR numbers (3 pts)
+
+Using your real output from E1 (not the class example):
+
+1.  State H₀ and Hₐ for your one-sex test.
+2.  In plain language, say which species differ and which don't — and why a
+    significant overall F *by itself* would not have told you that.
+3.  Compare your E1 F and *p* to the full-data F and *p* from Part 7. Explain why
+    they differ (or are surprisingly similar) even though you cut *n* roughly in
+    half.
+
+> Optional, no points: rerun E1 for `flipper_length_mm` instead of `body_mass_g`
+> and see whether the species separate the same way.
 
 ------------------------------------------------------------------------
 
@@ -283,4 +312,4 @@ Your answer:
 
 ------------------------------------------------------------------------
 
-*End of Worksheet 14. Next: Worksheet 15 — kicking off the final project.*
+*End of the ANOVA II worksheet. Next: kicking off the final project.*
