@@ -399,6 +399,68 @@ Your answer:
 
 ------------------------------------------------------------------------
 
+# Extension — out of class (~30–40 min)
+
+*Turn this in with your worksheet. In class you mapped Bigfoot reports. Now you
+map a **real species you pick**, pulled live from GBIF with `rgbif`.*
+
+::: callout-important
+**E2 and E3 must be handwritten** on paper, photographed, and embedded
+(`![caption](my_photo.jpg)`). Typed answers get **at most half credit, even if
+correct** — E2 is your prediction *before* you download.
+:::
+
+## E1 · Map your own species (4 pts)
+
+Pick any species with a scientific name (a plant, bird, mammal, insect — your
+choice). Then, with the same recipe as class:
+
+``` r
+library(rgbif)
+library(sf)
+library(tidyverse)
+
+# 1. up to ~1500 US records that have coordinates
+occ <- occ_data(scientificName = "Genus species",
+                country = "US", hasCoordinate = TRUE, limit = 1500)$data
+
+# 2. keep real coordinates, build the sf object (x = longitude first!)
+sp_sf <- occ %>%
+  filter(!is.na(decimalLongitude), !is.na(decimalLatitude)) %>%
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = 4326)
+
+# 3. points on the same states basemap you used in class
+ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+  geom_sf(data = sp_sf, alpha = 0.3, size = 0.6, color = "darkgreen") +
+  coord_sf(crs = 5070) +
+  theme_void()
+```
+
+Save the map to `figures/` at `dpi = 300`. Record your species and how many
+records you got.
+
+## E2 · Predict, then check — ✍️ by hand (3 pts)
+
+**Before running E1:** sketch, on a rough US outline, where you expect your
+species to occur and why (climate, habitat, range you know). Then run E1 and
+write 2–3 sentences comparing your prediction to the real map — and note whether
+anything looks like a *sampling* artifact rather than real range (a dense blob
+around one city, a hard line at a state border).
+
+## E3 · Explain it — ✍️ by hand (3 pts)
+
+1.  GBIF records are where people *reported* the species, not where it truly
+    lives. Give one concrete way that could bias *your* map.
+2.  Washington and California had many Bigfoot reports partly because they are
+    big and populous. What extra data would make a state-to-state comparison of
+    *your* species fair?
+3.  The choropleth recipe (polygons → counts → `left_join()` → `geom_sf(fill=)`)
+    didn't change from Bigfoot to your species. In your own words, why is that
+    recipe dataset-independent?
+
+------------------------------------------------------------------------
+
 # Getting unstuck
 
 1.  **`st_as_sf` error about missing coordinates** → filter out `NA` lat/long first (Part 2).
@@ -412,4 +474,4 @@ Your answer:
 
 ------------------------------------------------------------------------
 
-*End of Worksheet 13. Homework: map your own species from GBIF with `rgbif`.*
+*End of the Mapping worksheet.*
