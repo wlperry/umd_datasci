@@ -13,13 +13,13 @@
 | 07 | 4 | Quarto and Markdown Reports | `quarto` | L | A | · |
 | 08 | 4 | Flex / Catch-up | `catchup` | L | · | · |
 | 09 | 5 | T-Tests I — Setting Up the Test | `t_tests` | L | A | · |
-| 10 | 5 | T-Tests II — Running, Reporting & Extension | `t_tests_2` | L | A | · |
+| 10 | 5 | T-Tests II — Running, Reporting & Extension | `t_tests_2` | L | A | E |
 | 11 | 6 | Regressions | `regression` | L | A | · |
 | 12 | 6 | Weather Data & Regressions | `weather` | L | A | · |
 | 13 | 7 | Intro to the Final Project | `final_project` | L | A | · |
 | 14 | 7 | Finding Data & Examples for Your Project | — | · | · | · |
 | 15 | 8 | One-Way ANOVA I — Setting Up the Test (with Factors) | `one_way_anova` | L | A | · |
-| 16 | 8 | One-Way ANOVA II — Running, Reporting & Extension | `one_way_anova_2` | L | A | · |
+| 16 | 8 | One-Way ANOVA II — Running, Reporting & Extension | `one_way_anova_2` | L | A | E |
 | 17 | 9 | Lake Superior Ice | `pivoting` | L | A | · |
 | 18 | 9 | Holiday — Fall Break (no class) | — | · | · | · |
 | 19 | 10 | Final Project Pitches | — | · | · | · |
