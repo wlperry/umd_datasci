@@ -3,6 +3,36 @@
 *Working document. Created 2026-08-27. Edit `_schedule.yml` + content per this
 plan; check items off in §0 as you finish them so a fresh session can resume.*
 
+> ## Done so far (branch `course-revision`)
+>
+> - **`fdff36e`** — `_schedule.yml` rewritten to the instructor's real **15-week**
+>   Fall 2026 plan (from `schedule/2026_datascience_organization.xlsx`): flex-day
+>   + holiday slots, final-project pitch (wk10) / poster (wk15) days, Joins →
+>   wk11, Mapping → wk12, ANOVA I/II → wk8. Homework tree **deleted**; sidebar
+>   link removed; `course_map.R` H→E column. Unscheduled topics (GLM, ANCOVA,
+>   PCA I/II, multivariate, logistic, standalone Factors, tbd_20–30) **parked**
+>   in `content/_parked/` (excluded from render).
+> - **`6ae190e`** — Factors folded into **One-Way ANOVA I** (lecture: `fct_reorder`
+>   + `fct_relevel` slides; activity: new Parts 3 & 6, renumbered 1–8).
+> - **`8828aff`** — **Extension** sections added to `one_way_anova_2` and
+>   `t_tests_2` activities (the two-part topics carry the extension on Part II).
+>
+> ### Still open
+> - **Joins content** (`content/joins/`) is currently the **Bigfoot** BFRO
+>   example. The instructor wants it reworked around **fishers / the weasel
+>   family (Mustelidae)** — needs a dataset. The wk11 Excel note: *"add in most
+>   surprising thing at the end… only grade that."* → the Joins extension = a
+>   short "what surprised you most" reflection, and that is the only graded part.
+> - **Extensions for the other ~12 activities** (see §5.3) — not started.
+> - **`syllabus.qmd` / `admin/syllabus.qmd`** still say "Homework 20%" and
+>   describe reading-homework — update the grading table + policy to the
+>   activity+extension model.
+> - New slots (`Finding Data & Examples` wk7, `Final Project Pitches` wk10,
+>   `Poster Presentations` wk15) have topic strings but no content files.
+> - `site_libs/` has 3 stray tracked (empty) files — should be `.gitignore`d.
+> - `check_schedule_links.R` / `index.qmd` / `sync_order_from_schedule.R` still
+>   list a `homework` key — harmless (no module uses it), tidy later.
+
 This plan captures a restructuring the instructor decided on after doing the
 same thing on the Ecostats site:
 
@@ -26,21 +56,22 @@ same thing on the Ecostats site:
 
 Update these as you go. `[x]` = done, `[~]` = in progress, `[ ]` = not started.
 
-### Part A — Schedule
-- [ ] A1. Rewrite `_schedule.yml` weeks 7–10 (see §3.1)
-- [ ] A2. Renumber the tail (weeks 11+) — **decide with instructor first**
-- [ ] A3. `Rscript course_map.R` → regenerate `COURSE_MAP.md`
-- [ ] A4. `quarto render index.qmd` sanity check (homepage builds)
+### Part A — Schedule  ✅ done (`fdff36e`)
+- [x] A1. `_schedule.yml` → full 15-week Fall 2026 version (from the Excel)
+- [x] A2. Tail: weeks 11–15 are flex/holiday/new slots — no renumber needed
+- [x] A3. `COURSE_MAP.md` regenerated (`course_map.R`: H column → E)
+- [x] A4. `index.qmd` schedule chunk executes cleanly
+- [ ] A5. Update `syllabus.qmd` + `admin/syllabus.qmd` grading model (Homework 20% → activities/extensions)
 
-### Part B — Factors → ANOVA I
-- [ ] B1. Add "Factors control the order" content to `one_way_anova_lecture.qmd`
-- [ ] B2. Add factor parts to `one_way_anova_activity.qmd`
-- [ ] B3. Update ANOVA I recap/goals wording (it currently forward‑refs factors)
-- [ ] B4. Update `one_way_anova_2` (ANOVA II) — it may lean on factors ordering
-- [ ] B5. Remove the Factors module from `_schedule.yml`
-- [ ] B6. Trim `common_code/15_factors/factors.qmd` intro to point here; keep full reference
-- [ ] B7. Decide fate of `content/factors/` folder (archive vs delete — see §4.4)
-- [ ] B8. Render‑check ANOVA I lecture + activity
+### Part B — Factors → ANOVA I  ✅ done (`6ae190e`)
+- [x] B1. `fct_reorder` / `fct_relevel` slides in `one_way_anova_lecture.qmd`
+- [x] B2. New Parts 3 & 6 in `one_way_anova_activity.qmd`; renumbered 1–8
+- [x] B3. Recap / goals / getting-unstuck wording updated
+- [x] B4. `one_way_anova_2` — Extension added; no factor-order dependency to fix
+- [x] B5. Factors module removed from `_schedule.yml`
+- [ ] B6. Trim `common_code/15_factors/factors.qmd` intro to read as a reference
+- [x] B7. `content/factors/` parked in `content/_parked/factors/`
+- [x] B8. Render-checked (lecture 23/23 chunks; activity clean)
 
 ### Part C — Homework → Extension (one row per module; see §5.3)
 - [ ] C-01 introduction
@@ -51,11 +82,11 @@ Update these as you go. `[x]` = done, `[~]` = in progress, `[ ]` = not started.
 - [ ] C-06 summary_stats
 - [ ] C-07 quarto
 - [ ] C-09 t_tests (I)
-- [ ] C-10 t_tests_2 (II)
+- [x] C-10 t_tests_2 (II)  — one-tailed test on a chosen variable + handwritten E2/E3 (`8828aff`)
 - [ ] C-11 regression
 - [ ] C-12 weather
-- [ ] C-13 one_way_anova (I)  ← do together with Part B
-- [ ] C-14 one_way_anova_2 (II)
+- [x] C-13 one_way_anova (I)  — no extension; ANOVA is two-part, extension is on II
+- [x] C-14 one_way_anova_2 (II)  — one-sex-subset ANOVA + handwritten E2/E3 (`8828aff`)
 - [ ] C-15 final_project  ← **keep as a real project deliverable, not an extension** (confirm)
 - [ ] C-16 pivoting (Lake Superior Ice)
 - [ ] C-17 joins
