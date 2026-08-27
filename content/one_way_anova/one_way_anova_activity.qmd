@@ -1,8 +1,8 @@
 ---
 order: 15
 week: 8
-title: "Worksheet 13 — One-Way ANOVA I: Setting Up the Test"
-subtitle: "Exploring the penguins, fitting the model, and checking assumptions"
+title: "Worksheet — One-Way ANOVA I: Setting Up the Test (with Factors)"
+subtitle: "Exploring the penguins, ordering groups with factors, fitting the model, and checking assumptions"
 author: "Bill Perry"
 date: today
 
@@ -33,15 +33,16 @@ execute:
 ### Today's Objectives
 
 1.  Load and explore the Palmer penguins data
-2.  State the ANOVA null and alternate hypotheses
-3.  Fit a one-way ANOVA and check its assumptions
+2.  Order the groups with a **factor** (`fct_reorder`) for a readable boxplot
+3.  State the ANOVA null and alternate hypotheses
+4.  Fit a one-way ANOVA, set its reference level (`fct_relevel`), and check its assumptions
 
 > # **How to use this worksheet**
 >
 > - Work through the parts in order. Type the code into a new R script in Positron and run it line by line.
 > - Blocks marked **▶ Run this** should be executed as written.
 > - Blocks marked **✏️ Your turn** ask you to write, modify, or interpret.
-> - The **Going further** section is optional.
+> - There's no separate homework — the out-of-class **Extension** is on the ANOVA II worksheet.
 
 ::: callout-note
 ## 🔮 Predict before you run — and type, don't paste
@@ -51,9 +52,9 @@ Before each **▶ Run this** block, cover the output and *predict* what R will p
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 1 — Explore & hypothesize *(after lecture Chunk 1)*
+> ## 🧩 Chunk 1 — Explore, order, hypothesize *(after lecture Chunk 1)*
 >
-> Parts 1–3: load the penguins, plot body mass by species, and write your hypotheses.
+> Parts 1–4: load the penguins, plot body mass by species, reorder the boxplot with a factor, and write your hypotheses.
 
 # Part 1 · Load libraries and data
 
@@ -116,11 +117,51 @@ mass_box_plot
 Heaviest species:
 Lightest species:
 Do the spreads (box heights) look similar across species?  Y / N
+What order are the species in on the x-axis, and why?
 ```
 
 ------------------------------------------------------------------------
 
-# Part 3 · State your hypotheses
+# Part 3 · Order the boxplot with a factor
+
+> 🔮 **Predict first:** `species` is a **factor**. Run `levels(penguins_df$species)` — what order are the levels in? Is that the order you want on the plot?
+
+**▶ Run this:**
+
+``` r
+# What order does R store the species levels in? --------
+class(penguins_df$species)
+levels(penguins_df$species)
+
+# Reorder species by MEDIAN body mass, then plot --------
+penguins_df %>%
+  mutate(species = fct_reorder(species, body_mass_g, .fun = median)) %>%
+  ggplot(aes(x = species, y = body_mass_g, fill = species)) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+  labs(x = "Species (ordered by median mass)", y = "Body Mass (g)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+✏️ **Your turn:** Answer.
+
+```
+Stored level order:
+Order after fct_reorder():
+Does the reordered plot read more clearly?  Y / N
+```
+
+✏️ **Your turn:** `fct_reorder()` has to go **inside `mutate()`**. What happens if you just call `fct_reorder()` on its own and then plot `penguins_df`?
+
+```
+Your answer:
+```
+
+> 💡 **Key idea:** the whole `fct_*` family (rename, merge, lump levels) lives in **Common Code 15 · Factors**. Today you only need `fct_reorder()` here and `fct_relevel()` in Part 6.
+
+------------------------------------------------------------------------
+
+# Part 4 · State your hypotheses
 
 ✏️ **Your turn:** Write the ANOVA hypotheses in words and symbols.
 
@@ -135,15 +176,15 @@ In symbols:  H₀: μ_Adelie = μ_Chinstrap = μ_Gentoo
 Significance level α:
 ```
 
-> 💡 **Key idea:** Hₐ only says "at least one differs" — it does **not** say which. Finding which is the job of the post-hoc test in Part 9.
+> 💡 **Key idea:** Hₐ only says "at least one differs" — it does **not** say which. Finding which is the job of the post-hoc test in *ANOVA II*.
 
 ------------------------------------------------------------------------
 
 > ## 🧩 Chunk 2 — Fit & check assumptions *(after lecture Chunk 2)*
 >
-> Parts 4–6: fit the model, check residual normality, check equal variance.
+> Parts 5–8: fit the model, set the reference level, check residual normality, check equal variance.
 
-# Part 4 · Fit the model
+# Part 5 · Fit the model
 
 **▶ Run this:**
 
@@ -160,7 +201,38 @@ Your answer:
 
 ------------------------------------------------------------------------
 
-# Part 5 · Assumption 1 — normality of residuals
+# Part 6 · Set the reference level with `fct_relevel()`
+
+> 🔮 **Predict first:** `lm()` uses the **first** factor level as the baseline. If you move Gentoo to the front, will the overall F-test / p-value change, or only the coefficients?
+
+**▶ Run this:**
+
+``` r
+# Coefficients are differences FROM the first level -----
+coef(mass_model)
+
+# Make Gentoo the reference, refit, compare ------------
+penguins_relevel <- penguins_df %>%
+  mutate(species = fct_relevel(species, "Gentoo"))
+
+mass_model_gentoo <- lm(body_mass_g ~ species, data = penguins_relevel)
+coef(mass_model_gentoo)
+```
+
+✏️ **Your turn:** Compare the two coefficient sets.
+
+```
+What (Intercept) represents in mass_model:
+What (Intercept) represents in mass_model_gentoo:
+Did the coefficient values change?  Y / N
+Would the overall F-statistic / p-value change?  Y / N
+```
+
+> 💡 **Key idea:** releveling changes *which comparison the coefficients show*, not *whether any means differ*. Use it to make the baseline a group your reader cares about (a control, a reference site).
+
+------------------------------------------------------------------------
+
+# Part 7 · Assumption 1 — normality of residuals
 
 > 🔮 **Predict first:** `plot(mass_model)` gives the same four panels as the regression worksheet. Which panel checks normality?
 
@@ -192,7 +264,7 @@ Your answer:
 
 ------------------------------------------------------------------------
 
-# Part 6 · Assumption 2 — equal variance
+# Part 8 · Assumption 2 — equal variance
 
 > 🔮 **Predict first:** From the box heights in Part 2, predict — will Levene's test say the variances are equal (*p* > 0.05) or unequal?
 
@@ -218,6 +290,7 @@ If NOT equal, which test would you use instead? (hint: Welch)
 At this point you should be able to:
 
 - [ ] Explain why many t-tests inflate the false-positive rate
+- [ ] Order groups with `fct_reorder()` and set a model baseline with `fct_relevel()`
 - [ ] State ANOVA hypotheses with μ notation
 - [ ] Fit `lm(Y ~ group)` and check residual normality + equal variance
 
@@ -233,9 +306,11 @@ If not, what error appeared:
 # Getting unstuck
 
 1.  **`could not find function "penguins"`** → `library(palmerpenguins)`.
-2.  **Levene says unequal variance** → use `oneway.test(y ~ group, var.equal = FALSE)` (Welch's ANOVA).
-3.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
+2.  **`could not find function "fct_reorder"`** → `library(tidyverse)` (forcats is inside it).
+3.  **Reordering "did nothing"** → you must reorder **inside `mutate()`** and plot the result; reordering a copy doesn't change the original.
+4.  **Levene says unequal variance** → use `oneway.test(y ~ group, var.equal = FALSE)` (Welch's ANOVA).
+5.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/> · Factors: <https://rstudio.github.io/cheatsheets/factors.pdf>
 
 ------------------------------------------------------------------------
 
-*End of Worksheet 13. Next: Worksheet 14 — running the ANOVA and finding which species differ.*
+*End of the ANOVA I worksheet. Next: One-Way ANOVA II — running the test, post-hoc comparisons, and the out-of-class Extension.*
