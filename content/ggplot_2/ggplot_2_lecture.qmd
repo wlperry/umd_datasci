@@ -1,0 +1,418 @@
+---
+title: "Lecture 04 — GGPlot II"
+subtitle: "More geoms, zooming safely, and picking a theme"
+author: "Bill Perry"
+date: today
+
+order: 4
+week: 2
+type: lecture             # lecture | activity | homework | assignment | common_code
+description: >
+  Mapping shape alongside color, adding a trend line with geom_smooth(),
+  coord_cartesian() vs. xlim()/ylim(), and choosing a built-in theme.
+categories: [ggplot, tidyverse]
+
+format:
+  revealjs:
+    output-ext: "slides.html"
+    theme: simple
+    slide-number: true
+    fig-format: png
+    fig-width: 5
+    fig-height: 3.8
+    code-overflow: wrap
+    highlight-style: github
+  docx: default
+  pptx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+
+
+```{r setup}
+#| echo: false
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Where we left off (Lecture 03 — GGPlot I)
+
+- Piping straight into a plot: `tree_df %>% ggplot(...)`
+- `scale_color_manual()` / `scale_fill_manual()` — colors you choose
+- `facet_wrap()` and `facet_grid()` — one panel per group
+- `stat_summary()` — mean and mean ± SE, drawn from raw data
+
+::: callout-note
+**✅ Key idea from Lecture 03**
+
+You can already build a grouped, colored, faceted figure. Today: one more geom, a safer way to zoom, and picking a theme that looks intentional instead of default.
+:::
+
+# Goals for Today
+
+:::::: columns
+:::: {.column width="60%"}
+- Map **shape** alongside color, and add a trend line with `geom_smooth()`
+- Zoom into a plot **without silently dropping data** — `coord_cartesian()`
+- Pick a built-in **theme** and adjust it with `theme()`
+- Save a figure in the right **format** for the job
+
+::: callout-tip
+**🖐 Try it yourself**
+
+By the end you will recognize the single most common ggplot mistake — zooming with `xlim()`/`ylim()` — before you ever make it yourself.
+:::
+::::
+
+::: {.column width="40%"}
+**References:**
+
+- 📖 Whitlock & Schluter, Ch. 2 — *Displaying Data*
+- 📖 [R4DS Ch 1](https://r4ds.hadley.nz/data-visualize) — Data Visualization
+
+Both PDFs are in the course `readings/` folder.
+:::
+::::::
+
+# How to Use These Slides — Predict · Type · Run
+
+:::::: columns
+::: {.column width="60%"}
+This lecture runs in **three short chunks**. After each chunk you switch to the activity worksheet and type the code yourself.
+:::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Why bother?**
+
+`xlim()` and `coord_cartesian()` produce plots that look *identical* for simple scatter plots — the difference only shows up once you compute something (a smooth line, a boxplot). Typing both yourself and comparing outputs is the only way this sticks.
+:::
+::::
+::::::
+
+# Load Libraries and Data
+
+```{r load-libs-04}
+# Load all packages at the top of every script ----------
+library(readxl) # reading Excel files
+library(tidyverse) # data wrangling + ggplot2
+library(janitor) # cleans up messy column names
+```
+
+```{r load-data-04}
+# Read the leaf data from the data folder ---------------
+tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx") %>%
+  clean_names()
+```
+
+# 🧩 Chunk 1 of 3 · Shape, Color, and a Trend Line
+
+**We will cover:** mapping shape alongside color, and `geom_smooth()`.
+
+::: {.activitybanner}
+**🛑 After this chunk you will do Activity Part 1.**
+:::
+
+# Mapping Shape Alongside Color
+
+::: callout-note
+**🔮 Predict first:** We map both `color = side` and `shape = side` to the *same* variable. Will ggplot draw one legend or two?
+:::
+
+:::::: columns
+::: {.column width="60%"}
+```{r shape-color-demo}
+#| fig-format: png
+#| fig-alt: "Scatter plot of leaf weight against leaf width, with sunny leaves shown as gold triangles and shady leaves as green circles."
+# Map color AND shape to the same variable -------------
+tree_df %>%
+  ggplot(aes(x = width_cm, y = weight_g, color = side, shape = side)) +
+  geom_point(size = 2.5, alpha = 0.8) +
+  scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(
+    title = "Leaf Weight vs. Width",
+    x = "Width (cm)", y = "Weight (g)",
+    color = "Side", shape = "Side"
+  ) +
+  theme_minimal()
+```
+:::
+
+:::: {.column width="40%"}
+- Mapping the **same variable** to both `color` and `shape` merges them into **one legend**
+- This makes the plot easier to read in black-and-white or for colorblind readers
+- If `color` and `shape` legend titles differ in `labs()`, you get **two** legends instead — usually not what you want
+
+📖 [R4DS §9 — Layers](https://r4ds.hadley.nz/layers)
+::::
+::::::
+
+# Adding a Trend Line — `geom_smooth()`
+
+::::: columns
+::: {.column width="60%"}
+```{r geom-smooth-demo}
+#| fig-format: png
+#| fig-alt: "Scatter plot of leaf weight against width with a linear trend line and shaded confidence ribbon added."
+# geom_smooth() fits a line straight from the data -----
+tree_df %>%
+  ggplot(aes(x = width_cm, y = weight_g)) +
+  geom_point(alpha = 0.6, color = "grey40") +
+  geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
+  labs(
+    title = "Leaf Weight vs. Width, with Trend Line",
+    x = "Width (cm)", y = "Weight (g)"
+  ) +
+  theme_minimal()
+```
+:::
+
+::: {.column width="40%"}
+- `method = "lm"` fits a straight line (linear model)
+- The shaded ribbon is the **95% confidence band** around the line
+- We'll fit this same relationship formally with `lm()` in the Regression unit later this semester
+
+::: callout-tip
+`geom_smooth()` is exploration, not a hypothesis test — it shows you *whether a line is worth fitting formally* before you commit to one.
+:::
+::::
+::::::
+
+# → ACTIVITY 4 Part 1 now
+
+::: {.activitybanner}
+**🛑 Do Activity Part 1 now**
+
+Map shape and color to `side`, then add a `geom_smooth()` trend line. Predict, type, run.
+:::
+
+# 🧩 Chunk 2 of 3 · Zooming Without Losing Data
+
+**We will cover:** `coord_cartesian()` vs. `xlim()`/`ylim()` — they look the same until they don't.
+
+::: {.activitybanner}
+**🛑 After this chunk you will do Activity Part 2.**
+:::
+
+# `coord_cartesian()` — Zoom Without Removing Data
+
+::::: columns
+::: {.column width="60%"}
+```{r coord-cartesian-demo}
+#| fig-format: png
+#| fig-alt: "Scatter plot of leaf weight against width zoomed to a narrower window using coord_cartesian, with the same underlying data and trend line as the full plot."
+# coord_cartesian() zooms the VIEW, keeps all the data -
+tree_df %>%
+  ggplot(aes(x = width_cm, y = weight_g)) +
+  geom_point(alpha = 0.6, color = "grey40") +
+  geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
+  coord_cartesian(xlim = c(12, 15), ylim = c(2, 5)) +
+  labs(
+    title = "Zoomed with coord_cartesian()",
+    x = "Width (cm)", y = "Weight (g)"
+  ) +
+  theme_minimal()
+```
+:::
+
+:::: {.column width="40%"}
+- Zooms the **view** — every point still contributes to the trend line
+- The trend line is fit on **all 20 leaves**, then the plot window is cropped afterward
+- Safe to use anytime you just want a closer look
+::::
+::::::
+
+# `xlim()` / `ylim()` — Removes Data First
+
+::: callout-note
+**🔮 Predict first:** If we drop the leaves outside our zoom window *before* fitting the trend line, will the line look the same as before, or different?
+:::
+
+:::::: columns
+::: {.column width="60%"}
+```{r xlim-demo}
+#| fig-format: png
+#| fig-alt: "Scatter plot of leaf weight against width using xlim and ylim, showing a trend line refit only on the remaining visible points after out-of-range leaves were silently dropped."
+# xlim()/ylim() DELETE rows outside the range first ----
+tree_df %>%
+  ggplot(aes(x = width_cm, y = weight_g)) +
+  geom_point(alpha = 0.6, color = "grey40") +
+  geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
+  xlim(12, 15) +
+  ylim(2, 5) +
+  labs(
+    title = "Zoomed with xlim() / ylim() — different line!",
+    x = "Width (cm)", y = "Weight (g)"
+  ) +
+  theme_minimal()
+```
+:::
+
+:::: {.column width="40%"}
+::: callout-warning
+**⚠️ Watch out!**
+
+`xlim()`/`ylim()` **silently delete rows** outside the range *before* anything is computed. The trend line above is fit only on the leaves that remain — a different line than `coord_cartesian()` produced, with no warning that data went missing.
+:::
+
+**Rule of thumb:** use `coord_cartesian()` to zoom. Only use `xlim()`/`ylim()` when you actually want those rows excluded from the analysis, not just out of view.
+::::
+::::::
+
+# → ACTIVITY 4 Part 2 now
+
+::: {.activitybanner}
+**🛑 Do Activity Part 2 now**
+
+Zoom the same plot two ways and compare the trend lines. Predict, type, run.
+:::
+
+# 🧩 Chunk 3 of 3 · Themes and Saving
+
+**We will cover:** picking a built-in theme, `theme()` tweaks, and choosing a file format with `ggsave()`.
+
+::: {.activitybanner}
+**🛑 After this chunk you will do Activity Parts 3–4.**
+:::
+
+# Picking a Theme
+
+::::: columns
+::: {.column width="60%"}
+```{r themes-demo}
+#| fig-format: png
+#| fig-alt: "Boxplot of leaf weight by side rendered in theme_classic, with a white background and axis lines only."
+# theme_classic() — clean, close to journal defaults ---
+tree_df %>%
+  ggplot(aes(x = side, y = weight_g, fill = side)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(x = "Side of Tree", y = "Leaf Weight (g)", title = "Leaf Weight by Side") +
+  theme_classic() +
+  theme(legend.position = "none")
+```
+:::
+
+:::: {.column width="40%"}
+**Five built-in themes to try on the same plot:**
+
+| Theme | Look |
+|---|---|
+| `theme_grey()` | default — grey background |
+| `theme_bw()` | white background, grey gridlines |
+| `theme_minimal()` | no background, subtle gridlines |
+| `theme_classic()` | white background, axis lines only |
+| `theme_light()` | light grey lines and border |
+
+::: callout-tip
+`theme_classic()` is a safe default for scientific figures — clean, uncluttered, close to what most journals expect.
+:::
+::::
+::::::
+
+# Adjusting a Theme with `theme()`
+
+::::: columns
+::: {.column width="60%"}
+```{r theme-tweak-demo}
+#| fig-format: png
+#| fig-alt: "The same boxplot of leaf weight by side, with legend removed and larger axis text via theme adjustments."
+# theme() overrides individual elements afterward -----
+tree_df %>%
+  ggplot(aes(x = side, y = weight_g, fill = side)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(x = "Side of Tree", y = "Leaf Weight (g)", title = "Leaf Weight by Side") +
+  theme_classic() +
+  theme(
+    legend.position = "none",
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 13)
+  )
+```
+:::
+
+:::: {.column width="40%"}
+- Pick a **built-in theme first** (`theme_classic()`), then add `theme()` afterward to tweak individual pieces
+- `legend.position = "none"` — drop a redundant legend
+- `axis.text` / `axis.title` — control tick labels and axis titles separately
+
+::: callout-note
+**✅ Key idea**
+
+You rarely need to build a theme from scratch. Start from a built-in theme and override only what looks wrong.
+:::
+::::
+::::::
+
+# Saving in the Right Format
+
+::::: columns
+::: {.column width="60%"}
+```{r ggsave-formats}
+#| eval: false
+leaf_plot <- tree_df %>%
+  ggplot(aes(x = side, y = weight_g, fill = side)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(x = "Side of Tree", y = "Leaf Weight (g)") +
+  theme_classic() +
+  theme(legend.position = "none")
+
+# PNG — good for Word docs, slides, web
+ggsave("figures/leaf_weight_theme.png",
+       plot = leaf_plot, width = 5, height = 5,
+       units = "in", dpi = 300)
+
+# PDF — vector, scales to any size, good for print
+ggsave("figures/leaf_weight_theme.pdf",
+       plot = leaf_plot, width = 5, height = 5, units = "in")
+```
+:::
+
+:::: {.column width="40%"}
+| Format | Best for | Scales? |
+|---|---|---|
+| `.png` | Word docs, slides, web | ❌ fixed pixels |
+| `.pdf` | Print, journals | ✅ infinite |
+| `.tiff` | Journal submission | ❌ fixed pixels |
+
+::: callout-warning
+**⚠️ Watch out!** `ggsave()` takes the **filename first**, then `plot =`. Always name the plot object explicitly — do not rely on ggsave grabbing "the last plot shown."
+:::
+::::
+::::::
+
+# → ACTIVITY 4 Parts 3–4 now
+
+::: {.activitybanner}
+**🛑 Go to Activity 4 — Parts 3–4**
+
+Close the slides. Pick a theme, tweak it, and save your plot as both PNG and PDF.
+:::
+
+# What We Learned Today
+
+::::: columns
+::: {.column width="60%"}
+- Map `shape` alongside `color` to merge legends
+- `geom_smooth(method = "lm")` — a quick trend line, not a hypothesis test
+- `coord_cartesian()` zooms safely; `xlim()`/`ylim()` silently deletes rows first
+- Built-in themes (`theme_classic()`, etc.) + `theme()` for small overrides
+- `.png` for documents/slides, `.pdf` for print/journals
+:::
+
+::: {.column width="40%"}
+**References:**
+
+- 📖 Whitlock & Schluter, Ch. 2 — *Displaying Data*
+- 📖 [R4DS Ch 1](https://r4ds.hadley.nz/data-visualize) — Data Visualization
+
+**Up next — Lecture 05, Wrangling:**
+
+- `filter()`, `select()`, `mutate()`, `arrange()`
+- Chaining verbs into one pipeline
+:::
+:::::

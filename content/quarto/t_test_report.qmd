@@ -4,14 +4,14 @@ week: 3
 # =====================================================================
 #  t_test_report.qmd
 #  A WORKED EXAMPLE for the Quarto intro (Lecture 4.5).
-#  This is the analysis from Worksheet 04 (the Welch's t-test) written
+#  This is the analysis from Worksheets 09–10 (the Welch's t-test) written
 #  up as a Quarto report. Open it after the Quarto lecture to SEE why we
 #  bother: the same t-test you ran in a script becomes a finished Word
 #  document, with the t-statistic, p-value, and means dropped straight
 #  into the sentences — nothing copied by hand.
 # =====================================================================
 title: "Do Shady Leaves Weigh More? A Two-Sample t-Test"
-subtitle: "A reproducible write-up of the Worksheet 04 analysis"
+subtitle: "A reproducible write-up of the Worksheets 09–10 analysis"
 author: "Your Name Here"
 date: today
 
@@ -36,6 +36,7 @@ execute:
 # Load all packages in one chunk at the top ----------------------------
 library(readxl)
 library(tidyverse)
+library(broom)   # tidy() turns the t-test object into a data frame
 ```
 
 ```{r load-data}
@@ -94,6 +95,8 @@ knitr::kable(
 )
 ```
 
+<!-- 🔮 PREDICT before you Render: what t, df, and p-value will Table 2 show, and which side is heavier? Write your guesses, then render and check. -->
+
 ```{r run-test}
 # Welch's two-sample t-test --------------------------------------------
 leaf_ttest_model <- t.test(
@@ -103,32 +106,34 @@ leaf_ttest_model <- t.test(
   alternative = "two.sided"
 )
 
-# Pull the pieces we want to write into the sentences below
+# t and p for the figure subtitle below (not used in the text)
 t_val <- round(leaf_ttest_model$statistic, 2)
-df_val <- round(leaf_ttest_model$parameter, 1)
 p_val <- signif(leaf_ttest_model$p.value, 2)
-mean_sh <- round(leaf_ttest_model$estimate[1], 2) # shady (alphabetical first)
-mean_su <- round(leaf_ttest_model$estimate[2], 2) # sunny
-se_sh <- summary_df$se_wt[summary_df$side == "shady"]
-se_su <- summary_df$se_wt[summary_df$side == "sunny"]
+
+leaf_ttest_model |>
+  tidy() |>
+  select(estimate1, estimate2, statistic, parameter, p.value) |>
+  knitr::kable(digits = c(2, 2, 2, 1, 20),
+               col.names = c("Mean (shady)", "Mean (sunny)", "t",
+                             "df", "p-value"),
+               caption = "Table 2. Welch's two-sample t-test of leaf weight by side.")
 ```
 
-<!-- 🔮 PREDICT before you Render: what t, df, and p-value will fill the sentence below, and which side is heavier? Write your guesses, then render and check. -->
-
-Shady-side leaves were significantly **heavier** than sunny-side leaves
-(Welch's two-sample t-test: t(`r df_val`) = `r t_val`, *p* = `r p_val`).
-Mean ± SE weight was `r mean_sh` ± `r se_sh` g for shady leaves and
-`r mean_su` ± `r se_su` g for sunny leaves.
+Shady-side leaves were significantly **heavier** than sunny-side leaves: the
+group means, SE, and *n* are in Table 1, and the *t*, df, and *p*-value of the
+Welch's test are in Table 2. The *p*-value is below the 0.05 threshold, so the
+difference is significant.
 
 ::: {.callout-note appearance="simple"}
-Every statistic in that sentence — t, df, *p*, and both means ± SE — was inserted
-with inline code such as `` `r t_val` ``. If a leaf measurement changed, you
-would fix the data file, press **Render**, and the sentence would rewrite itself.
-In a plain script you would retype all of these by hand.
+Every number in Tables 1 and 2 is computed from the raw data when the document
+renders — nothing was typed or pasted. If a leaf measurement changed, you would
+fix the data file, press **Render**, and both tables would update themselves. In
+a plain script you would retype all of these by hand.
 :::
 
 ```{r boxplot}
 #| fig-cap: "Figure 1. Leaf weight by side of tree. Points show individual leaves; the test result is printed in the subtitle."
+#| fig-alt: "Boxplot comparing leaf weight in grams between the shady and sunny sides of the tree, with individual leaf weights overlaid as jittered points. The subtitle reports the Welch's t-test statistic and p-value."
 leaf_box_plot <- tree_df %>%
   ggplot(aes(x = side, y = weight_g, fill = side)) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +

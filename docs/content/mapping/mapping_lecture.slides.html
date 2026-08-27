@@ -7,11 +7,11 @@
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="../../site_libs/quarto-html/light-border.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-de63f62b328812d8e578a4d74e282472.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
-  <meta name="generator" content="quarto-1.9.38">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-bb62276ab45c84d9efd712f51ff97b5a.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.10.18">
 
   <meta name="author" content="Bill Perry">
-  <meta name="dcterms.date" content="2026-07-05">
+  <meta name="dcterms.date" content="2026-08-27">
   <title>UMD DAta Science Biology – Lecture 13 — Mapping: Where Is Bigfoot?</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -22,10 +22,13 @@
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
     */
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     ul.task-list{list-style: none;}
     ul.task-list li input[type="checkbox"] {
@@ -195,7 +198,7 @@
     }
   </style>
 <meta property="og:title" content="Lecture 13 — Mapping: Where Is Bigfoot? – UMD DAta Science Biology">
-<meta property="og:description" content="A fun 2-day intro to maps in R. Spatial data and coordinate systems, the sf package, turning latitude/longitude into a map with geom_sf(), drawing points on US states, and building a per-state choropleth by joining counts to the map — all with 4,500+ real Bigfoot sighting reports.">
+<meta property="og:description" content="A 2-day intro to maps in R. Spatial data and coordinate systems, the sf package, turning latitude/longitude into a map with geom_sf(), drawing points on US states, and building a per-state choropleth by joining counts to the map — all with ~4,600 real Bigfoot sighting reports.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 <body class="quarto-light">
@@ -209,12 +212,12 @@
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
 <div class="quarto-title-author-name">
-Bill Perry 
+Bill Perry
 </div>
 </div>
 </div>
 
-  <p class="date">2026-07-05</p>
+  <p class="date">2026-08-27</p>
 </section>
 <section id="where-we-left-off-factors-joins" class="title-slide slide level1 center">
 <h1>Where we left off — Factors &amp; Joins</h1>
@@ -233,7 +236,7 @@ Bill Perry
 </div>
 <div class="callout-content">
 <p><strong>✅ Transition</strong></p>
-<p>You can wrangle, summarize, model, and join. Today we put data <strong>on a map</strong> — the single most fun payoff in the toolkit. Our dataset: <strong>4,000+ real Bigfoot sightings</strong> across the US, each with a latitude and longitude. 🦶</p>
+<p>You can wrangle, summarize, model, and join — today those skills point at a map instead of a table. Our dataset: <strong>~4,600 real Bigfoot sightings</strong> across the US, each with a latitude and longitude, ready to become points and then a choropleth. 🦶</p>
 </div>
 </div>
 </div>
@@ -304,9 +307,9 @@ Bill Perry
 <div class="callout-content">
 <p><strong>✅ Why bother?</strong></p>
 <ul>
-<li><strong>Predicting the pattern</strong> (“Pacific Northwest?”) makes the map mean something when it appears.</li>
-<li><strong>Typing</strong> builds the <code>sf</code> + <code>geom_sf</code> muscle memory.</li>
-<li><strong>Chunk → practice</strong> keeps each new idea from piling up.</li>
+<li>A choropleth is easy to accept at face value once it’s drawn — naming the state you expect to be darkest <em>before</em> rendering it is what makes you actually look at the result instead of just admiring it.</li>
+<li><code>st_as_sf(coords = ..., crs = ...)</code> and <code>geom_sf()</code> are new syntax with a specific argument order; typing them yourself is what keeps <code>coords = c("longitude", "latitude")</code> from becoming a copy-paste habit you never really learned.</li>
+<li>Spatial objects, basemaps, joins, and projections each get their own chunk so a CRS mismatch doesn’t get confused with a join-key mismatch later.</li>
 </ul>
 </div>
 </div>
@@ -368,15 +371,15 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a></a><span class="co"># Load packages + the sighting data ------------------</span></span>
-<span id="cb1-2"><a></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-3"><a></a><span class="fu">library</span>(sf)       <span class="co"># simple features = spatial data frames</span></span>
-<span id="cb1-4"><a></a><span class="fu">library</span>(maps)     <span class="co"># ready-made state/country outlines</span></span>
-<span id="cb1-5"><a></a></span>
-<span id="cb1-6"><a></a><span class="co"># Swap this path for your download -------------------</span></span>
-<span id="cb1-7"><a></a>bigfoot_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_reports_geocoded.csv"</span>)</span>
-<span id="cb1-8"><a></a></span>
-<span id="cb1-9"><a></a>bigfoot_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(title, state, latitude, longitude, classification) <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a aria-label="1"></a><span class="co"># Load packages + the sighting data ------------------</span></span>
+<span id="cb1-2"><a aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-3"><a aria-label="3"></a><span class="fu">library</span>(sf)       <span class="co"># simple features = spatial data frames</span></span>
+<span id="cb1-4"><a aria-label="4"></a><span class="fu">library</span>(maps)     <span class="co"># ready-made state/country outlines</span></span>
+<span id="cb1-5"><a aria-label="5"></a></span>
+<span id="cb1-6"><a aria-label="6"></a><span class="co"># Swap this path for your download -------------------</span></span>
+<span id="cb1-7"><a aria-label="7"></a>bigfoot_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_reports_geocoded.csv"</span>)</span>
+<span id="cb1-8"><a aria-label="8"></a></span>
+<span id="cb1-9"><a aria-label="9"></a>bigfoot_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(title, state, latitude, longitude, classification) <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 5
   title                                  state latitude longitude classification
@@ -403,13 +406,13 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a></a><span class="co"># Drop missing coords + keep the lower 48 ------------</span></span>
-<span id="cb3-2"><a></a>bigfoot_df <span class="ot">&lt;-</span> bigfoot_df <span class="sc">%&gt;%</span></span>
-<span id="cb3-3"><a></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(latitude), <span class="sc">!</span><span class="fu">is.na</span>(longitude)) <span class="sc">%&gt;%</span></span>
-<span id="cb3-4"><a></a>  <span class="fu">filter</span>(longitude <span class="sc">&gt;</span> <span class="sc">-</span><span class="dv">125</span>, longitude <span class="sc">&lt;</span> <span class="sc">-</span><span class="dv">66</span>,</span>
-<span id="cb3-5"><a></a>         latitude  <span class="sc">&gt;</span>   <span class="dv">24</span>, latitude  <span class="sc">&lt;</span>  <span class="dv">50</span>)</span>
-<span id="cb3-6"><a></a></span>
-<span id="cb3-7"><a></a><span class="fu">nrow</span>(bigfoot_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a aria-label="1"></a><span class="co"># Drop missing coords + keep the lower 48 ------------</span></span>
+<span id="cb3-2"><a aria-label="2"></a>bigfoot_df <span class="ot">&lt;-</span> bigfoot_df <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a aria-label="3"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(latitude), <span class="sc">!</span><span class="fu">is.na</span>(longitude)) <span class="sc">%&gt;%</span></span>
+<span id="cb3-4"><a aria-label="4"></a>  <span class="fu">filter</span>(longitude <span class="sc">&gt;</span> <span class="sc">-</span><span class="dv">125</span>, longitude <span class="sc">&lt;</span> <span class="sc">-</span><span class="dv">66</span>,</span>
+<span id="cb3-5"><a aria-label="5"></a>         latitude  <span class="sc">&gt;</span>   <span class="dv">24</span>, latitude  <span class="sc">&lt;</span>  <span class="dv">50</span>)</span>
+<span id="cb3-6"><a aria-label="6"></a></span>
+<span id="cb3-7"><a aria-label="7"></a><span class="fu">nrow</span>(bigfoot_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 4031</code></pre>
 </div>
@@ -446,25 +449,25 @@ Bill Perry
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🔮 Predict first:</strong> We’re about to turn 4,000+ rows of lat/long into points and plot them with <strong>no basemap</strong>. What shape do you think the cloud of points will make?</p>
+<p><strong>🔮 Predict first:</strong> We’re about to turn ~4,600 rows of lat/long into points and plot them with <strong>no basemap</strong>. What shape do you think the cloud of points will make?</p>
 </div>
 </div>
 </div>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a></a><span class="co"># Build the geometry column from lon/lat -------------</span></span>
-<span id="cb5-2"><a></a>bigfoot_sf <span class="ot">&lt;-</span> bigfoot_df <span class="sc">%&gt;%</span></span>
-<span id="cb5-3"><a></a>  <span class="fu">st_as_sf</span>(<span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"longitude"</span>, <span class="st">"latitude"</span>), <span class="at">crs =</span> <span class="dv">4326</span>)</span>
-<span id="cb5-4"><a></a></span>
-<span id="cb5-5"><a></a><span class="co"># Just the points — the USA appears on its own -------</span></span>
-<span id="cb5-6"><a></a><span class="fu">ggplot</span>(bigfoot_sf) <span class="sc">+</span></span>
-<span id="cb5-7"><a></a>  <span class="fu">geom_sf</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb5-8"><a></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="co"># Build the geometry column from lon/lat -------------</span></span>
+<span id="cb5-2"><a aria-label="2"></a>bigfoot_sf <span class="ot">&lt;-</span> bigfoot_df <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a aria-label="3"></a>  <span class="fu">st_as_sf</span>(<span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"longitude"</span>, <span class="st">"latitude"</span>), <span class="at">crs =</span> <span class="dv">4326</span>)</span>
+<span id="cb5-4"><a aria-label="4"></a></span>
+<span id="cb5-5"><a aria-label="5"></a><span class="co"># Just the points — the USA appears on its own -------</span></span>
+<span id="cb5-6"><a aria-label="6"></a><span class="fu">ggplot</span>(bigfoot_sf) <span class="sc">+</span></span>
+<span id="cb5-7"><a aria-label="7"></a>  <span class="fu">geom_sf</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb5-8"><a aria-label="8"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="mapping_lecture_files/figure-revealjs/make-sf-13-1.png"></p>
+<p><img data-src="mapping_lecture_files/figure-revealjs/make-sf-13-1.png" alt="Scatter plot of Bigfoot sighting points by longitude and latitude with no basemap, the point cloud tracing the outline of the continental United States."></p>
 </figure>
 </div>
 </div>
@@ -507,13 +510,13 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a></a><span class="co"># Turn the built-in state outlines into sf ----------</span></span>
-<span id="cb6-2"><a></a>states_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(</span>
-<span id="cb6-3"><a></a>  maps<span class="sc">::</span><span class="fu">map</span>(<span class="st">"state"</span>, <span class="at">plot =</span> <span class="cn">FALSE</span>, <span class="at">fill =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb6-4"><a></a>) <span class="sc">%&gt;%</span></span>
-<span id="cb6-5"><a></a>  <span class="fu">st_set_crs</span>(<span class="dv">4326</span>)</span>
-<span id="cb6-6"><a></a></span>
-<span id="cb6-7"><a></a>states_sf <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a aria-label="1"></a><span class="co"># Turn the built-in state outlines into sf ----------</span></span>
+<span id="cb6-2"><a aria-label="2"></a>states_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(</span>
+<span id="cb6-3"><a aria-label="3"></a>  maps<span class="sc">::</span><span class="fu">map</span>(<span class="st">"state"</span>, <span class="at">plot =</span> <span class="cn">FALSE</span>, <span class="at">fill =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-4"><a aria-label="4"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-5"><a aria-label="5"></a>  <span class="fu">st_set_crs</span>(<span class="dv">4326</span>)</span>
+<span id="cb6-6"><a aria-label="6"></a></span>
+<span id="cb6-7"><a aria-label="7"></a>states_sf <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Simple feature collection with 3 features and 1 field
 Geometry type: MULTIPOLYGON
@@ -566,18 +569,18 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a></a><span class="co"># Basemap first, then points on top ------------------</span></span>
-<span id="cb8-2"><a></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb8-3"><a></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> states_sf, <span class="at">fill =</span> <span class="st">"grey96"</span>, <span class="at">color =</span> <span class="st">"grey75"</span>) <span class="sc">+</span></span>
-<span id="cb8-4"><a></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> bigfoot_sf, <span class="fu">aes</span>(<span class="at">color =</span> classification),</span>
-<span id="cb8-5"><a></a>          <span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb8-6"><a></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings Across the Lower 48"</span>,</span>
-<span id="cb8-7"><a></a>       <span class="at">color =</span> <span class="st">"Report class"</span>) <span class="sc">+</span></span>
-<span id="cb8-8"><a></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a aria-label="1"></a><span class="co"># Basemap first, then points on top ------------------</span></span>
+<span id="cb8-2"><a aria-label="2"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb8-3"><a aria-label="3"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> states_sf, <span class="at">fill =</span> <span class="st">"grey96"</span>, <span class="at">color =</span> <span class="st">"grey75"</span>) <span class="sc">+</span></span>
+<span id="cb8-4"><a aria-label="4"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> bigfoot_sf, <span class="fu">aes</span>(<span class="at">color =</span> classification),</span>
+<span id="cb8-5"><a aria-label="5"></a>          <span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb8-6"><a aria-label="6"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings Across the Lower 48"</span>,</span>
+<span id="cb8-7"><a aria-label="7"></a>       <span class="at">color =</span> <span class="st">"Report class"</span>) <span class="sc">+</span></span>
+<span id="cb8-8"><a aria-label="8"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="mapping_lecture_files/figure-revealjs/points-map-13-1.png"></p>
+<p><img data-src="mapping_lecture_files/figure-revealjs/points-map-13-1.png" alt="Map of the lower 48 US states with Bigfoot sighting points overlaid, colored by report classification, showing denser clusters in the Pacific Northwest."></p>
 </figure>
 </div>
 </div>
@@ -648,13 +651,13 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a></a><span class="co"># Sightings per state — lowercase to match the map --</span></span>
-<span id="cb9-2"><a></a>sightings_by_state <span class="ot">&lt;-</span> bigfoot_df <span class="sc">%&gt;%</span></span>
-<span id="cb9-3"><a></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">str_to_lower</span>(state)) <span class="sc">%&gt;%</span></span>
-<span id="cb9-4"><a></a>  <span class="fu">count</span>(state, <span class="at">name =</span> <span class="st">"sightings"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb9-5"><a></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(sightings))</span>
-<span id="cb9-6"><a></a></span>
-<span id="cb9-7"><a></a><span class="fu">head</span>(sightings_by_state)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># Sightings per state — lowercase to match the map --</span></span>
+<span id="cb9-2"><a aria-label="2"></a>sightings_by_state <span class="ot">&lt;-</span> bigfoot_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">str_to_lower</span>(state)) <span class="sc">%&gt;%</span></span>
+<span id="cb9-4"><a aria-label="4"></a>  <span class="fu">count</span>(state, <span class="at">name =</span> <span class="st">"sightings"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb9-5"><a aria-label="5"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(sightings))</span>
+<span id="cb9-6"><a aria-label="6"></a></span>
+<span id="cb9-7"><a aria-label="7"></a><span class="fu">head</span>(sightings_by_state)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 2
   state      sightings
@@ -682,9 +685,9 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <p>If I <strong>skip</strong> the lowercase step, the join keys don’t match — <code>"Washington"</code> ≠ <code>"washington"</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a></a>states_sf <span class="sc">%&gt;%</span></span>
-<span id="cb11-2"><a></a>  <span class="fu">mutate</span>(<span class="at">state =</span> ID) <span class="sc">%&gt;%</span></span>
-<span id="cb11-3"><a></a>  <span class="fu">left_join</span>(<span class="fu">count</span>(bigfoot_df, state), <span class="at">by =</span> <span class="st">"state"</span>)  <span class="co"># "Washington" vs "washington"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a>states_sf <span class="sc">%&gt;%</span></span>
+<span id="cb11-2"><a aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> ID) <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a aria-label="3"></a>  <span class="fu">left_join</span>(<span class="fu">count</span>(bigfoot_df, state), <span class="at">by =</span> <span class="st">"state"</span>)  <span class="co"># "Washington" vs "washington"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Every state gets <code>NA</code> sightings → the whole map renders <strong>grey</strong>. No error, just a blank choropleth.</p>
 <p>The fix — make both keys the <strong>same case</strong> before joining (<code>str_to_lower()</code>).</p>
 </div><div class="column" style="width:40%;">
@@ -697,8 +700,8 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <p><strong>Important</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>✅ Why show a blank map?</strong></p>
-<p>A join only matches keys that are <strong>exactly</strong> equal. <code>"Washington"</code>, <code>"washington"</code>, and <code>" Washington"</code> are three different keys. A silent all-<code>NA</code> result is almost always a <strong>key-mismatch</strong> — check case and spelling first.</p>
+<p><strong>✅ Why show a blank choropleth?</strong></p>
+<p><code>left_join()</code> doesn’t know that <code>"Washington"</code> and <code>"washington"</code> mean the same state — as far as R is concerned they’re two unrelated strings, so every row fails to match and <code>sightings</code> comes back <code>NA</code> everywhere. <code>scale_fill_viridis_c()</code> then has nothing to shade with, and you get a map that ran without a single error yet shows you nothing. Grey-everywhere is the signature of a key-mismatch, not a code bug.</p>
 </div>
 </div>
 </div>
@@ -710,20 +713,20 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a></a><span class="co"># Join sightings to the state polygons ---------------</span></span>
-<span id="cb12-2"><a></a>states_map <span class="ot">&lt;-</span> states_sf <span class="sc">%&gt;%</span></span>
-<span id="cb12-3"><a></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">str_remove</span>(ID, <span class="st">":.*"</span>)) <span class="sc">%&gt;%</span>   <span class="co"># drop ":north" etc.</span></span>
-<span id="cb12-4"><a></a>  <span class="fu">left_join</span>(sightings_by_state, <span class="at">by =</span> <span class="st">"state"</span>)</span>
-<span id="cb12-5"><a></a></span>
-<span id="cb12-6"><a></a><span class="fu">ggplot</span>(states_map) <span class="sc">+</span></span>
-<span id="cb12-7"><a></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> sightings), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
-<span id="cb12-8"><a></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="at">option =</span> <span class="st">"magma"</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb12-9"><a></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings by State"</span>, <span class="at">fill =</span> <span class="st">"Sightings"</span>) <span class="sc">+</span></span>
-<span id="cb12-10"><a></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="co"># Join sightings to the state polygons ---------------</span></span>
+<span id="cb12-2"><a aria-label="2"></a>states_map <span class="ot">&lt;-</span> states_sf <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">str_remove</span>(ID, <span class="st">":.*"</span>)) <span class="sc">%&gt;%</span>   <span class="co"># drop ":north" etc.</span></span>
+<span id="cb12-4"><a aria-label="4"></a>  <span class="fu">left_join</span>(sightings_by_state, <span class="at">by =</span> <span class="st">"state"</span>)</span>
+<span id="cb12-5"><a aria-label="5"></a></span>
+<span id="cb12-6"><a aria-label="6"></a><span class="fu">ggplot</span>(states_map) <span class="sc">+</span></span>
+<span id="cb12-7"><a aria-label="7"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> sightings), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb12-8"><a aria-label="8"></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="at">option =</span> <span class="st">"magma"</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb12-9"><a aria-label="9"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings by State"</span>, <span class="at">fill =</span> <span class="st">"Sightings"</span>) <span class="sc">+</span></span>
+<span id="cb12-10"><a aria-label="10"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="mapping_lecture_files/figure-revealjs/choropleth-13-1.png"></p>
+<p><img data-src="mapping_lecture_files/figure-revealjs/choropleth-13-1.png" alt="Choropleth map of US states shaded by number of Bigfoot sightings using a magma color scale, with darker states indicating more reports."></p>
 </figure>
 </div>
 </div>
@@ -767,18 +770,18 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a></a><span class="co"># Albers Equal-Area (EPSG:5070) — the "textbook" US --</span></span>
-<span id="cb13-2"><a></a><span class="fu">ggplot</span>(states_map) <span class="sc">+</span></span>
-<span id="cb13-3"><a></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> sightings), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
-<span id="cb13-4"><a></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="at">option =</span> <span class="st">"magma"</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb13-5"><a></a>  <span class="fu">coord_sf</span>(<span class="at">crs =</span> <span class="dv">5070</span>) <span class="sc">+</span></span>
-<span id="cb13-6"><a></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings by State (Albers projection)"</span>,</span>
-<span id="cb13-7"><a></a>       <span class="at">fill =</span> <span class="st">"Sightings"</span>) <span class="sc">+</span></span>
-<span id="cb13-8"><a></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># Albers Equal-Area (EPSG:5070) — the "textbook" US --</span></span>
+<span id="cb13-2"><a aria-label="2"></a><span class="fu">ggplot</span>(states_map) <span class="sc">+</span></span>
+<span id="cb13-3"><a aria-label="3"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> sightings), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb13-4"><a aria-label="4"></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="at">option =</span> <span class="st">"magma"</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb13-5"><a aria-label="5"></a>  <span class="fu">coord_sf</span>(<span class="at">crs =</span> <span class="dv">5070</span>) <span class="sc">+</span></span>
+<span id="cb13-6"><a aria-label="6"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings by State (Albers projection)"</span>,</span>
+<span id="cb13-7"><a aria-label="7"></a>       <span class="at">fill =</span> <span class="st">"Sightings"</span>) <span class="sc">+</span></span>
+<span id="cb13-8"><a aria-label="8"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="mapping_lecture_files/figure-revealjs/albers-13-1.png"></p>
+<p><img data-src="mapping_lecture_files/figure-revealjs/albers-13-1.png" alt="Choropleth map of US states shaded by Bigfoot sighting counts, redrawn in an Albers equal-area projection so the country appears in its familiar proportions."></p>
 </figure>
 </div>
 </div>
@@ -823,19 +826,19 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a></a><span class="co"># Facet the point map by season ----------------------</span></span>
-<span id="cb14-2"><a></a>bigfoot_sf <span class="sc">%&gt;%</span></span>
-<span id="cb14-3"><a></a>  <span class="fu">filter</span>(season <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Spring"</span>,<span class="st">"Summer"</span>,<span class="st">"Fall"</span>,<span class="st">"Winter"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb14-4"><a></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb14-5"><a></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> states_sf, <span class="at">fill =</span> <span class="st">"grey96"</span>, <span class="at">color =</span> <span class="st">"grey80"</span>) <span class="sc">+</span></span>
-<span id="cb14-6"><a></a>  <span class="fu">geom_sf</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">0.4</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
-<span id="cb14-7"><a></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> season) <span class="sc">+</span></span>
-<span id="cb14-8"><a></a>  <span class="fu">coord_sf</span>(<span class="at">crs =</span> <span class="dv">5070</span>) <span class="sc">+</span></span>
-<span id="cb14-9"><a></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a aria-label="1"></a><span class="co"># Facet the point map by season ----------------------</span></span>
+<span id="cb14-2"><a aria-label="2"></a>bigfoot_sf <span class="sc">%&gt;%</span></span>
+<span id="cb14-3"><a aria-label="3"></a>  <span class="fu">filter</span>(season <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Spring"</span>,<span class="st">"Summer"</span>,<span class="st">"Fall"</span>,<span class="st">"Winter"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb14-4"><a aria-label="4"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb14-5"><a aria-label="5"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> states_sf, <span class="at">fill =</span> <span class="st">"grey96"</span>, <span class="at">color =</span> <span class="st">"grey80"</span>) <span class="sc">+</span></span>
+<span id="cb14-6"><a aria-label="6"></a>  <span class="fu">geom_sf</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">0.4</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
+<span id="cb14-7"><a aria-label="7"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> season) <span class="sc">+</span></span>
+<span id="cb14-8"><a aria-label="8"></a>  <span class="fu">coord_sf</span>(<span class="at">crs =</span> <span class="dv">5070</span>) <span class="sc">+</span></span>
+<span id="cb14-9"><a aria-label="9"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="mapping_lecture_files/figure-revealjs/season-13-1.png"></p>
+<p><img data-src="mapping_lecture_files/figure-revealjs/season-13-1.png" alt="Four small maps of the lower 48 states, one per season, each showing Bigfoot sighting points in red, with summer showing the most reports."></p>
 </figure>
 </div>
 </div>

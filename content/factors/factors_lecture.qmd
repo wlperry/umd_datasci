@@ -1,12 +1,12 @@
 ---
-title: "Lecture 10 — Factors: Taming Categorical Data"
+title: "Lecture 16 — Factors: Taming Categorical Data"
 subtitle: "Ordering, renaming, and lumping categories with forcats — and cleaner ggplots"
 author: "Bill Perry"
 date: today
 
 # --- Fields the SITE reads for ordering / listings / homepage ---
-order: 10
-week: 5
+order: 17
+week: 9
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
   Categorical variables are factors, and factors carry an ORDER. This 2-day
@@ -48,7 +48,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ::: callout-note
 **✅ Transition**
 
-Why alphabetical? Because a categorical column is a **factor**, and its levels default to alphabetical. Today we take control of that order — and of the labels — with the **forcats** package. You'll lean on it again next week when you run a one-way **ANOVA**.
+Why alphabetical? Because a categorical column is a **factor**, and its levels default to alphabetical. Today we take control of that order — and of the labels — with the **forcats** package. You already used this kind of grouping variable back in the one-way ANOVA (Lecture 13) — today you learn to control how it displays.
 :::
 
 # Goals for today (a 2-day lecture)
@@ -97,9 +97,9 @@ This lecture runs in **four short chunks over two days**. After each chunk you s
 ::: callout-note
 **✅ Why bother? (the evidence)**
 
--   **Predicting the order** of a plot forces you to reason about levels — the whole point of factors.
--   **Typing by hand** builds the muscle memory for the `fct_` family.
--   **Chunk → practice** keeps each idea in working memory long enough to stick.
+-   With factors, "predict the output" almost always means "predict the order the bars will appear in" — forcing that guess is what makes you actually think about levels instead of ggplot's defaults.
+-   The `fct_` functions all take a similar shape (`fct_something(factor, ...)`), and typing them out enough times is what gets that shape into your fingers.
+-   Two days of new `fct_` verbs is a lot to hold onto — using each one in the activity right after you see it in lecture is what keeps Day 1's functions available when Day 2 builds on them.
 :::
 ::::
 :::::
@@ -151,6 +151,7 @@ penguins_df <- penguins %>% drop_na(species, body_mass_g)
 
 ```{r default-order-10}
 #| fig-format: png
+#| fig-alt: "Bar chart of penguin counts by species with bars for Adelie, Chinstrap, and Gentoo appearing in alphabetical order, the default factor level order."
 # ggplot uses the factor's level order = ALPHABETICAL -
 penguins_df %>%
   ggplot(aes(x = species)) +
@@ -213,6 +214,7 @@ Load the penguins, confirm `species` and `island` are factors, list their levels
 :::: {.column width="60%"}
 ```{r infreq-10}
 #| fig-format: png
+#| fig-alt: "Bar chart of penguin counts by species, reordered with fct_infreq() so bars run from the most common species on the left to the least common on the right."
 # Order bars from most to least common ----------------
 penguins_df %>%
   mutate(species = fct_infreq(species)) %>%
@@ -243,6 +245,7 @@ You reorder **inside `mutate()`**, then plot. The data itself is unchanged elsew
 :::: {.column width="60%"}
 ```{r reorder-10}
 #| fig-format: png
+#| fig-alt: "Boxplot of penguin body mass by species, with species ordered left to right from lowest to highest median body mass instead of alphabetically."
 # Order species by MEDIAN body mass, low -> high ------
 penguins_df %>%
   mutate(species = fct_reorder(species, body_mass_g, .fun = median)) %>%
@@ -269,13 +272,14 @@ penguins_df %>%
 :::: {.column width="60%"}
 ```{r summary-order-10}
 #| fig-format: png
+#| fig-alt: "Horizontal bar chart of mean body mass per penguin species, ranked from the heaviest species at the top to the lightest at the bottom."
 # Mean mass per species, ordered high -> low ----------
 penguins_df %>%
   group_by(species) %>%
   summarize(mean_mass = mean(body_mass_g)) %>%
   mutate(species = fct_reorder(species, mean_mass) %>% fct_rev()) %>%
   ggplot(aes(x = mean_mass, y = species)) +
-  geom_col(fill = "steelblue") +
+  geom_col(fill = "darkblue") +
   labs(x = "Mean mass (g)", y = NULL) +
   theme_minimal()
 ```
@@ -431,7 +435,7 @@ Rename the species to full names, collapse them into size groups, lump the islan
 # `fct_relevel()` — Set the Reference Level
 
 ::: callout-note
-**🔮 Predict first:** When you fit a model — the regression from Lecture 06, or the ANOVA coming next week — R compares everything to the **first level** (Adelie here). If we make **Gentoo** the reference, what changes — the overall test, or the coefficients?
+**🔮 Predict first:** When you fit a model — the regression from Lecture 11, or the ANOVA from Lecture 13 — R compares everything to the **first level** (Adelie here). If we make **Gentoo** the reference, what changes — the overall test, or the coefficients?
 :::
 
 ::::: columns
@@ -489,6 +493,7 @@ levels(two_species$species)
 :::: {.column width="60%"}
 ```{r together-10}
 #| fig-format: png
+#| fig-alt: "Boxplot of penguin body mass by species with individual points jittered on top, species relabeled with accented names and ordered from lowest to highest median body mass."
 # Reordered + relabeled in one pipeline ---------------
 penguins_df %>%
   mutate(
@@ -508,7 +513,7 @@ penguins_df %>%
 :::: {.column width="40%"}
 Ordered by mass, relabeled, publication-ready — and the code that made it is three `fct_` calls inside one `mutate()`.
 
-This is the everyday payoff: **factors are how you make categorical plots say what you mean.**
+Notice nothing here required touching the underlying data frame outside the pipe — `fct_recode()` and `fct_reorder()` did all the work on the fly, right where the plot is built.
 ::::
 :::::
 
@@ -536,9 +541,9 @@ Relevel a model to a new reference, drop an unused level, and build your own reo
 - 📖 [R4DS Ch. 16 — Factors](https://r4ds.hadley.nz/factors)
 - 📖 `common_code/15_factors`
 
-**Up next — Lecture 11:**
+**Up next — Lecture 17:**
 
-- **One-way ANOVA** — compare a numeric response across three or more groups
-- Your factor levels are now in order, so the group comparisons read cleanly
+- **Joins** — combine two tables on a shared key
+- The prerequisite for bigger datasets — and for maps
 ::::
 :::::

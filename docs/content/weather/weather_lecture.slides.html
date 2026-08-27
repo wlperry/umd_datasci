@@ -7,11 +7,11 @@
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="../../site_libs/quarto-html/light-border.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-de63f62b328812d8e578a4d74e282472.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
-  <meta name="generator" content="quarto-1.9.38">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-bb62276ab45c84d9efd712f51ff97b5a.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.10.18">
 
   <meta name="author" content="Bill Perry">
-  <meta name="dcterms.date" content="2026-07-05">
+  <meta name="dcterms.date" content="2026-08-27">
   <title>UMD DAta Science Biology – Lecture 07 — Real Climate Data in R</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -22,10 +22,13 @@
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
     */
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     ul.task-list{list-style: none;}
     ul.task-list li input[type="checkbox"] {
@@ -195,7 +198,7 @@
     }
   </style>
 <meta property="og:title" content="Lecture 07 — Real Climate Data in R – UMD DAta Science Biology">
-<meta property="og:description" content="How to use API (auto program interface) to download and ssummarize weather data.">
+<meta property="og:description" content="How to use an API (application programming interface) to download and summarize weather data.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 <body class="quarto-light">
@@ -209,12 +212,12 @@
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
 <div class="quarto-title-author-name">
-Bill Perry 
+Bill Perry
 </div>
 </div>
 </div>
 
-  <p class="date">2026-07-05</p>
+  <p class="date">2026-08-27</p>
 </section>
 <section id="where-we-left-off-lecture-06" class="title-slide slide level1 center">
 <h1>Where we left off (Lecture 06)</h1>
@@ -314,9 +317,9 @@ Bill Perry
 <div class="callout-content">
 <p><strong>✅ Why bother? (the evidence)</strong></p>
 <ul>
-<li><strong>Predicting first</strong> forces your brain to <em>retrieve</em> what it knows — the gap between guess and answer is what makes it stick.</li>
-<li><strong>Typing by hand</strong> builds the finger-memory and error-spotting that copy-paste skips.</li>
-<li><strong>Chunk → immediate practice</strong> keeps a new idea in working memory long enough to form a lasting schema.</li>
+<li>Before <code>get_GSOD()</code> runs, guess the row count or the shape of the trend — that guess is what your brain checks the real output against.</li>
+<li>Retyping <code>group_by(YEAR, MONTH)</code> instead of pasting it is what makes you notice you meant <code>YEAR</code> alone.</li>
+<li>Downloading, then immediately summarizing in the same sitting, is what keeps the whole workflow — not just isolated commands — in your head.</li>
 </ul>
 </div>
 </div>
@@ -369,18 +372,18 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a></a><span class="co"># Load packages at the top — always -------------------</span></span>
-<span id="cb1-2"><a></a><span class="fu">library</span>(tidyverse) <span class="co"># data manipulation + ggplot2</span></span>
-<span id="cb1-3"><a></a><span class="fu">library</span>(GSODR) <span class="co"># download NOAA weather station data</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a aria-label="1"></a><span class="co"># Load packages at the top — always -------------------</span></span>
+<span id="cb1-2"><a aria-label="2"></a><span class="fu">library</span>(tidyverse) <span class="co"># data manipulation + ggplot2</span></span>
+<span id="cb1-3"><a aria-label="3"></a><span class="fu">library</span>(GSODR) <span class="co"># download NOAA weather station data</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a></a><span class="co"># Download daily Duluth weather data, 1948-2025 --------</span></span>
-<span id="cb2-2"><a></a><span class="co"># this is DAILY data - rows = days, so expect ~28,000 rows</span></span>
-<span id="cb2-3"><a></a>duluth_df <span class="ot">&lt;-</span> <span class="fu">get_GSOD</span>(<span class="at">years =</span> <span class="dv">1948</span><span class="sc">:</span><span class="dv">2025</span>, <span class="at">station =</span> <span class="st">"727450-14913"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a aria-label="1"></a><span class="co"># Download daily Duluth weather data, 1948-2025 --------</span></span>
+<span id="cb2-2"><a aria-label="2"></a><span class="co"># this is DAILY data - rows = days, so expect ~28,000 rows</span></span>
+<span id="cb2-3"><a aria-label="3"></a>duluth_df <span class="ot">&lt;-</span> <span class="fu">get_GSOD</span>(<span class="at">years =</span> <span class="dv">1948</span><span class="sc">:</span><span class="dv">2025</span>, <span class="at">station =</span> <span class="st">"727450-14913"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a></a><span class="co"># Look at what we got -----------------------------------</span></span>
-<span id="cb3-2"><a></a><span class="fu">glimpse</span>(duluth_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a aria-label="1"></a><span class="co"># Look at what we got -----------------------------------</span></span>
+<span id="cb3-2"><a aria-label="2"></a><span class="fu">glimpse</span>(duluth_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 25,441
 Columns: 47
@@ -461,22 +464,22 @@ $ RH               &lt;dbl&gt; 87.5, 83.4, 82.8, 83.7, 79.8, 70.7, 70.5, 87.3, 9
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a></a><span class="co"># Keep only the columns we actually need -----------------</span></span>
-<span id="cb5-2"><a></a>dlh_temp_df <span class="ot">&lt;-</span> duluth_df <span class="sc">%&gt;%</span></span>
-<span id="cb5-3"><a></a>  <span class="fu">select</span>(</span>
-<span id="cb5-4"><a></a>    STNID,</span>
-<span id="cb5-5"><a></a>    NAME,</span>
-<span id="cb5-6"><a></a>    YEARMODA,</span>
-<span id="cb5-7"><a></a>    YEAR,</span>
-<span id="cb5-8"><a></a>    MONTH,</span>
-<span id="cb5-9"><a></a>    DAY,</span>
-<span id="cb5-10"><a></a>    TEMP,</span>
-<span id="cb5-11"><a></a>    MXSPD,</span>
-<span id="cb5-12"><a></a>    PRCP,</span>
-<span id="cb5-13"><a></a>    I_SNOW_ICE</span>
-<span id="cb5-14"><a></a>  )</span>
-<span id="cb5-15"><a></a></span>
-<span id="cb5-16"><a></a><span class="fu">head</span>(dlh_temp_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="co"># Keep only the columns we actually need -----------------</span></span>
+<span id="cb5-2"><a aria-label="2"></a>dlh_temp_df <span class="ot">&lt;-</span> duluth_df <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a aria-label="3"></a>  <span class="fu">select</span>(</span>
+<span id="cb5-4"><a aria-label="4"></a>    STNID,</span>
+<span id="cb5-5"><a aria-label="5"></a>    NAME,</span>
+<span id="cb5-6"><a aria-label="6"></a>    YEARMODA,</span>
+<span id="cb5-7"><a aria-label="7"></a>    YEAR,</span>
+<span id="cb5-8"><a aria-label="8"></a>    MONTH,</span>
+<span id="cb5-9"><a aria-label="9"></a>    DAY,</span>
+<span id="cb5-10"><a aria-label="10"></a>    TEMP,</span>
+<span id="cb5-11"><a aria-label="11"></a>    MXSPD,</span>
+<span id="cb5-12"><a aria-label="12"></a>    PRCP,</span>
+<span id="cb5-13"><a aria-label="13"></a>    I_SNOW_ICE</span>
+<span id="cb5-14"><a aria-label="14"></a>  )</span>
+<span id="cb5-15"><a aria-label="15"></a></span>
+<span id="cb5-16"><a aria-label="16"></a><span class="fu">head</span>(dlh_temp_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>          STNID                         NAME   YEARMODA  YEAR MONTH   DAY  TEMP
          &lt;char&gt;                       &lt;char&gt;     &lt;Date&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;num&gt;
@@ -512,14 +515,14 @@ $ RH               &lt;dbl&gt; 87.5, 83.4, 82.8, 83.7, 79.8, 70.7, 70.5, 87.3, 9
 <div class="columns">
 <div class="column" style="width:60%;">
 <p>NOAA’s column names are UPPERCASE. I’ll forget that:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a></a><span class="co"># The column is TEMP, but I type temp</span></span>
-<span id="cb7-2"><a></a>dlh_temp_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(temp)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a><span class="co"># The column is TEMP, but I type temp</span></span>
+<span id="cb7-2"><a aria-label="2"></a>dlh_temp_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(temp)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>R errors:</p>
 <pre><code>Error in `select()`:
 ! Can't select columns that don't exist.
 ✖ Column `temp` doesn't exist.</code></pre>
 <p>The fix — match the exact case:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a></a>dlh_temp_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(TEMP)   <span class="co"># names(dlh_temp_df) shows the real names</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a>dlh_temp_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(TEMP)   <span class="co"># names(dlh_temp_df) shows the real names</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div><div class="column" style="width:40%;">
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
@@ -556,23 +559,23 @@ $ RH               &lt;dbl&gt; 87.5, 83.4, 82.8, 83.7, 79.8, 70.7, 70.5, 87.3, 9
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a></a><span class="co"># Plot every single daily temperature ---------------------</span></span>
-<span id="cb10-2"><a></a>raw_temp_plot <span class="ot">&lt;-</span> dlh_temp_df <span class="sc">%&gt;%</span></span>
-<span id="cb10-3"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> YEARMODA, <span class="at">y =</span> TEMP)) <span class="sc">+</span></span>
-<span id="cb10-4"><a></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb10-5"><a></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
-<span id="cb10-6"><a></a>  <span class="fu">labs</span>(</span>
-<span id="cb10-7"><a></a>    <span class="at">title =</span> <span class="st">"Duluth Daily Mean Temperature, 1948–2025"</span>,</span>
-<span id="cb10-8"><a></a>    <span class="at">x =</span> <span class="st">"Date"</span>,</span>
-<span id="cb10-9"><a></a>    <span class="at">y =</span> <span class="st">"Temperature (°C)"</span></span>
-<span id="cb10-10"><a></a>  ) <span class="sc">+</span></span>
-<span id="cb10-11"><a></a>  <span class="fu">theme_minimal</span>()</span>
-<span id="cb10-12"><a></a></span>
-<span id="cb10-13"><a></a>raw_temp_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a aria-label="1"></a><span class="co"># Plot every single daily temperature ---------------------</span></span>
+<span id="cb10-2"><a aria-label="2"></a>raw_temp_plot <span class="ot">&lt;-</span> dlh_temp_df <span class="sc">%&gt;%</span></span>
+<span id="cb10-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> YEARMODA, <span class="at">y =</span> TEMP)) <span class="sc">+</span></span>
+<span id="cb10-4"><a aria-label="4"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb10-5"><a aria-label="5"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb10-6"><a aria-label="6"></a>  <span class="fu">labs</span>(</span>
+<span id="cb10-7"><a aria-label="7"></a>    <span class="at">title =</span> <span class="st">"Duluth Daily Mean Temperature, 1948–2025"</span>,</span>
+<span id="cb10-8"><a aria-label="8"></a>    <span class="at">x =</span> <span class="st">"Date"</span>,</span>
+<span id="cb10-9"><a aria-label="9"></a>    <span class="at">y =</span> <span class="st">"Temperature (°C)"</span></span>
+<span id="cb10-10"><a aria-label="10"></a>  ) <span class="sc">+</span></span>
+<span id="cb10-11"><a aria-label="11"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb10-12"><a aria-label="12"></a></span>
+<span id="cb10-13"><a aria-label="13"></a>raw_temp_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="weather_lecture_files/figure-revealjs/raw-plot-06-1.png"></p>
+<p><img data-src="weather_lecture_files/figure-revealjs/raw-plot-06-1.png" alt="Scatter plot of daily mean temperature in Duluth from 1948 to 2025, with points overlapping into a dense fuzzy band driven by the seasonal cycle; no long-term trend is visible."></p>
 </figure>
 </div>
 </div>
@@ -667,33 +670,33 @@ $ RH               &lt;dbl&gt; 87.5, 83.4, 82.8, 83.7, 79.8, 70.7, 70.5, 87.3, 9
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a></a><span class="co"># Mean temperature per year-month -----------------------</span></span>
-<span id="cb11-2"><a></a>dlh_month_df <span class="ot">&lt;-</span> dlh_temp_df <span class="sc">%&gt;%</span></span>
-<span id="cb11-3"><a></a>  <span class="fu">group_by</span>(YEAR, MONTH) <span class="sc">%&gt;%</span></span>
-<span id="cb11-4"><a></a>  <span class="fu">summarize</span>(</span>
-<span id="cb11-5"><a></a>    <span class="at">YEARMODA =</span> <span class="fu">first</span>(YEARMODA),</span>
-<span id="cb11-6"><a></a>    <span class="at">TEMP =</span> <span class="fu">mean</span>(TEMP, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb11-7"><a></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="co"># Mean temperature per year-month -----------------------</span></span>
+<span id="cb11-2"><a aria-label="2"></a>dlh_month_df <span class="ot">&lt;-</span> dlh_temp_df <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(YEAR, MONTH) <span class="sc">%&gt;%</span></span>
+<span id="cb11-4"><a aria-label="4"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb11-5"><a aria-label="5"></a>    <span class="at">YEARMODA =</span> <span class="fu">first</span>(YEARMODA),</span>
+<span id="cb11-6"><a aria-label="6"></a>    <span class="at">TEMP =</span> <span class="fu">mean</span>(TEMP, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-7"><a aria-label="7"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a></a><span class="co"># Plot the monthly means ----------------------------------</span></span>
-<span id="cb12-2"><a></a>month_temp_plot <span class="ot">&lt;-</span> dlh_month_df <span class="sc">%&gt;%</span></span>
-<span id="cb12-3"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> YEARMODA, <span class="at">y =</span> TEMP)) <span class="sc">+</span></span>
-<span id="cb12-4"><a></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb12-5"><a></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
-<span id="cb12-6"><a></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"steelblue"</span>) <span class="sc">+</span></span>
-<span id="cb12-7"><a></a>  <span class="fu">labs</span>(</span>
-<span id="cb12-8"><a></a>    <span class="at">title =</span> <span class="st">"Duluth Monthly Mean Temperature"</span>,</span>
-<span id="cb12-9"><a></a>    <span class="at">x =</span> <span class="st">"Date"</span>,</span>
-<span id="cb12-10"><a></a>    <span class="at">y =</span> <span class="st">"Temperature (°C)"</span></span>
-<span id="cb12-11"><a></a>  ) <span class="sc">+</span></span>
-<span id="cb12-12"><a></a>  <span class="fu">theme_minimal</span>()</span>
-<span id="cb12-13"><a></a></span>
-<span id="cb12-14"><a></a>month_temp_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="co"># Plot the monthly means ----------------------------------</span></span>
+<span id="cb12-2"><a aria-label="2"></a>month_temp_plot <span class="ot">&lt;-</span> dlh_month_df <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> YEARMODA, <span class="at">y =</span> TEMP)) <span class="sc">+</span></span>
+<span id="cb12-4"><a aria-label="4"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb12-5"><a aria-label="5"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb12-6"><a aria-label="6"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"darkblue"</span>) <span class="sc">+</span></span>
+<span id="cb12-7"><a aria-label="7"></a>  <span class="fu">labs</span>(</span>
+<span id="cb12-8"><a aria-label="8"></a>    <span class="at">title =</span> <span class="st">"Duluth Monthly Mean Temperature"</span>,</span>
+<span id="cb12-9"><a aria-label="9"></a>    <span class="at">x =</span> <span class="st">"Date"</span>,</span>
+<span id="cb12-10"><a aria-label="10"></a>    <span class="at">y =</span> <span class="st">"Temperature (°C)"</span></span>
+<span id="cb12-11"><a aria-label="11"></a>  ) <span class="sc">+</span></span>
+<span id="cb12-12"><a aria-label="12"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb12-13"><a aria-label="13"></a></span>
+<span id="cb12-14"><a aria-label="14"></a>month_temp_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="weather_lecture_files/figure-revealjs/monthly-plot-06-1.png"></p>
+<p><img data-src="weather_lecture_files/figure-revealjs/monthly-plot-06-1.png" alt="Scatter plot with connecting line of Duluth monthly mean temperature over time, showing a regular seasonal wave with a faint upward linear trend line overlaid."></p>
 </figure>
 </div>
 </div>
@@ -713,15 +716,15 @@ $ RH               &lt;dbl&gt; 87.5, 83.4, 82.8, 83.7, 79.8, 70.7, 70.5, 87.3, 9
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a></a><span class="co"># Mean temperature per year -------------------------------</span></span>
-<span id="cb13-2"><a></a>dlh_year_df <span class="ot">&lt;-</span> dlh_temp_df <span class="sc">%&gt;%</span></span>
-<span id="cb13-3"><a></a>  <span class="fu">group_by</span>(YEAR) <span class="sc">%&gt;%</span></span>
-<span id="cb13-4"><a></a>  <span class="fu">summarize</span>(</span>
-<span id="cb13-5"><a></a>    <span class="at">YEARMODA =</span> <span class="fu">first</span>(YEARMODA),</span>
-<span id="cb13-6"><a></a>    <span class="at">TEMP =</span> <span class="fu">mean</span>(TEMP, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb13-7"><a></a>  )</span>
-<span id="cb13-8"><a></a></span>
-<span id="cb13-9"><a></a><span class="fu">head</span>(dlh_year_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># Mean temperature per year -------------------------------</span></span>
+<span id="cb13-2"><a aria-label="2"></a>dlh_year_df <span class="ot">&lt;-</span> dlh_temp_df <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(YEAR) <span class="sc">%&gt;%</span></span>
+<span id="cb13-4"><a aria-label="4"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb13-5"><a aria-label="5"></a>    <span class="at">YEARMODA =</span> <span class="fu">first</span>(YEARMODA),</span>
+<span id="cb13-6"><a aria-label="6"></a>    <span class="at">TEMP =</span> <span class="fu">mean</span>(TEMP, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb13-7"><a aria-label="7"></a>  )</span>
+<span id="cb13-8"><a aria-label="8"></a></span>
+<span id="cb13-9"><a aria-label="9"></a><span class="fu">head</span>(dlh_year_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 3
    YEAR YEARMODA    TEMP
@@ -735,23 +738,23 @@ $ RH               &lt;dbl&gt; 87.5, 83.4, 82.8, 83.7, 79.8, 70.7, 70.5, 87.3, 9
 </div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a></a>yearly_temp_plot <span class="ot">&lt;-</span> dlh_year_df <span class="sc">%&gt;%</span></span>
-<span id="cb15-2"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> YEAR, <span class="at">y =</span> TEMP)) <span class="sc">+</span></span>
-<span id="cb15-3"><a></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
-<span id="cb15-4"><a></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
-<span id="cb15-5"><a></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
-<span id="cb15-6"><a></a>  <span class="fu">labs</span>(</span>
-<span id="cb15-7"><a></a>    <span class="at">title =</span> <span class="st">"Duluth Annual Mean Temperature, 1948–2025"</span>,</span>
-<span id="cb15-8"><a></a>    <span class="at">x =</span> <span class="st">"Year"</span>,</span>
-<span id="cb15-9"><a></a>    <span class="at">y =</span> <span class="st">"Mean Temp (°C)"</span></span>
-<span id="cb15-10"><a></a>  ) <span class="sc">+</span></span>
-<span id="cb15-11"><a></a>  <span class="fu">theme_minimal</span>()</span>
-<span id="cb15-12"><a></a></span>
-<span id="cb15-13"><a></a>yearly_temp_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a aria-label="1"></a>yearly_temp_plot <span class="ot">&lt;-</span> dlh_year_df <span class="sc">%&gt;%</span></span>
+<span id="cb15-2"><a aria-label="2"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> YEAR, <span class="at">y =</span> TEMP)) <span class="sc">+</span></span>
+<span id="cb15-3"><a aria-label="3"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb15-4"><a aria-label="4"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb15-5"><a aria-label="5"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
+<span id="cb15-6"><a aria-label="6"></a>  <span class="fu">labs</span>(</span>
+<span id="cb15-7"><a aria-label="7"></a>    <span class="at">title =</span> <span class="st">"Duluth Annual Mean Temperature, 1948–2025"</span>,</span>
+<span id="cb15-8"><a aria-label="8"></a>    <span class="at">x =</span> <span class="st">"Year"</span>,</span>
+<span id="cb15-9"><a aria-label="9"></a>    <span class="at">y =</span> <span class="st">"Mean Temp (°C)"</span></span>
+<span id="cb15-10"><a aria-label="10"></a>  ) <span class="sc">+</span></span>
+<span id="cb15-11"><a aria-label="11"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb15-12"><a aria-label="12"></a></span>
+<span id="cb15-13"><a aria-label="13"></a>yearly_temp_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="weather_lecture_files/figure-revealjs/yearly-plot-06-1.png"></p>
+<p><img data-src="weather_lecture_files/figure-revealjs/yearly-plot-06-1.png" alt="Scatter plot with connecting line of Duluth annual mean temperature from 1948 to 2025, with a firebrick-colored linear trend line showing a clear overall warming pattern."></p>
 </figure>
 </div>
 </div>
@@ -857,10 +860,10 @@ $ RH               &lt;dbl&gt; 87.5, 83.4, 82.8, 83.7, 79.8, 70.7, 70.5, 87.3, 9
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a></a><span class="co"># Fit a regression: TEMP predicted by YEAR ---------------</span></span>
-<span id="cb16-2"><a></a>yearly_temp_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(TEMP <span class="sc">~</span> YEAR, <span class="at">data =</span> dlh_year_df)</span>
-<span id="cb16-3"><a></a></span>
-<span id="cb16-4"><a></a><span class="fu">summary</span>(yearly_temp_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a aria-label="1"></a><span class="co"># Fit a regression: TEMP predicted by YEAR ---------------</span></span>
+<span id="cb16-2"><a aria-label="2"></a>yearly_temp_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(TEMP <span class="sc">~</span> YEAR, <span class="at">data =</span> dlh_year_df)</span>
+<span id="cb16-3"><a aria-label="3"></a></span>
+<span id="cb16-4"><a aria-label="4"></a><span class="fu">summary</span>(yearly_temp_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
@@ -899,15 +902,15 @@ F-statistic: 34.34 on 1 and 68 DF,  p-value: 1.489e-07</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a></a><span class="co"># Pull the slope and convert to °C per decade ------------</span></span>
-<span id="cb18-2"><a></a>yearly_intercept <span class="ot">&lt;-</span> <span class="fu">coef</span>(yearly_temp_model)[<span class="dv">1</span>]</span>
-<span id="cb18-3"><a></a>yearly_slope <span class="ot">&lt;-</span> <span class="fu">coef</span>(yearly_temp_model)[<span class="dv">2</span>]</span>
-<span id="cb18-4"><a></a></span>
-<span id="cb18-5"><a></a><span class="fu">cat</span>(<span class="st">"Slope (b)         ="</span>, <span class="fu">round</span>(yearly_slope, <span class="dv">4</span>), <span class="st">"°C/year</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a aria-label="1"></a><span class="co"># Pull the slope and convert to °C per decade ------------</span></span>
+<span id="cb18-2"><a aria-label="2"></a>yearly_intercept <span class="ot">&lt;-</span> <span class="fu">coef</span>(yearly_temp_model)[<span class="dv">1</span>]</span>
+<span id="cb18-3"><a aria-label="3"></a>yearly_slope <span class="ot">&lt;-</span> <span class="fu">coef</span>(yearly_temp_model)[<span class="dv">2</span>]</span>
+<span id="cb18-4"><a aria-label="4"></a></span>
+<span id="cb18-5"><a aria-label="5"></a><span class="fu">cat</span>(<span class="st">"Slope (b)         ="</span>, <span class="fu">round</span>(yearly_slope, <span class="dv">4</span>), <span class="st">"°C/year</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Slope (b)         = 0.0269 °C/year</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a></a><span class="fu">cat</span>(<span class="st">"Warming rate       ="</span>, <span class="fu">round</span>(yearly_slope <span class="sc">*</span> <span class="dv">10</span>, <span class="dv">3</span>), <span class="st">"°C per decade</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"Warming rate       ="</span>, <span class="fu">round</span>(yearly_slope <span class="sc">*</span> <span class="dv">10</span>, <span class="dv">3</span>), <span class="st">"°C per decade</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Warming rate       = 0.269 °C per decade</code></pre>
 </div>
@@ -930,10 +933,10 @@ F-statistic: 34.34 on 1 and 68 DF,  p-value: 1.489e-07</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a></a><span class="co"># Fit the same model on the monthly summary ---------------</span></span>
-<span id="cb22-2"><a></a>monthly_temp_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(TEMP <span class="sc">~</span> YEARMODA, <span class="at">data =</span> dlh_month_df)</span>
-<span id="cb22-3"><a></a></span>
-<span id="cb22-4"><a></a><span class="fu">summary</span>(monthly_temp_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a aria-label="1"></a><span class="co"># Fit the same model on the monthly summary ---------------</span></span>
+<span id="cb22-2"><a aria-label="2"></a>monthly_temp_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(TEMP <span class="sc">~</span> YEARMODA, <span class="at">data =</span> dlh_month_df)</span>
+<span id="cb22-3"><a aria-label="3"></a></span>
+<span id="cb22-4"><a aria-label="4"></a><span class="fu">summary</span>(monthly_temp_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
@@ -1039,19 +1042,19 @@ F-statistic: 2.882 on 1 and 834 DF,  p-value: 0.08995</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a></a><span class="co"># Label each day as summer, winter, or shoulder season ----</span></span>
-<span id="cb24-2"><a></a>dlh_season_df <span class="ot">&lt;-</span> dlh_temp_df <span class="sc">%&gt;%</span></span>
-<span id="cb24-3"><a></a>  <span class="fu">mutate</span>(</span>
-<span id="cb24-4"><a></a>    <span class="at">season =</span> <span class="fu">case_when</span>(</span>
-<span id="cb24-5"><a></a>      MONTH <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>) <span class="sc">~</span> <span class="st">"summer"</span>,</span>
-<span id="cb24-6"><a></a>      MONTH <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">12</span>, <span class="dv">1</span>, <span class="dv">2</span>) <span class="sc">~</span> <span class="st">"winter"</span>,</span>
-<span id="cb24-7"><a></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"shoulder"</span></span>
-<span id="cb24-8"><a></a>    )</span>
-<span id="cb24-9"><a></a>  )</span>
-<span id="cb24-10"><a></a></span>
-<span id="cb24-11"><a></a><span class="co"># Quick check - did it work? -------------------------------</span></span>
-<span id="cb24-12"><a></a>dlh_season_df <span class="sc">%&gt;%</span></span>
-<span id="cb24-13"><a></a>  <span class="fu">count</span>(season)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a aria-label="1"></a><span class="co"># Label each day as summer, winter, or shoulder season ----</span></span>
+<span id="cb24-2"><a aria-label="2"></a>dlh_season_df <span class="ot">&lt;-</span> dlh_temp_df <span class="sc">%&gt;%</span></span>
+<span id="cb24-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb24-4"><a aria-label="4"></a>    <span class="at">season =</span> <span class="fu">case_when</span>(</span>
+<span id="cb24-5"><a aria-label="5"></a>      MONTH <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>) <span class="sc">~</span> <span class="st">"summer"</span>,</span>
+<span id="cb24-6"><a aria-label="6"></a>      MONTH <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">12</span>, <span class="dv">1</span>, <span class="dv">2</span>) <span class="sc">~</span> <span class="st">"winter"</span>,</span>
+<span id="cb24-7"><a aria-label="7"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"shoulder"</span></span>
+<span id="cb24-8"><a aria-label="8"></a>    )</span>
+<span id="cb24-9"><a aria-label="9"></a>  )</span>
+<span id="cb24-10"><a aria-label="10"></a></span>
+<span id="cb24-11"><a aria-label="11"></a><span class="co"># Quick check - did it work? -------------------------------</span></span>
+<span id="cb24-12"><a aria-label="12"></a>dlh_season_df <span class="sc">%&gt;%</span></span>
+<span id="cb24-13"><a aria-label="13"></a>  <span class="fu">count</span>(season)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     season     n
      &lt;char&gt; &lt;int&gt;
@@ -1077,15 +1080,15 @@ F-statistic: 2.882 on 1 and 834 DF,  p-value: 0.08995</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a></a><span class="co"># Keep only summer and winter, then summarize by year -----</span></span>
-<span id="cb26-2"><a></a>season_year_df <span class="ot">&lt;-</span> dlh_season_df <span class="sc">%&gt;%</span></span>
-<span id="cb26-3"><a></a>  <span class="fu">filter</span>(season <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"summer"</span>, <span class="st">"winter"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb26-4"><a></a>  <span class="fu">group_by</span>(YEAR, season) <span class="sc">%&gt;%</span></span>
-<span id="cb26-5"><a></a>  <span class="fu">summarize</span>(</span>
-<span id="cb26-6"><a></a>    <span class="at">TEMP =</span> <span class="fu">mean</span>(TEMP, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb26-7"><a></a>  )</span>
-<span id="cb26-8"><a></a></span>
-<span id="cb26-9"><a></a><span class="fu">head</span>(season_year_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a aria-label="1"></a><span class="co"># Keep only summer and winter, then summarize by year -----</span></span>
+<span id="cb26-2"><a aria-label="2"></a>season_year_df <span class="ot">&lt;-</span> dlh_season_df <span class="sc">%&gt;%</span></span>
+<span id="cb26-3"><a aria-label="3"></a>  <span class="fu">filter</span>(season <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"summer"</span>, <span class="st">"winter"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb26-4"><a aria-label="4"></a>  <span class="fu">group_by</span>(YEAR, season) <span class="sc">%&gt;%</span></span>
+<span id="cb26-5"><a aria-label="5"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb26-6"><a aria-label="6"></a>    <span class="at">TEMP =</span> <span class="fu">mean</span>(TEMP, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb26-7"><a aria-label="7"></a>  )</span>
+<span id="cb26-8"><a aria-label="8"></a></span>
+<span id="cb26-9"><a aria-label="9"></a><span class="fu">head</span>(season_year_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 3
 # Groups:   YEAR [3]
@@ -1114,30 +1117,30 @@ F-statistic: 2.882 on 1 and 834 DF,  p-value: 0.08995</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a></a><span class="co"># Plot both seasons with separate trend lines --------------</span></span>
-<span id="cb28-2"><a></a>season_temp_plot <span class="ot">&lt;-</span> season_year_df <span class="sc">%&gt;%</span></span>
-<span id="cb28-3"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> YEAR, <span class="at">y =</span> TEMP, <span class="at">color =</span> season)) <span class="sc">+</span></span>
-<span id="cb28-4"><a></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="fl">1.8</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
-<span id="cb28-5"><a></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
-<span id="cb28-6"><a></a>  <span class="fu">scale_color_manual</span>(</span>
-<span id="cb28-7"><a></a>    <span class="at">values =</span> <span class="fu">c</span>(</span>
-<span id="cb28-8"><a></a>      <span class="st">"summer"</span> <span class="ot">=</span> <span class="st">"firebrick"</span>,</span>
-<span id="cb28-9"><a></a>      <span class="st">"winter"</span> <span class="ot">=</span> <span class="st">"steelblue"</span></span>
-<span id="cb28-10"><a></a>    )</span>
-<span id="cb28-11"><a></a>  ) <span class="sc">+</span></span>
-<span id="cb28-12"><a></a>  <span class="fu">labs</span>(</span>
-<span id="cb28-13"><a></a>    <span class="at">title =</span> <span class="st">"Duluth Summer vs. Winter Temperature Trends"</span>,</span>
-<span id="cb28-14"><a></a>    <span class="at">x =</span> <span class="st">"Year"</span>,</span>
-<span id="cb28-15"><a></a>    <span class="at">y =</span> <span class="st">"Mean Temp (°C)"</span>,</span>
-<span id="cb28-16"><a></a>    <span class="at">color =</span> <span class="st">"Season"</span></span>
-<span id="cb28-17"><a></a>  ) <span class="sc">+</span></span>
-<span id="cb28-18"><a></a>  <span class="fu">theme_minimal</span>()</span>
-<span id="cb28-19"><a></a></span>
-<span id="cb28-20"><a></a>season_temp_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a aria-label="1"></a><span class="co"># Plot both seasons with separate trend lines --------------</span></span>
+<span id="cb28-2"><a aria-label="2"></a>season_temp_plot <span class="ot">&lt;-</span> season_year_df <span class="sc">%&gt;%</span></span>
+<span id="cb28-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> YEAR, <span class="at">y =</span> TEMP, <span class="at">color =</span> season)) <span class="sc">+</span></span>
+<span id="cb28-4"><a aria-label="4"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="fl">1.8</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb28-5"><a aria-label="5"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb28-6"><a aria-label="6"></a>  <span class="fu">scale_color_manual</span>(</span>
+<span id="cb28-7"><a aria-label="7"></a>    <span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb28-8"><a aria-label="8"></a>      <span class="st">"summer"</span> <span class="ot">=</span> <span class="st">"firebrick"</span>,</span>
+<span id="cb28-9"><a aria-label="9"></a>      <span class="st">"winter"</span> <span class="ot">=</span> <span class="st">"darkblue"</span></span>
+<span id="cb28-10"><a aria-label="10"></a>    )</span>
+<span id="cb28-11"><a aria-label="11"></a>  ) <span class="sc">+</span></span>
+<span id="cb28-12"><a aria-label="12"></a>  <span class="fu">labs</span>(</span>
+<span id="cb28-13"><a aria-label="13"></a>    <span class="at">title =</span> <span class="st">"Duluth Summer vs. Winter Temperature Trends"</span>,</span>
+<span id="cb28-14"><a aria-label="14"></a>    <span class="at">x =</span> <span class="st">"Year"</span>,</span>
+<span id="cb28-15"><a aria-label="15"></a>    <span class="at">y =</span> <span class="st">"Mean Temp (°C)"</span>,</span>
+<span id="cb28-16"><a aria-label="16"></a>    <span class="at">color =</span> <span class="st">"Season"</span></span>
+<span id="cb28-17"><a aria-label="17"></a>  ) <span class="sc">+</span></span>
+<span id="cb28-18"><a aria-label="18"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb28-19"><a aria-label="19"></a></span>
+<span id="cb28-20"><a aria-label="20"></a>season_temp_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="weather_lecture_files/figure-revealjs/season-plot-06-1.png"></p>
+<p><img data-src="weather_lecture_files/figure-revealjs/season-plot-06-1.png" alt="Scatter plot of Duluth annual mean temperature by year, colored by season, with separate linear trend lines for summer (firebrick) and winter (dark blue) so their slopes can be compared."></p>
 </figure>
 </div>
 </div>
@@ -1170,23 +1173,23 @@ F-statistic: 2.882 on 1 and 834 DF,  p-value: 0.08995</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a></a><span class="co"># Summer-only model -----------------------------------------</span></span>
-<span id="cb29-2"><a></a>summer_df <span class="ot">&lt;-</span> season_year_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(season <span class="sc">==</span> <span class="st">"summer"</span>)</span>
-<span id="cb29-3"><a></a>summer_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(TEMP <span class="sc">~</span> YEAR, <span class="at">data =</span> summer_df)</span>
-<span id="cb29-4"><a></a>summer_slope <span class="ot">&lt;-</span> <span class="fu">coef</span>(summer_model)[<span class="dv">2</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a aria-label="1"></a><span class="co"># Summer-only model -----------------------------------------</span></span>
+<span id="cb29-2"><a aria-label="2"></a>summer_df <span class="ot">&lt;-</span> season_year_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(season <span class="sc">==</span> <span class="st">"summer"</span>)</span>
+<span id="cb29-3"><a aria-label="3"></a>summer_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(TEMP <span class="sc">~</span> YEAR, <span class="at">data =</span> summer_df)</span>
+<span id="cb29-4"><a aria-label="4"></a>summer_slope <span class="ot">&lt;-</span> <span class="fu">coef</span>(summer_model)[<span class="dv">2</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a></a><span class="co"># Winter-only model -----------------------------------------</span></span>
-<span id="cb30-2"><a></a>winter_df <span class="ot">&lt;-</span> season_year_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(season <span class="sc">==</span> <span class="st">"winter"</span>)</span>
-<span id="cb30-3"><a></a>winter_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(TEMP <span class="sc">~</span> YEAR, <span class="at">data =</span> winter_df)</span>
-<span id="cb30-4"><a></a>winter_slope <span class="ot">&lt;-</span> <span class="fu">coef</span>(winter_model)[<span class="dv">2</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a aria-label="1"></a><span class="co"># Winter-only model -----------------------------------------</span></span>
+<span id="cb30-2"><a aria-label="2"></a>winter_df <span class="ot">&lt;-</span> season_year_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(season <span class="sc">==</span> <span class="st">"winter"</span>)</span>
+<span id="cb30-3"><a aria-label="3"></a>winter_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(TEMP <span class="sc">~</span> YEAR, <span class="at">data =</span> winter_df)</span>
+<span id="cb30-4"><a aria-label="4"></a>winter_slope <span class="ot">&lt;-</span> <span class="fu">coef</span>(winter_model)[<span class="dv">2</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a></a><span class="fu">cat</span>(<span class="st">"Summer warming rate:"</span>, <span class="fu">round</span>(summer_slope <span class="sc">*</span> <span class="dv">10</span>, <span class="dv">3</span>), <span class="st">"°C/decade</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"Summer warming rate:"</span>, <span class="fu">round</span>(summer_slope <span class="sc">*</span> <span class="dv">10</span>, <span class="dv">3</span>), <span class="st">"°C/decade</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Summer warming rate: 0.211 °C/decade</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a></a><span class="fu">cat</span>(<span class="st">"Winter warming rate:"</span>, <span class="fu">round</span>(winter_slope <span class="sc">*</span> <span class="dv">10</span>, <span class="dv">3</span>), <span class="st">"°C/decade</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"Winter warming rate:"</span>, <span class="fu">round</span>(winter_slope <span class="sc">*</span> <span class="dv">10</span>, <span class="dv">3</span>), <span class="st">"°C/decade</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Winter warming rate: 0.342 °C/decade</code></pre>
 </div>

@@ -1,0 +1,286 @@
+---
+order: 14
+week: 7
+title: "Worksheet 14 — One-Way ANOVA II: Running & Reporting"
+subtitle: "Reading the F table, finding which species differ, and writing it up"
+author: "Bill Perry"
+date: today
+
+type: activity
+description: >
+  Hands-on companion to One-Way ANOVA II. Students run the ANOVA with aov()
+  and car::Anova(), use emmeans to find which penguin species differ, and
+  write a complete results sentence.
+categories: [anova, statistics, project-setup]
+
+format:
+  html: default
+  docx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# One-Way ANOVA II — Which Species Differ, and How Do We Report It?
+
+### Recap from Worksheet 13
+
+- Fit `mass_model <- lm(body_mass_g ~ species, data = penguins_df)`
+- Checked normality of the residuals (`plot(model)`, Shapiro-Wilk)
+- Checked equal variance (`leveneTest()`)
+- Decision: assumptions look fine — proceed with classic ANOVA
+
+### Today's Objectives
+
+1.  Read the F table from `aov()` and `car::Anova()`
+2.  Use `emmeans` to find **which** species differ
+3.  Read a compact letter display
+4.  Plot the estimated means ± CI
+5.  Write a complete results sentence
+
+> # **How to use this worksheet**
+>
+> - Work through the parts in order. Type the code into a new R script in Positron and run it line by line.
+> - Blocks marked **▶ Run this** should be executed as written.
+> - Blocks marked **✏️ Your turn** ask you to write, modify, or interpret.
+> - The **Going further** section is optional.
+
+::: callout-note
+## 🔮 Predict before you run — and type, don't paste
+
+Before each **▶ Run this** block, cover the output and *predict* what R will print — the F, the *p*-value, which species differ. Then type the code yourself.
+:::
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 1 — Run the ANOVA *(after lecture Chunk 1)*
+>
+> Parts 7–8: read the F table two ways.
+
+# Setup · Reload libraries and refit the model
+
+**▶ Run this at the top of your script:**
+
+``` r
+# Load packages at the top — always ----------------------
+library(tidyverse)      # wrangling + ggplot2
+library(palmerpenguins) # the penguins data
+library(car)            # Anova()
+library(emmeans)        # post-hoc pairwise tests
+```
+
+**▶ Run this** (same model as the end of Worksheet 13):
+
+``` r
+penguins_df <- penguins %>%
+  drop_na(body_mass_g, species)
+
+mass_model <- lm(body_mass_g ~ species, data = penguins_df)
+```
+
+------------------------------------------------------------------------
+
+# Part 7 · Run the ANOVA
+
+> 🔮 **Predict first:** The boxplot looked very separated. Predict the *p*-value — near 0.5, near 0.05, or far below 0.001?
+
+**▶ Run this:**
+
+``` r
+# Classic ANOVA table ------------------------------------
+mass_aov <- aov(body_mass_g ~ species, data = penguins_df)
+summary(mass_aov)
+```
+
+✏️ **Your turn:** Read the F table.
+
+```
+Df (between, within) =        ,
+F value =
+p-value =
+Reject H₀ at α = 0.05?  Y / N
+```
+
+------------------------------------------------------------------------
+
+# Part 8 · The same table with `car::Anova()`
+
+**▶ Run this:**
+
+``` r
+# Type II sums of squares (the habit to build) ----------
+Anova(mass_model, type = "II")
+```
+
+> ⚠️ **Watch out!** Lowercase `anova()` (base R) and capital `Anova()` (car) are different functions. If R says `could not find function "Anova"`, you forgot `library(car)`.
+
+✏️ **Your turn:** Does `Anova()` give the same F and p as `summary(mass_aov)`? (For one predictor it should.)
+
+```
+Match?  Y / N
+Why do we prefer Anova(type = "II") as a habit? (hint: unbalanced / two-way later)
+```
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 2 — Which groups differ? *(after lecture Chunk 2)*
+>
+> Parts 9–11: post-hoc comparisons, letters, plot, and the write-up.
+
+# Part 9 · Post-hoc — which species differ?
+
+> 🔮 **Predict first:** Will **all three** species differ from each other, or will two be statistically tied? Commit before you run it.
+
+**▶ Run this:**
+
+``` r
+# Estimated marginal means + Tukey-adjusted pairs -------
+mass_emm <- emmeans(mass_model, pairwise ~ species)
+
+mass_emm$contrasts
+```
+
+✏️ **Your turn:** Record each pairwise comparison.
+
+```
+Adelie  vs Chinstrap:  p =        different?  Y / N
+Adelie  vs Gentoo:     p =        different?  Y / N
+Chinstrap vs Gentoo:   p =        different?  Y / N
+```
+
+**▶ Run this (compact letter display):**
+
+``` r
+# Groups sharing a letter are NOT different -------------
+multcomp::cld(mass_emm$emmeans, Letters = letters)
+```
+
+✏️ **Your turn:** Write the letter for each species. Do any share a letter?
+
+```
+Adelie:      Chinstrap:      Gentoo:
+Any species share a letter (i.e. not different)?  Y / N
+```
+
+------------------------------------------------------------------------
+
+# Part 10 · Plot the result
+
+**▶ Run this:**
+
+``` r
+# Estimated means with 95% CI ---------------------------
+mass_emm_plot <- as.data.frame(mass_emm$emmeans) %>%
+  ggplot(aes(x = species, y = emmean, color = species)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
+                width = 0.15, linewidth = 0.9) +
+  labs(x = "Species", y = "Estimated mean mass (g)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+mass_emm_plot
+```
+
+``` r
+# Save it to the figures folder -------------------------
+ggsave("figures/penguin_mass_emmeans.png",
+       plot = mass_emm_plot,
+       width = 5, height = 5, units = "in", dpi = 300)
+```
+
+✏️ **Your turn:** Do any of the confidence intervals overlap? What does that suggest?
+
+```
+Your answer:
+```
+
+------------------------------------------------------------------------
+
+# Part 11 · Write a results sentence
+
+✏️ **Your turn:** Write a complete results sentence. Include the test, F, both df, the *p*-value, the post-hoc outcome, and the direction (which is heaviest).
+
+```
+Template:
+"Body mass differed significantly among the three penguin species
+(one-way ANOVA: F(__, __) = ____, p ____). Tukey-adjusted comparisons
+showed that ____________________, with __________ heaviest."
+
+Your sentence:
+```
+
+------------------------------------------------------------------------
+
+# Part 12 · Review and checkpoint
+
+At this point you should be able to:
+
+- [ ] Read the F table from `aov()` and `car::Anova(type = "II")`
+- [ ] Run `emmeans(model, pairwise ~ group)` and read the pairwise p-values
+- [ ] Interpret a compact letter display
+- [ ] Write a complete ANOVA results sentence
+
+✏️ **Your turn — before you move on:** Run your whole script top to bottom with **Ctrl/Cmd + Shift + Enter**. Does it run cleanly?
+
+```
+Ran cleanly?  Y / N
+If not, what error appeared:
+```
+
+------------------------------------------------------------------------
+
+# Part 13 · Going further
+
+> Optional — do this if you finish early or want to push deeper.
+
+### Try a different response variable
+
+**▶ Try this:** repeat the whole workflow for `flipper_length_mm` instead of body mass.
+
+``` r
+# One-way ANOVA on flipper length -----------------------
+flipper_df <- penguins %>% drop_na(flipper_length_mm, species)
+flipper_model <- lm(flipper_length_mm ~ species, data = flipper_df)
+
+Anova(flipper_model, type = "II")
+emmeans(flipper_model, pairwise ~ species)$contrasts
+```
+
+✏️ **Your turn:** Do the species differ in flipper length the same way they differ in mass?
+
+```
+Your answer:
+```
+
+### Compare across islands
+
+**▶ Try this:** use `island` as the grouping variable instead of `species`.
+
+``` r
+island_df <- penguins %>% drop_na(body_mass_g, island)
+island_model <- lm(body_mass_g ~ island, data = island_df)
+Anova(island_model, type = "II")
+```
+
+✏️ **Your turn:** Why might comparing by island be misleading here? (Hint: which species live on which islands?)
+
+```
+Your answer:
+```
+
+------------------------------------------------------------------------
+
+# Getting unstuck
+
+1.  **`could not find function "Anova"`** → `library(car)`, and mind the capital **A** (base `anova()` is different).
+2.  **`could not find function "emmeans"`** → `library(emmeans)`.
+3.  **`cld` not found** → `install.packages("multcomp")`, then `multcomp::cld(...)`.
+4.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
+
+> 💡 **Key idea:** Nothing about `aov()`, `Anova()`, or `emmeans()` here was specific to penguins or to having exactly three species — swap in four treatments or five sites and the same three function calls, in the same order, give you the same kind of answer.
+
+------------------------------------------------------------------------
+
+*End of Worksheet 14. Next: Worksheet 15 — kicking off the final project.*

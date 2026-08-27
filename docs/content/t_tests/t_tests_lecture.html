@@ -2,23 +2,26 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.38">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-07-05">
-<meta name="description" content="What are T-Tests and how to run them and test assumptions and interpret.">
+<meta name="dcterms.date" content="2026-08-27">
+<meta name="description" content="Why comparing means isn’t enough, the t-statistic, why Welch’s is the safe default, and checking normality and variance before we ever run a test.">
 
-<title>Lecture 04 — Testing Our Hypothesis – UMD DAta Science Biology</title>
+<title>Lecture 09 — T-Tests I: Setting Up the Test – UMD DAta Science Biology</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -78,14 +81,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-355b1241b13eb9e1b70054a630629ff7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-c57f65602dd0356675335e5a446f48c5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-355b1241b13eb9e1b70054a630629ff7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-ffe4ec66b3b2e5a5f7bab576e98f0639.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-6632f43c76c69e813a602cc5faf6884a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-ffe4ec66b3b2e5a5f7bab576e98f0639.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -115,7 +118,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 }</script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -145,10 +148,11 @@ window.Quarto = {
 </script>
 
 <link rel="stylesheet" href="../../css/main.css">
-<meta property="og:title" content="Lecture 04 — Testing Our Hypothesis – UMD DAta Science Biology">
-<meta property="og:description" content="What are T-Tests and how to run them and test assumptions and interpret.">
+<meta property="og:title" content="Lecture 09 — T-Tests I: Setting Up the Test – UMD DAta Science Biology">
+<meta property="og:description" content="Why comparing means isn’t enough, the t-statistic, why Welch’s is the safe default, and checking normality and variance before we ever run a test.">
 <meta property="og:image" content="https://wlperry.github.io/umd_datasci/content/t_tests/t_tests_lecture_files/figure-revealjs/recap-plot-1.png">
 <meta property="og:site_name" content="UMD DAta Science Biology">
+<meta property="og:image:alt" content="Jittered points of leaf weight in grams for shady and sunny sides, with a black point and error bar showing the mean plus or minus one standard error for each side; the shady mean sits well above the sunny mean.">
 <meta property="og:image:height" content="364">
 <meta property="og:image:width" content="480">
 </head>
@@ -324,7 +328,7 @@ window.Quarto = {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Lecture 04 — Testing Our Hypothesis</li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Lecture 09 — T-Tests I: Setting Up the Test</li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -443,8 +447,8 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Lecture 04 — Testing Our Hypothesis</h1>
-<p class="subtitle lead">The two-sample Welch’s t-test from assumptions to results</p>
+<h1 class="title">Lecture 09 — T-Tests I: Setting Up the Test</h1>
+<p class="subtitle lead">Hypotheses, the t-statistic, and checking assumptions before we test</p>
   <div class="quarto-categories">
     <div class="quarto-category">tidyverse</div>
     <div class="quarto-category">descriptive-stats</div>
@@ -453,7 +457,7 @@ window.Quarto = {
 
 <div>
   <div class="description">
-    <p>What are T-Tests and how to run them and test assumptions and interpret.</p>
+    <p>Why comparing means isn’t enough, the t-statistic, why Welch’s is the safe default, and checking normality and variance before we ever run a test.</p>
   </div>
 </div>
 
@@ -470,7 +474,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 5, 2026</p>
+      <p class="date">August 27, 2026</p>
     </div>
   </div>
   
@@ -482,14 +486,13 @@ window.Quarto = {
 </header>
 
 
-<section id="where-we-left-off-lecture-03" class="level1">
-<h1>Where we left off (Lecture 03)</h1>
+<section id="where-we-left-off-lectures-0506" class="level1">
+<h1>Where we left off (Lectures 05–06)</h1>
 <ul>
 <li><strong>Wrangling</strong> — <code>filter()</code>, <code>select()</code>, <code>mutate()</code>, <code>arrange()</code> as the core tidyverse verbs</li>
 <li><strong>Descriptive stats</strong> — mean, median, SD, SE with <code>group_by()</code> + <code>summarize()</code></li>
 <li><strong>NA handling</strong> — <code>sum(!is.na())</code> is the safe way to count <em>n</em></li>
-<li><strong><code>skimr</code></strong> — fast full-dataset overview in one line</li>
-<li><strong>Boxplot</strong> + jittered points; <strong>mean ± SE</strong> with <code>stat_summary()</code></li>
+<li><strong>Boxplot</strong> + jittered points; <strong>mean ± SE</strong> with <code>stat_summary()</code> (Lecture 03, GGPlot I)</li>
 <li><strong>Finding:</strong> shady leaves appear heavier, taller, and wider than sunny leaves</li>
 </ul>
 <div class="callout callout-style-default callout-note callout-titled">
@@ -502,8 +505,8 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>✅ Key idea from Lecture 03</strong></p>
-<p>We described the pattern in our data. Today we formally test whether that pattern is <em>statistically significant</em>.</p>
+<p><strong>✅ Key idea from Lecture 06</strong></p>
+<p>We described the pattern in our data. Over the next two lectures we formally test whether that pattern is <em>statistically significant</em> — today we set the test up, next time we run it.</p>
 </div>
 </div>
 </section>
@@ -513,15 +516,13 @@ Note
 <div class="column" style="width:60%;">
 <ul>
 <li><strong>Understand</strong> why comparing means is not enough — we need a test</li>
+<li><strong>Meet</strong> the two-sample t-test and why we default to <strong>Welch’s</strong></li>
 <li><strong>State</strong> null and alternate hypotheses formally</li>
 <li><strong>Check assumptions</strong> before running any test
 <ul>
-<li>normality: histogram, QQ plot, Shapiro-Wilk</li>
+<li>normality: histogram + Shapiro-Wilk</li>
 <li>variance: Levene’s test</li>
 </ul></li>
-<li><strong>Run</strong> Welch’s two-sample t-test in R</li>
-<li><strong>Read</strong> every line of the <code>t.test()</code> output</li>
-<li><strong>Report</strong> results in scientific writing format</li>
 </ul>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -534,7 +535,7 @@ Tip
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>🖐 Try it yourself</strong></p>
-<p>By the end you will run and interpret a complete t-test on our leaf data.</p>
+<p>By the end of today your data will be fully checked and ready to test. Next lecture, we run it.</p>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
@@ -544,9 +545,10 @@ Tip
 </ul>
 <p><strong>References:</strong></p>
 <ul>
+<li>📖 Whitlock &amp; Schluter, Ch. 4 — <em>Estimating with Uncertainty</em></li>
 <li>📖 <a href="https://r4ds.hadley.nz/data-transform">R4DS §3</a></li>
-<li>🌐 <a href="https://datacarpentry.github.io/R-ecology-lesson/">Data Carpentry</a></li>
 </ul>
+<p>Both are in the course <code>readings/</code> folder.</p>
 <p><strong>Today’s naming:</strong></p>
 <ul>
 <li>test objects → <code>_model</code></li>
@@ -600,7 +602,7 @@ Tip
 <h1>How to Use These Slides — Predict · Type · Run</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
-<p>This lecture runs in <strong>four short chunks</strong>. After each chunk you switch to the <strong>activity worksheet</strong> and type the code yourself.</p>
+<p>This lecture runs in <strong>two short chunks</strong>. After each chunk you switch to the <strong>activity worksheet</strong> and type the code yourself.</p>
 <p><strong>For every code block, do three things:</strong></p>
 <ol type="1">
 <li><strong>Predict</strong> — before it runs, say what you think the output will be</li>
@@ -620,9 +622,8 @@ Note
 <div class="callout-body-container callout-body">
 <p><strong>✅ Why bother? (the evidence)</strong></p>
 <ul>
-<li><strong>Predicting first</strong> forces your brain to <em>retrieve</em> what it knows. The gap between your guess and the real answer is what makes the idea stick — vital for slippery ideas like <em>p</em>-values.</li>
-<li><strong>Typing by hand</strong> builds the finger-memory and error-spotting that copy-paste skips.</li>
-<li><strong>Chunk → immediate practice</strong> keeps a new idea in working memory long enough to form a lasting schema.</li>
+<li>A <em>p</em>-value is easy to memorize and hard to actually understand. Guessing “above or below 0.05” <em>before</em> you see a test result forces you to reason about the test instead of just reading a number off the screen.</li>
+<li>Typing <code>var.equal = FALSE</code> yourself — rather than pasting it — is what makes you notice it’s there at all, instead of skating past the one argument that separates Welch’s from the standard t-test.</li>
 </ul>
 </div>
 </div>
@@ -635,8 +636,7 @@ Note
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load all packages at the top ----------------------------</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl) <span class="co"># reading Excel files</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse) <span class="co"># data manipulation + ggplot2</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(skimr) <span class="co"># fast summaries</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car) <span class="co"># Levene's test for variance equality</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car) <span class="co"># Levene's test for variance equality</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the leaf data from the data folder -----------------</span></span>
@@ -657,72 +657,11 @@ Note
 </div>
 </div>
 </section>
-<section id="what-we-know-so-far" class="level1">
-<h1>What We Know So Far</h1>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>🔮 Predict first:</strong> The two group means differ by about 4 g. With only 10 leaves per side — commit now to a yes/no: is that gap big enough to be <em>statistically significant</em>? You’ll find out in Chunk 3.</p>
-</div>
-</div>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick recap from Lecture 03 ----------------------------</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>recap_df <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(side) <span class="sc">%&gt;%</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(weight_g)),</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_wt =</span> <span class="fu">round</span>(<span class="fu">mean</span>(weight_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">2</span>),</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd_wt =</span> <span class="fu">round</span>(<span class="fu">sd</span>(weight_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">2</span>),</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">se_wt =</span> <span class="fu">round</span>(sd_wt <span class="sc">/</span> <span class="fu">sqrt</span>(n), <span class="dv">2</span>)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>recap_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 2 × 5
-  side      n mean_wt sd_wt se_wt
-  &lt;chr&gt; &lt;int&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
-1 shady    10     7.8  1.03  0.33
-2 sunny    10     3.8  0.79  0.25</code></pre>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<ul>
-<li>RESULTS:
-<ul>
-<li>Shady mean: <strong>7.80 g</strong></li>
-<li>Sunny mean: <strong>3.80 g</strong></li>
-<li>Difference: <strong>4.0 g</strong> — a big gap!</li>
-</ul></li>
-<li><strong>But is that gap real, or could it just be sampling noise?</strong></li>
-<li>With only n = 10 per group, random chance could produce apparent differences.</li>
-<li><strong>We need a formal test to quantify the probability.</strong></li>
-</ul>
-</div>
-</div>
-</section>
-<section id="chunk-1-of-4-why-we-test-the-t-statistic" class="level1">
-<h1>🧩 Chunk 1 of 4 · Why We Test &amp; the t-Statistic</h1>
-<p><strong>We will cover:</strong> why comparing means isn’t enough, what a two-sample t-test is, why we default to Welch’s, and the formula in action.</p>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>🖐 After this chunk: Activity Parts 1–3</strong> (load data, state hypotheses, recap the descriptive stats).</p>
-</div>
+<section id="chunk-1-of-2-why-we-test-the-t-statistic" class="level1">
+<h1>🧩 Chunk 1 of 2 · Why We Test &amp; the t-Statistic</h1>
+<p><strong>We will cover:</strong> why comparing means isn’t enough, the five-step framework we’ll use for every test this semester, what a two-sample t-test is, and why we default to Welch’s.</p>
+<div class="activitybanner">
+<p><strong>🛑 After this chunk: Activity Parts 1–2</strong> (load data, recap the descriptive stats).</p>
 </div>
 </section>
 <section id="why-comparing-means-is-not-enough" class="level1">
@@ -730,29 +669,29 @@ Tip
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remind ourselves what the data look like ---------------</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>recap_plot <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> side, <span class="at">y =</span> weight_g, <span class="at">color =</span> side)) <span class="sc">+</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">seed =</span> <span class="dv">42</span>),</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.5</span>,</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">2</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun =</span> mean, <span class="at">geom =</span> <span class="st">"point"</span>, <span class="at">size =</span> <span class="dv">4</span>) <span class="sc">+</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">fun.data =</span> mean_se,</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">geom =</span> <span class="st">"errorbar"</span>,</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">width =</span> <span class="fl">0.15</span>,</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">0.9</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Side"</span>, <span class="at">y =</span> <span class="st">"Leaf Weight (g)"</span>) <span class="sc">+</span></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>recap_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remind ourselves what the data look like ---------------</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>recap_plot <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> side, <span class="at">y =</span> weight_g, <span class="at">color =</span> side)) <span class="sc">+</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">seed =</span> <span class="dv">42</span>),</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.5</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">2</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun =</span> mean, <span class="at">geom =</span> <span class="st">"point"</span>, <span class="at">size =</span> <span class="dv">4</span>) <span class="sc">+</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">fun.data =</span> mean_se,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">geom =</span> <span class="st">"errorbar"</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">width =</span> <span class="fl">0.15</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">0.9</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Side"</span>, <span class="at">y =</span> <span class="st">"Leaf Weight (g)"</span>) <span class="sc">+</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>recap_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="t_tests_lecture_files/figure-revealjs/recap-plot-1.png" class="img-fluid figure-img"></p>
+<p><img src="t_tests_lecture_files/figure-revealjs/recap-plot-1.png" class="img-fluid figure-img" alt="Jittered points of leaf weight in grams for shady and sunny sides, with a black point and error bar showing the mean plus or minus one standard error for each side; the shady mean sits well above the sunny mean."></p>
 </figure>
 </div>
 </div>
@@ -769,6 +708,66 @@ Tip
 <p><em>“If H₀ were true, how often would we see a gap this large just by chance?”</em></p>
 </blockquote>
 <p>Small <em>p</em> → the gap is unlikely to be chance.</p>
+</div>
+</div>
+</section>
+<section id="five-steps-to-a-hypothesis-test" class="level1">
+<h1>Five Steps to a Hypothesis Test</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p>Every hypothesis test this semester — t-test, ANOVA, regression — follows the same sequence:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Step</th>
+<th>Action</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>1</strong></td>
+<td>State H₀ and Hₐ</td>
+<td>Today</td>
+</tr>
+<tr class="even">
+<td><strong>2</strong></td>
+<td>Check <strong>normality</strong></td>
+<td>Today</td>
+</tr>
+<tr class="odd">
+<td><strong>3</strong></td>
+<td>Check <strong>variance</strong></td>
+<td>Today</td>
+</tr>
+<tr class="even">
+<td><strong>4</strong></td>
+<td><strong>Run</strong> the test</td>
+<td>Next lecture</td>
+</tr>
+<tr class="odd">
+<td><strong>5</strong></td>
+<td><strong>Interpret</strong> and <strong>report</strong></td>
+<td>Next lecture</td>
+</tr>
+</tbody>
+</table>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Check assumptions BEFORE running the test.</strong></p>
+<p>If your data seriously violate assumptions, the <em>p</em>-value from the t-test is unreliable.</p>
+<p>With n = 10 per group, our main concern is <strong>gross non-normality</strong>. The t-test is quite robust to mild departures.</p>
+</div>
+</div>
 </div>
 </div>
 </section>
@@ -851,8 +850,8 @@ Tip
 </div>
 </div>
 </section>
-<section id="the-welchs-formula-in-action" class="level1">
-<h1>The Welch’s Formula in Action</h1>
+<section id="seeing-the-formula-in-action" class="level1">
+<h1>Seeing the Formula in Action</h1>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -869,34 +868,34 @@ Note
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pull stats and compute t by hand ----------------------</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>stats_df <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(side) <span class="sc">%&gt;%</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(weight_g)),</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">m =</span> <span class="fu">mean</span>(weight_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">s =</span> <span class="fu">sd</span>(weight_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>m_sha <span class="ot">&lt;-</span> stats_df<span class="sc">$</span>m[stats_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"shady"</span>]</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>m_sun <span class="ot">&lt;-</span> stats_df<span class="sc">$</span>m[stats_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"sunny"</span>]</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>s_sha <span class="ot">&lt;-</span> stats_df<span class="sc">$</span>s[stats_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"shady"</span>]</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>s_sun <span class="ot">&lt;-</span> stats_df<span class="sc">$</span>s[stats_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"sunny"</span>]</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>n_sha <span class="ot">&lt;-</span> stats_df<span class="sc">$</span>n[stats_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"shady"</span>]</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>n_sun <span class="ot">&lt;-</span> stats_df<span class="sc">$</span>n[stats_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"sunny"</span>]</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>se_diff <span class="ot">&lt;-</span> <span class="fu">sqrt</span>((s_sha<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> n_sha) <span class="sc">+</span> (s_sun<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> n_sun))</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>t_manual <span class="ot">&lt;-</span> (m_sha <span class="sc">-</span> m_sun) <span class="sc">/</span> se_diff</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Difference in means:"</span>, <span class="fu">round</span>(m_sha <span class="sc">-</span> m_sun, <span class="dv">2</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Watch the instructor plug numbers into the formula ----</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>stats_df <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(side) <span class="sc">%&gt;%</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(weight_g)),</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">m =</span> <span class="fu">mean</span>(weight_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">s =</span> <span class="fu">sd</span>(weight_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>m_sha <span class="ot">&lt;-</span> stats_df<span class="sc">$</span>m[stats_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"shady"</span>]</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>m_sun <span class="ot">&lt;-</span> stats_df<span class="sc">$</span>m[stats_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"sunny"</span>]</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>s_sha <span class="ot">&lt;-</span> stats_df<span class="sc">$</span>s[stats_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"shady"</span>]</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>s_sun <span class="ot">&lt;-</span> stats_df<span class="sc">$</span>s[stats_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"sunny"</span>]</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>n_sha <span class="ot">&lt;-</span> stats_df<span class="sc">$</span>n[stats_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"shady"</span>]</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>n_sun <span class="ot">&lt;-</span> stats_df<span class="sc">$</span>n[stats_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"sunny"</span>]</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>se_diff <span class="ot">&lt;-</span> <span class="fu">sqrt</span>((s_sha<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> n_sha) <span class="sc">+</span> (s_sun<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> n_sun))</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>t_manual <span class="ot">&lt;-</span> (m_sha <span class="sc">-</span> m_sun) <span class="sc">/</span> se_diff</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Difference in means:"</span>, <span class="fu">round</span>(m_sha <span class="sc">-</span> m_sun, <span class="dv">2</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Difference in means: 4 g</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"SE of difference:   "</span>, <span class="fu">round</span>(se_diff, <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"SE of difference:   "</span>, <span class="fu">round</span>(se_diff, <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>SE of difference:    0.411 </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"t-statistic:        "</span>, <span class="fu">round</span>(t_manual, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"t-statistic:        "</span>, <span class="fu">round</span>(t_manual, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>t-statistic:         9.733 </code></pre>
 </div>
@@ -908,83 +907,22 @@ Note
 <li>SE of the difference: <span class="math inline">\(\sqrt{\frac{s^2_{shady}}{10} + \frac{s^2_{sunny}}{10}}\)</span></li>
 <li>t = difference / SE</li>
 </ol>
-<p>The observed difference is ~10 standard errors above zero — very far from what we’d expect if H₀ were true.</p>
+<p>The observed difference is ~10 standard errors above zero — very far from what we’d expect if H₀ were true. You’ll try this yourself with a calculator in the activity’s optional section — today the goal is just to see where the number comes from.</p>
 </div>
 </div>
 </section>
-<section id="pause-do-activity-parts-13-now" class="level1">
-<h1>🛑 Pause — Do Activity Parts 1–3 Now</h1>
-<p>Load the data, write your hypotheses <em>before</em> looking at any results, and recompute the group means / SD / SE. Predict each output, type it, run it.</p>
-</section>
-<section id="chunk-2-of-4-framework-hypotheses-assumptions" class="level1">
-<h1>🧩 Chunk 2 of 4 · Framework, Hypotheses &amp; Assumptions</h1>
-<p><strong>We will cover:</strong> the five-step framework, stating H₀ / Hₐ, and checking normality (histogram, QQ, Shapiro-Wilk) and equal variance (Levene’s).</p>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>🖐 After this chunk: Activity Parts 4–7</strong> (histogram, QQ, Shapiro, Levene).</p>
-</div>
+<section id="activity-9-parts-12-now" class="level1">
+<h1>→ ACTIVITY 9 Parts 1–2 now</h1>
+<div class="activitybanner">
+<p><strong>🛑 Do Activity Parts 1–2 now</strong></p>
+<p>Load the data and recompute the group means, SD, and SE. Predict each output, type it, run it.</p>
 </div>
 </section>
-<section id="five-steps-to-a-hypothesis-test" class="level1">
-<h1>Five Steps to a Hypothesis Test</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p>We will always follow this sequence:</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Step</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>1</strong></td>
-<td>State H₀ and Hₐ</td>
-</tr>
-<tr class="even">
-<td><strong>2</strong></td>
-<td>Check <strong>normality</strong> — histogram/box plot</td>
-</tr>
-<tr class="odd">
-<td><strong>3</strong></td>
-<td>Check <strong>normality</strong> — QQ plot + Shapiro-Wilk</td>
-</tr>
-<tr class="even">
-<td><strong>4</strong></td>
-<td>Check <strong>variance</strong> — Levene’s test</td>
-</tr>
-<tr class="odd">
-<td><strong>5</strong></td>
-<td><strong>Run</strong> the test; <strong>interpret</strong> and <strong>report</strong></td>
-</tr>
-</tbody>
-</table>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-style-default callout-important callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Important
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>Check assumptions BEFORE running the test.</strong></p>
-<p>If your data seriously violate assumptions, the <em>p</em>-value from the t-test is unreliable.</p>
-<p>With n = 10 per group, our main concern is <strong>gross non-normality</strong>. The t-test is quite robust to mild departures.</p>
-</div>
-</div>
-</div>
+<section id="chunk-2-of-2-steps-13-hypotheses-assumptions" class="level1">
+<h1>🧩 Chunk 2 of 2 · Steps 1–3: Hypotheses &amp; Assumptions</h1>
+<p><strong>We will cover:</strong> stating H₀ / Hₐ formally, checking normality (histogram + Shapiro-Wilk), and checking equal variance (Levene’s).</p>
+<div class="activitybanner">
+<p><strong>🛑 After this chunk: Activity Parts 3–6</strong> (hypotheses, histogram, Shapiro-Wilk, Levene’s).</p>
 </div>
 </section>
 <section id="step-1-hypotheses-formal" class="level1">
@@ -1015,23 +953,23 @@ Important
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Histogram per group to visually check normality -------</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>hist_norm_plot <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> weight_g, <span class="at">fill =</span> side)) <span class="sc">+</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">"white"</span>, <span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>side, <span class="at">ncol =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Leaf Weight Distribution by Side"</span>,</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Leaf Weight (g)"</span>,</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Count"</span></span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>hist_norm_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Histogram per group to visually check normality -------</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>hist_norm_plot <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> weight_g, <span class="at">fill =</span> side)) <span class="sc">+</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">"white"</span>, <span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>side, <span class="at">ncol =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Leaf Weight Distribution by Side"</span>,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Leaf Weight (g)"</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Count"</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>hist_norm_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="t_tests_lecture_files/figure-revealjs/histogram-norm-1.png" class="img-fluid figure-img"></p>
+<p><img src="t_tests_lecture_files/figure-revealjs/histogram-norm-1.png" class="img-fluid figure-img" alt="Two histograms of leaf weight in grams, faceted by side, showing the count of leaves in each 1-gram bin for shady leaves and for sunny leaves."></p>
 </figure>
 </div>
 </div>
@@ -1044,50 +982,6 @@ Important
 <li>No extreme <strong>outliers</strong></li>
 </ul>
 <p>With n = 10 per group, histograms look lumpy — that is <strong>normal for small samples</strong>.</p>
-<p>Histograms are a visual check only. We also use QQ plots and Shapiro-Wilk.</p>
-</div>
-</div>
-</section>
-<section id="step-3-check-normality-qq-plot" class="level1">
-<h1>Step 3 — Check Normality: QQ Plot</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q-Q plot — points should fall along the diagonal line --</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>qq_norm_plot <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">sample =</span> weight_g, <span class="at">color =</span> side)) <span class="sc">+</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq</span>() <span class="sc">+</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq_line</span>(<span class="at">color =</span> <span class="st">"black"</span>, <span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>side, <span class="at">scales =</span> <span class="st">"free"</span>) <span class="sc">+</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Normal Q-Q Plots by Side"</span>,</span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Theoretical Quantiles"</span>,</span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Sample Quantiles"</span></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>qq_norm_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="t_tests_lecture_files/figure-revealjs/qq-norm-1.png" class="img-fluid figure-img"></p>
-</figure>
-</div>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<p><strong>How to read a QQ plot:</strong></p>
-<ul>
-<li>Points <strong>on the line</strong> → data follow a normal distribution</li>
-<li>Points <strong>curving away</strong> at ends → heavy tails or skew</li>
-<li>With only n = 10, some deviation is expected and acceptable</li>
-</ul>
-<p>If points follow the line roughly, we are comfortable proceeding with the t-test.</p>
-</div>
-</div>
-</section>
-<section id="step-3-check-normality-shapiro-wilk-test" class="level1">
-<h1>Step 3 — Check Normality: Shapiro-Wilk Test</h1>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1098,17 +992,35 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>🔮 Predict first:</strong> Shapiro-Wilk’s H₀ is “the data are normal.” From the histogram and QQ plot you just saw, predict for each side: will <em>p</em> be <strong>above</strong> or <strong>below</strong> 0.05?</p>
+<p>A <strong>QQ plot</strong> is another common visual check — same idea, different picture. You’ll find one in the activity’s optional section if you want to compare.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="step-2-check-normality-shapiro-wilk-test" class="level1">
+<h1>Step 2 — Check Normality: Shapiro-Wilk Test</h1>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🔮 Predict first:</strong> Shapiro-Wilk’s H₀ is “the data are normal.” From the histogram you just saw, predict for each side: will <em>p</em> be <strong>above</strong> or <strong>below</strong> 0.05?</p>
 </div>
 </div>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Shapiro-Wilk test for the sunny side -----------------</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(side <span class="sc">==</span> <span class="st">"sunny"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(weight_g) <span class="sc">%&gt;%</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">shapiro.test</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Shapiro-Wilk test for the sunny side -----------------</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(side <span class="sc">==</span> <span class="st">"sunny"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(weight_g) <span class="sc">%&gt;%</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">shapiro.test</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Shapiro-Wilk normality test
@@ -1118,11 +1030,11 @@ W = 0.8197, p-value = 0.02513</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Shapiro-Wilk test for the shady side -----------------</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(side <span class="sc">==</span> <span class="st">"shady"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(weight_g) <span class="sc">%&gt;%</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">shapiro.test</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Shapiro-Wilk test for the shady side -----------------</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(side <span class="sc">==</span> <span class="st">"shady"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(weight_g) <span class="sc">%&gt;%</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">shapiro.test</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Shapiro-Wilk normality test
@@ -1148,19 +1060,19 @@ Important
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>Small-sample caution:</strong></p>
-<p>With n = 10, this test has <strong>low power</strong> — it rarely detects non-normality even when present. The QQ plot is equally important.</p>
+<p>With n = 10, this test has <strong>low power</strong> — it rarely detects non-normality even when present. The histogram is equally important.</p>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section id="step-4-check-variance-levenes-test" class="level1">
-<h1>Step 4 — Check Variance: Levene’s Test</h1>
+<section id="step-3-check-variance-levenes-test" class="level1">
+<h1>Step 3 — Check Variance: Levene’s Test</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Levene's test — are the variances similar? -----------</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(weight_g <span class="sc">~</span> side, <span class="at">data =</span> tree_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Levene's test — are the variances similar? -----------</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(weight_g <span class="sc">~</span> side, <span class="at">data =</span> tree_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Levene's Test for Homogeneity of Variance (center = median)
       Df F value Pr(&gt;F)
@@ -1185,13 +1097,13 @@ group  1     0.6 0.4486
 <div class="columns">
 <div class="column" style="width:60%;">
 <p>Suppose I forgot <code>library(car)</code> and run Levene’s:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(weight_g <span class="sc">~</span> side, <span class="at">data =</span> tree_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(weight_g <span class="sc">~</span> side, <span class="at">data =</span> tree_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>R stops with:</p>
 <pre><code>Error in leveneTest(weight_g ~ side, data = tree_df) :
   could not find function "leveneTest"</code></pre>
 <p>The fix — load the package that <em>contains</em> the function:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car)</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(weight_g <span class="sc">~</span> side, <span class="at">data =</span> tree_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(weight_g <span class="sc">~</span> side, <span class="at">data =</span> tree_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div><div class="column" style="width:40%;">
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -1204,514 +1116,41 @@ Tip
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>✅ Why show a broken run?</strong></p>
-<p>“could not find function” almost always means a missing <code>library()</code> — not a typo. Watching me diagnose it here means you’ll fix it in seconds when it happens to you.</p>
+<p><code>leveneTest()</code> lives inside <code>car</code>, not base R — so R has no idea what the function is until the package is loaded. Seeing that exact error message once, on purpose, means you won’t waste ten minutes hunting for a typo the next time it happens to you.</p>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section id="pause-do-activity-parts-47-now" class="level1">
-<h1>🛑 Pause — Do Activity Parts 4–7 Now</h1>
-<p>Check every assumption <em>before</em> you test: histogram, QQ plot, Shapiro-Wilk, and Levene’s. Predict each p-value before you run it.</p>
-</section>
-<section id="chunk-3-of-4-run-interpret-the-test" class="level1">
-<h1>🧩 Chunk 3 of 4 · Run &amp; Interpret the Test</h1>
-<p><strong>We will cover:</strong> running Welch’s <code>t.test()</code>, reading every line of the output, and making a formal reject / fail-to-reject decision.</p>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
+<section id="activity-9-parts-36-now" class="level1">
+<h1>→ ACTIVITY 9 Parts 3–6 now</h1>
+<div class="activitybanner">
+<p><strong>🛑 Go to Activity 9 — Parts 3–6</strong></p>
+<p>Close the slides. State your hypotheses, then check normality (histogram + Shapiro-Wilk) and variance (Levene’s). Predict every p-value before you run it.</p>
 </div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>🖐 After this chunk: Activity Parts 8–11</strong> (run, decode, calculate t by hand, decide).</p>
-</div>
-</div>
-</section>
-<section id="step-5-run-the-welchs-t-test" class="level1">
-<h1>Step 5 — Run the Welch’s t-Test</h1>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>🔮 Predict first:</strong> Write down a guess for the <em>p</em>-value before you run <code>t.test()</code> — above or below 0.05? Then see how close you were.</p>
-</div>
-</div>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Welch's two-sample t-test — unequal variance ---------</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>leaf_ttest_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  weight_g <span class="sc">~</span> side, <span class="co"># formula: response ~ grouping variable</span></span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> tree_df,</span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">var.equal =</span> <span class="cn">FALSE</span>, <span class="co"># Welch's — no pooled variance</span></span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">alternative =</span> <span class="st">"two.sided"</span> <span class="co"># two-tailed test</span></span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>leaf_ttest_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-    Welch Two Sample t-test
-
-data:  weight_g by side
-t = 9.7333, df = 16.834, p-value = 2.514e-08
-alternative hypothesis: true difference in means between group shady and group sunny is not equal to 0
-95 percent confidence interval:
- 3.132297 4.867703
-sample estimates:
-mean in group shady mean in group sunny 
-                7.8                 3.8 </code></pre>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<p><strong>Key arguments:</strong></p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 39%">
-<col style="width: 60%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>argument</th>
-<th>what it does</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>weight_g ~ side</code></td>
-<td>compare <code>weight_g</code> between levels of <code>side</code></td>
-</tr>
-<tr class="even">
-<td><code>var.equal = FALSE</code></td>
-<td>use Welch’s correction</td>
-</tr>
-<tr class="odd">
-<td><code>alternative = "two.sided"</code></td>
-<td>two-tailed test</td>
-</tr>
-</tbody>
-</table>
-<p>The result is a model object. We decode each line of the output on the next slide.</p>
-</div>
-</div>
-</section>
-<section id="reading-the-t.test-output" class="level1">
-<h1>Reading the <code>t.test()</code> Output</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract individual values from the model object ------</span></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"t-statistic  :"</span>, <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>statistic, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>t-statistic  : 9.733 </code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"df (Welch)   :"</span>, <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>parameter, <span class="dv">2</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>df (Welch)   : 16.83 </code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"p-value      :"</span>, <span class="fu">signif</span>(leaf_ttest_model<span class="sc">$</span>p.value, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>p-value      : 2.51e-08 </code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"95% CI       :"</span>,</span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>conf.int[<span class="dv">1</span>], <span class="dv">2</span>),</span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"to"</span>,</span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>conf.int[<span class="dv">2</span>], <span class="dv">2</span>),</span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span></span>
-<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>95% CI       : 3.13 to 4.87 g</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Mean shady   :"</span>, <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>estimate[<span class="dv">1</span>], <span class="dv">2</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Mean shady   : 7.8 g</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Mean sunny   :"</span>, <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>estimate[<span class="dv">2</span>], <span class="dv">2</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Mean sunny   : 3.8 g</code></pre>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<p><strong>Line by line:</strong></p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 31%">
-<col style="width: 68%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>output</th>
-<th>meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>t</code></td>
-<td>our calculated t-statistic</td>
-</tr>
-<tr class="even">
-<td><code>df</code></td>
-<td>Welch-Satterthwaite df (non-integer is normal!)</td>
-</tr>
-<tr class="odd">
-<td><code>p-value</code></td>
-<td>probability of this result if H₀ is true</td>
-</tr>
-<tr class="even">
-<td><code>95% CI</code></td>
-<td>plausible range for the true difference in means</td>
-</tr>
-<tr class="odd">
-<td><code>mean of shady/sunny</code></td>
-<td>the two group means</td>
-</tr>
-</tbody>
-</table>
-<p>The <strong>95% CI</strong> is the range we could expect to see if we repeated this study many times.</p>
-</div>
-</div>
-</section>
-<section id="step-5-make-a-decision" class="level1">
-<h1>Step 5 — Make a Decision</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># State the decision formally --------------------------</span></span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="co"># if/else: R checks the condition and runs one of two blocks</span></span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="co"># We will learn these formally in the functions lecture</span></span>
-<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>p_val <span class="ot">&lt;-</span> leaf_ttest_model<span class="sc">$</span>p.value</span>
-<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="fl">0.05</span></span>
-<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (p_val <span class="sc">&lt;</span> alpha) {</span>
-<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"p ="</span>, <span class="fu">signif</span>(p_val, <span class="dv">3</span>), <span class="st">"&lt; α ="</span>, alpha, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Decision: REJECT H₀</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Conclusion: leaf weight differs between sides.</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
-<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"p ="</span>, <span class="fu">signif</span>(p_val, <span class="dv">3</span>), <span class="st">"&gt;= α ="</span>, alpha, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Decision: FAIL TO REJECT H₀</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Conclusion: insufficient evidence of a difference.</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>p = 2.51e-08 &lt; α = 0.05 
-Decision: REJECT H₀
-Conclusion: leaf weight differs between sides.</code></pre>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-style-default callout-important callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Important
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>What a small p-value means:</strong></p>
-<p>If H₀ were true (no real difference), we would get a t-statistic this large or larger less than <code>p</code> × 100% of the time just by chance.</p>
-<p>We set α = 0.05 <em>before</em> the test. If <em>p</em> &lt; α, we reject H₀.</p>
-</div>
-</div>
-<p><strong>What a small p-value does NOT mean:</strong></p>
-<ul>
-<li>It is not the probability that H₀ is true</li>
-<li>Statistical significance ≠ biological importance</li>
-<li>Report the effect size (difference in means) alongside <em>p</em></li>
-</ul>
-</div>
-</div>
-</section>
-<section id="pause-do-activity-parts-811-now" class="level1">
-<h1>🛑 Pause — Do Activity Parts 8–11 Now</h1>
-<p>Run the test, decode t / df / p / CI, reproduce t by hand, and state your decision in formal language. Predict the p-value first.</p>
-</section>
-<section id="chunk-4-of-4-visualize-report" class="level1">
-<h1>🧩 Chunk 4 of 4 · Visualize &amp; Report</h1>
-<p><strong>We will cover:</strong> embedding the test result in a boxplot and a mean ± SE plot, writing a scientific results sentence, and saving publication-quality figures.</p>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>🖐 After this chunk: Activity Parts 12–13</strong> (plots and the results sentence).</p>
-</div>
-</div>
-</section>
-<section id="visualize-the-result-boxplot" class="level1">
-<h1>Visualize the Result — Boxplot</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Final boxplot with all points -----------------------</span></span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>leaf_box_04_plot <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> side, <span class="at">y =</span> weight_g, <span class="at">fill =</span> side)) <span class="sc">+</span></span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
-<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">seed =</span> <span class="dv">42</span>),</span>
-<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.6</span>,</span>
-<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="fl">2.5</span></span>
-<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Leaf Weight by Tree Side"</span>,</span>
-<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="fu">paste0</span>(</span>
-<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Welch's t-test: t = "</span>,</span>
-<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>statistic, <span class="dv">2</span>),</span>
-<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a>      <span class="st">", p = "</span>,</span>
-<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">signif</span>(leaf_ttest_model<span class="sc">$</span>p.value, <span class="dv">2</span>)</span>
-<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Side of Tree"</span>,</span>
-<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Leaf Weight (g)"</span></span>
-<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
-<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a>leaf_box_04_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="t_tests_lecture_files/figure-revealjs/boxplot-04-1.png" class="img-fluid figure-img"></p>
-</figure>
-</div>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<p><strong>Including the test result in the figure:</strong></p>
-<ul>
-<li><code>subtitle</code> pulls t and p directly from the model object</li>
-<li>R fills in the actual numbers automatically</li>
-<li>If you re-run with new data, the subtitle updates</li>
-</ul>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Embedding test statistics in the plot subtitle saves you from copying numbers by hand — and avoids typos in your report.</p>
-</div>
-</div>
-</div>
-</div>
-</section>
-<section id="visualize-the-result-mean-se" class="level1">
-<h1>Visualize the Result — Mean ± SE</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mean ± SE plot with individual points ---------------</span></span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>leaf_mean_se_04_plot <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> side, <span class="at">y =</span> weight_g, <span class="at">color =</span> side)) <span class="sc">+</span></span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
-<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">seed =</span> <span class="dv">42</span>),</span>
-<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.35</span>,</span>
-<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">2</span></span>
-<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun =</span> mean, <span class="at">geom =</span> <span class="st">"point"</span>, <span class="at">size =</span> <span class="dv">4</span>) <span class="sc">+</span></span>
-<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(</span>
-<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">fun.data =</span> mean_se,</span>
-<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">geom =</span> <span class="st">"errorbar"</span>,</span>
-<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">width =</span> <span class="fl">0.15</span>,</span>
-<span id="cb40-14"><a href="#cb40-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">0.9</span></span>
-<span id="cb40-15"><a href="#cb40-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb40-16"><a href="#cb40-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb40-17"><a href="#cb40-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Mean ± SE Leaf Weight by Tree Side"</span>,</span>
-<span id="cb40-18"><a href="#cb40-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="fu">paste0</span>(</span>
-<span id="cb40-19"><a href="#cb40-19" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Welch's t: t("</span>,</span>
-<span id="cb40-20"><a href="#cb40-20" aria-hidden="true" tabindex="-1"></a>      <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>parameter, <span class="dv">1</span>),</span>
-<span id="cb40-21"><a href="#cb40-21" aria-hidden="true" tabindex="-1"></a>      <span class="st">") = "</span>,</span>
-<span id="cb40-22"><a href="#cb40-22" aria-hidden="true" tabindex="-1"></a>      <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>statistic, <span class="dv">2</span>),</span>
-<span id="cb40-23"><a href="#cb40-23" aria-hidden="true" tabindex="-1"></a>      <span class="st">", p &lt; 0.001"</span></span>
-<span id="cb40-24"><a href="#cb40-24" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb40-25"><a href="#cb40-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Side of Tree"</span>,</span>
-<span id="cb40-26"><a href="#cb40-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Leaf Weight (g)"</span></span>
-<span id="cb40-27"><a href="#cb40-27" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb40-28"><a href="#cb40-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb40-29"><a href="#cb40-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
-<span id="cb40-30"><a href="#cb40-30" aria-hidden="true" tabindex="-1"></a>leaf_mean_se_04_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="t_tests_lecture_files/figure-revealjs/mean-se-04-1.png" class="img-fluid figure-img"></p>
-</figure>
-</div>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<p><strong>What the error bars tell you:</strong></p>
-<ul>
-<li>Bars show <strong>± 1 SE</strong> — precision of the mean estimate</li>
-<li>Non-overlapping bars suggest a significant difference</li>
-</ul>
-<p><strong>Rule of thumb:</strong></p>
-<p>If error bars overlap by less than half the bar length, the difference is <em>likely</em> significant at α = 0.05. The <em>p</em>-value from the t-test is the definitive answer.</p>
-</div>
-</div>
-</section>
-<section id="how-to-report-results-in-science" class="level1">
-<h1>How to Report Results in Science</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute reporting values from the model object -------</span></span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>t_val <span class="ot">&lt;-</span> <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>statistic, <span class="dv">2</span>)</span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>df_val <span class="ot">&lt;-</span> <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>parameter, <span class="dv">1</span>)</span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>p_val2 <span class="ot">&lt;-</span> <span class="fu">signif</span>(leaf_ttest_model<span class="sc">$</span>p.value, <span class="dv">2</span>)</span>
-<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"--- Results sentence ---</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>--- Results sentence ---</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Shady-side leaves were significantly heavier than</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Shady-side leaves were significantly heavier than</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(</span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"sunny-side leaves (Welch's t-test: t("</span>,</span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  df_val,</span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">") ="</span>,</span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  t_val,</span>
-<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">", p ="</span>,</span>
-<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>  p_val2,</span>
-<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">").</span><span class="sc">\n</span><span class="st">"</span></span>
-<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>sunny-side leaves (Welch's t-test: t( 16.8 ) = 9.73 , p = 2.5e-08 ).</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(</span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Mean ± SE: shady ="</span>,</span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>estimate[<span class="dv">1</span>], <span class="dv">2</span>),</span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"±"</span>,</span>
-<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(recap_df<span class="sc">$</span>se_wt[recap_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"shady"</span>], <span class="dv">2</span>),</span>
-<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"g,</span><span class="sc">\n</span><span class="st">"</span></span>
-<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Mean ± SE: shady = 7.8 ± 0.33 g,</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(</span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"           sunny ="</span>,</span>
-<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>estimate[<span class="dv">2</span>], <span class="dv">2</span>),</span>
-<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"±"</span>,</span>
-<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(recap_df<span class="sc">$</span>se_wt[recap_df<span class="sc">$</span>side <span class="sc">==</span> <span class="st">"sunny"</span>], <span class="dv">2</span>),</span>
-<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"g.</span><span class="sc">\n</span><span class="st">"</span></span>
-<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>           sunny = 3.8 ± 0.25 g.</code></pre>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<p><strong>Standard format:</strong></p>
-<blockquote class="blockquote">
-<p><em>“[Finding] (Welch’s t-test: t(df) = X.XX, p = X.XXX; mean ± SE: group1 = X.X ± X.X units, group2 = X.X ± X.X units).”</em></p>
-</blockquote>
-<p><strong>Always include:</strong></p>
-<ul>
-<li>Test type (Welch’s t-test)</li>
-<li>t-statistic and df</li>
-<li>Exact <em>p</em>-value (or &lt; 0.001)</li>
-<li>Group means ± SE</li>
-<li>Units</li>
-</ul>
-<p><strong>Never report</strong> “p = 0.000” — write “p &lt; 0.001” instead.</p>
-</div>
-</div>
-</section>
-<section id="save-your-plots" class="level1">
-<h1>Save Your Plots</h1>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save both plots to the figures folder ----------------</span></span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(</span>
-<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"figures/leaf_weight_boxplot_ttest.png"</span>,</span>
-<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">plot =</span> leaf_box_04_plot,</span>
-<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">width =</span> <span class="dv">5</span>,</span>
-<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">height =</span> <span class="dv">5</span>,</span>
-<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">units =</span> <span class="st">"in"</span>,</span>
-<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">dpi =</span> <span class="dv">300</span></span>
-<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(</span>
-<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a>  <span class="st">"figures/leaf_weight_mean_se_ttest.png"</span>,</span>
-<span id="cb51-13"><a href="#cb51-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">plot =</span> leaf_mean_se_04_plot,</span>
-<span id="cb51-14"><a href="#cb51-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">width =</span> <span class="dv">5</span>,</span>
-<span id="cb51-15"><a href="#cb51-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">height =</span> <span class="dv">5</span>,</span>
-<span id="cb51-16"><a href="#cb51-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">units =</span> <span class="st">"in"</span>,</span>
-<span id="cb51-17"><a href="#cb51-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">dpi =</span> <span class="dv">300</span></span>
-<span id="cb51-18"><a href="#cb51-18" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p>Both plots are now in your <code>figures/</code> folder with the test statistics embedded in the subtitle — ready for a lab report or paper.</p>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><code>dpi = 300</code> is publication quality. Use it for any figure that will appear in a paper, poster, or formal report.</p>
-</div>
-</div>
-</div>
-</div>
-</section>
-<section id="pause-do-activity-parts-1213-now" class="level1">
-<h1>🛑 Pause — Do Activity Parts 12–13 Now</h1>
-<p>Build both figures with the statistics embedded in the subtitle, then write your results sentence. Predict what the subtitle will say before you run it.</p>
 </section>
 <section id="what-we-learned-today" class="level1">
 <h1>What We Learned Today</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
-<p><strong>Concepts:</strong></p>
 <ul>
 <li>Why we need a hypothesis test — means alone are not enough</li>
+<li>The <strong>five-step framework</strong> we’ll reuse all semester</li>
 <li><strong>Welch’s t-test</strong> — use <code>var.equal = FALSE</code> as the safe default</li>
 <li><strong>Two-tailed</strong> test — detects differences in either direction</li>
-<li><strong>Five-step framework</strong> — hypotheses → normality → variance → test → report</li>
-<li><strong>Reading output</strong> — t, df, <em>p</em>, CI, group means</li>
-</ul>
-<p><strong>R skills:</strong></p>
-<ul>
-<li><code>library(car)</code> + <code>leveneTest(y ~ group, data)</code> — variance check</li>
-<li><code>filter() %&gt;% pull() %&gt;% shapiro.test()</code> — normality per group</li>
-<li><code>t.test(y ~ group, data, var.equal = FALSE, alternative = "two.sided")</code></li>
-<li><code>model$statistic</code>, <code>model$p.value</code>, <code>model$conf.int</code> — extract results</li>
-<li><code>paste0(...)</code> in subtitle — embed test statistics in figures</li>
+<li>Checking assumptions <strong>before</strong> testing: normality (histogram + Shapiro-Wilk), variance (Levene’s)</li>
 </ul>
 </div><div class="column" style="width:40%;">
 <p><strong>References:</strong></p>
 <ul>
-<li>📖 <a href="https://r4ds.hadley.nz/data-transform">R4DS §3</a> — Data Transformation</li>
-<li>📖 <a href="https://r4ds.hadley.nz/numbers">R4DS §13</a> — Numbers</li>
-<li>🌐 <a href="https://datacarpentry.github.io/R-ecology-lesson/">Data Carpentry</a></li>
+<li>📖 Whitlock &amp; Schluter, Ch. 4 — <em>Estimating with Uncertainty</em></li>
+<li>📖 <a href="https://r4ds.hadley.nz/data-transform">R4DS §3</a></li>
 </ul>
-<p><strong>Up next — Lecture 05:</strong></p>
+<p><strong>Up next — Lecture 10, T-Tests II:</strong></p>
 <ul>
-<li>Linear regression — predicting leaf area from paper tracing mass</li>
-<li>Building a calibration curve with <code>lm()</code></li>
-<li>R², residuals, and assumption checking</li>
+<li>Run Welch’s <code>t.test()</code></li>
+<li>Decode the output line by line</li>
+<li>Make a formal decision and write a results sentence</li>
 </ul>
 </div>
 </div>
@@ -1720,6 +1159,17 @@ Tip
 </section>
 
 </main> <!-- /main -->
+<script>
+// RevealJS slide decks replace the page they're linked from, which strips
+// away the sidebar/nav. Open them in a new tab so it's easy to just close
+// the tab and land back where you were.
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll('a[href$="slides.html"]').forEach(function (a) {
+    a.target = "_blank";
+    a.rel = "noopener";
+  });
+});
+</script>
 
 <script>
   // htmlwidgets need to know to resize themselves when slides are shown/hidden.

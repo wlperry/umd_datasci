@@ -1,16 +1,16 @@
 ---
-order: 11
-week: 6
-title: "Worksheet 11 — One-Way ANOVA with Palmer Penguins"
-subtitle: "Comparing three species, checking assumptions, and post-hoc tests with emmeans"
+order: 13
+week: 7
+title: "Worksheet 13 — One-Way ANOVA I: Setting Up the Test"
+subtitle: "Exploring the penguins, fitting the model, and checking assumptions"
 author: "Bill Perry"
 date: today
 
 type: activity
 description: >
-  Hands-on companion to the one-way ANOVA lecture. Students explore the Palmer
-  penguins data, fit a one-way ANOVA, check the assumptions, run it with aov()
-  and car::Anova(), and use emmeans to find which species differ.
+  Hands-on companion to One-Way ANOVA I. Students explore the Palmer
+  penguins data, fit a one-way ANOVA, and check its assumptions —
+  normality of residuals and equal variance.
 categories: [anova, statistics, project-setup]
 
 format:
@@ -22,22 +22,19 @@ execute:
   message: false
 ---
 
-# One-Way ANOVA — Do Penguin Species Differ in Body Mass?
+# One-Way ANOVA I — Do Penguin Species Differ in Body Mass?
 
-### Recap from Worksheet 10
+### Recap from Worksheets 09–11
 
-- Turned categorical variables into ordered **factors**
-- Reordered levels for cleaner plots with `fct_reorder()`
-- Set a model's reference group with `fct_relevel()`
+- Compared **two** groups with Welch's t-test
+- Fit `lm(Y ~ X)` with a **numeric** predictor in the regression worksheet
+- Checked assumptions with `plot(model)` and Shapiro-Wilk
 
 ### Today's Objectives
 
 1.  Load and explore the Palmer penguins data
 2.  State the ANOVA null and alternate hypotheses
 3.  Fit a one-way ANOVA and check its assumptions
-4.  Read the F table from `aov()` and `car::Anova()`
-5.  Use `emmeans` to find **which** species differ
-6.  Write a complete results sentence
 
 > # **How to use this worksheet**
 >
@@ -165,19 +162,14 @@ Your answer:
 
 # Part 5 · Assumption 1 — normality of residuals
 
+> 🔮 **Predict first:** `plot(mass_model)` gives the same four panels as the regression worksheet. Which panel checks normality?
+
 **▶ Run this:**
 
 ``` r
-# QQ plot of residuals -----------------------------------
-qq_mass_plot <- penguins_df %>%
-  mutate(resid = residuals(mass_model)) %>%
-  ggplot(aes(sample = resid)) +
-  stat_qq() +
-  stat_qq_line(color = "red", linewidth = 0.8) +
-  labs(x = "Theoretical", y = "Sample residuals") +
-  theme_minimal()
-
-qq_mass_plot
+# plot() on an lm object gives all four diagnostics -------
+par(mfrow = c(2, 2))
+plot(mass_model)
 ```
 
 ``` r
@@ -188,11 +180,11 @@ shapiro.test(residuals(mass_model))
 ✏️ **Your turn:** Record and interpret.
 
 ```
-Do the QQ points track the red line?  Y / mostly / no
+Do the Normal Q-Q points (panel 2) track the dashed line?  Y / mostly / no
 Shapiro-Wilk p-value =
 ```
 
-✏️ **Your turn:** With ~340 penguins, Shapiro-Wilk is very sensitive and may flag tiny departures. Which should you trust more here — the QQ plot or the Shapiro p-value? Why?
+✏️ **Your turn:** With ~340 penguins, Shapiro-Wilk is very sensitive and may flag tiny departures. Which should you trust more here — the Q-Q panel or the Shapiro p-value? Why?
 
 ```
 Your answer:
@@ -221,153 +213,13 @@ If NOT equal, which test would you use instead? (hint: Welch)
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 3 — Run the ANOVA *(after lecture Chunk 3)*
->
-> Parts 7–8: read the F table two ways.
-
-# Part 7 · Run the ANOVA
-
-> 🔮 **Predict first:** The boxplot looked very separated. Predict the *p*-value — near 0.5, near 0.05, or far below 0.001?
-
-**▶ Run this:**
-
-``` r
-# Classic ANOVA table ------------------------------------
-mass_aov <- aov(body_mass_g ~ species, data = penguins_df)
-summary(mass_aov)
-```
-
-✏️ **Your turn:** Read the F table.
-
-```
-Df (between, within) =        ,
-F value =
-p-value =
-Reject H₀ at α = 0.05?  Y / N
-```
-
-------------------------------------------------------------------------
-
-# Part 8 · The same table with `car::Anova()`
-
-**▶ Run this:**
-
-``` r
-# Type II sums of squares (the habit to build) ----------
-Anova(mass_model, type = "II")
-```
-
-> ⚠️ **Watch out!** Lowercase `anova()` (base R) and capital `Anova()` (car) are different functions. If R says `could not find function "Anova"`, you forgot `library(car)`.
-
-✏️ **Your turn:** Does `Anova()` give the same F and p as `summary(mass_aov)`? (For one predictor it should.)
-
-```
-Match?  Y / N
-Why do we prefer Anova(type = "II") as a habit? (hint: unbalanced / two-way later)
-```
-
-------------------------------------------------------------------------
-
-> ## 🧩 Chunk 4 — Which groups differ? *(after lecture Chunk 4)*
->
-> Parts 9–11: post-hoc comparisons, letters, plot, and the write-up.
-
-# Part 9 · Post-hoc — which species differ?
-
-> 🔮 **Predict first:** Will **all three** species differ from each other, or will two be statistically tied? Commit before you run it.
-
-**▶ Run this:**
-
-``` r
-# Estimated marginal means + Tukey-adjusted pairs -------
-mass_emm <- emmeans(mass_model, pairwise ~ species)
-
-mass_emm$contrasts
-```
-
-✏️ **Your turn:** Record each pairwise comparison.
-
-```
-Adelie  vs Chinstrap:  p =        different?  Y / N
-Adelie  vs Gentoo:     p =        different?  Y / N
-Chinstrap vs Gentoo:   p =        different?  Y / N
-```
-
-**▶ Run this (compact letter display):**
-
-``` r
-# Groups sharing a letter are NOT different -------------
-multcomp::cld(mass_emm$emmeans, Letters = letters)
-```
-
-✏️ **Your turn:** Write the letter for each species. Do any share a letter?
-
-```
-Adelie:      Chinstrap:      Gentoo:
-Any species share a letter (i.e. not different)?  Y / N
-```
-
-------------------------------------------------------------------------
-
-# Part 10 · Plot the result
-
-**▶ Run this:**
-
-``` r
-# Estimated means with 95% CI ---------------------------
-mass_emm_plot <- as.data.frame(mass_emm$emmeans) %>%
-  ggplot(aes(x = species, y = emmean, color = species)) +
-  geom_point(size = 3) +
-  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
-                width = 0.15, linewidth = 0.9) +
-  labs(x = "Species", y = "Estimated mean mass (g)") +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-mass_emm_plot
-```
-
-``` r
-# Save it to the figures folder -------------------------
-ggsave("figures/penguin_mass_emmeans.png",
-       plot = mass_emm_plot,
-       width = 5, height = 5, units = "in", dpi = 300)
-```
-
-✏️ **Your turn:** Do any of the confidence intervals overlap? What does that suggest?
-
-```
-Your answer:
-```
-
-------------------------------------------------------------------------
-
-# Part 11 · Write a results sentence
-
-✏️ **Your turn:** Write a complete results sentence. Include the test, F, both df, the *p*-value, the post-hoc outcome, and the direction (which is heaviest).
-
-```
-Template:
-"Body mass differed significantly among the three penguin species
-(one-way ANOVA: F(__, __) = ____, p ____). Tukey-adjusted comparisons
-showed that ____________________, with __________ heaviest."
-
-Your sentence:
-```
-
-------------------------------------------------------------------------
-
-# Part 12 · Review and checkpoint
+# Review and checkpoint
 
 At this point you should be able to:
 
 - [ ] Explain why many t-tests inflate the false-positive rate
 - [ ] State ANOVA hypotheses with μ notation
 - [ ] Fit `lm(Y ~ group)` and check residual normality + equal variance
-- [ ] Read the F table from `aov()` and `car::Anova(type = "II")`
-- [ ] Run `emmeans(model, pairwise ~ group)` and read the pairwise p-values
-- [ ] Interpret a compact letter display
-- [ ] Write a complete ANOVA results sentence
 
 ✏️ **Your turn — before you move on:** Run your whole script top to bottom with **Ctrl/Cmd + Shift + Enter**. Does it run cleanly?
 
@@ -378,58 +230,12 @@ If not, what error appeared:
 
 ------------------------------------------------------------------------
 
-# Part 13 · Going further
-
-> Optional — do this if you finish early or want to push deeper.
-
-### Try a different response variable
-
-**▶ Try this:** repeat the whole workflow for `flipper_length_mm` instead of body mass.
-
-``` r
-# One-way ANOVA on flipper length -----------------------
-flipper_df <- penguins %>% drop_na(flipper_length_mm, species)
-flipper_model <- lm(flipper_length_mm ~ species, data = flipper_df)
-
-Anova(flipper_model, type = "II")
-emmeans(flipper_model, pairwise ~ species)$contrasts
-```
-
-✏️ **Your turn:** Do the species differ in flipper length the same way they differ in mass?
-
-```
-Your answer:
-```
-
-### Compare across islands
-
-**▶ Try this:** use `island` as the grouping variable instead of `species`.
-
-``` r
-island_df <- penguins %>% drop_na(body_mass_g, island)
-island_model <- lm(body_mass_g ~ island, data = island_df)
-Anova(island_model, type = "II")
-```
-
-✏️ **Your turn:** Why might comparing by island be misleading here? (Hint: which species live on which islands?)
-
-```
-Your answer:
-```
-
-------------------------------------------------------------------------
-
 # Getting unstuck
 
 1.  **`could not find function "penguins"`** → `library(palmerpenguins)`.
-2.  **`could not find function "Anova"`** → `library(car)`, and mind the capital **A** (base `anova()` is different).
-3.  **`could not find function "emmeans"`** → `library(emmeans)`.
-4.  **`cld` not found** → `install.packages("multcomp")`, then `multcomp::cld(...)`.
-5.  **Levene says unequal variance** → use `oneway.test(y ~ group, var.equal = FALSE)` (Welch's ANOVA).
-6.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
-
-> 💡 **Key idea:** One-way ANOVA → post-hoc is the exact template for comparing any 3+ groups you'll meet — treatments, sites, species, seasons. Master it here and it transfers everywhere.
+2.  **Levene says unequal variance** → use `oneway.test(y ~ group, var.equal = FALSE)` (Welch's ANOVA).
+3.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
 
 ------------------------------------------------------------------------
 
-*End of Worksheet 10. Next: Worksheet 11 — factors, so your groups plot and model in the order you want.*
+*End of Worksheet 13. Next: Worksheet 14 — running the ANOVA and finding which species differ.*

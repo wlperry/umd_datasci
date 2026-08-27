@@ -29,7 +29,7 @@ glimpse(pg)
 # ── 1. Explore the relationship ───────────────────────────────────────────────
 
 ggplot(pg, aes(x = flipper_length_mm, y = body_mass_g)) +
-  geom_point(alpha = 0.5, color = "steelblue", size = 2) +
+  geom_point(alpha = 0.5, color = "darkblue", size = 2) +
   geom_smooth(method = "loess", se = FALSE,
               color = "tomato", linetype = "dashed", linewidth = 0.8) +
   labs(x = "Flipper length (mm)", y = "Body mass (g)",
@@ -40,14 +40,14 @@ ggplot(pg, aes(x = flipper_length_mm, y = body_mass_g)) +
 
 # Q-Q plots for each variable
 ggplot(pg, aes(sample = flipper_length_mm)) +
-  stat_qq(color = "steelblue", alpha = 0.6) +
+  stat_qq(color = "darkblue", alpha = 0.6) +
   stat_qq_line(color = "tomato") +
   labs(title = "Q-Q: Flipper length",
        x = "Theoretical quantiles", y = "Sample quantiles") +
   theme_regular()
 
 ggplot(pg, aes(sample = body_mass_g)) +
-  stat_qq(color = "steelblue", alpha = 0.6) +
+  stat_qq(color = "darkblue", alpha = 0.6) +
   stat_qq_line(color = "tomato") +
   labs(title = "Q-Q: Body mass",
        x = "Theoretical quantiles", y = "Sample quantiles") +
@@ -148,7 +148,7 @@ diag_df <- tibble(
 
 # Residuals vs Fitted — equal variance
 ggplot(diag_df, aes(x = fitted, y = residuals)) +
-  geom_point(alpha = 0.5, color = "steelblue") +
+  geom_point(alpha = 0.5, color = "darkblue") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "tomato") +
   geom_smooth(method = "loess", se = FALSE, color = "grey40", linewidth = 0.8) +
   labs(title = "Residuals vs Fitted",
@@ -157,7 +157,7 @@ ggplot(diag_df, aes(x = fitted, y = residuals)) +
 
 # Q-Q of residuals — normality
 ggplot(diag_df, aes(sample = std_resid)) +
-  stat_qq(alpha = 0.5, color = "steelblue") +
+  stat_qq(alpha = 0.5, color = "darkblue") +
   stat_qq_line(color = "tomato") +
   labs(title = "Normal Q-Q of residuals",
        x = "Theoretical quantiles", y = "Standardised residuals") +
@@ -165,7 +165,7 @@ ggplot(diag_df, aes(sample = std_resid)) +
 
 # Cook's distance — influential points
 ggplot(diag_df, aes(x = seq_along(cooks_d), y = cooks_d)) +
-  geom_col(fill = "steelblue", alpha = 0.7) +
+  geom_col(fill = "darkblue", alpha = 0.7) +
   geom_hline(yintercept = 4 / nrow(pg), linetype = "dashed", color = "tomato") +
   labs(title = "Cook's distance",
        x = "Observation", y = "Cook's D",

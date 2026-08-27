@@ -195,7 +195,7 @@ city_season_plot <- city_season_year_df %>%
   geom_smooth(method = "lm", se = TRUE) +
   scale_color_manual(values = c(
     "summer" = "_____",      # pick a color, e.g. "firebrick"
-    "winter" = "_____"       # pick a color, e.g. "steelblue"
+    "winter" = "_____"       # pick a color, e.g. "darkblue"
   )) +
   labs(
     title = "_____",         # write a descriptive title with your city's name

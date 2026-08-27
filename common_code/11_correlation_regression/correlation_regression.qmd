@@ -7,7 +7,7 @@ date: today
 topic_number: "11"
 type: common_code
 description: >
-  How to do a linear regreession in R and interpret the output and test assumptions
+  How to do a linear regression in R and interpret the output and test assumptions
 categories: [packages, setup]
 
 format:
@@ -31,7 +31,7 @@ variables with no manipulation — making correlation appropriate first, and
 regression appropriate when we want a predictive equation.
 
 > ⬇️ **Download the companion R script:**
-> [`10_correlation_regression.R`](11_correlation_regression.R)
+> [`11_correlation_regression.R`](11_correlation_regression.R)
 
 ![Penguin bill dimensions art by Allison Horst](https://allisonhorst.github.io/palmerpenguins/reference/figures/culmen_depth.png)
 
@@ -51,28 +51,16 @@ source("themes/r_themes_for_3_sizes.R")
 pg <- penguins |> drop_na(flipper_length_mm, body_mass_g, species)
 ```
 
-::: {.callout-warning}
-## Errors found in the original scripts
+::: {.callout-note}
+## Watch out for pre-transformed data
 
-Before the improved version, two issues worth flagging:
-
-**In the DEET regression file:** The `bites` column in `chap17q30DEETMosquiteBites.csv`
-contains values like `4.062`, `3.535`, `2.549` — these are already
-**square-root transformed** bite counts (√16.5, √12.5, √6.5). The original
-script treats them as raw counts, fits a linear model, then writes a methods
-section saying "number of mosquito bites" — but the response variable is
-actually √bites. The regression equation, R², intercept interpretation and
-results text are all on the wrong scale. Always check `skim()` or `head()` and
-compare to the paper before fitting any model.
-
-**In both correlation and regression files:** `n()` is used inside `summarise()`
-for sample sizes rather than `sum(!is.na())`, and the results sections contain
-unfilled `[value]` placeholders rather than extracted model values.
-
-**In both files:** `par(mfrow = c(2,2)); plot(model)` uses base R diagnostics
-that cannot be saved with `ggsave()` and do not match course style.
-Replaced throughout with ggplot versions built from `fitted()`, `residuals()`,
-and `rstandard()`.
+The `bites` column in `chap17q30DEETMosquiteBites.csv` contains values like
+`4.062`, `3.535`, `2.549` — these are already **square-root transformed**
+mosquito bite counts (√16.5, √12.5, √6.5), not raw counts. If you fit a
+linear model to this column and describe the response as "number of
+mosquito bites," the regression equation, R², and intercept interpretation
+will all be on the wrong scale. Always check `skim()` or `head()` and
+compare to the data dictionary or source paper before fitting any model.
 :::
 
 ---
@@ -111,7 +99,7 @@ whether a straight line is a reasonable description.
 
 ```r
 ggplot(pg, aes(x = flipper_length_mm, y = body_mass_g)) +
-  geom_point(alpha = 0.5, color = "steelblue", size = 2) +
+  geom_point(alpha = 0.5, color = "darkblue", size = 2) +
   geom_smooth(method = "loess", se = FALSE,
               color = "tomato", linetype = "dashed", linewidth = 0.8) +
   labs(x = "Flipper length (mm)", y = "Body mass (g)",
@@ -140,7 +128,7 @@ distributed. Check each one separately with a Q-Q plot and Shapiro-Wilk test.
 ```r
 # Q-Q plot for flipper length
 ggplot(pg, aes(sample = flipper_length_mm)) +
-  stat_qq(color = "steelblue", alpha = 0.6) +
+  stat_qq(color = "darkblue", alpha = 0.6) +
   stat_qq_line(color = "tomato") +
   labs(title = "Q-Q: Flipper length",
        x = "Theoretical quantiles", y = "Sample quantiles") +
@@ -148,7 +136,7 @@ ggplot(pg, aes(sample = flipper_length_mm)) +
 
 # Q-Q plot for body mass
 ggplot(pg, aes(sample = body_mass_g)) +
-  stat_qq(color = "steelblue", alpha = 0.6) +
+  stat_qq(color = "darkblue", alpha = 0.6) +
   stat_qq_line(color = "tomato") +
   labs(title = "Q-Q: Body mass",
        x = "Theoretical quantiles", y = "Sample quantiles") +
@@ -387,7 +375,7 @@ diag_df <- tibble(
 
 ```r
 ggplot(diag_df, aes(x = fitted, y = residuals)) +
-  geom_point(alpha = 0.5, color = "steelblue") +
+  geom_point(alpha = 0.5, color = "darkblue") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "tomato") +
   geom_smooth(method = "loess", se = FALSE,
               color = "grey40", linewidth = 0.8) +
@@ -400,7 +388,7 @@ ggplot(diag_df, aes(x = fitted, y = residuals)) +
 
 ```r
 ggplot(diag_df, aes(sample = std_resid)) +
-  stat_qq(alpha = 0.5, color = "steelblue") +
+  stat_qq(alpha = 0.5, color = "darkblue") +
   stat_qq_line(color = "tomato") +
   labs(title = "Normal Q-Q of residuals",
        x = "Theoretical quantiles", y = "Standardised residuals") +
@@ -411,7 +399,7 @@ ggplot(diag_df, aes(sample = std_resid)) +
 
 ```r
 ggplot(diag_df, aes(x = seq_along(cooks_d), y = cooks_d)) +
-  geom_col(fill = "steelblue", alpha = 0.7) +
+  geom_col(fill = "darkblue", alpha = 0.7) +
   geom_hline(yintercept = 4 / nrow(pg),
              linetype = "dashed", color = "tomato") +
   labs(title = "Cook's distance",
@@ -551,5 +539,6 @@ still means you have fitted the wrong model. Check assumptions first, R² second
 
 ---
 
-*End of Common Code 10 — Correlation and Simple Linear Regression.*
-*Next: Common Code 11 — One-Way ANOVA.*
+*End of Common Code 11 — Correlation and Simple Linear Regression.*
+
+*Next: Common Code 12 — One-Way ANOVA.*

@@ -2,12 +2,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.38">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-07-05">
+<meta name="dcterms.date" content="2026-08-27">
 <meta name="description" content="Summarizing data and using an API and more R">
 
 <title>Worksheet 06 — Real Climate Data in R – UMD DAta Science Biology</title>
@@ -15,10 +15,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -78,14 +81,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-355b1241b13eb9e1b70054a630629ff7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-c57f65602dd0356675335e5a446f48c5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-355b1241b13eb9e1b70054a630629ff7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-ffe4ec66b3b2e5a5f7bab576e98f0639.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-6632f43c76c69e813a602cc5faf6884a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-ffe4ec66b3b2e5a5f7bab576e98f0639.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -438,7 +441,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 5, 2026</p>
+      <p class="date">August 27, 2026</p>
     </div>
   </div>
   
@@ -495,11 +498,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Before each <strong>▶ Run this</strong> block, cover the output and <em>predict</em> what R will print. Then type the code yourself. Two reasons:</p>
-<ul>
-<li><strong>Predicting makes it stick.</strong> Guessing the row count, the slope, or which season warms faster forces you to retrieve the idea — being surprised is when it sinks in.</li>
-<li><strong>Typing beats pasting.</strong> Typing trains your eye for the small errors (a lowercase <code>temp</code>, <code>==</code> instead of <code>%in%</code>) that you would otherwise spend real time hunting.</li>
-</ul>
+<p>Before each <strong>▶ Run this</strong> block, cover the output and <em>predict</em> what R will print. Then type the code yourself.</p>
+<p>Committing to a guess — how many rows survive a <code>group_by()</code>, which sign the slope will have, which season wins — gives you something to be right or wrong about, and being wrong is what you’ll actually remember. Typing the code instead of pasting it also slows you down just enough to catch the errors this dataset is full of: a lowercase <code>temp</code> where NOAA wants <code>TEMP</code>, an <code>==</code> where you needed <code>%in%</code>.</p>
 </div>
 </div>
 <hr>
@@ -573,7 +573,7 @@ What does one row represent (a year? a month? a day?):</code></pre>
 Can you see a clear warming trend?  Y / N
 Why or why not:</code></pre>
 <blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> Raw data shows you <em>everything</em> that happened — which can hide the <em>one pattern</em> you’re looking for. The seasonal cycle (summer ↔︎ winter) is much bigger than any year-to-year warming trend, so it drowns the trend out visually.</p>
+<p>💡 <strong>Key idea:</strong> The seasonal swing between a Duluth summer and a Duluth winter is roughly 30°C. A warming trend of a few tenths of a degree per decade is real, but at this scale it’s buried under swings a hundred times larger — that’s why we have to summarize before we can see it.</p>
 </blockquote>
 <hr>
 <blockquote class="blockquote">
@@ -598,7 +598,7 @@ Why or why not:</code></pre>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> YEARMODA, <span class="at">y =</span> TEMP)) <span class="sc">+</span></span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"steelblue"</span>) <span class="sc">+</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"darkblue"</span>) <span class="sc">+</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Duluth Monthly Mean Temperature"</span>,</span>
 <span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Date"</span>, <span class="at">y =</span> <span class="st">"Temperature (°C)"</span></span>
@@ -743,7 +743,7 @@ What TRUE ~ "shoulder" does:</code></pre>
 <span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
 <span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(</span>
 <span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"summer"</span> <span class="ot">=</span> <span class="st">"firebrick"</span>,</span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"winter"</span> <span class="ot">=</span> <span class="st">"steelblue"</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"winter"</span> <span class="ot">=</span> <span class="st">"darkblue"</span></span>
 <span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span></span>
 <span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
 <span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Duluth Summer vs. Winter Temperature Trends"</span>,</span>
@@ -889,7 +889,7 @@ If not, what error appeared:</code></pre>
 <li><strong>Cheat sheets</strong> — <a href="https://posit.co/resources/cheatsheets/" class="uri">https://posit.co/resources/cheatsheets/</a></li>
 </ol>
 <blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> Every dataset you’ll ever download from NOAA, eBird, or any other public source will need this same workflow — download → trim → explore raw → summarize → model. You now have it.</p>
+<p>💡 <strong>Key idea:</strong> Notice you never opened Excel for any of this — download, trim, plot, summarize, and model all happened inside the same R session. That’s the habit worth keeping for your final project, whatever data source you end up pulling from.</p>
 </blockquote>
 <hr>
 <p><em>End of Worksheet 06. Next: Homework — repeat this entire workflow for a city of your choice and compare your city’s warming rate to Duluth’s.</em></p>
@@ -898,6 +898,17 @@ If not, what error appeared:</code></pre>
 </section>
 
 </main> <!-- /main -->
+<script>
+// RevealJS slide decks replace the page they're linked from, which strips
+// away the sidebar/nav. Open them in a new tab so it's easy to just close
+// the tab and land back where you were.
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll('a[href$="slides.html"]').forEach(function (a) {
+    a.target = "_blank";
+    a.rel = "noopener";
+  });
+});
+</script>
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

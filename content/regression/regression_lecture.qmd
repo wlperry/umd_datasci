@@ -1,5 +1,5 @@
 ---
-title: "Lecture 06 — Linear Regression"
+title: "Lecture 11 — Linear Regression"
 subtitle: "Predicting leaf area from paper tracing mass (Whitlock & Schluter Ch. 17)"
 author: "Bill Perry"
 date: today
@@ -7,11 +7,11 @@ date: today
 # --- Fields the SITE reads for ordering / listings / homepage ---
 # These are the ONLY things you need to edit to move this lecture around.
 # The folder name and filename never have to change.
-order: 6
-week: 3
+order: 11
+week: 6
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
-  How to do regressions and test assumptions and interpret and calculate.
+  How to fit a linear regression, test its assumptions, interpret the model output, and calculate predictions.
 categories: [tidyverse, descriptive-stats]
 
 format:
@@ -37,14 +37,14 @@ execute:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
-# Where we left off (Lecture 05)
+# Where we left off (Lectures 07, 09–10)
 
 - **Quarto** — one `.qmd` file holds your **writing *and* your code**, and renders to Word, HTML, or PowerPoint
 - **Three ingredients** — YAML front matter, Markdown text, and named code chunks
 - **Reproducibility** — numbers and figures are *computed*, never copied by hand; change the data, press **Render**
 - **Inline code** — drop a live result straight into a sentence with `` `r ` ``
 - **Word reports** — `format: docx` with `toc` and `number-sections` gives a professional document
-- **Carried forward (Lecture 04)** — shady leaves were significantly *heavier* than sunny leaves (Welch's t-test, *p* \< 0.001)
+- **Carried forward (Lectures 09–10)** — shady leaves were significantly *heavier* than sunny leaves (Welch's t-test, *p* \< 0.001)
 
 ::: callout-note
 **✅ Transition**
@@ -111,9 +111,9 @@ This lecture runs in **four short chunks**. After each chunk you switch to the *
 ::: callout-note
 **✅ Why bother? (the evidence)**
 
--   **Predicting first** forces your brain to *retrieve* what it knows — the gap between guess and answer is what makes it stick.
--   **Typing by hand** builds the finger-memory and error-spotting that copy-paste skips.
--   **Chunk → immediate practice** keeps a new idea in working memory long enough to form a lasting schema.
+-   A guess about the sign of the slope, or the size of R², is a claim you can be proven wrong about — and being wrong is what makes the right answer stick.
+-   Typing `lm(area_cm2 ~ mass_g, data = paper_df)` yourself, instead of pasting it, is what makes you actually notice which variable sits on which side of the `~`.
+-   Running each short chunk and then immediately applying it in the activity keeps the idea active in your head instead of letting it go stale between lecture and practice.
 :::
 ::::
 ::::::
@@ -187,7 +187,7 @@ X is often something easy to measure; Y is what you actually want to know. Regre
 - One variable can reasonably **predict or cause** the other
 - You want an **equation** to make predictions for new observations
 
-**Regression vs. our t-test (Lecture 04):**
+**Regression vs. our t-test (Lectures 09–10):**
 
 | Test       | Question                        |
 |------------|---------------------------------|
@@ -250,9 +250,8 @@ The **least-squares line** minimizes the sum of *squared* residuals:
 $$\text{minimize} \sum_{i=1}^{n}(Y_i - \hat{Y}_i)^2$$
 
 - Squaring serves two purposes:
-  - \- Makes all deviations **positive** (no cancellation)
-
-  - \- Penalizes **large** deviations more than small ones
+  - Makes all deviations **positive** (no cancellation)
+  - Penalizes **large** deviations more than small ones
 - There is only one line that achieves this minimum — it is unique.
 - 📖 W&S §17.1 p. 542 (Figure 17.1-2)
 :::
@@ -320,10 +319,10 @@ Four assumptions must hold for the p-value and confidence intervals to be valid 
 
 | \# | Assumption | How to check |
 |------------------------|------------------------|------------------------|
-| 1 | **Linearity** — Y changes linearly with X | Residual vs. fitted plot |
+| 1 | **Linearity** — Y changes linearly with X | `plot(model)`, panel 1 |
 | 2 | **Independence** — observations are independent | Study design |
-| 3 | **Equal variance** — spread of residuals is constant | Residual vs. fitted plot |
-| 4 | **Normality** — residuals are normally distributed | QQ plot + Shapiro-Wilk |
+| 3 | **Equal variance** — spread of residuals is constant | `plot(model)`, panels 1 & 3 |
+| 4 | **Normality** — residuals are normally distributed | `plot(model)`, panel 2 + Shapiro-Wilk |
 :::
 
 :::: {.column width="40%"}
@@ -332,7 +331,7 @@ Four assumptions must hold for the p-value and confidence intervals to be valid 
 
 The normality assumption is about the **residuals** (observed − predicted), not the original Y values.
 
-A well-fitted residual plot looks like a random horizontal cloud of points centered at zero — no curves, no funnel shapes.
+R builds these diagnostic plots for you the instant you fit a model — `plot()` on any `lm` object gives you all four in one call.
 :::
 
 📖 W&S §17.5 pp. 557–560 (Figures 17.5-1, 17.5-4)
@@ -398,6 +397,7 @@ paper_df %>%
 ::: {.column width="60%"}
 ```{r scatter-raw-05}
 #| fig-format: png
+#| fig-alt: "Scatter plot of paper area in square centimeters against paper mass in grams, showing a tight, linear, positively sloped relationship with no obvious curve or outliers."
 # Scatter plot of area vs mass to check linearity -----
 scatter_05_plot <- paper_df %>%
   ggplot(aes(x = mass_g, y = area_cm2)) +
@@ -425,7 +425,7 @@ Both variables are continuous and numeric → linear regression is appropriate.
 :::
 :::::
 
-# Fit the Model with `lm() - Linear Model`
+# Fit the Model with `lm()` — the Linear Model Function
 
 ::: callout-note
 **🔮 Predict first:** area rises with mass. Before you read the output — will the slope be **positive or negative**? Roughly how many cm² per gram of paper?
@@ -531,10 +531,10 @@ Fit `lm(area_cm2 ~ mass_g)`, decode the `summary()` table, and pull the slope, i
 
 # 🧩 Chunk 3 of 4 · Visualize & Check Assumptions
 
-**We will cover:** the calibration curve with its CI band, the residuals-vs-fitted plot, and the QQ plot + Shapiro-Wilk on the residuals.
+**We will cover:** the calibration curve with its CI band, and the four base R diagnostic plots + Shapiro-Wilk on the residuals.
 
 ::: callout-tip
-**🖐 After this chunk: Activity Parts 8–10** (plot the curve; check the residual and QQ/Shapiro assumptions).
+**🖐 After this chunk: Activity Parts 8–10** (plot the curve; check `plot(model)` and Shapiro-Wilk).
 :::
 
 # Plot the Calibration Curve
@@ -543,6 +543,7 @@ Fit `lm(area_cm2 ~ mass_g)`, decode the `summary()` table, and pull the slope, i
 ::: {.column width="60%"}
 ```{r calibration-line-plot-05}
 #| fig-format: png
+#| fig-alt: "Scatter plot of paper area versus mass with a dark blue least-squares regression line and a light blue 95 percent confidence band that narrows near the middle of the mass range and widens at the extremes."
 # Calibration curve with regression line + 95% CI band
 calibration_plot <- paper_df %>%
   ggplot(aes(x = mass_g, y = area_cm2)) +
@@ -550,7 +551,7 @@ calibration_plot <- paper_df %>%
   geom_smooth(
     method = "lm",
     se = TRUE,
-    color = "steelblue",
+    color = "darkblue",
     fill = "lightblue"
   ) +
   labs(
@@ -583,85 +584,61 @@ This is exactly Figure 17.2-1 from W&S (p. 549).
 :::
 :::::
 
-# Check Assumptions — Residual Plot
+# Check Assumptions — the Base R Diagnostic Plots
 
 ::: callout-note
-**🔮 Predict first:** If the line fits well, what should the residuals-vs-fitted plot look like — a random flat cloud, a curve, or a funnel? Predict, then look.
+**🔮 Predict first:** `plot()` on a fitted model gives you four panels at once. One of them is a QQ plot — what do you predict the other three will show?
 :::
 
 :::::: columns
 ::: {.column width="60%"}
-```{r add-resid-df-05}
-# mutate() adds new columns to the data frame ----------
-# Here we add the model's fitted values and residuals
-# so we can plot them — recall mutate() from Lecture 03!
-paper_resid_df <- paper_df %>%
-  mutate(
-    fitted = fitted(paper_lm_model),
-    residuals = residuals(paper_lm_model)
-  )
-```
-
-```{r resid-vs-fitted-05}
+```{r diagnostic-plots-05}
 #| fig-format: png
-# Residuals vs Fitted — checks linearity & equal variance
-resid_plot <- paper_resid_df %>%
-  ggplot(aes(x = fitted, y = residuals)) +
-  geom_point(alpha = 0.5) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  labs(x = "Fitted Values (cm²)", y = "Residuals (cm²)") +
-  theme_minimal()
-
-resid_plot
+#| fig-width: 6
+#| fig-height: 6
+#| fig-alt: "Four base R diagnostic plots for the paper calibration linear model, arranged in a two by two grid: residuals versus fitted values, a normal Q-Q plot of the residuals, a scale-location plot, and a residuals versus leverage plot."
+# plot() on an lm object gives all four diagnostics -----
+par(mfrow = c(2, 2))
+plot(paper_lm_model)
 ```
 :::
 
 :::: {.column width="40%"}
+**No extra code needed.** Once you have a fitted `lm` object, `plot()` already knows how to diagnose it.
+
+| Panel | Name | Checks |
+|---|---|---|
+| 1 | Residuals vs Fitted | linearity, equal variance |
+| 2 | Normal Q-Q | normality of residuals |
+| 3 | Scale-Location | equal variance (another view) |
+| 4 | Residuals vs Leverage | influential points |
+
 **What to look for:**
 
-- ✅ **Good:** random cloud of points centered at zero; constant spread across all fitted values
-- ❌ **Bad:** - Curved pattern → linearity violated - Fan shape (funnel) → unequal variance
-- 📖 W&S §17.5 p. 559 (Figure 17.5-4)
+- ✅ **Good:** panel 1 & 3 show a random flat cloud; panel 2 tracks the dashed line
+- ❌ **Bad:** a curve or funnel in panel 1, or points curving away at the ends of panel 2
 
-::: callout-tip
-The residual plot is the most important diagnostic. Always check it before interpreting your results.
-:::
+📖 W&S §17.5 p. 557–560 (Figures 17.5-1, 17.5-4)
 ::::
 ::::::
 
-# Check Assumptions — QQ Plot and Shapiro-Wilk
+# Confirming Normality — Shapiro-Wilk
 
 ::::: columns
 ::: {.column width="60%"}
-```{r qq-resid-05}
-#| fig-format: png
-# QQ plot of residuals — checks normality assumption --
-qq_resid_plot <- paper_resid_df %>%
-  ggplot(aes(sample = residuals)) +
-  stat_qq() +
-  stat_qq_line(color = "red", linewidth = 0.8) +
-  labs(
-    title = "Normal QQ Plot of Residuals",
-    x = "Theoretical Quantiles",
-    y = "Sample Quantiles (residuals)"
-  ) +
-  theme_minimal()
-
-qq_resid_plot
-```
-:::
-
-::: {.column width="40%"}
 ```{r shapiro-resid-05}
 # Shapiro-Wilk test on residuals — NOT on raw data ---
 shapiro.test(residuals(paper_lm_model))
 ```
+:::
 
+::: {.column width="40%"}
 **Remember:**
 
 - The normality assumption is about **residuals**, not raw data
 - H₀ (Shapiro-Wilk): residuals are normally distributed
 - *p* \> 0.05 → proceed with confidence intervals and *p*-values
+- Use this as a **formal companion** to panel 2 of the diagnostic plot — not a replacement for looking at it
 
 📖 W&S §17.5 p. 559
 :::
@@ -669,7 +646,7 @@ shapiro.test(residuals(paper_lm_model))
 
 # 🛑 Pause — Do Activity Parts 8–10 Now
 
-Plot the calibration curve, then check the residual plot and the QQ/Shapiro test on the residuals. Predict each diagnostic before you run it.
+Plot the calibration curve, then run `plot(model)` and Shapiro-Wilk on the residuals. Predict each diagnostic before you run it.
 
 # 🧩 Chunk 4 of 4 · Predict & Report
 
@@ -718,7 +695,7 @@ For a shady tracing at 0.138 g:
 
 $130.5 \times 0.138 + 0.28 = 18.3$ cm²
 
-This matches our observation from Lecture 03 — shady leaves are larger!
+This matches our confirmed result from Lectures 09–10 — shady leaves are significantly heavier and, now, larger in area too!
 :::
 :::::
 
@@ -823,7 +800,13 @@ cat(
 
 > *"Paper area was accurately predicted from paper mass (linear regression: F(df₁, df₂) = F, p \< 0.001, R² = 0.9999). The regression equation was area = 130.5 × mass + 0.28 (slope 95% CI: X to Y cm²/g)."*
 
-**Always include:** - F-statistic and both df - *p*-value (never "p = 0.000" — write "p \< 0.001") - R² - The actual equation - 95% CI for the slope
+**Always include:**
+
+- F-statistic and both df
+- *p*-value (never "p = 0.000" — write "p \< 0.001")
+- R²
+- The actual equation
+- 95% CI for the slope
 
 📖 W&S §17.3 p. 553
 :::
@@ -851,7 +834,7 @@ Predict leaf area from tracing mass, compare confidence vs prediction intervals,
 - `lm(Y ~ X, data)` — fits the model
 - `summary()` — extracts slope, intercept, R², p-values
 - `coef()`, `fitted()`, `residuals()` — pull model components
-- `mutate()` with `fitted()` and `residuals()` — add model output to a data frame
+- `plot(model)` — all four diagnostic plots in one call
 - `predict(model, newdata, interval = "prediction")` — predictions with uncertainty
 - `geom_smooth(method = "lm", se = TRUE)` — plot the line with CI band
 :::
@@ -865,7 +848,7 @@ Predict leaf area from tracing mass, compare confidence vs prediction intervals,
 - 📖 W&S §17.4 — R²
 - 📖 W&S §17.5 — Assumptions
 
-**Up next — Lecture 07:**
+**Up next — Lecture 12:**
 
 - Downloading real climate data straight into R with `GSODR`
 - Summarizing daily data to reveal long-term trends

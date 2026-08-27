@@ -1,0 +1,587 @@
+---
+title: "Lecture 06 — Summary Statistics"
+subtitle: "Mean, median, spread, and describing groups the tidy way"
+author: "Bill Perry"
+date: today
+
+order: 6
+week: 3
+type: lecture             # lecture | activity | homework | assignment | common_code
+description: >
+  Mean, median, variance, SD, and SE by hand; counting correctly with NAs;
+  group_by() + summarize(), across(), and skimr for describing our leaf data.
+categories: [tidyverse, descriptive-stats]
+
+format:
+  revealjs:
+    output-ext: "slides.html"
+    theme: simple
+    slide-number: true
+    fig-format: png
+    fig-width: 5
+    fig-height: 3.8
+    code-overflow: wrap
+    highlight-style: github
+  docx: default
+  pptx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+
+
+```{r setup}
+#| echo: false
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Where we left off (Lecture 05 — Wrangling)
+
+- `filter()`, `select()`, `mutate()`, `arrange()` — the core wrangling verbs
+- Chaining verbs into one pipeline with `%>%`
+- Our leaf data: `tree_df` — `side`, `weight_g`, `width_cm`, `height_cm`
+
+::: callout-note
+**✅ Key idea from Lecture 05**
+
+You can already reshape the data into exactly the rows and columns you need. Today we learn to *describe* what's in it — one number at a time, then all at once.
+:::
+
+# Our Scientific Question
+
+::::: columns
+::: {.column width="60%"}
+**Biological prediction:** Leaves on the *shady* side of a tree will be **larger and heavier** to capture more of the limited light.
+
+|                     | Hypothesis                                                |
+|---------------------|------------------------------------------------------------|
+| **H₀ — null**       | No difference in leaf size between sunny and shady sides   |
+| **Hₐ — alternate**  | Leaf size differs between sunny and shady sides             |
+:::
+
+::: {.column width="40%"}
+**Plan for this unit:**
+
+1.  **Today** — *describe* the data
+2.  **Lecture 09** — formally *test* the hypotheses with a t-test
+
+Statistics helps us decide which hypothesis is better supported by the data.
+
+**References:**
+
+- 📖 Whitlock & Schluter, Ch. 3 — *Describing Data*
+- 📖 Whitlock & Schluter, Ch. 4 — *Estimating with Uncertainty*
+- 📖 [R4DS Ch 13](https://r4ds.hadley.nz/numbers) — Numbers
+- 📖 [R4DS Ch 18](https://r4ds.hadley.nz/missing-values) — Missing Values
+
+Both W&S PDFs are in the course `readings/` folder.
+:::
+:::::
+
+# How to Use These Slides — Predict · Type · Run
+
+:::::: columns
+::: {.column width="60%"}
+This lecture runs in **two chunks**. After each chunk you switch to the activity worksheet and type the code yourself.
+
+**For every code block, do three things:**
+
+1.  **Predict** — before it runs, say what you think the output will be
+2.  **Type** it out by hand — do not copy-paste
+3.  **Run** it and compare to your prediction
+:::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Why bother?**
+
+- A single mean or SD looks obvious once it's on the slide — predicting it first is what tells you whether you actually understand where the number comes from.
+- Typing `sum(!is.na(x))` yourself, instead of pasting it, is what makes you notice *why* it's there instead of `length(x)`.
+:::
+::::
+::::::
+
+# Load Libraries and Data
+
+```{r load-libs-06}
+# Load all packages at the top of every script ----------
+library(readxl) # reading Excel files
+library(tidyverse) # data wrangling + ggplot2
+library(skimr) # fast descriptive summaries
+```
+
+```{r load-data-06}
+# Read the leaf data from the data folder ---------------
+tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
+```
+
+::: callout-note
+**Install once — load every session**
+
+- Run in the Console one time only: `install.packages("skimr")`
+- Then every session: `library(skimr)` activates it.
+:::
+
+# 🧩 Chunk 1 of 2 · Centre, Spread, and Counting Correctly
+
+**We will cover:** the mean, median, variance, SD, SE, and the `length()` trap.
+
+::: {.activitybanner}
+**🛑 After this chunk: Activity Parts 1–3 (mean, median, spread, and the NA problem).**
+:::
+
+# What Is the Mean?
+
+::::: columns
+::: {.column width="60%"}
+$$\bar{x} = \frac{\sum_{i=1}^{n} x_i}{n}$$
+
+- Add up all values, divide by *n*
+- The **balance point** of the distribution
+- **Sensitive to outliers** — one very large value pulls the mean up
+
+**Example:**
+
+Values: 5, 6, 7, 8, **50** → mean = 15.2
+
+*Is 15.2 a fair summary? Not really — the outlier dominates!*
+:::
+
+::: {.column width="40%"}
+**Why it matters:**
+
+- The most commonly reported statistic
+- Used in every t-test, ANOVA, and regression
+- Always pair it with a measure of **spread** (SD or SE)
+
+📖 Whitlock & Schluter, Ch. 3 — *Describing Data*; [R4DS §13 — Numbers](https://r4ds.hadley.nz/numbers)
+:::
+:::::
+
+# Calculating the Mean — filter() and pull()
+
+::::: columns
+::: {.column width="60%"}
+```{r filter-pull-sunny}
+# Use filter() + pull() to extract one group's values --
+sunny_wt <- tree_df %>%
+  filter(side == "sunny") %>%
+  pull(weight_g)
+
+sunny_wt # look at the raw values
+```
+
+```{r mean-sunny}
+# Calculate the mean -----------------------------------
+mean_sunny <- mean(sunny_wt, na.rm = TRUE)
+cat("Mean sunny weight:", round(mean_sunny, 2), "g\n")
+```
+:::
+
+::: {.column width="40%"}
+- `filter(side == "sunny")` — keeps only sunny rows
+- `pull(weight_g)` — extracts that column as a **vector**
+- `na.rm = TRUE` — removes any `NA` before computing
+
+**Key pattern:**
+
+`filter()` → picks **rows**
+
+`pull()` → extracts a **column** as a vector
+
+📖 [R4DS §3 — Data Transformation](https://r4ds.hadley.nz/data-transform)
+:::
+:::::
+
+# What Is the Median?
+
+::::: columns
+::: {.column width="60%"}
+**The middle value when data are sorted**
+
+| Sorted data            | Median                |
+|------------------------|-----------------------|
+| 5, 6, **7**, 8, 50     | **7**                 |
+| 5, 6, **7, 8**, 50, 51 | **(7 + 8) / 2 = 7.5** |
+
+- Not pulled by outliers → **robust**
+- If **mean ≫ median** → right-skewed
+- If **mean ≈ median** → roughly symmetric
+:::
+
+::: {.column width="40%"}
+```{r median-calc}
+# Median for each side ---------------------------------
+shady_wt <- tree_df %>%
+  filter(side == "shady") %>%
+  pull(weight_g)
+
+med_sunny <- median(sunny_wt, na.rm = TRUE)
+med_shady <- median(shady_wt, na.rm = TRUE)
+
+cat("Median sunny:", round(med_sunny, 2), "\n")
+cat("Median shady:", round(med_shady, 2), "\n")
+```
+:::
+:::::
+
+# What Is Variance?
+
+:::::: columns
+::: {.column width="60%"}
+$$s^2 = \frac{\sum_{i=1}^{n}(x_i - \bar{x})^2}{n - 1}$$
+
+1.  For each value, compute distance from mean: $(x_i - \bar{x})$
+2.  **Square** those distances → all positive
+3.  Sum them up, divide by $n - 1$
+
+Dividing by $n - 1$ gives an **unbiased** estimate of population variance.
+
+**Larger variance = more spread = more uncertainty**
+:::
+
+:::: {.column width="40%"}
+```{r variance-calc}
+# Variance for each side ------------------------------
+var_sunny <- var(sunny_wt, na.rm = TRUE)
+var_shady <- var(shady_wt, na.rm = TRUE)
+
+cat("Variance sunny:", round(var_sunny, 2), "\n")
+cat("Variance shady:", round(var_shady, 2), "\n")
+```
+
+::: callout-note
+Variance is in **squared units** (g²) — hard to interpret. That is why we use SD.
+:::
+
+📖 [R4DS §13.3](https://r4ds.hadley.nz/numbers#numeric-summaries)
+::::
+::::::
+
+# What Is Standard Deviation?
+
+::::: columns
+::: {.column width="60%"}
+$$s = \sqrt{s^2} = \sqrt{\frac{\sum(x_i - \bar{x})^2}{n-1}}$$
+
+- The **square root of variance** → back in original units (g) ✓
+- For a normal distribution:
+  - \~**68%** of values fall within mean ± 1 SD
+  - \~**95%** fall within mean ± 2 SD
+- Reports how spread out *individual* data points are
+:::
+
+::: {.column width="40%"}
+```{r sd-calc}
+# Standard deviation for each side -------------------
+sd_sunny <- sd(sunny_wt, na.rm = TRUE)
+sd_shady <- sd(shady_wt, na.rm = TRUE)
+
+cat("SD sunny:", round(sd_sunny, 2), "g\n")
+cat("SD shady:", round(sd_shady, 2), "g\n")
+```
+:::
+:::::
+
+# What Is Standard Error?
+
+::::: columns
+::: {.column width="60%"}
+$$SE = \frac{s}{\sqrt{n}}$$
+
+- Measures how precisely we know the **mean**
+- Not the spread of raw data — the **uncertainty of the mean itself**
+- Gets **smaller** as *n* increases → more data = more precise estimate
+
+|        | Describes                          |
+|--------|-------------------------------------|
+| **SD** | spread of *individual* data points |
+| **SE** | precision of the *sample mean*     |
+
+We report SE when making claims about group means.
+
+📖 Whitlock & Schluter, Ch. 4 — *Estimating with Uncertainty*
+:::
+
+::: {.column width="40%"}
+```{r se-calc}
+# SE = SD / sqrt(n) — need correct n -----------------
+n_sunny <- sum(!is.na(sunny_wt))
+n_shady <- sum(!is.na(shady_wt))
+
+se_sunny <- sd_sunny / sqrt(n_sunny)
+se_shady <- sd_shady / sqrt(n_shady)
+
+cat("n sunny  =", n_sunny, "\n")
+cat("SE sunny =", round(se_sunny, 2), "g\n\n")
+cat("n shady  =", n_shady, "\n")
+cat("SE shady =", round(se_shady, 2), "g\n")
+```
+:::
+:::::
+
+# The Problem with `length()`
+
+::::: columns
+::: {.column width="60%"}
+```{r length-problem-demo}
+# length() counts ALL positions — including NAs -------
+x <- c(4, 3, NA, 7, NA) # a vector with missing values
+
+length(x) # returns 5 — but 2 are NA!
+sum(is.na(x)) # how many NAs are there?
+```
+
+```{r length-wrong-mean}
+# Using length() in SE gives the WRONG answer ---------
+wrong_n <- length(x)
+wrong_se <- sd(x, na.rm = TRUE) / sqrt(wrong_n)
+
+cat("Wrong n  =", wrong_n, "\n")
+cat("Wrong SE =", round(wrong_se, 3), "\n")
+```
+:::
+
+::: {.column width="40%"}
+- `length(x)` counts **all positions** in the vector — including `NA`
+- This is a **silent error** — R will not warn you!
+- Using n = 5 in SE = SD / √n when n should be 3 gives the wrong answer
+
+📖 [R4DS §18 — Missing Values](https://r4ds.hadley.nz/missing-values)
+:::
+:::::
+
+# Fix — `sum(!is.na())`
+
+:::::: columns
+::: {.column width="60%"}
+```{r na-fix-step-by-step}
+# Break it down step by step -------------------------
+x <- c(4, 3, NA, 7, NA)
+
+is.na(x) # TRUE where NA, FALSE where real
+!is.na(x) # FLIP: TRUE where real, FALSE where NA
+sum(!is.na(x)) # count the TRUEs = number of real values
+```
+
+```{r na-fix-real}
+# Apply to our real leaf data ------------------------
+n_sun_check <- sum(!is.na(sunny_wt))
+cat("Non-missing sunny weights =", n_sun_check, "\n")
+```
+:::
+
+:::: {.column width="40%"}
+**How it works step by step:**
+
+1.  `is.na(x)` → `TRUE` for each `NA`
+2.  `!is.na(x)` → flips it: `TRUE` for **real** values
+3.  `sum(...)` → counts `TRUE`s
+
+::: callout-tip
+**Best practice:** always use `sum(!is.na(x))` when you need *n* — even when you think there are no NAs.
+:::
+::::
+::::::
+
+# All Stats — Base R, One Group at a Time
+
+::::: columns
+::: {.column width="60%"}
+```{r basestats-manual}
+# All stats for the sunny side -----------------------
+n_s <- sum(!is.na(sunny_wt))
+mean_s <- mean(sunny_wt, na.rm = TRUE)
+med_s <- median(sunny_wt, na.rm = TRUE)
+sd_s <- sd(sunny_wt, na.rm = TRUE)
+se_s <- sd_s / sqrt(n_s)
+
+cat("--- Sunny Leaves ---\n")
+cat("n      =", n_s, "\n")
+cat("Mean   =", round(mean_s, 2), "\n")
+cat("Median =", round(med_s, 2), "\n")
+cat("SD     =", round(sd_s, 2), "\n")
+cat("SE     =", round(se_s, 2), "\n")
+```
+:::
+
+::: {.column width="40%"}
+- Every function takes `na.rm = TRUE`
+- `cat()` prints clean labelled output
+- This is **clear** but repetitive for many groups → that is why we use `group_by()` next
+:::
+:::::
+
+# 🛑 Pause — Do Activity Parts 1–3 Now
+
+::: {.activitybanner}
+**🛑 Do Activity Parts 1–3 now**
+
+Mean, median, spread, and the NA problem. Predict each output, type it, then run it.
+:::
+
+# 🧩 Chunk 2 of 2 · Tidy Stats at Scale
+
+**We will cover:** `group_by()` + `summarize()`, summarizing many columns at once with `across()`, and `skimr`.
+
+::: {.activitybanner}
+**🛑 After this chunk: Activity Parts 4–6.**
+:::
+
+# Stats the Tidy Way — `group_by()` + `summarize()`
+
+::: callout-note
+**🔮 Predict first:** How many **rows** will `stats_df` have? (Hint: how many values does `side` take?) Predict the number before you run it.
+:::
+
+::::: columns
+::: {.column width="60%"}
+```{r groupby-stats}
+# Calculate all stats for both sides at once ----------
+stats_df <- tree_df %>%
+  group_by(side) %>%
+  summarize(
+    n = sum(!is.na(weight_g)),
+    mean_wt = round(mean(weight_g, na.rm = TRUE), 2),
+    med_wt = round(median(weight_g, na.rm = TRUE), 2),
+    sd_wt = round(sd(weight_g, na.rm = TRUE), 2),
+    se_wt = round(sd_wt / sqrt(n), 2)
+  )
+
+stats_df
+```
+:::
+
+::: {.column width="40%"}
+- `group_by(side)` — splits the data by the `side` column
+- `summarize()` — collapses each group to one row of stats
+- You get **both groups in one clean table**
+- You can reference a column just created (`sd_wt` → `se_wt`)
+
+📖 [R4DS §3.5 — `summarize()`](https://r4ds.hadley.nz/data-transform#sec-summarize)
+:::
+:::::
+
+# Multiple Variables at Once
+
+::::: columns
+::: {.column width="60%"}
+```{r groupby-multi}
+# One group_by() pipe summarizes all measurements -----
+size_stats_df <- tree_df %>%
+  group_by(side) %>%
+  summarize(
+    n = sum(!is.na(weight_g)),
+    mean_wt = round(mean(weight_g, na.rm = TRUE), 2),
+    mean_ht = round(mean(height_cm, na.rm = TRUE), 2),
+    mean_wd = round(mean(width_cm, na.rm = TRUE), 2)
+  )
+
+size_stats_df
+```
+:::
+
+::: {.column width="40%"}
+**With one `group_by()` pipe** you summarize **all three measurements** across both sides.
+
+**Do the numbers support our hypothesis?**
+
+- Shady heavier? → check `mean_wt`
+- Shady taller? → check `mean_ht`
+- Shady wider? → check `mean_wd`
+:::
+:::::
+
+# The Fast Way — `across()`
+
+::::: columns
+::: {.column width="60%"}
+```{r across-demo}
+# Apply the SAME function to every numeric column -----
+mean_all_df <- tree_df %>%
+  group_by(side) %>%
+  summarize(
+    across(
+      c(weight_g, width_cm, height_cm),
+      ~ round(mean(.x, na.rm = TRUE), 2)
+    )
+  )
+
+mean_all_df
+```
+:::
+
+::: {.column width="40%"}
+- `across(columns, function)` applies one function to **many columns** at once
+- `.x` is a stand-in for "whichever column we're on right now"
+- Same idea as `mean_wt`/`mean_ht`/`mean_wd` above — just without typing each one out
+
+::: callout-tip
+Once you have more than 3–4 measurement columns, `across()` saves real typing — and real typos.
+:::
+:::
+:::::
+
+# Fast Summaries with `skimr`
+
+```{r skimr-skim}
+# skim() grouped by side — full column summaries ------
+tree_df %>%
+  group_by(side) %>%
+  skim()
+```
+
+:::::: columns
+::: {.column width="60%"}
+Per column and per group: `n_missing`, `mean`, `sd`, percentiles (`p0` to `p100`), and a mini histogram.
+:::
+
+:::: {.column width="40%"}
+::: callout-tip
+`skim()` is your fastest **first look** at any dataset. Pair it with `group_by()` to compare groups instantly.
+:::
+::::
+::::::
+
+# → ACTIVITY 6 starts now
+
+::: {.activitybanner}
+**🛑 Go to Activity 6 — Summary Statistics**
+
+Close the slides. Finish Activity Parts 4–6: `group_by()` + `summarize()`, `across()`, and `skimr`.
+:::
+
+# What We Learned Today
+
+::::: columns
+::: {.column width="60%"}
+- **Statistics concepts:**
+  - **Mean** — balance point; sensitive to outliers
+  - **Median** — middle value; robust
+  - **Variance / SD** — spread of individual data
+  - **SE** — precision of the sample mean
+- **R skills:**
+  - `sum(!is.na())` — the right way to count *n*
+  - `group_by()` + `summarize()` — all stats for all groups at once
+  - `across()` — one function, many columns
+  - `skim()` — instant full dataset overview
+:::
+
+::: {.column width="40%"}
+**References:**
+
+- 📖 Whitlock & Schluter, Ch. 3 — *Describing Data*
+- 📖 Whitlock & Schluter, Ch. 4 — *Estimating with Uncertainty*
+- 📖 [R4DS §13](https://r4ds.hadley.nz/numbers) — Numbers
+- 📖 [R4DS §18](https://r4ds.hadley.nz/missing-values) — Missing Values
+
+Both W&S PDFs are in the course `readings/` folder.
+
+**Up next — Lecture 07, Quarto:**
+
+- Writing reproducible reports
+- Mixing prose, code, and results in one document
+:::
+:::::

@@ -35,6 +35,7 @@ execute:
 library(readxl)
 library(tidyverse)
 library(skimr)
+library(broom)   # tidy() and glance() turn model objects into data frames
 ```
 
 ```{r load-data}
@@ -65,62 +66,71 @@ paper, weigh the tracing, and convert its mass to area.
 
 We weighed 118 paper squares of known area (1–567 cm²) and fit a simple linear
 regression, `area_cm2 ~ mass_g`, with `lm()`. We checked the four regression
-assumptions using a residuals-vs-fitted plot and a normal Q–Q plot with a
-Shapiro–Wilk test on the residuals. All work was done in R with the tidyverse;
-this report was written in Quarto so every number and figure below is computed
-directly from the data.
+assumptions using base R's diagnostic plots for a fitted model, with a
+Shapiro–Wilk test on the residuals as a formal companion. All work was done in
+R with the tidyverse; this report was written in Quarto so every number and
+figure below is computed directly from the data.
 
 # Results
 
 ```{r fit-model}
 # Fit the least-squares regression line --------------------------------
 paper_lm_model <- lm(area_cm2 ~ mass_g, data = paper_df)
-```
 
-```{r pull-values}
-# Pull the values we want to write into the text below -----------------
+# Values used by the figure and prediction code below (not in the text) -
 a_intercept <- coef(paper_lm_model)[1]
 b_slope <- coef(paper_lm_model)[2]
 r2_val <- summary(paper_lm_model)$r.squared
-
-f_stat <- summary(paper_lm_model)$fstatistic
-f_val <- round(f_stat[1], 1)
-df1 <- f_stat[2]
-df2 <- f_stat[3]
-p_val <- pf(f_stat[1], df1, df2, lower.tail = FALSE)
 ```
 
-<!-- 🔮 PREDICT before you Render: what F, p, and R² will fill the sentence below, and what slope (cm² per gram)? Write your guesses, then render and check. -->
+<!-- 🔮 PREDICT before you Render: what F, p, and R² will the model summary show, and what slope (cm² per gram)? Write your guesses, then render and check. -->
 
-Paper mass was an extremely strong predictor of paper area
-(linear regression: F(`r df1`, `r df2`) = `r f_val`,
-*p* < `r signif(p_val, 1)`, R² = `r round(r2_val, 4)`). The calibration
-equation was:
+Paper mass was an extremely strong predictor of paper area. The overall model
+fit, coefficients, and *p*-values are shown in the two tables below.
 
-$$\widehat{\text{area}} = `r round(b_slope, 2)` \times \text{mass} + `r round(a_intercept, 3)`$$
+```{r model-summary}
+# Overall model fit: F-statistic, R-squared, p-value ------------------
+glance(paper_lm_model) |>
+  select(r.squared, statistic, df, df.residual, p.value) |>
+  knitr::kable(digits = c(4, 1, 0, 0, 20),
+               col.names = c("R-squared", "F", "df (model)",
+                             "df (residual)", "p-value"),
+               caption = "Table 1. Overall fit of the calibration regression.")
+```
 
-In words, every additional gram of paper corresponds to about
-**`r round(b_slope, 1)` cm²** of area.
+```{r coef-table}
+# The calibration equation: intercept and slope ----------------------
+tidy(paper_lm_model) |>
+  knitr::kable(digits = c(0, 3, 3, 1, 20),
+               col.names = c("Term", "Estimate", "Std. error",
+                             "t", "p-value"),
+               caption = "Table 2. Calibration equation coefficients. The `mass_g` estimate is the area gained per additional gram of paper; `(Intercept)` is the fitted area at zero mass.")
+```
+
+Read the calibration equation off Table 2: predicted area equals the
+`(Intercept)` estimate plus the `mass_g` estimate times paper mass. In words,
+every additional gram of paper corresponds to about the `mass_g` estimate in
+cm² of area.
 
 ::: {.callout-note appearance="simple"}
-Notice that **F, *p*, R², the slope, and the intercept above were never typed by
-hand** — they are inserted with inline code like `` `r round(b_slope, 2)` ``.
-Change the data file and re-render, and every one of these updates itself. That
-is the difference from the `.R` script, where you would copy each number into
-Word yourself.
+Every number in Tables 1 and 2 is computed from the data when the document
+renders — nothing was typed by hand. Change the data file and re-render, and the
+tables update themselves. That is the difference from the `.R` script, where you
+would copy each number into Word yourself.
 :::
 
 ## The calibration curve
 
 ```{r calibration-plot}
 #| fig-cap: "Figure 1. Paper area vs. mass with the least-squares line and 95% confidence band."
+#| fig-alt: "Scatter plot of paper area against mass with a dark blue least-squares line and light blue 95 percent confidence band; the subtitle reports the fitted equation and R-squared. Points cluster tightly around the line, narrowing the band toward the middle of the mass range."
 calibration_plot <- paper_df %>%
   ggplot(aes(x = mass_g, y = area_cm2)) +
   geom_point(alpha = 0.5, size = 1.8) +
   geom_smooth(
     method = "lm",
     se = TRUE,
-    color = "steelblue",
+    color = "darkblue",
     fill = "lightblue"
   ) +
   labs(
@@ -142,50 +152,46 @@ calibration_plot
 
 ## Assumption checks
 
-```{r resid-df}
-paper_resid_df <- paper_df %>%
-  mutate(
-    fitted = fitted(paper_lm_model),
-    residuals = residuals(paper_lm_model)
-  )
-```
-
-```{r resid-plot}
-#| fig-cap: "Figure 2. Residuals vs. fitted values — a random band with no funnel or curve supports linearity and equal variance."
-paper_resid_df %>%
-  ggplot(aes(x = fitted, y = residuals)) +
-  geom_point(alpha = 0.5) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  labs(x = "Fitted Values (cm²)", y = "Residuals (cm²)") +
-  theme_minimal()
+```{r diagnostic-plots}
+#| fig-cap: "Figure 2. Base R diagnostic plots for the fitted model — residuals vs. fitted, normal Q-Q, scale-location, and residuals vs. leverage. A random band with no funnel or curve in panel 1 supports linearity and equal variance."
+#| fig-alt: "Four base R diagnostic plots for the calibration linear model in a two by two grid: residuals versus fitted values, a normal Q-Q plot of the residuals, a scale-location plot, and a residuals versus leverage plot."
+par(mfrow = c(2, 2))
+plot(paper_lm_model)
 ```
 
 ```{r shapiro}
 # Shapiro-Wilk on the RESIDUALS (not the raw data)
-shapiro_out <- shapiro.test(residuals(paper_lm_model))
+shapiro.test(residuals(paper_lm_model)) |>
+  tidy() |>
+  knitr::kable(digits = c(3, 20, 0),
+               col.names = c("W", "p-value", "Method"),
+               caption = "Table 3. Shapiro–Wilk normality test on the regression residuals.")
 ```
 
-A Shapiro–Wilk test on the residuals gave W = `r round(shapiro_out$statistic, 3)`,
-*p* = `r signif(shapiro_out$p.value, 2)`.
+The Shapiro–Wilk result is in Table 3. Read *W* and its *p*-value there, then
+compare that verdict with the normal Q-Q panel of Figure 2.
 
 ## Predicting leaf area
 
-```{r predict}
-# Predict area for two example leaf tracings ---------------------------
-mass_sunny <- 0.092
-mass_shady <- 0.138
-
-area_sunny <- b_slope * mass_sunny + a_intercept
-area_shady <- b_slope * mass_shady + a_intercept
-```
-
 <!-- 🔮 PREDICT before you Render: which tracing gives the larger predicted area — the 0.092 g sunny or the 0.138 g shady? Guess the two areas, then render. -->
 
-Applying the equation to two example tracings, a sunny-side tracing of
-`r mass_sunny` g predicts an area of **`r round(area_sunny, 1)` cm²**, while a
-heavier shady-side tracing of `r mass_shady` g predicts
-**`r round(area_shady, 1)` cm²** — consistent with our earlier finding that
-shady leaves are larger.
+```{r predict}
+# Predict area for two example leaf tracings --------------------------
+new_tracings <- tibble(
+  tracing = c("sunny-side", "shady-side"),
+  mass_g  = c(0.092, 0.138)
+)
+
+new_tracings |>
+  mutate(predicted_area_cm2 = predict(paper_lm_model, newdata = new_tracings)) |>
+  knitr::kable(digits = c(0, 3, 1),
+               col.names = c("Tracing", "Mass (g)", "Predicted area (cm²)"),
+               caption = "Table 4. Predicted leaf area for two example paper tracings, from the calibration equation.")
+```
+
+Table 4 applies the calibration equation to two example tracings. The heavier
+shady-side tracing has the larger predicted area — consistent with our earlier
+finding that shady leaves are larger.
 
 # Discussion
 

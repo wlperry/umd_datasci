@@ -1,0 +1,418 @@
+---
+title: "Lecture 03 — GGPlot I"
+subtitle: "Grouped summaries, facets, and the pipe into ggplot"
+author: "Bill Perry"
+date: today
+
+order: 3
+week: 2
+type: lecture             # lecture | activity | homework | assignment | common_code
+description: >
+  Custom colors with scale_color_manual(), splitting plots into panels with
+  facet_wrap()/facet_grid(), and building a mean ± SE plot with
+  stat_summary() — all piped straight into ggplot().
+categories: [ggplot, tidyverse]
+
+format:
+  revealjs:
+    output-ext: "slides.html"
+    theme: simple
+    slide-number: true
+    fig-format: png
+    fig-width: 5
+    fig-height: 3.8
+    code-overflow: wrap
+    highlight-style: github
+  docx: default
+  pptx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+
+
+```{r setup}
+#| echo: false
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Where we left off (Lecture 02 — Meeting R)
+
+- **Project structure** — `data/`, `scripts/`, `figures/`
+- **Packages** — `install.packages()` once, `library()` every session
+- **Loading data** — `read_excel()`, `clean_names()`
+- **The pipe** — `%>%` reads as "then"
+- **Our first plot** — a bare `geom_point()`
+
+::: callout-note
+**✅ Key idea from Lecture 02**
+
+You can already load data and make one honest point on a page. Today that one geom becomes a whole toolkit: custom colors, side-by-side panels, and a proper mean ± SE summary.
+:::
+
+# Goals for Today
+
+:::::: columns
+:::: {.column width="60%"}
+- Start every plot with the pipe: `tree_df %>% ggplot(...)`
+- Assign colors on purpose with `scale_color_manual()`
+- Split one plot into panels with `facet_wrap()` and `facet_grid()`
+- Build a **mean ± SE plot** with `stat_summary()`
+
+::: callout-tip
+**🖐 Try it yourself**
+
+By the end you will make a publication-style figure: raw leaf data, grouped and colored on purpose, with the mean and its uncertainty layered on top.
+:::
+::::
+
+::: {.column width="40%"}
+**References:**
+
+- 📖 Whitlock & Schluter, Ch. 2 — *Displaying Data*
+- 📖 [R4DS Ch 1](https://r4ds.hadley.nz/data-visualize) — Data Visualization
+- 📖 [R4DS Ch 9](https://r4ds.hadley.nz/layers) — Layers
+
+Both PDFs are in the course `readings/` folder.
+
+**Naming conventions:**
+
+- data frames → `_df`
+- plots → `_plot`
+:::
+::::::
+
+# How to Use These Slides — Predict · Type · Run
+
+:::::: columns
+::: {.column width="60%"}
+This lecture runs in **three short chunks**. After each chunk you switch to the activity worksheet and type the code yourself.
+
+**For every code block, do three things:**
+
+1.  **Predict** — before it runs, say what you think the output will be
+2.  **Type** it out by hand — do not copy-paste
+3.  **Run** it and compare to your prediction
+:::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Why bother?**
+
+- `facet_wrap()` and `facet_grid()` look interchangeable until you've typed both and watched one wrap into rows while the other insists on a strict grid.
+- Typing `scale_color_manual(values = c(...))` yourself is what makes you notice the color names have to match your group names *exactly*.
+:::
+::::
+::::::
+
+# Load Libraries and Data
+
+```{r load-libs-03}
+# Load all packages at the top of every script ----------
+library(readxl) # reading Excel files
+library(tidyverse) # data wrangling + ggplot2
+library(janitor) # cleans up messy column names
+```
+
+```{r load-data-03}
+# Read the leaf data from the data folder ---------------
+tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx") %>%
+  clean_names()
+
+glimpse(tree_df)
+```
+
+# 🧩 Chunk 1 of 3 · Piping into ggplot, on Purpose
+
+**We will cover:** starting a plot with the pipe, and choosing colors with `scale_color_manual()`.
+
+::: {.activitybanner}
+**🛑 After this chunk you will do Activity Parts 1–2.**
+:::
+
+# Every Plot Starts the Same Way
+
+::::: columns
+::: {.column width="60%"}
+```{r pipe-into-ggplot}
+#| fig-format: png
+#| fig-alt: "Boxplot of leaf weight in grams by tree side, with jittered points overlaid, using default ggplot colors."
+# Pipe the data frame straight into ggplot() -----------
+tree_df %>%
+  ggplot(aes(x = side, y = weight_g, fill = side)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6) +
+  labs(
+    title = "Leaf Weight by Tree Side",
+    x = "Side of Tree",
+    y = "Leaf Weight (g)",
+    fill = "Side"
+  ) +
+  theme_minimal()
+```
+:::
+
+::: {.column width="40%"}
+- `tree_df %>% ggplot(...)` reads as *"take `tree_df`, then plot it"* — the same pipe you've already used
+- Everything after `ggplot()` is added with `+`, not `%>%` — **ggplot layers use plus, pipelines use the pipe**
+- `fill = side` maps a **column** to color — ggplot chooses the colors *for* you
+
+::: callout-warning
+**⚠️ Watch out!**
+
+`%>%` connects data-wrangling steps. `+` connects plot layers. Mixing them up is the single most common ggplot error.
+:::
+:::
+:::::
+
+# Choosing Colors on Purpose — `scale_color_manual()`
+
+::: callout-note
+**🔮 Predict first:** `scale_fill_manual()` needs one color per group. We have two groups (`sunny`, `shady`). How many colors do we need to supply?
+:::
+
+:::::: columns
+::: {.column width="60%"}
+```{r scale-manual-demo}
+#| fig-format: png
+#| fig-alt: "Boxplot of leaf weight in grams by tree side with jittered points, using custom gold and forest-green colors for sunny and shady sides respectively."
+# scale_fill_manual() assigns exact colors to exact groups
+tree_df %>%
+  ggplot(aes(x = side, y = weight_g, fill = side)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6) +
+  scale_fill_manual(values = c(
+    "sunny" = "goldenrod",
+    "shady" = "forestgreen"
+  )) +
+  labs(
+    title = "Leaf Weight by Tree Side",
+    x = "Side of Tree",
+    y = "Leaf Weight (g)",
+    fill = "Side"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+:::
+
+:::: {.column width="40%"}
+- `scale_fill_manual()` — for `fill =` aesthetics (boxes, bars, columns)
+- `scale_color_manual()` — for `color =` aesthetics (points, lines)
+- The **names inside `c()` must exactly match** the values in your data (`"sunny"`, `"shady"`) — case and spelling both count
+
+::: callout-warning
+**⚠️ Watch out!**
+
+If a name in `values = c(...)` doesn't match a value in your data exactly, that group's color falls back to grey and ggplot prints a warning.
+:::
+::::
+::::::
+
+# → ACTIVITY 3 Parts 1–2 now
+
+::: {.activitybanner}
+**🛑 Do Activity Parts 1–2 now**
+
+Pipe into `ggplot()`, then assign sunny/shady their own colors with `scale_fill_manual()`. Predict, type, run.
+:::
+
+# 🧩 Chunk 2 of 3 · Small Multiples with Facets
+
+**We will cover:** `facet_wrap()` and `facet_grid()` — splitting one plot into a panel per group.
+
+::: {.activitybanner}
+**🛑 After this chunk you will do Activity Part 3.**
+:::
+
+# `facet_wrap()` — One Panel per Group
+
+::::: columns
+::: {.column width="60%"}
+```{r facet-wrap-demo}
+#| fig-format: png
+#| fig-alt: "Two histograms of leaf weight in grams, one panel per tree side, arranged side by side by facet_wrap."
+# facet_wrap() splits into one panel per level ---------
+tree_df %>%
+  ggplot(aes(x = weight_g, fill = side)) +
+  geom_histogram(binwidth = 1, color = "white") +
+  facet_wrap(~side) +
+  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(x = "Leaf Weight (g)", y = "Count", title = "Weight Distribution by Side") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+:::
+
+:::: {.column width="40%"}
+- `~side` reads as *"by side"* — the `~` is required
+- Each panel gets its **own copy of the plot**, filtered to that group
+- `facet_wrap(~side, scales = "free_y")` lets each panel's y-axis rescale independently
+
+📖 [R4DS §9 — Layers](https://r4ds.hadley.nz/layers)
+::::
+::::::
+
+# `facet_grid()` — a Strict Rows-and-Columns Grid
+
+::::: columns
+::: {.column width="60%"}
+```{r facet-grid-demo}
+#| fig-format: png
+#| fig-alt: "Two histograms of leaf weight stacked in one column, one row per tree side, arranged by facet_grid."
+# facet_grid(rows ~ cols) — use "." for "no grouping" --
+tree_df %>%
+  ggplot(aes(x = weight_g, fill = side)) +
+  geom_histogram(binwidth = 1, color = "white") +
+  facet_grid(side ~ .) +
+  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(x = "Leaf Weight (g)", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+:::
+
+:::: {.column width="40%"}
+- `facet_grid(side ~ .)` stacks panels in **rows**; `facet_grid(. ~ side)` arranges them in **columns**
+- The dot `.` means "nothing on this side of the grid"
+- `facet_grid()` really shines with **two** grouping variables (`rows ~ cols`) — we only have one (`side`) today, but you'll use the two-variable form the moment your data has a second grouping column
+
+::: callout-note
+**💡 `facet_wrap` vs `facet_grid`**
+
+Use `facet_wrap()` for one grouping variable — it wraps panels into a grid automatically. Use `facet_grid()` when you have two variables and want rows and columns to each mean something specific.
+:::
+::::
+::::::
+
+# → ACTIVITY 3 Part 3 now
+
+::: {.activitybanner}
+**🛑 Do Activity Part 3 now**
+
+Build both a `facet_wrap()` and a `facet_grid()` version of the histogram. Predict, type, run.
+:::
+
+# 🧩 Chunk 3 of 3 · Mean ± SE with `stat_summary()`
+
+**We will cover:** layering a group mean and its standard error directly on top of raw data — no summary table needed.
+
+::: {.activitybanner}
+**🛑 After this chunk you will do Activity Parts 4–5.**
+:::
+
+# `stat_summary()` — the Mean as a Layer
+
+::::: columns
+::: {.column width="60%"}
+```{r stat-summary-mean}
+#| fig-format: png
+#| fig-alt: "Jittered points of leaf weight by tree side in gold and green, with a larger black point marking the mean for each side."
+# stat_summary() computes the mean straight from the data
+tree_df %>%
+  ggplot(aes(x = side, y = weight_g, color = side)) +
+  geom_jitter(width = 0.15, alpha = 0.4, size = 2) +
+  stat_summary(fun = mean, geom = "point", size = 4, color = "black") +
+  scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(
+    title = "Leaf Weight with Group Means",
+    x = "Side of Tree", y = "Leaf Weight (g)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+:::
+
+::: {.column width="40%"}
+- `stat_summary()` computes a statistic **from the raw data** and draws it — no pre-built summary table needed
+- `fun = mean` — any function that returns one number (`mean`, `median`, `max`, …)
+- `geom = "point"` — draw that number as a point
+- Put `geom_jitter()` **before** `stat_summary()` so the mean sits on top of the raw points, not buried under them
+:::
+:::::
+
+# `stat_summary()` — Mean ± SE
+
+::: callout-note
+**🔮 Predict first:** `fun.data = mean_se` returns three numbers per group instead of one (the mean, and the bar's top and bottom). What do you think those three are called?
+:::
+
+:::::: columns
+::: {.column width="60%"}
+```{r stat-summary-se}
+#| fig-format: png
+#| fig-alt: "Jittered points of leaf weight by tree side in gold and green with mean plus or minus one standard error error bars overlaid for each side."
+# fun.data = returns THREE values: y, ymin, ymax -------
+tree_mean_se_plot <- tree_df %>%
+  ggplot(aes(x = side, y = weight_g, color = side)) +
+  geom_jitter(width = 0.15, alpha = 0.35, size = 2) +
+  stat_summary(fun = mean, geom = "point", size = 4) +
+  stat_summary(
+    fun.data = mean_se,
+    geom = "errorbar",
+    width = 0.15,
+    linewidth = 0.9
+  ) +
+  scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(
+    title = "Mean ± SE Leaf Weight by Tree Side",
+    x = "Side of Tree", y = "Leaf Weight (g)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+tree_mean_se_plot
+```
+:::
+
+:::: {.column width="40%"}
+**Two `stat_summary()` layers, stacked:**
+
+| call | what it draws |
+|---|---|
+| `fun = mean` | a point at the mean |
+| `fun.data = mean_se` | error bars for ± 1 SE |
+
+- Raw points in the **background** (`alpha = 0.35`)
+- Mean as a **larger foreground point**
+- Error bars = **± 1 SE**
+
+📖 Whitlock & Schluter, Ch. 3 — *Describing Data*
+::::
+::::::
+
+# → ACTIVITY 3 Parts 4–5 now
+
+::: {.activitybanner}
+**🛑 Go to Activity 3 — Parts 4–5**
+
+Close the slides. Build your own mean ± SE plot, then save it to `figures/`.
+:::
+
+# What We Learned Today
+
+::::: columns
+::: {.column width="60%"}
+- Pipe straight into a plot: `tree_df %>% ggplot(...)`
+- `scale_color_manual()` / `scale_fill_manual()` — colors you choose, not colors ggplot guesses
+- `facet_wrap(~var)` — one panel per group, wraps automatically
+- `facet_grid(rows ~ cols)` — strict grid, best with two grouping variables
+- `stat_summary()` — mean and mean ± SE, drawn directly from raw data
+:::
+
+::: {.column width="40%"}
+**References:**
+
+- 📖 Whitlock & Schluter, Ch. 2 — *Displaying Data*
+- 📖 [R4DS Ch 1](https://r4ds.hadley.nz/data-visualize) — Data Visualization
+- 📖 [R4DS Ch 9](https://r4ds.hadley.nz/layers) — Layers
+
+**Up next — Lecture 04, GGPlot II:**
+
+- More geoms
+- `coord_cartesian()` vs. `xlim()`
+- Themes
+:::
+:::::

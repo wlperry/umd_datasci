@@ -1,12 +1,12 @@
 ---
-title: "Lecture 12 — Joins: Combining Two Tables"
+title: "Lecture 17 — Joins: Combining Two Tables"
 subtitle: "Keys, mutating joins, and filtering joins with real Bigfoot report data"
 author: "Bill Perry"
 date: today
 
 # --- Fields the SITE reads for ordering / listings / homepage ---
-order: 12
-week: 6
+order: 18
+week: 9
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
   Real projects spread data across several tables. This 2-day lecture teaches
@@ -39,10 +39,10 @@ execute:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
-# Where we left off — ANOVA & Factors
+# Where we left off — Factors
 
-- **One-way ANOVA** — compared a numeric response across several groups
-- **Factors** — reordered and relabeled those groups for clean plots
+- **Factors** — reordered and relabeled categorical levels for clean plots and models
+- Before that: reshaped messy data (Pivoting), started the final project, and ran a one-way ANOVA
 - So far every analysis used **one** table
 
 ::: callout-note
@@ -100,9 +100,9 @@ This lecture runs in **four chunks over two days**. After each chunk you switch 
 ::: callout-note
 **✅ Why bother?**
 
--   **Predicting the row count** is the whole skill — a join that returns the wrong number of rows is the #1 data bug.
--   **Typing** builds the `*_join()` muscle memory.
--   **Chunk → practice** keeps each join type distinct.
+-   A join can run without error and still hand you the wrong table — the only way to catch that is to know the row count you expected *before* you see the actual one.
+-   Every join in this lecture takes `by = c("a" = "b")` as an argument — typing that syntax a dozen times is what makes it automatic under deadline pressure.
+-   Four short chunks instead of one long one means `left_join`, `inner`/`full`, and `semi`/`anti` each get their own uncluttered mental slot.
 :::
 ::::
 :::::
@@ -253,7 +253,7 @@ reports_df %>% left_join(locations_df, by = c("REPORT_NUMBER" = "number"))
 ::: callout-important
 **✅ Why show a silent wrong join?**
 
-When dplyr prints *"Joining with `by = ...`"* and you didn't choose that column — **stop**. Auto-joining on an accidental shared name (`index`, `id`, `x`) is a classic silent bug. Name your key every time.
+Nothing here throws an error, so nothing forces you to notice — `reports_df` and `locations_df` both got the same made-up `index` column at some point, dplyr matches on it happily, and you end up with row 1's coordinates glued to row 1's report regardless of which Bigfoot sighting it actually was. If the message *"Joining with `by = ...`"* names a column you didn't pick, treat it as a bug report, not a status update.
 :::
 ::::
 :::::
@@ -325,9 +325,9 @@ c(inner = nrow(inner), left = nrow(left), full = nrow(full))
 
 :::: {.column width="40%"}
 ::: callout-note
-**✅ Key idea**
+**✅ Choosing among the three**
 
-Start from the question: *"Which rows do I refuse to lose?"* That answer picks your join. For mapping we refuse to lose reports, so `left_join`.
+Ask which rows you'd be upset to lose. Drop a report from the map and a real sighting vanishes; drop a stray location record and nothing is lost. That's why the map keeps every report — `left_join`, not `inner_join`.
 :::
 
 📖 R4DS §19.3–19.4
@@ -412,7 +412,7 @@ bigfoot_mappable %>%
 :::: {.column width="40%"}
 This joined table — report text **plus** coordinates — is essentially `bfro_reports_geocoded.csv`, the file you'll turn into a map in **Lecture 13**.
 
-**You just built a real dataset from two raw ones.** That's the everyday work of data science.
+**You just built a real dataset from two raw ones.** `bigfoot_mappable` didn't exist in either source file — it only exists because you joined them on a key, and it's the exact table Lecture 13 opens with.
 ::::
 :::::
 
@@ -445,7 +445,7 @@ Use `anti_join` to find the un-geocoded reports, `semi_join` to keep the mappabl
 - 📖 [R4DS Ch. 19 — Joins](https://r4ds.hadley.nz/joins)
 - 📖 `common_code/13_joins`
 
-**Up next — Lecture 13:**
+**Up next — Lecture 18:**
 
 - **Mapping** — turn this joined table into a map with `sf` and `geom_sf()`
 - Where *is* Bigfoot, anyway?

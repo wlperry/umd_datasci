@@ -94,7 +94,7 @@ diag_df <- tibble(
 
 # Residuals vs Fitted — check for equal variance across groups
 ggplot(diag_df, aes(x = fitted, y = residuals)) +
-  geom_point(alpha = 0.5, color = "steelblue") +
+  geom_point(alpha = 0.5, color = "darkblue") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "tomato") +
   geom_smooth(method = "loess", se = FALSE, color = "grey40", linewidth = 0.8) +
   labs(title = "Residuals vs Fitted",
@@ -103,7 +103,7 @@ ggplot(diag_df, aes(x = fitted, y = residuals)) +
 
 # Q-Q plot — check normality of residuals
 ggplot(diag_df, aes(sample = std_resid)) +
-  stat_qq(alpha = 0.5, color = "steelblue") +
+  stat_qq(alpha = 0.5, color = "darkblue") +
   stat_qq_line(color = "tomato") +
   labs(title = "Normal Q-Q plot of residuals",
        x = "Theoretical quantiles", y = "Standardised residuals") +

@@ -75,7 +75,7 @@ calibration_plot <- paper_df %>%
   geom_smooth(
     method = "lm",
     se = TRUE,
-    color = "steelblue",
+    color = "darkblue",
     fill = "lightblue"
   ) +
   labs(
@@ -107,36 +107,11 @@ ggsave(
 
 
 # ---- 8. Check assumptions -------------------------------------------
-# Add fitted values and residuals to the data frame
-paper_resid_df <- paper_df %>%
-  mutate(
-    fitted = fitted(paper_lm_model),
-    residuals = residuals(paper_lm_model)
-  )
-
-# Residuals vs Fitted — linearity + equal variance
-resid_reg_plot <- paper_resid_df %>%
-  ggplot(aes(x = fitted, y = residuals)) +
-  geom_point(alpha = 0.5) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  labs(x = "Fitted Values (cm²)", y = "Residuals (cm²)") +
-  theme_minimal()
-
-resid_reg_plot
-
-# Normality of residuals — QQ plot + Shapiro-Wilk
-qq_reg_plot <- paper_resid_df %>%
-  ggplot(aes(sample = residuals)) +
-  stat_qq() +
-  stat_qq_line(color = "red", linewidth = 0.8) +
-  labs(
-    title = "Normal QQ Plot of Residuals",
-    x = "Theoretical Quantiles",
-    y = "Sample Quantiles"
-  ) +
-  theme_minimal()
-
-qq_reg_plot
+# plot() on an lm object gives all four base R diagnostic plots:
+# Residuals vs Fitted, Normal Q-Q, Scale-Location, Residuals vs Leverage
+par(mfrow = c(2, 2))
+plot(paper_lm_model)
+par(mfrow = c(1, 1))
 
 shapiro.test(residuals(paper_lm_model)) # H0: residuals are normal
 

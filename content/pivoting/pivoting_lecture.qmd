@@ -1,5 +1,5 @@
 ---
-title: "Lecture 09 — Wide, Long, and Wild: Pivoting Real Data"
+title: "Lecture 15 — Wide, Long, and Wild: Pivoting Real Data"
 subtitle: "Reshaping Lake Superior ice cover data with pivot_longer() and pivot_wider()"
 author: "Bill Perry"
 date: today
@@ -7,8 +7,8 @@ date: today
 # --- Fields the SITE reads for ordering / listings / homepage ---
 # These are the ONLY things you need to edit to move this lecture around.
 # The folder name and filename never have to change.
-order: 9
-week: 5
+order: 16
+week: 8
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
   Lake Superior Ice Data and how to pivot and summarize data.
@@ -37,19 +37,16 @@ execute:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
-# Where We Left Off (Lecture 07)
+# Where We Left Off (Lecture 14)
 
-- **Downloaded real data from inside R** — NOAA's `GSODR` package, Duluth station
-- **Raw vs. summarized data** — daily data hides trends; `group_by() %>% summarize()` reveals them
-- **Reused `lm()`** to estimate a rate of change — °C per year, converted to °C per decade
-- **`case_when()`** to build a new categorical variable — summer vs. winter
-- **Compared two group-specific models** — found winter warming faster than summer
+- **Started the final project** — claimed a topic and a candidate dataset
+- Sized up a new dataset in R with `read_csv()`, `glimpse()`, `dim()`, `head()`
+- Wrote H₀ and Hₐ for a question you chose yourself
 
 ::: callout-note
 **✅ Transition**
 
-- Duluth's weather data came to us **already tidy**
-  - one row per day, one column per variable.
+- Every dataset we've analyzed so far came to us **already tidy** — one row per observation, one column per variable.
 - Today's dataset will **not** be tidy.
 - We'll learn how to fix that.
 :::
@@ -104,9 +101,9 @@ This lecture runs in **four short chunks**. After each chunk you switch to the *
 ::: callout-note
 **✅ Why bother? (the evidence)**
 
--   **Predicting first** forces your brain to *retrieve* what it knows — the gap between guess and answer is what makes it stick.
--   **Typing by hand** builds the finger-memory and error-spotting that copy-paste skips.
--   **Chunk → immediate practice** keeps a new idea in working memory long enough to form a lasting schema.
+-   Guessing the shape of `ice_long` before you pivot forces you to reason about what `pivot_longer()` actually does, instead of just watching it happen.
+-   Typing `names_prefix`, `names_to`, and `values_to` yourself is how you notice which argument does which job — copy-pasting lets you skip right past that.
+-   Reshaping wrong in front of an error message (a missing `date` column, a stray `X`) teaches you more about tidy data than reshaping right on the first try.
 :::
 ::::
 ::::::
@@ -326,7 +323,7 @@ ice_raw <- ice_raw %>% rownames_to_column(var = "date")
 - The long version has **one row per observation** — exactly what `ggplot()` and `group_by()` expect
 
 ::: callout-tip
-This is the single most important reshaping skill in all of data science — almost every messy dataset needs this.
+Once a dataset's categories are trapped in column names instead of a column of values, this reshape is usually the first thing you reach for — it's what turns a spreadsheet into something `group_by()` can work with.
 :::
 ::::
 ::::::
@@ -403,7 +400,7 @@ head(monthly_avg)
 ::: {.column width="40%"}
 **This should look familiar.**
 
-- Exactly the same `group_by() %>% summarize()` pattern from Lecture 06's Duluth weather data
+- Exactly the same `group_by() %>% summarize()` pattern from Lecture 12's Duluth weather data
 - We could **not** have written this on the wide data — there was no `year` or `month` column to group by until we pivoted
 
 The reshape wasn't just cosmetic — it **unlocked** every tidyverse tool we already know.
@@ -456,7 +453,7 @@ This recreates an Excel-style pivot table — but computed, not copy-pasted.
 
 :::: {.column width="40%"}
 ::: callout-important
-**You will use `pivot_longer()` constantly in your own research.** This is one of the most-used functions in the entire tidyverse.
+**Expect to reach for `pivot_longer()` again in your own research.** Government text files, field data sheets, and Excel exports are so often shaped one-column-per-year or one-column-per-site that this pivot comes up in almost any real dataset you didn't design yourself.
 :::
 ::::
 ::::::
@@ -534,6 +531,7 @@ This is a common trick for any **seasonal, cyclical** time series.
 ::: {.column width="60%"}
 ```{r spaghetti-plot-07}
 #| fig-format: png
+#| fig-alt: "Line plot of Lake Superior ice cover by day of winter (November through May). Many thin, semi-transparent blue lines each trace one past winter; a thick red line shows the historical daily average; a thick black line traces the current winter, drawn on top of the others. The y-axis is percent ice cover."
 ice_spaghetti_plot <- ggplot() +
   geom_line(
     data = past_years,
@@ -628,6 +626,7 @@ summary(max_ice_model)
 
 ```{r max-ice-plot-07}
 #| fig-format: png
+#| fig-alt: "Scatterplot of each year's maximum ice cover (percent) versus year, spanning roughly 1973 to the present, with a firebrick-colored linear trend line and a shaded confidence ribbon overlaid on the scattered points."
 max_ice_plot <- max_ice_per_year %>%
   ggplot(aes(x = year, y = ice_cover)) +
   geom_point(size = 2) +
@@ -644,9 +643,9 @@ max_ice_plot
 :::
 
 ::: {.column width="40%"}
-**Same `lm()` syntax as Lecture 06** — only now `X = year` and `Y = ice_cover` (the yearly peak, not a daily or monthly mean).
+**Same `lm()` syntax as Lecture 11/13** — only now `X = year` and `Y = ice_cover` (the yearly peak, not a daily or monthly mean).
 
-- The slope tells us °C-equivalent: percentage points of max ice cover, per year
+- The slope tells us how many percentage points of max ice cover change per year
 - Notice the **huge year-to-year scatter** — Great Lakes ice cover is famously variable, driven by short-term weather patterns like ENSO and the polar vortex, not just a steady climate trend
 
 This is real data — the story is messier (and more honest) than a clean line.
@@ -668,7 +667,7 @@ Build the spaghetti plot, pull each winter's peak with `slice_max()`, and fit `l
 - `pivot_wider()` does the reverse — builds a readable summary table from tidy data
 - Seasonal data that **crosses the calendar year boundary** needs careful date logic
 - `slice_max()` pulls out the single extreme value per group — useful for "ice-on/ice-off" type questions
-- The same `lm()` workflow from Lecture 06 applies to *any* time-indexed variable, including a yearly maximum
+- The same `lm()` workflow from Lecture 12 applies to *any* time-indexed variable, including a yearly maximum
 
 **R skills:**
 

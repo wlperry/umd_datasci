@@ -2,22 +2,25 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.38">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-07-05">
+<meta name="dcterms.date" content="2026-08-27">
 
 <title>Quiz 11 — One-Way ANOVA – UMD DAta Science Biology</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -77,14 +80,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-355b1241b13eb9e1b70054a630629ff7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-c57f65602dd0356675335e5a446f48c5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../site_libs/bootstrap/bootstrap-355b1241b13eb9e1b70054a630629ff7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-ffe4ec66b3b2e5a5f7bab576e98f0639.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-6632f43c76c69e813a602cc5faf6884a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-ffe4ec66b3b2e5a5f7bab576e98f0639.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -116,7 +119,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <link rel="stylesheet" href="../css/main.css">
 <meta property="og:title" content="Quiz 11 — One-Way ANOVA – UMD DAta Science Biology">
-<meta property="og:description" content="comparing 3+ groups, assumptions, car::Anova, and emmeans post-hoc">
+<meta property="og:description" content="comparing 3+ groups, assumptions, aov()/car::Anova(), and emmeans post-hoc — Palmer penguins">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 
@@ -406,49 +409,141 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#instructions" id="toc-instructions" class="nav-link" data-scroll-target="#instructions">Instructions</a></li>
   </ul></li>
-  <li><a href="#question-1-true-false" id="toc-question-1-true-false" class="nav-link" data-scroll-target="#question-1-true-false">Question 1 · True / False</a>
-  <ul class="collapse">
-  <li><a href="#running-three-separate-t-tests-to-compare-three-groups-inflates-the-overall-family-wise-false-positive-rate-above-0.05." id="toc-running-three-separate-t-tests-to-compare-three-groups-inflates-the-overall-family-wise-false-positive-rate-above-0.05." class="nav-link" data-scroll-target="#running-three-separate-t-tests-to-compare-three-groups-inflates-the-overall-family-wise-false-positive-rate-above-0.05.">Running three separate t-tests to compare three groups inflates the overall (family-wise) false-positive rate above 0.05.</a></li>
-  </ul></li>
-  <li><a href="#question-2-multiple-choice" id="toc-question-2-multiple-choice" class="nav-link" data-scroll-target="#question-2-multiple-choice">Question 2 · Multiple choice</a>
+  <li><a href="#part-a-general-knowledge-concepts" id="toc-part-a-general-knowledge-concepts" class="nav-link" data-scroll-target="#part-a-general-knowledge-concepts">Part A — General Knowledge &amp; Concepts</a></li>
+  <li><a href="#question-1-multiple-choice" id="toc-question-1-multiple-choice" class="nav-link" data-scroll-target="#question-1-multiple-choice">Question 1 · Multiple choice</a>
   <ul class="collapse">
   <li><a href="#the-anova-f-statistic-is-a-ratio-of" id="toc-the-anova-f-statistic-is-a-ratio-of" class="nav-link" data-scroll-target="#the-anova-f-statistic-is-a-ratio-of">The ANOVA F-statistic is a ratio of:</a></li>
   </ul></li>
-  <li><a href="#question-3-short-answer-hypotheses" id="toc-question-3-short-answer-hypotheses" class="nav-link" data-scroll-target="#question-3-short-answer-hypotheses">Question 3 · Short answer — hypotheses</a>
+  <li><a href="#question-2-true-false" id="toc-question-2-true-false" class="nav-link" data-scroll-target="#question-2-true-false">Question 2 · True / False</a>
   <ul class="collapse">
-  <li><a href="#write-h₀-and-hₐ-for-a-one-way-anova-comparing-mean-body-mass-across-three-penguin-species." id="toc-write-h₀-and-hₐ-for-a-one-way-anova-comparing-mean-body-mass-across-three-penguin-species." class="nav-link" data-scroll-target="#write-h₀-and-hₐ-for-a-one-way-anova-comparing-mean-body-mass-across-three-penguin-species.">Write H₀ and Hₐ for a one-way ANOVA comparing mean body mass across three penguin species.</a></li>
+  <li><a href="#running-three-separate-t-tests-to-compare-three-groups-inflates-the-overall-family-wise-false-positive-rate-above-0.05." id="toc-running-three-separate-t-tests-to-compare-three-groups-inflates-the-overall-family-wise-false-positive-rate-above-0.05." class="nav-link" data-scroll-target="#running-three-separate-t-tests-to-compare-three-groups-inflates-the-overall-family-wise-false-positive-rate-above-0.05.">Running three separate t-tests to compare three groups inflates the overall (family-wise) false-positive rate above 0.05.</a></li>
   </ul></li>
-  <li><a href="#question-4-matching-the-tools" id="toc-question-4-matching-the-tools" class="nav-link" data-scroll-target="#question-4-matching-the-tools">Question 4 · Matching — the tools</a>
+  <li><a href="#question-3-short-answer-how-many-tests" id="toc-question-3-short-answer-how-many-tests" class="nav-link" data-scroll-target="#question-3-short-answer-how-many-tests">Question 3 · Short answer — how many tests?</a>
+  <ul class="collapse">
+  <li><a href="#with-4-groups-how-many-pairwise-t-tests-would-you-need-to-compare-every-pair-and-roughly-what-does-that-do-to-your-overall-false-positive-rate-compared-to-a-single-anova" id="toc-with-4-groups-how-many-pairwise-t-tests-would-you-need-to-compare-every-pair-and-roughly-what-does-that-do-to-your-overall-false-positive-rate-compared-to-a-single-anova" class="nav-link" data-scroll-target="#with-4-groups-how-many-pairwise-t-tests-would-you-need-to-compare-every-pair-and-roughly-what-does-that-do-to-your-overall-false-positive-rate-compared-to-a-single-anova">With 4 groups, how many pairwise t-tests would you need to compare every pair, and roughly what does that do to your overall false-positive rate compared to a single ANOVA?</a></li>
+  </ul></li>
+  <li><a href="#question-4-multiple-choice" id="toc-question-4-multiple-choice" class="nav-link" data-scroll-target="#question-4-multiple-choice">Question 4 · Multiple choice</a>
+  <ul class="collapse">
+  <li><a href="#in-lmbody_mass_g-species-data-penguins_df-which-statement-is-correct" id="toc-in-lmbody_mass_g-species-data-penguins_df-which-statement-is-correct" class="nav-link" data-scroll-target="#in-lmbody_mass_g-species-data-penguins_df-which-statement-is-correct">In <code>lm(body_mass_g ~ species, data = penguins_df)</code>, which statement is correct?</a></li>
+  </ul></li>
+  <li><a href="#question-5-short-answer-between-vs.-within" id="toc-question-5-short-answer-between-vs.-within" class="nav-link" data-scroll-target="#question-5-short-answer-between-vs.-within">Question 5 · Short answer — between vs.&nbsp;within</a>
+  <ul class="collapse">
+  <li><a href="#in-one-sentence-each-define-between-group-variance-and-within-group-variance-in-the-context-of-comparing-body-mass-across-three-penguin-species." id="toc-in-one-sentence-each-define-between-group-variance-and-within-group-variance-in-the-context-of-comparing-body-mass-across-three-penguin-species." class="nav-link" data-scroll-target="#in-one-sentence-each-define-between-group-variance-and-within-group-variance-in-the-context-of-comparing-body-mass-across-three-penguin-species.">In one sentence each, define “between-group variance” and “within-group variance” in the context of comparing body mass across three penguin species.</a></li>
+  </ul></li>
+  <li><a href="#question-6-true-false" id="toc-question-6-true-false" class="nav-link" data-scroll-target="#question-6-true-false">Question 6 · True / False</a>
+  <ul class="collapse">
+  <li><a href="#emmeans-pairwise-comparisons-that-are-tukey-adjusted-already-correct-for-multiple-comparisons-so-the-family-wise-error-rate-stays-at-0.05-without-you-doing-anything-extra." id="toc-emmeans-pairwise-comparisons-that-are-tukey-adjusted-already-correct-for-multiple-comparisons-so-the-family-wise-error-rate-stays-at-0.05-without-you-doing-anything-extra." class="nav-link" data-scroll-target="#emmeans-pairwise-comparisons-that-are-tukey-adjusted-already-correct-for-multiple-comparisons-so-the-family-wise-error-rate-stays-at-0.05-without-you-doing-anything-extra."><code>emmeans</code> pairwise comparisons that are Tukey-adjusted already correct for multiple comparisons, so the family-wise error rate stays at 0.05 without you doing anything extra.</a></li>
+  </ul></li>
+  <li><a href="#question-7-matching-the-tools" id="toc-question-7-matching-the-tools" class="nav-link" data-scroll-target="#question-7-matching-the-tools">Question 7 · Matching — the tools</a>
   <ul class="collapse">
   <li><a href="#match-each-function-to-its-job.-write-the-letter-next-to-each-item." id="toc-match-each-function-to-its-job.-write-the-letter-next-to-each-item." class="nav-link" data-scroll-target="#match-each-function-to-its-job.-write-the-letter-next-to-each-item.">Match each function to its job. Write the letter next to each item.</a></li>
   </ul></li>
-  <li><a href="#question-5-short-code-fit-and-test" id="toc-question-5-short-code-fit-and-test" class="nav-link" data-scroll-target="#question-5-short-code-fit-and-test">Question 5 · Short code — fit and test</a>
+  <li><a href="#question-8-multiple-choice" id="toc-question-8-multiple-choice" class="nav-link" data-scroll-target="#question-8-multiple-choice">Question 8 · Multiple choice</a>
   <ul class="collapse">
-  <li><a href="#write-the-two-lines-that-1-fit-a-model-of-body_mass_g-by-species-in-penguins_df-stored-in-mass_model-and-2-print-the-type-ii-anova-table-with-car." id="toc-write-the-two-lines-that-1-fit-a-model-of-body_mass_g-by-species-in-penguins_df-stored-in-mass_model-and-2-print-the-type-ii-anova-table-with-car." class="nav-link" data-scroll-target="#write-the-two-lines-that-1-fit-a-model-of-body_mass_g-by-species-in-penguins_df-stored-in-mass_model-and-2-print-the-type-ii-anova-table-with-car.">Write the two lines that (1) fit a model of <code>body_mass_g</code> by <code>species</code> in <code>penguins_df</code>, stored in <code>mass_model</code>, and (2) print the Type II ANOVA table with <code>car</code>.</a></li>
+  <li><a href="#why-does-the-lecture-prefer-caranovamodel-type-ii-over-base-rs-anovamodel-for-the-penguin-data" id="toc-why-does-the-lecture-prefer-caranovamodel-type-ii-over-base-rs-anovamodel-for-the-penguin-data" class="nav-link" data-scroll-target="#why-does-the-lecture-prefer-caranovamodel-type-ii-over-base-rs-anovamodel-for-the-penguin-data">Why does the lecture prefer <code>car::Anova(model, type = "II")</code> over base R’s <code>anova(model)</code> for the penguin data?</a></li>
   </ul></li>
-  <li><a href="#question-6-find-the-error-car-not-loaded" id="toc-question-6-find-the-error-car-not-loaded" class="nav-link" data-scroll-target="#question-6-find-the-error-car-not-loaded">Question 6 · Find the error — car not loaded</a>
+  <li><a href="#part-b-predict-the-output" id="toc-part-b-predict-the-output" class="nav-link" data-scroll-target="#part-b-predict-the-output">Part B — Predict the Output</a></li>
+  <li><a href="#question-9-predict-the-output-count" id="toc-question-9-predict-the-output-count" class="nav-link" data-scroll-target="#question-9-predict-the-output-count">Question 9 · Predict the output — count()</a>
+  <ul class="collapse">
+  <li><a href="#what-does-penguins_df-countspecies-print-sketch-the-shape-of-the-result-columns-and-roughly-how-many-rows." id="toc-what-does-penguins_df-countspecies-print-sketch-the-shape-of-the-result-columns-and-roughly-how-many-rows." class="nav-link" data-scroll-target="#what-does-penguins_df-countspecies-print-sketch-the-shape-of-the-result-columns-and-roughly-how-many-rows.">What does <code>penguins_df %&gt;% count(species)</code> print? Sketch the shape of the result (columns and roughly how many rows).</a></li>
+  </ul></li>
+  <li><a href="#question-10-predict-the-output-the-boxplot" id="toc-question-10-predict-the-output-the-boxplot" class="nav-link" data-scroll-target="#question-10-predict-the-output-the-boxplot">Question 10 · Predict the output — the boxplot</a>
+  <ul class="collapse">
+  <li><a href="#sketch-or-describe-what-this-plot-looks-like-how-many-boxes-their-relative-heights-and-what-the-jittered-points-add." id="toc-sketch-or-describe-what-this-plot-looks-like-how-many-boxes-their-relative-heights-and-what-the-jittered-points-add." class="nav-link" data-scroll-target="#sketch-or-describe-what-this-plot-looks-like-how-many-boxes-their-relative-heights-and-what-the-jittered-points-add.">Sketch or describe what this plot looks like — how many boxes, their relative heights, and what the jittered points add.</a></li>
+  </ul></li>
+  <li><a href="#question-11-predict-the-output-diagnostic-plots" id="toc-question-11-predict-the-output-diagnostic-plots" class="nav-link" data-scroll-target="#question-11-predict-the-output-diagnostic-plots">Question 11 · Predict the output — diagnostic plots</a>
+  <ul class="collapse">
+  <li><a href="#parmfrow-c2-2-plotmass_model-produces-four-base-r-panels.-name-all-four-in-order-and-what-each-one-is-used-to-check." id="toc-parmfrow-c2-2-plotmass_model-produces-four-base-r-panels.-name-all-four-in-order-and-what-each-one-is-used-to-check." class="nav-link" data-scroll-target="#parmfrow-c2-2-plotmass_model-produces-four-base-r-panels.-name-all-four-in-order-and-what-each-one-is-used-to-check."><code>par(mfrow = c(2, 2)); plot(mass_model)</code> produces four base R panels. Name all four, in order, and what each one is used to check.</a></li>
+  </ul></li>
+  <li><a href="#question-12-predict-the-output-the-f-table" id="toc-question-12-predict-the-output-the-f-table" class="nav-link" data-scroll-target="#question-12-predict-the-output-the-f-table">Question 12 · Predict the output — the F table</a>
+  <ul class="collapse">
+  <li><a href="#summaryaovbody_mass_g-species-data-penguins_df-prints-a-table-with-columns-df-sum-sq-mean-sq-f-value-and-prf.-if-prf-comes-back-far-below-0.001-what-does-that-tell-you-and-what-does-it-not-tell-you" id="toc-summaryaovbody_mass_g-species-data-penguins_df-prints-a-table-with-columns-df-sum-sq-mean-sq-f-value-and-prf.-if-prf-comes-back-far-below-0.001-what-does-that-tell-you-and-what-does-it-not-tell-you" class="nav-link" data-scroll-target="#summaryaovbody_mass_g-species-data-penguins_df-prints-a-table-with-columns-df-sum-sq-mean-sq-f-value-and-prf.-if-prf-comes-back-far-below-0.001-what-does-that-tell-you-and-what-does-it-not-tell-you"><code>summary(aov(body_mass_g ~ species, data = penguins_df))</code> prints a table with columns <code>Df</code>, <code>Sum Sq</code>, <code>Mean Sq</code>, <code>F value</code>, and <code>Pr(&gt;F)</code>. If <code>Pr(&gt;F)</code> comes back far below 0.001, what does that tell you — and what does it NOT tell you?</a></li>
+  </ul></li>
+  <li><a href="#question-13-predict-the-output-emmeans-contrasts" id="toc-question-13-predict-the-output-emmeans-contrasts" class="nav-link" data-scroll-target="#question-13-predict-the-output-emmeans-contrasts">Question 13 · Predict the output — emmeans contrasts</a>
+  <ul class="collapse">
+  <li><a href="#mass_emm---emmeansmass_model-pairwise-species-then-mass_emmcontrasts-is-printed.-how-many-rows-appear-in-this-table-and-what-does-each-row-represent" id="toc-mass_emm---emmeansmass_model-pairwise-species-then-mass_emmcontrasts-is-printed.-how-many-rows-appear-in-this-table-and-what-does-each-row-represent" class="nav-link" data-scroll-target="#mass_emm---emmeansmass_model-pairwise-species-then-mass_emmcontrasts-is-printed.-how-many-rows-appear-in-this-table-and-what-does-each-row-represent"><code>mass_emm &lt;- emmeans(mass_model, pairwise ~ species)</code> then <code>mass_emm$contrasts</code> is printed. How many rows appear in this table, and what does each row represent?</a></li>
+  </ul></li>
+  <li><a href="#question-14-predict-the-output-compact-letter-display" id="toc-question-14-predict-the-output-compact-letter-display" class="nav-link" data-scroll-target="#question-14-predict-the-output-compact-letter-display">Question 14 · Predict the output — compact letter display</a>
+  <ul class="collapse">
+  <li><a href="#suppose-multcompcldmass_emmemmeans-letters-letters-assigns-adelie-a-chinstrap-a-gentoo-b.-sketch-what-the-output-table-looks-like-species-emmean-and-the-.group-column-and-state-in-one-sentence-what-the-letters-mean." id="toc-suppose-multcompcldmass_emmemmeans-letters-letters-assigns-adelie-a-chinstrap-a-gentoo-b.-sketch-what-the-output-table-looks-like-species-emmean-and-the-.group-column-and-state-in-one-sentence-what-the-letters-mean." class="nav-link" data-scroll-target="#suppose-multcompcldmass_emmemmeans-letters-letters-assigns-adelie-a-chinstrap-a-gentoo-b.-sketch-what-the-output-table-looks-like-species-emmean-and-the-.group-column-and-state-in-one-sentence-what-the-letters-mean.">Suppose <code>multcomp::cld(mass_emm$emmeans, Letters = letters)</code> assigns Adelie → “a”, Chinstrap → “a”, Gentoo → “b”. Sketch what the output table looks like (species, emmean, and the <code>.group</code> column), and state in one sentence what the letters mean.</a></li>
+  </ul></li>
+  <li><a href="#question-15-predict-the-output-levenes-test" id="toc-question-15-predict-the-output-levenes-test" class="nav-link" data-scroll-target="#question-15-predict-the-output-levenes-test">Question 15 · Predict the output — Levene’s test</a>
+  <ul class="collapse">
+  <li><a href="#levenetestbody_mass_g-species-data-penguins_df-returns-p-0.34.-do-you-proceed-with-the-classic-anova-or-switch-to-welchs-anova-oneway.test...-var.equal-false-explain." id="toc-levenetestbody_mass_g-species-data-penguins_df-returns-p-0.34.-do-you-proceed-with-the-classic-anova-or-switch-to-welchs-anova-oneway.test...-var.equal-false-explain." class="nav-link" data-scroll-target="#levenetestbody_mass_g-species-data-penguins_df-returns-p-0.34.-do-you-proceed-with-the-classic-anova-or-switch-to-welchs-anova-oneway.test...-var.equal-false-explain."><code>leveneTest(body_mass_g ~ species, data = penguins_df)</code> returns <code>p = 0.34</code>. Do you proceed with the classic ANOVA or switch to Welch’s ANOVA (<code>oneway.test(..., var.equal = FALSE)</code>)? Explain.</a></li>
+  </ul></li>
+  <li><a href="#question-16-predict-the-output-the-means-plot" id="toc-question-16-predict-the-output-the-means-plot" class="nav-link" data-scroll-target="#question-16-predict-the-output-the-means-plot">Question 16 · Predict the output — the means plot</a>
+  <ul class="collapse">
+  <li><a href="#describe-what-this-plot-looks-like-how-many-points-what-the-error-bars-represent-and-what-it-would-mean-if-two-of-the-error-bars-overlapped-a-lot." id="toc-describe-what-this-plot-looks-like-how-many-points-what-the-error-bars-represent-and-what-it-would-mean-if-two-of-the-error-bars-overlapped-a-lot." class="nav-link" data-scroll-target="#describe-what-this-plot-looks-like-how-many-points-what-the-error-bars-represent-and-what-it-would-mean-if-two-of-the-error-bars-overlapped-a-lot.">Describe what this plot looks like — how many points, what the error bars represent, and what it would mean if two of the error bars overlapped a lot.</a></li>
+  </ul></li>
+  <li><a href="#part-c-troubleshooting" id="toc-part-c-troubleshooting" class="nav-link" data-scroll-target="#part-c-troubleshooting">Part C — Troubleshooting</a></li>
+  <li><a href="#question-17-find-the-error-car-not-loaded" id="toc-question-17-find-the-error-car-not-loaded" class="nav-link" data-scroll-target="#question-17-find-the-error-car-not-loaded">Question 17 · Find the error — car not loaded</a>
   <ul class="collapse">
   <li><a href="#this-errors-with-could-not-find-function-anova.-what-is-wrong-and-what-is-the-difference-between-anova-and-anova" id="toc-this-errors-with-could-not-find-function-anova.-what-is-wrong-and-what-is-the-difference-between-anova-and-anova" class="nav-link" data-scroll-target="#this-errors-with-could-not-find-function-anova.-what-is-wrong-and-what-is-the-difference-between-anova-and-anova">This errors with <code>could not find function "Anova"</code>. What is wrong, and what is the difference between <code>anova()</code> and <code>Anova()</code>?</a></li>
   </ul></li>
-  <li><a href="#question-7-multiple-choice-interpreting-the-f-test" id="toc-question-7-multiple-choice-interpreting-the-f-test" class="nav-link" data-scroll-target="#question-7-multiple-choice-interpreting-the-f-test">Question 7 · Multiple choice — interpreting the F test</a>
+  <li><a href="#question-18-find-the-error-backwards-formula" id="toc-question-18-find-the-error-backwards-formula" class="nav-link" data-scroll-target="#question-18-find-the-error-backwards-formula">Question 18 · Find the error — backwards formula</a>
   <ul class="collapse">
-  <li><a href="#the-anova-gives-p-0.001.-what-can-you-correctly-conclude" id="toc-the-anova-gives-p-0.001.-what-can-you-correctly-conclude" class="nav-link" data-scroll-target="#the-anova-gives-p-0.001.-what-can-you-correctly-conclude">The ANOVA gives <code>p &lt; 0.001</code>. What can you correctly conclude?</a></li>
+  <li><a href="#a-student-wants-to-test-whether-body-mass-differs-by-species-and-writes-this.-what-is-conceptually-wrong-with-the-model-and-how-would-you-fix-it" id="toc-a-student-wants-to-test-whether-body-mass-differs-by-species-and-writes-this.-what-is-conceptually-wrong-with-the-model-and-how-would-you-fix-it" class="nav-link" data-scroll-target="#a-student-wants-to-test-whether-body-mass-differs-by-species-and-writes-this.-what-is-conceptually-wrong-with-the-model-and-how-would-you-fix-it">A student wants to test whether body mass differs by species, and writes this. What is conceptually wrong with the model, and how would you fix it?</a></li>
   </ul></li>
-  <li><a href="#question-8-short-code-post-hoc" id="toc-question-8-short-code-post-hoc" class="nav-link" data-scroll-target="#question-8-short-code-post-hoc">Question 8 · Short code — post-hoc</a>
+  <li><a href="#question-19-find-the-error-testing-the-wrong-thing" id="toc-question-19-find-the-error-testing-the-wrong-thing" class="nav-link" data-scroll-target="#question-19-find-the-error-testing-the-wrong-thing">Question 19 · Find the error — testing the wrong thing</a>
   <ul class="collapse">
-  <li><a href="#write-the-line-that-runs-tukey-adjusted-pairwise-comparisons-of-species-from-mass_model-using-emmeans." id="toc-write-the-line-that-runs-tukey-adjusted-pairwise-comparisons-of-species-from-mass_model-using-emmeans." class="nav-link" data-scroll-target="#write-the-line-that-runs-tukey-adjusted-pairwise-comparisons-of-species-from-mass_model-using-emmeans.">Write the line that runs Tukey-adjusted pairwise comparisons of <code>species</code> from <code>mass_model</code> using <code>emmeans</code>.</a></li>
+  <li><a href="#this-code-runs-without-an-error-but-it-does-not-check-what-the-student-thinks-it-checks.-what-is-wrong" id="toc-this-code-runs-without-an-error-but-it-does-not-check-what-the-student-thinks-it-checks.-what-is-wrong" class="nav-link" data-scroll-target="#this-code-runs-without-an-error-but-it-does-not-check-what-the-student-thinks-it-checks.-what-is-wrong">This code runs without an error, but it does not check what the student thinks it checks. What is wrong?</a></li>
   </ul></li>
-  <li><a href="#question-9-true-false" id="toc-question-9-true-false" class="nav-link" data-scroll-target="#question-9-true-false">Question 9 · True / False</a>
+  <li><a href="#question-20-find-the-error-skipped-drop_na" id="toc-question-20-find-the-error-skipped-drop_na" class="nav-link" data-scroll-target="#question-20-find-the-error-skipped-drop_na">Question 20 · Find the error — skipped drop_na()</a>
   <ul class="collapse">
-  <li><a href="#the-normality-assumption-in-anova-is-checked-on-the-models-residuals-and-with-a-large-sample-the-shapiro-wilk-test-can-flag-tiny-harmless-departures-so-the-qq-plot-matters-too." id="toc-the-normality-assumption-in-anova-is-checked-on-the-models-residuals-and-with-a-large-sample-the-shapiro-wilk-test-can-flag-tiny-harmless-departures-so-the-qq-plot-matters-too." class="nav-link" data-scroll-target="#the-normality-assumption-in-anova-is-checked-on-the-models-residuals-and-with-a-large-sample-the-shapiro-wilk-test-can-flag-tiny-harmless-departures-so-the-qq-plot-matters-too.">The normality assumption in ANOVA is checked on the model’s <strong>residuals</strong>, and with a large sample the Shapiro-Wilk test can flag tiny, harmless departures — so the QQ plot matters too.</a></li>
+  <li><a href="#a-student-skips-the-cleaning-step-and-fits-the-model-directly-on-penguins-instead-of-penguins_df.-what-could-go-wrong-and-why-does-the-lecture-drop-rows-first" id="toc-a-student-skips-the-cleaning-step-and-fits-the-model-directly-on-penguins-instead-of-penguins_df.-what-could-go-wrong-and-why-does-the-lecture-drop-rows-first" class="nav-link" data-scroll-target="#a-student-skips-the-cleaning-step-and-fits-the-model-directly-on-penguins-instead-of-penguins_df.-what-could-go-wrong-and-why-does-the-lecture-drop-rows-first">A student skips the cleaning step and fits the model directly on <code>penguins</code> instead of <code>penguins_df</code>. What could go wrong, and why does the lecture drop rows first?</a></li>
   </ul></li>
-  <li><a href="#question-10-predict-short-answer-compact-letters" id="toc-question-10-predict-short-answer-compact-letters" class="nav-link" data-scroll-target="#question-10-predict-short-answer-compact-letters">Question 10 · Predict / short answer — compact letters</a>
+  <li><a href="#question-21-find-the-error-missing-pairwise" id="toc-question-21-find-the-error-missing-pairwise" class="nav-link" data-scroll-target="#question-21-find-the-error-missing-pairwise">Question 21 · Find the error — missing pairwise</a>
   <ul class="collapse">
-  <li><a href="#in-a-compact-letter-display-adelie-gets-a-chinstrap-gets-a-and-gentoo-gets-b.-which-species-are-statistically-different-from-each-other-and-which-are-not" id="toc-in-a-compact-letter-display-adelie-gets-a-chinstrap-gets-a-and-gentoo-gets-b.-which-species-are-statistically-different-from-each-other-and-which-are-not" class="nav-link" data-scroll-target="#in-a-compact-letter-display-adelie-gets-a-chinstrap-gets-a-and-gentoo-gets-b.-which-species-are-statistically-different-from-each-other-and-which-are-not">In a compact letter display, Adelie gets <strong>a</strong>, Chinstrap gets <strong>a</strong>, and Gentoo gets <strong>b</strong>. Which species are statistically different from each other, and which are not?</a></li>
+  <li><a href="#this-code-errors-with-operator-is-invalid-for-atomic-vectors-or-similar-when-the-student-tries-mass_emmcontrasts.-what-did-they-forget-to-include-in-the-emmeans-call" id="toc-this-code-errors-with-operator-is-invalid-for-atomic-vectors-or-similar-when-the-student-tries-mass_emmcontrasts.-what-did-they-forget-to-include-in-the-emmeans-call" class="nav-link" data-scroll-target="#this-code-errors-with-operator-is-invalid-for-atomic-vectors-or-similar-when-the-student-tries-mass_emmcontrasts.-what-did-they-forget-to-include-in-the-emmeans-call">This code errors with <code>$ operator is invalid for atomic vectors</code> (or similar) when the student tries <code>mass_emm$contrasts</code>. What did they forget to include in the <code>emmeans()</code> call?</a></li>
+  </ul></li>
+  <li><a href="#question-22-find-the-error-cld-on-the-wrong-object" id="toc-question-22-find-the-error-cld-on-the-wrong-object" class="nav-link" data-scroll-target="#question-22-find-the-error-cld-on-the-wrong-object">Question 22 · Find the error — cld() on the wrong object</a>
+  <ul class="collapse">
+  <li><a href="#this-throws-an-error.-what-object-should-be-passed-to-cld-instead" id="toc-this-throws-an-error.-what-object-should-be-passed-to-cld-instead" class="nav-link" data-scroll-target="#this-throws-an-error.-what-object-should-be-passed-to-cld-instead">This throws an error. What object should be passed to <code>cld()</code> instead?</a></li>
+  </ul></li>
+  <li><a href="#question-23-find-the-error-levenetest-formula-backwards" id="toc-question-23-find-the-error-levenetest-formula-backwards" class="nav-link" data-scroll-target="#question-23-find-the-error-levenetest-formula-backwards">Question 23 · Find the error — leveneTest formula backwards</a>
+  <ul class="collapse">
+  <li><a href="#a-student-writes-the-formula-backwards.-what-should-the-formula-be-and-why-does-the-order-matter-for-levenetest" id="toc-a-student-writes-the-formula-backwards.-what-should-the-formula-be-and-why-does-the-order-matter-for-levenetest" class="nav-link" data-scroll-target="#a-student-writes-the-formula-backwards.-what-should-the-formula-be-and-why-does-the-order-matter-for-levenetest">A student writes the formula backwards. What should the formula be, and why does the order matter for <code>leveneTest()</code>?</a></li>
+  </ul></li>
+  <li><a href="#question-24-find-the-error-wrong-argument-value" id="toc-question-24-find-the-error-wrong-argument-value" class="nav-link" data-scroll-target="#question-24-find-the-error-wrong-argument-value">Question 24 · Find the error — wrong argument value</a>
+  <ul class="collapse">
+  <li><a href="#this-errors-or-silently-misbehaves.-what-is-wrong-with-the-type-argument" id="toc-this-errors-or-silently-misbehaves.-what-is-wrong-with-the-type-argument" class="nav-link" data-scroll-target="#this-errors-or-silently-misbehaves.-what-is-wrong-with-the-type-argument">This errors (or silently misbehaves). What is wrong with the <code>type</code> argument?</a></li>
+  </ul></li>
+  <li><a href="#part-d-open-ended-applied" id="toc-part-d-open-ended-applied" class="nav-link" data-scroll-target="#part-d-open-ended-applied">Part D — Open-Ended / Applied</a></li>
+  <li><a href="#question-25-hypotheses" id="toc-question-25-hypotheses" class="nav-link" data-scroll-target="#question-25-hypotheses">Question 25 · Hypotheses</a>
+  <ul class="collapse">
+  <li><a href="#write-h₀-and-hₐ-in-both-words-and-symbols-for-a-one-way-anova-comparing-mean-body-mass-across-the-three-penguin-species." id="toc-write-h₀-and-hₐ-in-both-words-and-symbols-for-a-one-way-anova-comparing-mean-body-mass-across-the-three-penguin-species." class="nav-link" data-scroll-target="#write-h₀-and-hₐ-in-both-words-and-symbols-for-a-one-way-anova-comparing-mean-body-mass-across-the-three-penguin-species.">Write H₀ and Hₐ, in both words and symbols, for a one-way ANOVA comparing mean body mass across the three penguin species.</a></li>
+  </ul></li>
+  <li><a href="#question-26-hypothesis-vs.-prediction" id="toc-question-26-hypothesis-vs.-prediction" class="nav-link" data-scroll-target="#question-26-hypothesis-vs.-prediction">Question 26 · Hypothesis vs.&nbsp;prediction</a>
+  <ul class="collapse">
+  <li><a href="#explain-the-difference-between-a-hypothesis-the-h₀hₐ-framework-and-a-prediction-what-you-personally-expect-the-data-to-show.-then-give-one-example-of-each-for-the-penguin-body-mass-anova." id="toc-explain-the-difference-between-a-hypothesis-the-h₀hₐ-framework-and-a-prediction-what-you-personally-expect-the-data-to-show.-then-give-one-example-of-each-for-the-penguin-body-mass-anova." class="nav-link" data-scroll-target="#explain-the-difference-between-a-hypothesis-the-h₀hₐ-framework-and-a-prediction-what-you-personally-expect-the-data-to-show.-then-give-one-example-of-each-for-the-penguin-body-mass-anova.">Explain the difference between a <strong>hypothesis</strong> (the H₀/Hₐ framework) and a <strong>prediction</strong> (what you personally expect the data to show). Then give one example of each for the penguin body-mass ANOVA.</a></li>
+  </ul></li>
+  <li><a href="#question-27-assumptions" id="toc-question-27-assumptions" class="nav-link" data-scroll-target="#question-27-assumptions">Question 27 · Assumptions</a>
+  <ul class="collapse">
+  <li><a href="#list-the-assumptions-of-a-one-way-anova-and-for-each-one-name-the-specific-check-you-would-run-on-mass_model." id="toc-list-the-assumptions-of-a-one-way-anova-and-for-each-one-name-the-specific-check-you-would-run-on-mass_model." class="nav-link" data-scroll-target="#list-the-assumptions-of-a-one-way-anova-and-for-each-one-name-the-specific-check-you-would-run-on-mass_model.">List the assumptions of a one-way ANOVA and, for each one, name the specific check you would run on <code>mass_model</code>.</a></li>
+  </ul></li>
+  <li><a href="#question-28-interpreting-a-significant-f-test" id="toc-question-28-interpreting-a-significant-f-test" class="nav-link" data-scroll-target="#question-28-interpreting-a-significant-f-test">Question 28 · Interpreting a significant F-test</a>
+  <ul class="collapse">
+  <li><a href="#the-anova-gives-p-0.001.-what-can-you-correctly-conclude-and-what-can-you-not-conclude-without-running-a-post-hoc-test" id="toc-the-anova-gives-p-0.001.-what-can-you-correctly-conclude-and-what-can-you-not-conclude-without-running-a-post-hoc-test" class="nav-link" data-scroll-target="#the-anova-gives-p-0.001.-what-can-you-correctly-conclude-and-what-can-you-not-conclude-without-running-a-post-hoc-test">The ANOVA gives <code>p &lt; 0.001</code>. What can you correctly conclude, and what can you NOT conclude without running a post-hoc test?</a></li>
+  </ul></li>
+  <li><a href="#question-29-compact-letters" id="toc-question-29-compact-letters" class="nav-link" data-scroll-target="#question-29-compact-letters">Question 29 · Compact letters</a>
+  <ul class="collapse">
+  <li><a href="#in-a-compact-letter-display-adelie-gets-a-chinstrap-gets-a-and-gentoo-gets-b.-which-species-are-statistically-different-from-each-other-and-which-are-not-how-do-you-know" id="toc-in-a-compact-letter-display-adelie-gets-a-chinstrap-gets-a-and-gentoo-gets-b.-which-species-are-statistically-different-from-each-other-and-which-are-not-how-do-you-know" class="nav-link" data-scroll-target="#in-a-compact-letter-display-adelie-gets-a-chinstrap-gets-a-and-gentoo-gets-b.-which-species-are-statistically-different-from-each-other-and-which-are-not-how-do-you-know">In a compact letter display, Adelie gets <strong>a</strong>, Chinstrap gets <strong>a</strong>, and Gentoo gets <strong>b</strong>. Which species are statistically different from each other, and which are not? How do you know?</a></li>
+  </ul></li>
+  <li><a href="#question-30-large-sample-caution" id="toc-question-30-large-sample-caution" class="nav-link" data-scroll-target="#question-30-large-sample-caution">Question 30 · Large-sample caution</a>
+  <ul class="collapse">
+  <li><a href="#with-about-340-penguins-shapiro-wilk-can-return-a-significant-small-p-value-even-when-the-residuals-look-fine-on-the-q-q-plot.-explain-why-large-samples-cause-this-and-which-diagnostic-you-should-trust-more-in-that-situation." id="toc-with-about-340-penguins-shapiro-wilk-can-return-a-significant-small-p-value-even-when-the-residuals-look-fine-on-the-q-q-plot.-explain-why-large-samples-cause-this-and-which-diagnostic-you-should-trust-more-in-that-situation." class="nav-link" data-scroll-target="#with-about-340-penguins-shapiro-wilk-can-return-a-significant-small-p-value-even-when-the-residuals-look-fine-on-the-q-q-plot.-explain-why-large-samples-cause-this-and-which-diagnostic-you-should-trust-more-in-that-situation.">With about 340 penguins, Shapiro-Wilk can return a “significant” (small) p-value even when the residuals look fine on the Q-Q plot. Explain why large samples cause this, and which diagnostic you should trust more in that situation.</a></li>
+  </ul></li>
+  <li><a href="#question-31-why-the-type-habit-matters" id="toc-question-31-why-the-type-habit-matters" class="nav-link" data-scroll-target="#question-31-why-the-type-habit-matters">Question 31 · Why the type habit matters</a>
+  <ul class="collapse">
+  <li><a href="#caranovamass_model-type-ii-gives-the-same-f-and-p-value-here-as-base-anova-since-there-is-only-one-predictor.-explain-why-the-lecture-still-insists-on-building-the-type-ii-habit-now-before-you-meet-two-way-anova." id="toc-caranovamass_model-type-ii-gives-the-same-f-and-p-value-here-as-base-anova-since-there-is-only-one-predictor.-explain-why-the-lecture-still-insists-on-building-the-type-ii-habit-now-before-you-meet-two-way-anova." class="nav-link" data-scroll-target="#caranovamass_model-type-ii-gives-the-same-f-and-p-value-here-as-base-anova-since-there-is-only-one-predictor.-explain-why-the-lecture-still-insists-on-building-the-type-ii-habit-now-before-you-meet-two-way-anova."><code>car::Anova(mass_model, type = "II")</code> gives the same F and p-value here as base <code>anova()</code>, since there is only one predictor. Explain why the lecture still insists on building the <code>type = "II"</code> habit now, before you meet two-way ANOVA.</a></li>
+  </ul></li>
+  <li><a href="#question-32-write-the-results-sentence" id="toc-question-32-write-the-results-sentence" class="nav-link" data-scroll-target="#question-32-write-the-results-sentence">Question 32 · Write the results sentence</a>
+  <ul class="collapse">
+  <li><a href="#using-the-template-below-write-a-complete-reportable-results-sentence-for-the-penguin-anova.-include-the-test-name-f-both-degrees-of-freedom-the-p-value-the-post-hoc-outcome-and-the-direction-which-species-is-heaviest." id="toc-using-the-template-below-write-a-complete-reportable-results-sentence-for-the-penguin-anova.-include-the-test-name-f-both-degrees-of-freedom-the-p-value-the-post-hoc-outcome-and-the-direction-which-species-is-heaviest." class="nav-link" data-scroll-target="#using-the-template-below-write-a-complete-reportable-results-sentence-for-the-penguin-anova.-include-the-test-name-f-both-degrees-of-freedom-the-p-value-the-post-hoc-outcome-and-the-direction-which-species-is-heaviest.">Using the template below, write a complete, reportable results sentence for the penguin ANOVA. Include the test name, F, both degrees of freedom, the p-value, the post-hoc outcome, and the direction (which species is heaviest).</a></li>
   </ul></li>
   <li><a href="#answer-key-instructor-copy-remove-before-distributing" id="toc-answer-key-instructor-copy-remove-before-distributing" class="nav-link" data-scroll-target="#answer-key-instructor-copy-remove-before-distributing">Answer key <em>(instructor copy — remove before distributing)</em></a>
   <ul class="collapse">
-  <li><a href="#q5-model-answer" id="toc-q5-model-answer" class="nav-link" data-scroll-target="#q5-model-answer">Q5 model answer</a></li>
+  <li><a href="#q17-model-answer" id="toc-q17-model-answer" class="nav-link" data-scroll-target="#q17-model-answer">Q17 model answer</a></li>
   </ul></li>
   </ul>
 <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="11_quiz_anova.docx"><i class="bi bi-file-word"></i>MS Word</a></li></ul></div></nav>
@@ -464,7 +559,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Quiz 11 — One-Way ANOVA</h1>
-<p class="subtitle lead">comparing 3+ groups, assumptions, car::Anova, and emmeans post-hoc</p>
+<p class="subtitle lead">comparing 3+ groups, assumptions, aov()/car::Anova(), and emmeans post-hoc — Palmer penguins</p>
 </div>
 
 
@@ -481,7 +576,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 5, 2026</p>
+      <p class="date">August 27, 2026</p>
     </div>
   </div>
   
@@ -497,25 +592,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1>Quiz 11: One-Way ANOVA</h1>
 <section id="instructions" class="level3">
 <h3 class="anchored" data-anchor-id="instructions">Instructions</h3>
-<p>Answer all 10 questions. This quiz covers why we use ANOVA instead of many t-tests, the F-statistic, checking assumptions, running the test, and finding <strong>which</strong> groups differ with post-hoc comparisons (Palmer penguins: body mass by species).</p>
+<p>This quiz covers One-Way ANOVA I &amp; II: why we use ANOVA instead of many t-tests, the F-statistic, fitting <code>lm(body_mass_g ~ species, data = penguins_df)</code>, checking assumptions, running the test, and finding <strong>which</strong> species differ with <code>emmeans</code> post-hoc comparisons.</p>
+<p>The quiz has four parts:</p>
+<ul>
+<li><strong>Part A — General Knowledge &amp; Concepts</strong> (8 questions)</li>
+<li><strong>Part B — Predict the Output</strong> (8 questions)</li>
+<li><strong>Part C — Troubleshooting</strong> (8 questions)</li>
+<li><strong>Part D — Open-Ended / Applied</strong> (8 questions)</li>
+</ul>
 <blockquote class="blockquote">
-<p><strong>Grading:</strong> 10 questions × 1 point = 10 points total. Partial credit is available on code questions.</p>
+<p><strong>Grading:</strong> 32 questions × 1 point = 32 points total. Partial credit is available on code and open-ended questions.</p>
 </blockquote>
 <hr>
 </section>
 </section>
-<section id="question-1-true-false" class="level1">
-<h1>Question 1 · True / False</h1>
-<section id="running-three-separate-t-tests-to-compare-three-groups-inflates-the-overall-family-wise-false-positive-rate-above-0.05." class="level3">
-<h3 class="anchored" data-anchor-id="running-three-separate-t-tests-to-compare-three-groups-inflates-the-overall-family-wise-false-positive-rate-above-0.05.">Running three separate t-tests to compare three groups inflates the overall (family-wise) false-positive rate above 0.05.</h3>
-<pre><code>TRUE        FALSE</code></pre>
-<p>Your answer:</p>
-<pre><code></code></pre>
-<hr>
+<section id="part-a-general-knowledge-concepts" class="level1">
+<h1>Part A — General Knowledge &amp; Concepts</h1>
 </section>
-</section>
-<section id="question-2-multiple-choice" class="level1">
-<h1>Question 2 · Multiple choice</h1>
+<section id="question-1-multiple-choice" class="level1">
+<h1>Question 1 · Multiple choice</h1>
 <section id="the-anova-f-statistic-is-a-ratio-of" class="level3">
 <h3 class="anchored" data-anchor-id="the-anova-f-statistic-is-a-ratio-of">The ANOVA F-statistic is a ratio of:</h3>
 <pre><code>A)  within-group variance ÷ between-group variance
@@ -527,17 +622,60 @@ D)  sample size ÷ number of groups</code></pre>
 <hr>
 </section>
 </section>
-<section id="question-3-short-answer-hypotheses" class="level1">
-<h1>Question 3 · Short answer — hypotheses</h1>
-<section id="write-h₀-and-hₐ-for-a-one-way-anova-comparing-mean-body-mass-across-three-penguin-species." class="level3">
-<h3 class="anchored" data-anchor-id="write-h₀-and-hₐ-for-a-one-way-anova-comparing-mean-body-mass-across-three-penguin-species.">Write H₀ and Hₐ for a one-way ANOVA comparing mean body mass across three penguin species.</h3>
-<pre><code>H0:
-Ha:</code></pre>
+<section id="question-2-true-false" class="level1">
+<h1>Question 2 · True / False</h1>
+<section id="running-three-separate-t-tests-to-compare-three-groups-inflates-the-overall-family-wise-false-positive-rate-above-0.05." class="level3">
+<h3 class="anchored" data-anchor-id="running-three-separate-t-tests-to-compare-three-groups-inflates-the-overall-family-wise-false-positive-rate-above-0.05.">Running three separate t-tests to compare three groups inflates the overall (family-wise) false-positive rate above 0.05.</h3>
+<pre><code>TRUE        FALSE</code></pre>
+<p>Your answer:</p>
+<pre><code></code></pre>
 <hr>
 </section>
 </section>
-<section id="question-4-matching-the-tools" class="level1">
-<h1>Question 4 · Matching — the tools</h1>
+<section id="question-3-short-answer-how-many-tests" class="level1">
+<h1>Question 3 · Short answer — how many tests?</h1>
+<section id="with-4-groups-how-many-pairwise-t-tests-would-you-need-to-compare-every-pair-and-roughly-what-does-that-do-to-your-overall-false-positive-rate-compared-to-a-single-anova" class="level3">
+<h3 class="anchored" data-anchor-id="with-4-groups-how-many-pairwise-t-tests-would-you-need-to-compare-every-pair-and-roughly-what-does-that-do-to-your-overall-false-positive-rate-compared-to-a-single-anova">With 4 groups, how many pairwise t-tests would you need to compare every pair, and roughly what does that do to your overall false-positive rate compared to a single ANOVA?</h3>
+<pre><code>Number of pairwise tests:
+Effect on false-positive rate:</code></pre>
+<hr>
+</section>
+</section>
+<section id="question-4-multiple-choice" class="level1">
+<h1>Question 4 · Multiple choice</h1>
+<section id="in-lmbody_mass_g-species-data-penguins_df-which-statement-is-correct" class="level3">
+<h3 class="anchored" data-anchor-id="in-lmbody_mass_g-species-data-penguins_df-which-statement-is-correct">In <code>lm(body_mass_g ~ species, data = penguins_df)</code>, which statement is correct?</h3>
+<pre><code>A)  body_mass_g is the predictor and species is the response
+B)  species is the predictor and body_mass_g is the response
+C)  Both variables are predictors
+D)  This is not a valid ANOVA — species must be numeric</code></pre>
+<p>Your answer:</p>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-5-short-answer-between-vs.-within" class="level1">
+<h1>Question 5 · Short answer — between vs.&nbsp;within</h1>
+<section id="in-one-sentence-each-define-between-group-variance-and-within-group-variance-in-the-context-of-comparing-body-mass-across-three-penguin-species." class="level3">
+<h3 class="anchored" data-anchor-id="in-one-sentence-each-define-between-group-variance-and-within-group-variance-in-the-context-of-comparing-body-mass-across-three-penguin-species.">In one sentence each, define “between-group variance” and “within-group variance” in the context of comparing body mass across three penguin species.</h3>
+<pre><code>Between-group variance:
+
+Within-group variance:</code></pre>
+<hr>
+</section>
+</section>
+<section id="question-6-true-false" class="level1">
+<h1>Question 6 · True / False</h1>
+<section id="emmeans-pairwise-comparisons-that-are-tukey-adjusted-already-correct-for-multiple-comparisons-so-the-family-wise-error-rate-stays-at-0.05-without-you-doing-anything-extra." class="level3">
+<h3 class="anchored" data-anchor-id="emmeans-pairwise-comparisons-that-are-tukey-adjusted-already-correct-for-multiple-comparisons-so-the-family-wise-error-rate-stays-at-0.05-without-you-doing-anything-extra."><code>emmeans</code> pairwise comparisons that are Tukey-adjusted already correct for multiple comparisons, so the family-wise error rate stays at 0.05 without you doing anything extra.</h3>
+<pre><code>TRUE        FALSE</code></pre>
+<p>Your answer:</p>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-7-matching-the-tools" class="level1">
+<h1>Question 7 · Matching — the tools</h1>
 <section id="match-each-function-to-its-job.-write-the-letter-next-to-each-item." class="level3">
 <h3 class="anchored" data-anchor-id="match-each-function-to-its-job.-write-the-letter-next-to-each-item.">Match each function to its job. Write the letter next to each item.</h3>
 <pre><code>1.  aov() + summary()                 ___
@@ -553,61 +691,265 @@ E.  Test normality of the residuals</code></pre>
 <hr>
 </section>
 </section>
-<section id="question-5-short-code-fit-and-test" class="level1">
-<h1>Question 5 · Short code — fit and test</h1>
-<section id="write-the-two-lines-that-1-fit-a-model-of-body_mass_g-by-species-in-penguins_df-stored-in-mass_model-and-2-print-the-type-ii-anova-table-with-car." class="level3">
-<h3 class="anchored" data-anchor-id="write-the-two-lines-that-1-fit-a-model-of-body_mass_g-by-species-in-penguins_df-stored-in-mass_model-and-2-print-the-type-ii-anova-table-with-car.">Write the two lines that (1) fit a model of <code>body_mass_g</code> by <code>species</code> in <code>penguins_df</code>, stored in <code>mass_model</code>, and (2) print the Type II ANOVA table with <code>car</code>.</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Your code:</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="question-8-multiple-choice" class="level1">
+<h1>Question 8 · Multiple choice</h1>
+<section id="why-does-the-lecture-prefer-caranovamodel-type-ii-over-base-rs-anovamodel-for-the-penguin-data" class="level3">
+<h3 class="anchored" data-anchor-id="why-does-the-lecture-prefer-caranovamodel-type-ii-over-base-rs-anovamodel-for-the-penguin-data">Why does the lecture prefer <code>car::Anova(model, type = "II")</code> over base R’s <code>anova(model)</code> for the penguin data?</h3>
+<pre><code>A)  Anova() runs faster on large datasets
+B)  The groups are unbalanced (different n per species), and Type II does not depend on variable order
+C)  anova() cannot handle a categorical predictor
+D)  Anova() automatically drops missing data</code></pre>
+<p>Your answer:</p>
+<pre><code></code></pre>
 <hr>
 </section>
 </section>
-<section id="question-6-find-the-error-car-not-loaded" class="level1">
-<h1>Question 6 · Find the error — car not loaded</h1>
+<section id="part-b-predict-the-output" class="level1">
+<h1>Part B — Predict the Output</h1>
+</section>
+<section id="question-9-predict-the-output-count" class="level1">
+<h1>Question 9 · Predict the output — count()</h1>
+<section id="what-does-penguins_df-countspecies-print-sketch-the-shape-of-the-result-columns-and-roughly-how-many-rows." class="level3">
+<h3 class="anchored" data-anchor-id="what-does-penguins_df-countspecies-print-sketch-the-shape-of-the-result-columns-and-roughly-how-many-rows.">What does <code>penguins_df %&gt;% count(species)</code> print? Sketch the shape of the result (columns and roughly how many rows).</h3>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-10-predict-the-output-the-boxplot" class="level1">
+<h1>Question 10 · Predict the output — the boxplot</h1>
+<section id="sketch-or-describe-what-this-plot-looks-like-how-many-boxes-their-relative-heights-and-what-the-jittered-points-add." class="level3">
+<h3 class="anchored" data-anchor-id="sketch-or-describe-what-this-plot-looks-like-how-many-boxes-their-relative-heights-and-what-the-jittered-points-add.">Sketch or describe what this plot looks like — how many boxes, their relative heights, and what the jittered points add.</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">seed =</span> <span class="dv">42</span>),</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>             <span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">1.5</span>) <span class="sc">+</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species"</span>, <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-11-predict-the-output-diagnostic-plots" class="level1">
+<h1>Question 11 · Predict the output — diagnostic plots</h1>
+<section id="parmfrow-c2-2-plotmass_model-produces-four-base-r-panels.-name-all-four-in-order-and-what-each-one-is-used-to-check." class="level3">
+<h3 class="anchored" data-anchor-id="parmfrow-c2-2-plotmass_model-produces-four-base-r-panels.-name-all-four-in-order-and-what-each-one-is-used-to-check."><code>par(mfrow = c(2, 2)); plot(mass_model)</code> produces four base R panels. Name all four, in order, and what each one is used to check.</h3>
+<pre><code>Panel 1:
+Panel 2:
+Panel 3:
+Panel 4:</code></pre>
+<hr>
+</section>
+</section>
+<section id="question-12-predict-the-output-the-f-table" class="level1">
+<h1>Question 12 · Predict the output — the F table</h1>
+<section id="summaryaovbody_mass_g-species-data-penguins_df-prints-a-table-with-columns-df-sum-sq-mean-sq-f-value-and-prf.-if-prf-comes-back-far-below-0.001-what-does-that-tell-you-and-what-does-it-not-tell-you" class="level3">
+<h3 class="anchored" data-anchor-id="summaryaovbody_mass_g-species-data-penguins_df-prints-a-table-with-columns-df-sum-sq-mean-sq-f-value-and-prf.-if-prf-comes-back-far-below-0.001-what-does-that-tell-you-and-what-does-it-not-tell-you"><code>summary(aov(body_mass_g ~ species, data = penguins_df))</code> prints a table with columns <code>Df</code>, <code>Sum Sq</code>, <code>Mean Sq</code>, <code>F value</code>, and <code>Pr(&gt;F)</code>. If <code>Pr(&gt;F)</code> comes back far below 0.001, what does that tell you — and what does it NOT tell you?</h3>
+<pre><code>What it tells you:
+
+What it does NOT tell you:</code></pre>
+<hr>
+</section>
+</section>
+<section id="question-13-predict-the-output-emmeans-contrasts" class="level1">
+<h1>Question 13 · Predict the output — emmeans contrasts</h1>
+<section id="mass_emm---emmeansmass_model-pairwise-species-then-mass_emmcontrasts-is-printed.-how-many-rows-appear-in-this-table-and-what-does-each-row-represent" class="level3">
+<h3 class="anchored" data-anchor-id="mass_emm---emmeansmass_model-pairwise-species-then-mass_emmcontrasts-is-printed.-how-many-rows-appear-in-this-table-and-what-does-each-row-represent"><code>mass_emm &lt;- emmeans(mass_model, pairwise ~ species)</code> then <code>mass_emm$contrasts</code> is printed. How many rows appear in this table, and what does each row represent?</h3>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-14-predict-the-output-compact-letter-display" class="level1">
+<h1>Question 14 · Predict the output — compact letter display</h1>
+<section id="suppose-multcompcldmass_emmemmeans-letters-letters-assigns-adelie-a-chinstrap-a-gentoo-b.-sketch-what-the-output-table-looks-like-species-emmean-and-the-.group-column-and-state-in-one-sentence-what-the-letters-mean." class="level3">
+<h3 class="anchored" data-anchor-id="suppose-multcompcldmass_emmemmeans-letters-letters-assigns-adelie-a-chinstrap-a-gentoo-b.-sketch-what-the-output-table-looks-like-species-emmean-and-the-.group-column-and-state-in-one-sentence-what-the-letters-mean.">Suppose <code>multcomp::cld(mass_emm$emmeans, Letters = letters)</code> assigns Adelie → “a”, Chinstrap → “a”, Gentoo → “b”. Sketch what the output table looks like (species, emmean, and the <code>.group</code> column), and state in one sentence what the letters mean.</h3>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-15-predict-the-output-levenes-test" class="level1">
+<h1>Question 15 · Predict the output — Levene’s test</h1>
+<section id="levenetestbody_mass_g-species-data-penguins_df-returns-p-0.34.-do-you-proceed-with-the-classic-anova-or-switch-to-welchs-anova-oneway.test...-var.equal-false-explain." class="level3">
+<h3 class="anchored" data-anchor-id="levenetestbody_mass_g-species-data-penguins_df-returns-p-0.34.-do-you-proceed-with-the-classic-anova-or-switch-to-welchs-anova-oneway.test...-var.equal-false-explain."><code>leveneTest(body_mass_g ~ species, data = penguins_df)</code> returns <code>p = 0.34</code>. Do you proceed with the classic ANOVA or switch to Welch’s ANOVA (<code>oneway.test(..., var.equal = FALSE)</code>)? Explain.</h3>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-16-predict-the-output-the-means-plot" class="level1">
+<h1>Question 16 · Predict the output — the means plot</h1>
+<section id="describe-what-this-plot-looks-like-how-many-points-what-the-error-bars-represent-and-what-it-would-mean-if-two-of-the-error-bars-overlapped-a-lot." class="level3">
+<h3 class="anchored" data-anchor-id="describe-what-this-plot-looks-like-how-many-points-what-the-error-bars-represent-and-what-it-would-mean-if-two-of-the-error-bars-overlapped-a-lot.">Describe what this plot looks like — how many points, what the error bars represent, and what it would mean if two of the error bars overlapped a lot.</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as.data.frame</span>(mass_emm<span class="sc">$</span>emmeans) <span class="sc">%&gt;%</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> emmean, <span class="at">color =</span> species)) <span class="sc">+</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lower.CL, <span class="at">ymax =</span> upper.CL),</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">linewidth =</span> <span class="fl">0.9</span>) <span class="sc">+</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species"</span>, <span class="at">y =</span> <span class="st">"Estimated mean mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="part-c-troubleshooting" class="level1">
+<h1>Part C — Troubleshooting</h1>
+</section>
+<section id="question-17-find-the-error-car-not-loaded" class="level1">
+<h1>Question 17 · Find the error — car not loaded</h1>
 <section id="this-errors-with-could-not-find-function-anova.-what-is-wrong-and-what-is-the-difference-between-anova-and-anova" class="level3">
 <h3 class="anchored" data-anchor-id="this-errors-with-could-not-find-function-anova.-what-is-wrong-and-what-is-the-difference-between-anova-and-anova">This errors with <code>could not find function "Anova"</code>. What is wrong, and what is the difference between <code>anova()</code> and <code>Anova()</code>?</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(mass_model, <span class="at">type =</span> <span class="st">"II"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(mass_model, <span class="at">type =</span> <span class="st">"II"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Your fix and explanation:</p>
 <pre><code></code></pre>
 <hr>
 </section>
 </section>
-<section id="question-7-multiple-choice-interpreting-the-f-test" class="level1">
-<h1>Question 7 · Multiple choice — interpreting the F test</h1>
-<section id="the-anova-gives-p-0.001.-what-can-you-correctly-conclude" class="level3">
-<h3 class="anchored" data-anchor-id="the-anova-gives-p-0.001.-what-can-you-correctly-conclude">The ANOVA gives <code>p &lt; 0.001</code>. What can you correctly conclude?</h3>
-<pre><code>A)  All three species differ from each other
-B)  At least one species mean differs from the others — but not which
-C)  Gentoo is the heaviest species
-D)  The variances are equal</code></pre>
-<p>Your answer:</p>
+<section id="question-18-find-the-error-backwards-formula" class="level1">
+<h1>Question 18 · Find the error — backwards formula</h1>
+<section id="a-student-wants-to-test-whether-body-mass-differs-by-species-and-writes-this.-what-is-conceptually-wrong-with-the-model-and-how-would-you-fix-it" class="level3">
+<h3 class="anchored" data-anchor-id="a-student-wants-to-test-whether-body-mass-differs-by-species-and-writes-this.-what-is-conceptually-wrong-with-the-model-and-how-would-you-fix-it">A student wants to test whether body mass differs by species, and writes this. What is conceptually wrong with the model, and how would you fix it?</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>mass_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(species <span class="sc">~</span> body_mass_g, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre><code></code></pre>
 <hr>
 </section>
 </section>
-<section id="question-8-short-code-post-hoc" class="level1">
-<h1>Question 8 · Short code — post-hoc</h1>
-<section id="write-the-line-that-runs-tukey-adjusted-pairwise-comparisons-of-species-from-mass_model-using-emmeans." class="level3">
-<h3 class="anchored" data-anchor-id="write-the-line-that-runs-tukey-adjusted-pairwise-comparisons-of-species-from-mass_model-using-emmeans.">Write the line that runs Tukey-adjusted pairwise comparisons of <code>species</code> from <code>mass_model</code> using <code>emmeans</code>.</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Your code:</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<hr>
-</section>
-</section>
-<section id="question-9-true-false" class="level1">
-<h1>Question 9 · True / False</h1>
-<section id="the-normality-assumption-in-anova-is-checked-on-the-models-residuals-and-with-a-large-sample-the-shapiro-wilk-test-can-flag-tiny-harmless-departures-so-the-qq-plot-matters-too." class="level3">
-<h3 class="anchored" data-anchor-id="the-normality-assumption-in-anova-is-checked-on-the-models-residuals-and-with-a-large-sample-the-shapiro-wilk-test-can-flag-tiny-harmless-departures-so-the-qq-plot-matters-too.">The normality assumption in ANOVA is checked on the model’s <strong>residuals</strong>, and with a large sample the Shapiro-Wilk test can flag tiny, harmless departures — so the QQ plot matters too.</h3>
-<pre><code>TRUE        FALSE</code></pre>
-<p>Your answer:</p>
+<section id="question-19-find-the-error-testing-the-wrong-thing" class="level1">
+<h1>Question 19 · Find the error — testing the wrong thing</h1>
+<section id="this-code-runs-without-an-error-but-it-does-not-check-what-the-student-thinks-it-checks.-what-is-wrong" class="level3">
+<h3 class="anchored" data-anchor-id="this-code-runs-without-an-error-but-it-does-not-check-what-the-student-thinks-it-checks.-what-is-wrong">This code runs without an error, but it does not check what the student thinks it checks. What is wrong?</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(mass_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre><code></code></pre>
 <hr>
 </section>
 </section>
-<section id="question-10-predict-short-answer-compact-letters" class="level1">
-<h1>Question 10 · Predict / short answer — compact letters</h1>
-<section id="in-a-compact-letter-display-adelie-gets-a-chinstrap-gets-a-and-gentoo-gets-b.-which-species-are-statistically-different-from-each-other-and-which-are-not" class="level3">
-<h3 class="anchored" data-anchor-id="in-a-compact-letter-display-adelie-gets-a-chinstrap-gets-a-and-gentoo-gets-b.-which-species-are-statistically-different-from-each-other-and-which-are-not">In a compact letter display, Adelie gets <strong>a</strong>, Chinstrap gets <strong>a</strong>, and Gentoo gets <strong>b</strong>. Which species are statistically different from each other, and which are not?</h3>
+<section id="question-20-find-the-error-skipped-drop_na" class="level1">
+<h1>Question 20 · Find the error — skipped drop_na()</h1>
+<section id="a-student-skips-the-cleaning-step-and-fits-the-model-directly-on-penguins-instead-of-penguins_df.-what-could-go-wrong-and-why-does-the-lecture-drop-rows-first" class="level3">
+<h3 class="anchored" data-anchor-id="a-student-skips-the-cleaning-step-and-fits-the-model-directly-on-penguins-instead-of-penguins_df.-what-could-go-wrong-and-why-does-the-lecture-drop-rows-first">A student skips the cleaning step and fits the model directly on <code>penguins</code> instead of <code>penguins_df</code>. What could go wrong, and why does the lecture drop rows first?</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>mass_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-21-find-the-error-missing-pairwise" class="level1">
+<h1>Question 21 · Find the error — missing pairwise</h1>
+<section id="this-code-errors-with-operator-is-invalid-for-atomic-vectors-or-similar-when-the-student-tries-mass_emmcontrasts.-what-did-they-forget-to-include-in-the-emmeans-call" class="level3">
+<h3 class="anchored" data-anchor-id="this-code-errors-with-operator-is-invalid-for-atomic-vectors-or-similar-when-the-student-tries-mass_emmcontrasts.-what-did-they-forget-to-include-in-the-emmeans-call">This code errors with <code>$ operator is invalid for atomic vectors</code> (or similar) when the student tries <code>mass_emm$contrasts</code>. What did they forget to include in the <code>emmeans()</code> call?</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>mass_emm <span class="ot">&lt;-</span> <span class="fu">emmeans</span>(mass_model, <span class="sc">~</span> species)</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>mass_emm<span class="sc">$</span>contrasts</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-22-find-the-error-cld-on-the-wrong-object" class="level1">
+<h1>Question 22 · Find the error — cld() on the wrong object</h1>
+<section id="this-throws-an-error.-what-object-should-be-passed-to-cld-instead" class="level3">
+<h3 class="anchored" data-anchor-id="this-throws-an-error.-what-object-should-be-passed-to-cld-instead">This throws an error. What object should be passed to <code>cld()</code> instead?</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(mass_emm, <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-23-find-the-error-levenetest-formula-backwards" class="level1">
+<h1>Question 23 · Find the error — leveneTest formula backwards</h1>
+<section id="a-student-writes-the-formula-backwards.-what-should-the-formula-be-and-why-does-the-order-matter-for-levenetest" class="level3">
+<h3 class="anchored" data-anchor-id="a-student-writes-the-formula-backwards.-what-should-the-formula-be-and-why-does-the-order-matter-for-levenetest">A student writes the formula backwards. What should the formula be, and why does the order matter for <code>leveneTest()</code>?</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(species <span class="sc">~</span> body_mass_g, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-24-find-the-error-wrong-argument-value" class="level1">
+<h1>Question 24 · Find the error — wrong argument value</h1>
+<section id="this-errors-or-silently-misbehaves.-what-is-wrong-with-the-type-argument" class="level3">
+<h3 class="anchored" data-anchor-id="this-errors-or-silently-misbehaves.-what-is-wrong-with-the-type-argument">This errors (or silently misbehaves). What is wrong with the <code>type</code> argument?</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>car<span class="sc">::</span><span class="fu">Anova</span>(mass_model, <span class="at">type =</span> <span class="st">"2"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="part-d-open-ended-applied" class="level1">
+<h1>Part D — Open-Ended / Applied</h1>
+</section>
+<section id="question-25-hypotheses" class="level1">
+<h1>Question 25 · Hypotheses</h1>
+<section id="write-h₀-and-hₐ-in-both-words-and-symbols-for-a-one-way-anova-comparing-mean-body-mass-across-the-three-penguin-species." class="level3">
+<h3 class="anchored" data-anchor-id="write-h₀-and-hₐ-in-both-words-and-symbols-for-a-one-way-anova-comparing-mean-body-mass-across-the-three-penguin-species.">Write H₀ and Hₐ, in both words and symbols, for a one-way ANOVA comparing mean body mass across the three penguin species.</h3>
+<pre><code>H0 (words):
+Ha (words):
+
+H0 (symbols):
+Ha (symbols):</code></pre>
+<hr>
+</section>
+</section>
+<section id="question-26-hypothesis-vs.-prediction" class="level1">
+<h1>Question 26 · Hypothesis vs.&nbsp;prediction</h1>
+<section id="explain-the-difference-between-a-hypothesis-the-h₀hₐ-framework-and-a-prediction-what-you-personally-expect-the-data-to-show.-then-give-one-example-of-each-for-the-penguin-body-mass-anova." class="level3">
+<h3 class="anchored" data-anchor-id="explain-the-difference-between-a-hypothesis-the-h₀hₐ-framework-and-a-prediction-what-you-personally-expect-the-data-to-show.-then-give-one-example-of-each-for-the-penguin-body-mass-anova.">Explain the difference between a <strong>hypothesis</strong> (the H₀/Hₐ framework) and a <strong>prediction</strong> (what you personally expect the data to show). Then give one example of each for the penguin body-mass ANOVA.</h3>
+<pre><code>Difference:
+
+Example hypothesis:
+
+Example prediction:</code></pre>
+<hr>
+</section>
+</section>
+<section id="question-27-assumptions" class="level1">
+<h1>Question 27 · Assumptions</h1>
+<section id="list-the-assumptions-of-a-one-way-anova-and-for-each-one-name-the-specific-check-you-would-run-on-mass_model." class="level3">
+<h3 class="anchored" data-anchor-id="list-the-assumptions-of-a-one-way-anova-and-for-each-one-name-the-specific-check-you-would-run-on-mass_model.">List the assumptions of a one-way ANOVA and, for each one, name the specific check you would run on <code>mass_model</code>.</h3>
+<pre><code>Assumption 1:                  How to check it:
+Assumption 2:                  How to check it:
+Assumption 3:                  How to check it:</code></pre>
+<hr>
+</section>
+</section>
+<section id="question-28-interpreting-a-significant-f-test" class="level1">
+<h1>Question 28 · Interpreting a significant F-test</h1>
+<section id="the-anova-gives-p-0.001.-what-can-you-correctly-conclude-and-what-can-you-not-conclude-without-running-a-post-hoc-test" class="level3">
+<h3 class="anchored" data-anchor-id="the-anova-gives-p-0.001.-what-can-you-correctly-conclude-and-what-can-you-not-conclude-without-running-a-post-hoc-test">The ANOVA gives <code>p &lt; 0.001</code>. What can you correctly conclude, and what can you NOT conclude without running a post-hoc test?</h3>
+<pre><code>Can conclude:
+
+Cannot conclude (without post-hoc):</code></pre>
+<hr>
+</section>
+</section>
+<section id="question-29-compact-letters" class="level1">
+<h1>Question 29 · Compact letters</h1>
+<section id="in-a-compact-letter-display-adelie-gets-a-chinstrap-gets-a-and-gentoo-gets-b.-which-species-are-statistically-different-from-each-other-and-which-are-not-how-do-you-know" class="level3">
+<h3 class="anchored" data-anchor-id="in-a-compact-letter-display-adelie-gets-a-chinstrap-gets-a-and-gentoo-gets-b.-which-species-are-statistically-different-from-each-other-and-which-are-not-how-do-you-know">In a compact letter display, Adelie gets <strong>a</strong>, Chinstrap gets <strong>a</strong>, and Gentoo gets <strong>b</strong>. Which species are statistically different from each other, and which are not? How do you know?</h3>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-30-large-sample-caution" class="level1">
+<h1>Question 30 · Large-sample caution</h1>
+<section id="with-about-340-penguins-shapiro-wilk-can-return-a-significant-small-p-value-even-when-the-residuals-look-fine-on-the-q-q-plot.-explain-why-large-samples-cause-this-and-which-diagnostic-you-should-trust-more-in-that-situation." class="level3">
+<h3 class="anchored" data-anchor-id="with-about-340-penguins-shapiro-wilk-can-return-a-significant-small-p-value-even-when-the-residuals-look-fine-on-the-q-q-plot.-explain-why-large-samples-cause-this-and-which-diagnostic-you-should-trust-more-in-that-situation.">With about 340 penguins, Shapiro-Wilk can return a “significant” (small) p-value even when the residuals look fine on the Q-Q plot. Explain why large samples cause this, and which diagnostic you should trust more in that situation.</h3>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-31-why-the-type-habit-matters" class="level1">
+<h1>Question 31 · Why the type habit matters</h1>
+<section id="caranovamass_model-type-ii-gives-the-same-f-and-p-value-here-as-base-anova-since-there-is-only-one-predictor.-explain-why-the-lecture-still-insists-on-building-the-type-ii-habit-now-before-you-meet-two-way-anova." class="level3">
+<h3 class="anchored" data-anchor-id="caranovamass_model-type-ii-gives-the-same-f-and-p-value-here-as-base-anova-since-there-is-only-one-predictor.-explain-why-the-lecture-still-insists-on-building-the-type-ii-habit-now-before-you-meet-two-way-anova."><code>car::Anova(mass_model, type = "II")</code> gives the same F and p-value here as base <code>anova()</code>, since there is only one predictor. Explain why the lecture still insists on building the <code>type = "II"</code> habit now, before you meet two-way ANOVA.</h3>
+<pre><code></code></pre>
+<hr>
+</section>
+</section>
+<section id="question-32-write-the-results-sentence" class="level1">
+<h1>Question 32 · Write the results sentence</h1>
+<section id="using-the-template-below-write-a-complete-reportable-results-sentence-for-the-penguin-anova.-include-the-test-name-f-both-degrees-of-freedom-the-p-value-the-post-hoc-outcome-and-the-direction-which-species-is-heaviest." class="level3">
+<h3 class="anchored" data-anchor-id="using-the-template-below-write-a-complete-reportable-results-sentence-for-the-penguin-anova.-include-the-test-name-f-both-degrees-of-freedom-the-p-value-the-post-hoc-outcome-and-the-direction-which-species-is-heaviest.">Using the template below, write a complete, reportable results sentence for the penguin ANOVA. Include the test name, F, both degrees of freedom, the p-value, the post-hoc outcome, and the direction (which species is heaviest).</h3>
+<pre><code>Template:
+"Body mass differed significantly among the three penguin species
+(one-way ANOVA: F(__, __) = ____, p ____). Tukey-adjusted comparisons
+showed that ____________________, with __________ heaviest."
+
+Your sentence:</code></pre>
 <hr>
 </section>
 </section>
@@ -615,9 +957,9 @@ D)  The variances are equal</code></pre>
 <h1>Answer key <em>(instructor copy — remove before distributing)</em></h1>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
+<col style="width: 24%">
+<col style="width: 25%">
+<col style="width: 50%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -629,60 +971,170 @@ D)  The variances are equal</code></pre>
 <tbody>
 <tr class="odd">
 <td>1</td>
-<td>T/F</td>
-<td><strong>TRUE</strong> — 3 tests at α = 0.05 gives ~14% family-wise error</td>
-</tr>
-<tr class="even">
-<td>2</td>
 <td>MC</td>
 <td><strong>B</strong> — between ÷ within (signal ÷ noise)</td>
 </tr>
+<tr class="even">
+<td>2</td>
+<td>T/F</td>
+<td><strong>TRUE</strong> — 3 tests at α = 0.05 gives ~14% family-wise error</td>
+</tr>
 <tr class="odd">
 <td>3</td>
-<td>Concept</td>
-<td>H₀: μ₁ = μ₂ = μ₃ (all species means equal); Hₐ: at least one differs</td>
+<td>Short</td>
+<td>6 pairwise tests (choose(4,2)); stacks to roughly a 26% chance of at least one false positive vs.&nbsp;5% for one ANOVA</td>
 </tr>
 <tr class="even">
 <td>4</td>
-<td>Match</td>
-<td>1–B, 2–D, 3–A, 4–E, 5–C</td>
+<td>MC</td>
+<td><strong>B</strong> — <code>species</code> (categorical) is the predictor, <code>body_mass_g</code> (numeric) is the response</td>
 </tr>
 <tr class="odd">
 <td>5</td>
-<td>Code</td>
-<td>See below</td>
+<td>Short</td>
+<td>Between = how far apart the group means are; within = how much individuals scatter inside each group</td>
 </tr>
 <tr class="even">
 <td>6</td>
-<td>Error</td>
-<td><code>library(car)</code> is missing; lowercase <code>anova()</code> compares models (Type I), capital <code>Anova()</code> gives the Type II/III table</td>
-</tr>
-<tr class="odd">
-<td>7</td>
-<td>MC</td>
-<td><strong>B</strong> — at least one differs; post-hoc says which</td>
-</tr>
-<tr class="even">
-<td>8</td>
-<td>Code</td>
-<td><code>emmeans(mass_model, pairwise ~ species)</code></td>
-</tr>
-<tr class="odd">
-<td>9</td>
 <td>T/F</td>
 <td><strong>TRUE</strong></td>
 </tr>
+<tr class="odd">
+<td>7</td>
+<td>Match</td>
+<td>1–B, 2–D, 3–A, 4–E, 5–C</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td>MC</td>
+<td><strong>B</strong> — unbalanced n per species; Type II is order-independent</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td>Predict</td>
+<td>3 rows (Adelie, Chinstrap, Gentoo) with columns <code>species</code> and <code>n</code></td>
+</tr>
 <tr class="even">
 <td>10</td>
+<td>Predict</td>
+<td>3 boxplots (one per species) with jittered points overlaid; Gentoo visibly higher/heavier than Adelie and Chinstrap, which overlap more with each other</td>
+</tr>
+<tr class="odd">
+<td>11</td>
+<td>Predict</td>
+<td>1: Residuals vs Fitted (equal variance/patterns); 2: Normal Q-Q (normality of residuals); 3: Scale-Location (spread of residuals); 4: Residuals vs Leverage (influential points)</td>
+</tr>
+<tr class="even">
+<td>12</td>
+<td>Predict</td>
+<td>Tells you: at least one species mean differs from the others. Does NOT tell you: which species differ — needs post-hoc</td>
+</tr>
+<tr class="odd">
+<td>13</td>
+<td>Predict</td>
+<td>3 rows — one per pairwise comparison: Adelie–Chinstrap, Adelie–Gentoo, Chinstrap–Gentoo, each with estimate, SE, df, t.ratio, p.value</td>
+</tr>
+<tr class="even">
+<td>14</td>
+<td>Predict</td>
+<td>Table shows species, emmean, SE, CI, and <code>.group</code>; Adelie and Chinstrap share letter “a” (not different), Gentoo has “b” (different from both)</td>
+</tr>
+<tr class="odd">
+<td>15</td>
+<td>Predict</td>
+<td>p = 0.34 &gt; 0.05 → variances are not significantly different → proceed with the classic ANOVA (no need for Welch’s)</td>
+</tr>
+<tr class="even">
+<td>16</td>
+<td>Predict</td>
+<td>3 points (one per species) with vertical error bars = 95% CI of the estimated mean; heavily overlapping bars would suggest those two species’ means are not clearly distinguishable</td>
+</tr>
+<tr class="odd">
+<td>17</td>
+<td>Error</td>
+<td><code>library(car)</code> is missing; lowercase <code>anova()</code> is base R (Type I, compares models), capital <code>Anova()</code> (car) gives the Type II/III table</td>
+</tr>
+<tr class="even">
+<td>18</td>
+<td>Error</td>
+<td>The formula is backwards — it models species (categorical) as a function of body mass, which is not the research question; fix: <code>lm(body_mass_g ~ species, data = penguins_df)</code></td>
+</tr>
+<tr class="odd">
+<td>19</td>
+<td>Error</td>
+<td><code>shapiro.test()</code> is being run on the model object itself, not on its residuals; fix: <code>shapiro.test(residuals(mass_model))</code> — ANOVA’s normality assumption is about the residuals, not raw data or the model</td>
+</tr>
+<tr class="even">
+<td>20</td>
+<td>Error</td>
+<td><code>penguins</code> still has rows with missing <code>body_mass_g</code>/<code>species</code>; <code>lm()</code> will silently drop incomplete rows itself, but sample sizes and downstream <code>count()</code>/plots may not match; the lecture drops NA explicitly for a clean, documented <code>penguins_df</code></td>
+</tr>
+<tr class="odd">
+<td>21</td>
+<td>Error</td>
+<td>Forgot <code>pairwise ~ species</code> — with just <code>~ species</code>, <code>emmeans()</code> only returns estimated means, no <code>$contrasts</code> element to extract</td>
+</tr>
+<tr class="even">
+<td>22</td>
+<td>Error</td>
+<td><code>cld()</code> needs the emmeans grid, not the whole <code>emmGrid</code>+contrasts list; fix: <code>multcomp::cld(mass_emm$emmeans, Letters = letters)</code></td>
+</tr>
+<tr class="odd">
+<td>23</td>
+<td>Error</td>
+<td><code>leveneTest()</code> expects <code>numeric_response ~ grouping_factor</code>; written backwards it tests variance of a categorical variable across body-mass “groups,” which is meaningless; fix: <code>leveneTest(body_mass_g ~ species, data = penguins_df)</code></td>
+</tr>
+<tr class="even">
+<td>24</td>
+<td>Error</td>
+<td><code>type</code> must be the character values <code>"I"</code>, <code>"II"</code>, or <code>"III"</code> (Roman numerals), not <code>"2"</code></td>
+</tr>
+<tr class="odd">
+<td>25</td>
+<td>Concept</td>
+<td>H₀: μ_Adelie = μ_Chinstrap = μ_Gentoo (all species means equal); Hₐ: at least one species mean differs</td>
+</tr>
+<tr class="even">
+<td>26</td>
+<td>Concept</td>
+<td>A hypothesis is the formal H₀/Hₐ statistical framework being tested; a prediction is your specific expectation about the data (e.g., “Gentoo will be heaviest”) — a hypothesis can be true while your particular prediction about direction/magnitude is wrong</td>
+</tr>
+<tr class="odd">
+<td>27</td>
+<td>Concept</td>
+<td>Independence (study design, not testable from data) / Normality of residuals (Q-Q plot + Shapiro-Wilk on <code>residuals(model)</code>) / Equal variance (Residuals vs Fitted pattern + Levene’s test)</td>
+</tr>
+<tr class="even">
+<td>28</td>
+<td>Concept</td>
+<td>Can conclude: at least one species mean differs from the others. Cannot conclude: which specific species differ, or that all three differ from each other</td>
+</tr>
+<tr class="odd">
+<td>29</td>
 <td>Concept</td>
 <td>Gentoo (<strong>b</strong>) differs from both Adelie and Chinstrap (<strong>a</strong>); Adelie and Chinstrap share a letter, so they do <strong>not</strong> differ</td>
 </tr>
+<tr class="even">
+<td>30</td>
+<td>Concept</td>
+<td>With large n, Shapiro-Wilk has high power and can flag even tiny, practically meaningless departures from normality as “significant”; trust the Q-Q panel — if points track the line closely, proceed</td>
+</tr>
+<tr class="odd">
+<td>31</td>
+<td>Concept</td>
+<td>With one predictor, Type I/II/III all agree, so the habit costs nothing here — but with two or more predictors (two-way ANOVA), the sums-of-squares type changes the answer, especially for unbalanced designs, so it’s safer to build the <code>type = "II"</code> habit now</td>
+</tr>
+<tr class="even">
+<td>32</td>
+<td>Applied</td>
+<td>Model: “Body mass differed significantly among the three penguin species (one-way ANOVA: F(2, 339) = 343.6, p &lt; 0.001). Tukey-adjusted comparisons showed all three species differed except Adelie and Chinstrap, with Gentoo heaviest.”</td>
+</tr>
 </tbody>
 </table>
-<section id="q5-model-answer" class="level3">
-<h3 class="anchored" data-anchor-id="q5-model-answer">Q5 model answer</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>mass_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>car<span class="sc">::</span><span class="fu">Anova</span>(mass_model, <span class="at">type =</span> <span class="st">"II"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="q17-model-answer" class="level3">
+<h3 class="anchored" data-anchor-id="q17-model-answer">Q17 model answer</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car)</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(mass_model, <span class="at">type =</span> <span class="st">"II"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 <p><em>End of Quiz 11.</em></p>
 
@@ -691,6 +1143,17 @@ D)  The variances are equal</code></pre>
 </section>
 
 </main> <!-- /main -->
+<script>
+// RevealJS slide decks replace the page they're linked from, which strips
+// away the sidebar/nav. Open them in a new tab so it's easy to just close
+// the tab and land back where you were.
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll('a[href$="slides.html"]').forEach(function (a) {
+    a.target = "_blank";
+    a.rel = "noopener";
+  });
+});
+</script>
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

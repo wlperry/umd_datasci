@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Bill Perry">
+<meta name="dcterms.date" content="2026-08-27">
+<meta name="description" content="Detect and fix inconsistent text, disguised missing values, numbers stored as text, duplicate rows, and suspicious outliers in a genuinely messy dataset.">
+
+<title>Activity 03B — Cleaning Messy Data – UMD DAta Science Biology</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-b85bc7c33db8c58e0ec93c3465666fed.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-ffe4ec66b3b2e5a5f7bab576e98f0639.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-6632f43c76c69e813a602cc5faf6884a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-ffe4ec66b3b2e5a5f7bab576e98f0639.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../css/main.css">
+<meta property="og:title" content="Activity 03B — Cleaning Messy Data – UMD DAta Science Biology">
+<meta property="og:description" content="Detect and fix inconsistent text, disguised missing values, numbers stored as text, duplicate rows, and suspicious outliers in a genuinely messy dataset.">
+<meta property="og:site_name" content="UMD DAta Science Biology">
+</head>
+
+<body class="nav-sidebar docked quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Activity 03B — Cleaning Messy Data</li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+      <a href="../../index.html" class="sidebar-logo-link">
+      <img src="../../images/course-hex.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="../../images/course-hex.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
+      </a>
+      <div class="sidebar-tools-main">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="https://wlperry.github.io/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">← Back to Perry Homepage</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="false">
+ <span class="menu-text">Course Information</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Schedule</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../syllabus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Syllabus</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../links.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Helpful Links</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
+ <span class="menu-text">Course Materials</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../lectures.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lectures</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../activities.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Activities</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../homeworks/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Homeworks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../common_code/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Common Code</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#cleaning-our-messy-leaf-data" id="toc-cleaning-our-messy-leaf-data" class="nav-link active" data-scroll-target="#cleaning-our-messy-leaf-data">Cleaning Our Messy Leaf Data</a>
+  <ul class="collapse">
+  <li><a href="#recap-from-the-lecture" id="toc-recap-from-the-lecture" class="nav-link" data-scroll-target="#recap-from-the-lecture">Recap from the lecture</a></li>
+  </ul></li>
+  <li><a href="#part-1-load-libraries-and-the-raw-file" id="toc-part-1-load-libraries-and-the-raw-file" class="nav-link" data-scroll-target="#part-1-load-libraries-and-the-raw-file">Part 1 · Load libraries and the raw file</a></li>
+  <li><a href="#part-2-find-the-mess-before-you-touch-anything" id="toc-part-2-find-the-mess-before-you-touch-anything" class="nav-link" data-scroll-target="#part-2-find-the-mess-before-you-touch-anything">Part 2 · Find the mess before you touch anything</a></li>
+  <li><a href="#part-3-fix-inconsistent-text" id="toc-part-3-fix-inconsistent-text" class="nav-link" data-scroll-target="#part-3-fix-inconsistent-text">Part 3 · Fix inconsistent text</a></li>
+  <li><a href="#part-4-disguised-missing-values" id="toc-part-4-disguised-missing-values" class="nav-link" data-scroll-target="#part-4-disguised-missing-values">Part 4 · Disguised missing values</a></li>
+  <li><a href="#part-5-rescue-numbers-trapped-in-text" id="toc-part-5-rescue-numbers-trapped-in-text" class="nav-link" data-scroll-target="#part-5-rescue-numbers-trapped-in-text">Part 5 · Rescue numbers trapped in text</a></li>
+  <li><a href="#part-6-find-and-remove-duplicate-rows" id="toc-part-6-find-and-remove-duplicate-rows" class="nav-link" data-scroll-target="#part-6-find-and-remove-duplicate-rows">Part 6 · Find and remove duplicate rows</a></li>
+  <li><a href="#part-7-flag-suspicious-values-do-not-delete-them" id="toc-part-7-flag-suspicious-values-do-not-delete-them" class="nav-link" data-scroll-target="#part-7-flag-suspicious-values-do-not-delete-them">Part 7 · Flag suspicious values (do not delete them)</a></li>
+  <li><a href="#part-8-before-and-after-check" id="toc-part-8-before-and-after-check" class="nav-link" data-scroll-target="#part-8-before-and-after-check">Part 8 · Before-and-after check</a></li>
+  <li><a href="#part-9-review-and-checkpoint" id="toc-part-9-review-and-checkpoint" class="nav-link" data-scroll-target="#part-9-review-and-checkpoint">Part 9 · Review and checkpoint</a></li>
+  <li><a href="#part-10-going-further" id="toc-part-10-going-further" class="nav-link" data-scroll-target="#part-10-going-further">Part 10 · Going further</a>
+  <ul class="collapse">
+  <li><a href="#write-a-cleaning-summary" id="toc-write-a-cleaning-summary" class="nav-link" data-scroll-target="#write-a-cleaning-summary">Write a cleaning summary</a></li>
+  <li><a href="#try-case_when-for-a-three-way-recode" id="toc-try-case_when-for-a-three-way-recode" class="nav-link" data-scroll-target="#try-case_when-for-a-three-way-recode">Try <code>case_when()</code> for a three-way recode</a></li>
+  </ul></li>
+  <li><a href="#getting-unstuck" id="toc-getting-unstuck" class="nav-link" data-scroll-target="#getting-unstuck">Getting unstuck</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="data_cleaning_activity.docx"><i class="bi bi-file-word"></i>MS Word</a></li></ul></div></nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Activity 03B — Cleaning Messy Data</h1>
+<p class="subtitle lead">Turning a real messy leaf spreadsheet into a trustworthy data frame</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">data-cleaning</div>
+    <div class="quarto-category">tidyverse</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>Detect and fix inconsistent text, disguised missing values, numbers stored as text, duplicate rows, and suspicious outliers in a genuinely messy dataset.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Bill Perry </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">August 27, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="cleaning-our-messy-leaf-data" class="level1">
+<h1>Cleaning Our Messy Leaf Data</h1>
+<section id="recap-from-the-lecture" class="level3">
+<h3 class="anchored">Recap from the lecture</h3>
+<ul>
+<li><code>glimpse()</code>, <code>skim()</code>, and <code>count()</code> are how you <em>find</em> messiness</li>
+<li><code>janitor::clean_names()</code> standardizes column names</li>
+<li><code>str_trim()</code> + <code>str_to_lower()</code> fix inconsistent text categories</li>
+<li><code>read_csv(na = c(...))</code> and <code>na_if()</code> fix disguised missing-value codes</li>
+<li><code>parse_number()</code> rescues numbers that were accidentally typed as text</li>
+<li><code>duplicated()</code> finds repeat rows; <code>distinct()</code> removes them</li>
+<li>Flag suspicious values with <code>mutate()</code> — never silently delete them</li>
+</ul>
+<blockquote class="blockquote">
+<h1 id="how-to-use-this-worksheet"><strong>How to use this worksheet</strong></h1>
+<p>Work through each part in order. Type every line yourself. Blocks marked <strong>▶ Run this</strong> should be executed exactly as written. Blocks marked <strong>✏️ Your turn</strong> ask you to write or modify code. The <strong>Going further</strong> section is optional.</p>
+</blockquote>
+<blockquote class="blockquote">
+<h2 id="predict-before-you-run-and-type-dont-paste" class="anchored" data-anchor-id="recap-from-the-lecture">🔮 Predict before you run — and type, don’t paste</h2>
+<p>Before every <strong>▶ Run this</strong> block, guess what R will print. The gap between your guess and the real output is where the learning happens — and typing (not pasting) trains your eye to catch the exact typos that make messy data messy in the first place.</p>
+</blockquote>
+<hr>
+<blockquote class="blockquote">
+<h2 id="chunk-1-finding-the-mess-matches-lecture-chunk-1" class="anchored">🧩 Chunk 1 — Finding the mess <em>(matches lecture Chunk 1)</em></h2>
+</blockquote>
+</section>
+</section>
+<section id="part-1-load-libraries-and-the-raw-file" class="level1">
+<h1>Part 1 · Load libraries and the raw file</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load all packages — always at the top of the script --------</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># dplyr, stringr, readr, ggplot2</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)      <span class="co"># clean_names() and friends</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the file EXACTLY as it was entered — do not fix anything yet</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>leaf_raw_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/messy_leaf_data.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<blockquote class="blockquote">
+<p>⚠️ <strong>Watch out!</strong> If R says <em>“could not find function <code>clean_names</code>”</em> you forgot <code>library(janitor)</code>. Run <code>install.packages("janitor")</code> once in the Console first if you haven’t already.</p>
+</blockquote>
+<hr>
+</section>
+<section id="part-2-find-the-mess-before-you-touch-anything" class="level1">
+<h1>Part 2 · Find the mess before you touch anything</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(leaf_raw_df)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(leaf_raw_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Which column has the wrong data type, and what type is it currently?</p>
+<pre><code>Column with the wrong type:
+Current type (&lt;chr&gt; / &lt;dbl&gt;):
+What type should it be:</code></pre>
+<p><strong>▶ Run this — clean the column names:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(leaf_raw_df)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>leaf_raw_df <span class="ot">&lt;-</span> leaf_raw_df <span class="sc">%&gt;%</span> <span class="fu">clean_names</span>()</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(leaf_raw_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Run this — count every category in <code>side</code>:</strong></p>
+<blockquote class="blockquote">
+<p>🔮 <strong>Predict first:</strong> there are only two real sides (sunny and shady). Guess how many <em>distinct</em> values <code>count(side)</code> will actually show.</p>
+</blockquote>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>leaf_raw_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(side)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> List every distinct spelling of “sunny” and “shady” that showed up, and explain in one sentence why R treats them as different categories.</p>
+<pre><code>Distinct spellings found:
+
+Why R sees them as different:</code></pre>
+<hr>
+<blockquote class="blockquote">
+<h2 id="chunk-2-fixing-text-matches-lecture-chunk-2" class="anchored" data-anchor-id="part-2-find-the-mess-before-you-touch-anything">🧩 Chunk 2 — Fixing text <em>(matches lecture Chunk 2)</em></h2>
+</blockquote>
+</section>
+<section id="part-3-fix-inconsistent-text" class="level1">
+<h1>Part 3 · Fix inconsistent text</h1>
+<p><strong>▶ Run this — see the two fixes in isolation first:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"sunny"</span>, <span class="st">" sunny"</span>, <span class="st">"sunny "</span>, <span class="st">"  sunny  "</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">str_trim</span>(x)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Sunny"</span>, <span class="st">"SUNNY"</span>, <span class="st">"sunny"</span>, <span class="st">"SHADY"</span>, <span class="st">"Shady"</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">str_to_lower</span>(y)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Run this — apply both fixes to the real column:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>leaf_clean_df <span class="ot">&lt;-</span> leaf_raw_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">side =</span> <span class="fu">str_trim</span>(side)) <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">side =</span> <span class="fu">str_to_lower</span>(side))</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>leaf_clean_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(side)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Confirm there are now exactly two categories. If there are more than two, what did you miss? (Hint: check for a typo’d side value, not just case/whitespace.)</p>
+<pre><code>Number of distinct side values now:
+Anything left to fix?</code></pre>
+<hr>
+<blockquote class="blockquote">
+<h2 id="chunk-3-fixing-fake-missing-values-matches-lecture-chunk-3" class="anchored" data-anchor-id="part-3-fix-inconsistent-text">🧩 Chunk 3 — Fixing fake missing values <em>(matches lecture Chunk 3)</em></h2>
+</blockquote>
+</section>
+<section id="part-4-disguised-missing-values" class="level1">
+<h1>Part 4 · Disguised missing values</h1>
+<p><strong>▶ Run this — look at every distinct raw value in <code>weight_g</code>:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>leaf_raw_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(weight_g) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(weight_g)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> List every value in this column that actually means “missing,” even though it doesn’t look like <code>NA</code>.</p>
+<pre><code>Missing-value disguises found in weight_g:</code></pre>
+<p><strong>▶ Run this — reload the file telling <code>read_csv()</code> about every code you found:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>leaf_raw_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"data/messy_leaf_data.csv"</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">na =</span> <span class="fu">c</span>(<span class="st">""</span>, <span class="st">"NA"</span>, <span class="st">"N/A"</span>, <span class="st">"-999"</span>, <span class="st">"999"</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>leaf_raw_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(<span class="fu">is.na</span>(weight_g))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> <code>height_cm</code> also has a disguised missing value that is different from the ones in <code>weight_g</code>. Find it with <code>count()</code> and explain what it was.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Write your code here:</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Disguised missing value in height_cm:</code></pre>
+<blockquote class="blockquote">
+<p>⚠️ <strong>Watch out!</strong> <code>na = c(...)</code> is applied to <strong>every column</strong> in the file. Make sure none of your “missing” codes could also be a legitimate value somewhere else in the dataset — always check with <code>count()</code> first.</p>
+</blockquote>
+<hr>
+<blockquote class="blockquote">
+<h2 id="chunk-4-numbers-as-text-duplicates-outliers-matches-lecture-chunk-4" class="anchored" data-anchor-id="part-4-disguised-missing-values">🧩 Chunk 4 — Numbers-as-text, duplicates, outliers <em>(matches lecture Chunk 4)</em></h2>
+</blockquote>
+</section>
+<section id="part-5-rescue-numbers-trapped-in-text" class="level1">
+<h1>Part 5 · Rescue numbers trapped in text</h1>
+<p><strong>▶ Run this:</strong></p>
+<blockquote class="blockquote">
+<p>🔮 <strong>Predict first:</strong> what will <code>parse_number("5.5g")</code> return?</p>
+</blockquote>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">parse_number</span>(<span class="st">"5.5g"</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>leaf_clean_df <span class="ot">&lt;-</span> leaf_raw_df <span class="sc">%&gt;%</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">side =</span> <span class="fu">str_trim</span>(side)) <span class="sc">%&gt;%</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">side =</span> <span class="fu">str_to_lower</span>(side)) <span class="sc">%&gt;%</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">weight_g =</span> <span class="fu">parse_number</span>(weight_g))</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(leaf_clean_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Confirm <code>weight_g</code> is now <code>&lt;dbl&gt;</code>. What was the one entry that had forced the whole column to be text?</p>
+<pre><code>Is weight_g now &lt;dbl&gt;?  Y / N
+The entry that broke it:</code></pre>
+<hr>
+</section>
+<section id="part-6-find-and-remove-duplicate-rows" class="level1">
+<h1>Part 6 · Find and remove duplicate rows</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">duplicated</span>(leaf_clean_df))</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>leaf_clean_df <span class="sc">%&gt;%</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">duplicated</span>(leaf_clean_df) <span class="sc">|</span> <span class="fu">duplicated</span>(leaf_clean_df, <span class="at">fromLast =</span> <span class="cn">TRUE</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Which <code>id</code> numbers are the duplicate pair? Read the <code>notes</code> column — does it explain what happened?</p>
+<pre><code>Duplicate id numbers:
+What notes says happened:</code></pre>
+<p><strong>▶ Run this — remove the duplicate:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>leaf_clean_df <span class="ot">&lt;-</span> leaf_clean_df <span class="sc">%&gt;%</span> <span class="fu">distinct</span>()</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(leaf_clean_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+<section id="part-7-flag-suspicious-values-do-not-delete-them" class="level1">
+<h1>Part 7 · Flag suspicious values (do not delete them)</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>leaf_flagged_df <span class="ot">&lt;-</span> leaf_clean_df <span class="sc">%&gt;%</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">weight_flag =</span> <span class="fu">if_else</span>(weight_g <span class="sc">&gt;</span> <span class="dv">20</span>, <span class="st">"check this value"</span>, <span class="st">"ok"</span>))</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>leaf_flagged_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(weight_flag <span class="sc">==</span> <span class="st">"check this value"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Look at the flagged row’s <code>notes</code> column. What is the most likely real value, and why shouldn’t you just change it to that number yourself?</p>
+<pre><code>Flagged id:
+Likely real value and reasoning:
+Why you should NOT just silently fix it:</code></pre>
+<hr>
+</section>
+<section id="part-8-before-and-after-check" class="level1">
+<h1>Part 8 · Before-and-after check</h1>
+<p>✏️ <strong>Your turn:</strong> Fill in this table comparing <code>leaf_raw_df</code> to your final <code>leaf_flagged_df</code>.</p>
+<pre><code>                          leaf_raw_df    leaf_flagged_df
+Number of rows
+Number of distinct "side" values
+Data type of weight_g
+Number of flagged/suspicious rows</code></pre>
+<hr>
+</section>
+<section id="part-9-review-and-checkpoint" class="level1">
+<h1>Part 9 · Review and checkpoint</h1>
+<p>At this point you should be able to:</p>
+<ul class="task-list">
+<li><label><input type="checkbox">Explain why <code>count()</code> on a <code>&lt;chr&gt;</code> column is the fastest way to catch messy categories</label></li>
+<li><label><input type="checkbox">Use <code>janitor::clean_names()</code> to standardize column names</label></li>
+<li><label><input type="checkbox">Fix inconsistent text with <code>str_trim()</code> and <code>str_to_lower()</code></label></li>
+<li><label><input type="checkbox">Identify disguised missing-value codes and fix them with <code>read_csv(na = c(...))</code></label></li>
+<li><label><input type="checkbox">Use <code>parse_number()</code> to rescue a numeric column that was stored as text</label></li>
+<li><label><input type="checkbox">Find duplicate rows with <code>duplicated()</code> and remove them with <code>distinct()</code></label></li>
+<li><label><input type="checkbox">Flag a suspicious value with <code>mutate()</code> instead of silently deleting or “fixing” it</label></li>
+<li><label><input type="checkbox">Explain why you never overwrite your raw data file</label></li>
+</ul>
+<p>✏️ <strong>Your turn — before you move on:</strong> Run your entire script top to bottom. Does it complete without errors, starting from the untouched raw file?</p>
+<pre><code>Ran cleanly?  Y / N
+If not, what error appeared:</code></pre>
+<hr>
+</section>
+<section id="part-10-going-further" class="level1">
+<h1>Part 10 · Going further</h1>
+<blockquote class="blockquote">
+<p>Optional — do this if you finish early.</p>
+</blockquote>
+<section id="write-a-cleaning-summary" class="level3">
+<h3 class="anchored" data-anchor-id="write-a-cleaning-summary">Write a cleaning summary</h3>
+<p>✏️ <strong>Your turn:</strong> In 3–4 sentences, describe every problem you found in this dataset and how you fixed each one. Imagine you are writing the “Data Cleaning” paragraph of a methods section.</p>
+<pre><code>Your summary:</code></pre>
+</section>
+<section id="try-case_when-for-a-three-way-recode" class="level3">
+<h3 class="anchored" data-anchor-id="try-case_when-for-a-three-way-recode">Try <code>case_when()</code> for a three-way recode</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># case_when() handles more than two outcomes at once ---</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>leaf_flagged_df <span class="sc">%&gt;%</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">size_class =</span> <span class="fu">case_when</span>(</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    weight_g <span class="sc">&lt;</span> <span class="dv">5</span>             <span class="sc">~</span> <span class="st">"small"</span>,</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    weight_g <span class="sc">&gt;=</span> <span class="dv">5</span> <span class="sc">&amp;</span> weight_g <span class="sc">&lt;</span> <span class="dv">7</span> <span class="sc">~</span> <span class="st">"medium"</span>,</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    weight_g <span class="sc">&gt;=</span> <span class="dv">7</span>             <span class="sc">~</span> <span class="st">"large"</span>,</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span>                       <span class="sc">~</span> <span class="st">"unknown"</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(size_class)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Why is the final <code>TRUE ~ "unknown"</code> line useful, even though every row should match one of the three ranges above it?</p>
+<pre><code>Your answer:</code></pre>
+<hr>
+</section>
+</section>
+<section id="getting-unstuck" class="level1">
+<h1>Getting unstuck</h1>
+<ol type="1">
+<li><strong>Read the error message out loud.</strong> R usually names the line and the problem.</li>
+<li><strong><code>clean_names</code> not found?</strong> Run <code>library(janitor)</code> — and <code>install.packages("janitor")</code> once if needed.</li>
+<li><strong>Still seeing extra categories after <code>str_trim()</code> + <code>str_to_lower()</code>?</strong> There may be a genuine typo (e.g.&nbsp;<code>"suny"</code>), not just case or whitespace — <code>count()</code> again to see exactly what’s left.</li>
+<li><strong><code>parse_number()</code> returns <code>NA</code> for everything?</strong> Check you spelled the column name correctly with <code>names(leaf_raw_df)</code>.</li>
+<li><strong>Not sure if a value is a typo or real?</strong> Flag it and go back to the original field notebook or data source — never guess silently.</li>
+<li><strong>Bring the exact error</strong> (copy-paste it) to class, Canvas, or office hours.</li>
+</ol>
+<blockquote class="blockquote">
+<p>💡 <strong>Key idea:</strong> Cleaning is not a detour before “the real analysis” — it <em>is</em> the real analysis. A beautiful t-test on uncleaned data is just a beautifully wrong answer.</p>
+</blockquote>
+<hr>
+<p><em>End of Worksheet 03B. Next: Lecture 04 — the two-sample t-test, now on data you actually trust.</em></p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script>
+// RevealJS slide decks replace the page they're linked from, which strips
+// away the sidebar/nav. Open them in a new tab so it's easy to just close
+// the tab and land back where you were.
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll('a[href$="slides.html"]').forEach(function (a) {
+    a.target = "_blank";
+    a.rel = "noopener";
+  });
+});
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/wlperry\.github\.io\/umd_datasci");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 UMD Data Science Biology Perry</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/wlperry">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="mailto:wlperry@d.umn.edu">
+      <i class="bi bi-envelope-heart-fill" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

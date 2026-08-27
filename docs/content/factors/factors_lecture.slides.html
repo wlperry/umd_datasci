@@ -7,12 +7,12 @@
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="../../site_libs/quarto-html/light-border.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-de63f62b328812d8e578a4d74e282472.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
-  <meta name="generator" content="quarto-1.9.38">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-bb62276ab45c84d9efd712f51ff97b5a.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.10.18">
 
   <meta name="author" content="Bill Perry">
-  <meta name="dcterms.date" content="2026-07-05">
-  <title>UMD DAta Science Biology – Lecture 10 — Factors: Taming Categorical Data</title>
+  <meta name="dcterms.date" content="2026-08-27">
+  <title>UMD DAta Science Biology – Lecture 16 — Factors: Taming Categorical Data</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -22,10 +22,13 @@
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
     */
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     ul.task-list{list-style: none;}
     ul.task-list li input[type="checkbox"] {
@@ -194,7 +197,7 @@
       margin-right: 0; 
     }
   </style>
-<meta property="og:title" content="Lecture 10 — Factors: Taming Categorical Data – UMD DAta Science Biology">
+<meta property="og:title" content="Lecture 16 — Factors: Taming Categorical Data – UMD DAta Science Biology">
 <meta property="og:description" content="Categorical variables are factors, and factors carry an ORDER. This 2-day lecture shows how to create and inspect factors, reorder them for readable ggplots (fct_reorder, fct_infreq), rename/collapse/lump levels, set the reference group for an ANOVA (fct_relevel), and avoid the classic factor traps — all using the Palmer penguins data.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
@@ -203,18 +206,18 @@
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h1 class="title">Lecture 10 — Factors: Taming Categorical Data</h1>
+  <h1 class="title">Lecture 16 — Factors: Taming Categorical Data</h1>
   <p class="subtitle">Ordering, renaming, and lumping categories with forcats — and cleaner ggplots</p>
 
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
 <div class="quarto-title-author-name">
-Bill Perry 
+Bill Perry
 </div>
 </div>
 </div>
 
-  <p class="date">2026-07-05</p>
+  <p class="date">2026-08-27</p>
 </section>
 <section id="where-we-left-off-pivoting-real-data" class="title-slide slide level1 center">
 <h1>Where we left off — Pivoting real data</h1>
@@ -233,7 +236,7 @@ Bill Perry
 </div>
 <div class="callout-content">
 <p><strong>✅ Transition</strong></p>
-<p>Why alphabetical? Because a categorical column is a <strong>factor</strong>, and its levels default to alphabetical. Today we take control of that order — and of the labels — with the <strong>forcats</strong> package. You’ll lean on it again next week when you run a one-way <strong>ANOVA</strong>.</p>
+<p>Why alphabetical? Because a categorical column is a <strong>factor</strong>, and its levels default to alphabetical. Today we take control of that order — and of the labels — with the <strong>forcats</strong> package. You already used this kind of grouping variable back in the one-way ANOVA (Lecture 13) — today you learn to control how it displays.</p>
 </div>
 </div>
 </div>
@@ -301,9 +304,9 @@ Bill Perry
 <div class="callout-content">
 <p><strong>✅ Why bother? (the evidence)</strong></p>
 <ul>
-<li><strong>Predicting the order</strong> of a plot forces you to reason about levels — the whole point of factors.</li>
-<li><strong>Typing by hand</strong> builds the muscle memory for the <code>fct_</code> family.</li>
-<li><strong>Chunk → practice</strong> keeps each idea in working memory long enough to stick.</li>
+<li>With factors, “predict the output” almost always means “predict the order the bars will appear in” — forcing that guess is what makes you actually think about levels instead of ggplot’s defaults.</li>
+<li>The <code>fct_</code> functions all take a similar shape (<code>fct_something(factor, ...)</code>), and typing them out enough times is what gets that shape into your fingers.</li>
+<li>Two days of new <code>fct_</code> verbs is a lot to hold onto — using each one in the activity right after you see it in lecture is what keeps Day 1’s functions available when Day 2 builds on them.</li>
 </ul>
 </div>
 </div>
@@ -375,23 +378,23 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a></a><span class="co"># Load packages + data --------------------------------</span></span>
-<span id="cb1-2"><a></a><span class="fu">library</span>(tidyverse)      <span class="co"># includes forcats</span></span>
-<span id="cb1-3"><a></a><span class="fu">library</span>(palmerpenguins)</span>
-<span id="cb1-4"><a></a></span>
-<span id="cb1-5"><a></a><span class="co"># Swap this one line to use your own data later -------</span></span>
-<span id="cb1-6"><a></a>penguins_df <span class="ot">&lt;-</span> penguins <span class="sc">%&gt;%</span> <span class="fu">drop_na</span>(species, body_mass_g)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a aria-label="1"></a><span class="co"># Load packages + data --------------------------------</span></span>
+<span id="cb1-2"><a aria-label="2"></a><span class="fu">library</span>(tidyverse)      <span class="co"># includes forcats</span></span>
+<span id="cb1-3"><a aria-label="3"></a><span class="fu">library</span>(palmerpenguins)</span>
+<span id="cb1-4"><a aria-label="4"></a></span>
+<span id="cb1-5"><a aria-label="5"></a><span class="co"># Swap this one line to use your own data later -------</span></span>
+<span id="cb1-6"><a aria-label="6"></a>penguins_df <span class="ot">&lt;-</span> penguins <span class="sc">%&gt;%</span> <span class="fu">drop_na</span>(species, body_mass_g)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a></a><span class="co"># ggplot uses the factor's level order = ALPHABETICAL -</span></span>
-<span id="cb2-2"><a></a>penguins_df <span class="sc">%&gt;%</span></span>
-<span id="cb2-3"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species)) <span class="sc">+</span></span>
-<span id="cb2-4"><a></a>  <span class="fu">geom_bar</span>() <span class="sc">+</span></span>
-<span id="cb2-5"><a></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a aria-label="1"></a><span class="co"># ggplot uses the factor's level order = ALPHABETICAL -</span></span>
+<span id="cb2-2"><a aria-label="2"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb2-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species)) <span class="sc">+</span></span>
+<span id="cb2-4"><a aria-label="4"></a>  <span class="fu">geom_bar</span>() <span class="sc">+</span></span>
+<span id="cb2-5"><a aria-label="5"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="factors_lecture_files/figure-revealjs/default-order-10-1.png"></p>
+<p><img data-src="factors_lecture_files/figure-revealjs/default-order-10-1.png" alt="Bar chart of penguin counts by species with bars for Adelie, Chinstrap, and Gentoo appearing in alphabetical order, the default factor level order."></p>
 </figure>
 </div>
 </div>
@@ -408,19 +411,19 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a></a><span class="co"># What type is species, and what are its levels? ------</span></span>
-<span id="cb3-2"><a></a><span class="fu">class</span>(penguins_df<span class="sc">$</span>species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a aria-label="1"></a><span class="co"># What type is species, and what are its levels? ------</span></span>
+<span id="cb3-2"><a aria-label="2"></a><span class="fu">class</span>(penguins_df<span class="sc">$</span>species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "factor"</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a></a><span class="fu">levels</span>(penguins_df<span class="sc">$</span>species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="fu">levels</span>(penguins_df<span class="sc">$</span>species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "Adelie"    "Chinstrap" "Gentoo"   </code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a></a><span class="co"># fct_count() = a factor-aware count -------------------</span></span>
-<span id="cb7-2"><a></a><span class="fu">fct_count</span>(penguins_df<span class="sc">$</span>species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a><span class="co"># fct_count() = a factor-aware count -------------------</span></span>
+<span id="cb7-2"><a aria-label="2"></a><span class="fu">fct_count</span>(penguins_df<span class="sc">$</span>species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 3 × 2
   f             n
@@ -480,16 +483,16 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a></a><span class="co"># Order bars from most to least common ----------------</span></span>
-<span id="cb9-2"><a></a>penguins_df <span class="sc">%&gt;%</span></span>
-<span id="cb9-3"><a></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_infreq</span>(species)) <span class="sc">%&gt;%</span></span>
-<span id="cb9-4"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species)) <span class="sc">+</span></span>
-<span id="cb9-5"><a></a>  <span class="fu">geom_bar</span>() <span class="sc">+</span></span>
-<span id="cb9-6"><a></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># Order bars from most to least common ----------------</span></span>
+<span id="cb9-2"><a aria-label="2"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_infreq</span>(species)) <span class="sc">%&gt;%</span></span>
+<span id="cb9-4"><a aria-label="4"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species)) <span class="sc">+</span></span>
+<span id="cb9-5"><a aria-label="5"></a>  <span class="fu">geom_bar</span>() <span class="sc">+</span></span>
+<span id="cb9-6"><a aria-label="6"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="factors_lecture_files/figure-revealjs/infreq-10-1.png"></p>
+<p><img data-src="factors_lecture_files/figure-revealjs/infreq-10-1.png" alt="Bar chart of penguin counts by species, reordered with fct_infreq() so bars run from the most common species on the left to the least common on the right."></p>
 </figure>
 </div>
 </div>
@@ -534,17 +537,17 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a></a><span class="co"># Order species by MEDIAN body mass, low -&gt; high ------</span></span>
-<span id="cb10-2"><a></a>penguins_df <span class="sc">%&gt;%</span></span>
-<span id="cb10-3"><a></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_reorder</span>(species, body_mass_g, <span class="at">.fun =</span> median)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-4"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
-<span id="cb10-5"><a></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb10-6"><a></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb10-7"><a></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a aria-label="1"></a><span class="co"># Order species by MEDIAN body mass, low -&gt; high ------</span></span>
+<span id="cb10-2"><a aria-label="2"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb10-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_reorder</span>(species, body_mass_g, <span class="at">.fun =</span> median)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-4"><a aria-label="4"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
+<span id="cb10-5"><a aria-label="5"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb10-6"><a aria-label="6"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb10-7"><a aria-label="7"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="factors_lecture_files/figure-revealjs/reorder-10-1.png"></p>
+<p><img data-src="factors_lecture_files/figure-revealjs/reorder-10-1.png" alt="Boxplot of penguin body mass by species, with species ordered left to right from lowest to highest median body mass instead of alphabetically."></p>
 </figure>
 </div>
 </div>
@@ -564,19 +567,19 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a></a><span class="co"># Mean mass per species, ordered high -&gt; low ----------</span></span>
-<span id="cb11-2"><a></a>penguins_df <span class="sc">%&gt;%</span></span>
-<span id="cb11-3"><a></a>  <span class="fu">group_by</span>(species) <span class="sc">%&gt;%</span></span>
-<span id="cb11-4"><a></a>  <span class="fu">summarize</span>(<span class="at">mean_mass =</span> <span class="fu">mean</span>(body_mass_g)) <span class="sc">%&gt;%</span></span>
-<span id="cb11-5"><a></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_reorder</span>(species, mean_mass) <span class="sc">%&gt;%</span> <span class="fu">fct_rev</span>()) <span class="sc">%&gt;%</span></span>
-<span id="cb11-6"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mean_mass, <span class="at">y =</span> species)) <span class="sc">+</span></span>
-<span id="cb11-7"><a></a>  <span class="fu">geom_col</span>(<span class="at">fill =</span> <span class="st">"steelblue"</span>) <span class="sc">+</span></span>
-<span id="cb11-8"><a></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Mean mass (g)"</span>, <span class="at">y =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
-<span id="cb11-9"><a></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="co"># Mean mass per species, ordered high -&gt; low ----------</span></span>
+<span id="cb11-2"><a aria-label="2"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(species) <span class="sc">%&gt;%</span></span>
+<span id="cb11-4"><a aria-label="4"></a>  <span class="fu">summarize</span>(<span class="at">mean_mass =</span> <span class="fu">mean</span>(body_mass_g)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-5"><a aria-label="5"></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_reorder</span>(species, mean_mass) <span class="sc">%&gt;%</span> <span class="fu">fct_rev</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb11-6"><a aria-label="6"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mean_mass, <span class="at">y =</span> species)) <span class="sc">+</span></span>
+<span id="cb11-7"><a aria-label="7"></a>  <span class="fu">geom_col</span>(<span class="at">fill =</span> <span class="st">"darkblue"</span>) <span class="sc">+</span></span>
+<span id="cb11-8"><a aria-label="8"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Mean mass (g)"</span>, <span class="at">y =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb11-9"><a aria-label="9"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="factors_lecture_files/figure-revealjs/summary-order-10-1.png"></p>
+<p><img data-src="factors_lecture_files/figure-revealjs/summary-order-10-1.png" alt="Horizontal bar chart of mean body mass per penguin species, ranked from the heaviest species at the top to the lightest at the bottom."></p>
 </figure>
 </div>
 </div>
@@ -633,14 +636,14 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a></a><span class="co"># Give levels cleaner display names -------------------</span></span>
-<span id="cb12-2"><a></a>penguins_df <span class="sc">%&gt;%</span></span>
-<span id="cb12-3"><a></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_recode</span>(species,</span>
-<span id="cb12-4"><a></a>    <span class="st">"Adélie penguin"</span>    <span class="ot">=</span> <span class="st">"Adelie"</span>,</span>
-<span id="cb12-5"><a></a>    <span class="st">"Chinstrap penguin"</span> <span class="ot">=</span> <span class="st">"Chinstrap"</span>,</span>
-<span id="cb12-6"><a></a>    <span class="st">"Gentoo penguin"</span>    <span class="ot">=</span> <span class="st">"Gentoo"</span></span>
-<span id="cb12-7"><a></a>  )) <span class="sc">%&gt;%</span></span>
-<span id="cb12-8"><a></a>  <span class="fu">count</span>(species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="co"># Give levels cleaner display names -------------------</span></span>
+<span id="cb12-2"><a aria-label="2"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_recode</span>(species,</span>
+<span id="cb12-4"><a aria-label="4"></a>    <span class="st">"Adélie penguin"</span>    <span class="ot">=</span> <span class="st">"Adelie"</span>,</span>
+<span id="cb12-5"><a aria-label="5"></a>    <span class="st">"Chinstrap penguin"</span> <span class="ot">=</span> <span class="st">"Chinstrap"</span>,</span>
+<span id="cb12-6"><a aria-label="6"></a>    <span class="st">"Gentoo penguin"</span>    <span class="ot">=</span> <span class="st">"Gentoo"</span></span>
+<span id="cb12-7"><a aria-label="7"></a>  )) <span class="sc">%&gt;%</span></span>
+<span id="cb12-8"><a aria-label="8"></a>  <span class="fu">count</span>(species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 3 × 2
   species               n
@@ -677,13 +680,13 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a></a><span class="co"># Combine several levels into one ---------------------</span></span>
-<span id="cb14-2"><a></a>penguins_df <span class="sc">%&gt;%</span></span>
-<span id="cb14-3"><a></a>  <span class="fu">mutate</span>(<span class="at">size_group =</span> <span class="fu">fct_collapse</span>(species,</span>
-<span id="cb14-4"><a></a>    <span class="st">"smaller"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"Adelie"</span>, <span class="st">"Chinstrap"</span>),</span>
-<span id="cb14-5"><a></a>    <span class="st">"larger"</span>  <span class="ot">=</span> <span class="st">"Gentoo"</span></span>
-<span id="cb14-6"><a></a>  )) <span class="sc">%&gt;%</span></span>
-<span id="cb14-7"><a></a>  <span class="fu">count</span>(size_group)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a aria-label="1"></a><span class="co"># Combine several levels into one ---------------------</span></span>
+<span id="cb14-2"><a aria-label="2"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb14-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">size_group =</span> <span class="fu">fct_collapse</span>(species,</span>
+<span id="cb14-4"><a aria-label="4"></a>    <span class="st">"smaller"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">"Adelie"</span>, <span class="st">"Chinstrap"</span>),</span>
+<span id="cb14-5"><a aria-label="5"></a>    <span class="st">"larger"</span>  <span class="ot">=</span> <span class="st">"Gentoo"</span></span>
+<span id="cb14-6"><a aria-label="6"></a>  )) <span class="sc">%&gt;%</span></span>
+<span id="cb14-7"><a aria-label="7"></a>  <span class="fu">count</span>(size_group)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 2
   size_group     n
@@ -706,11 +709,11 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a></a><span class="co"># Keep the 2 most common islands, lump the rest -------</span></span>
-<span id="cb16-2"><a></a>penguins <span class="sc">%&gt;%</span></span>
-<span id="cb16-3"><a></a>  <span class="fu">drop_na</span>(island) <span class="sc">%&gt;%</span></span>
-<span id="cb16-4"><a></a>  <span class="fu">mutate</span>(<span class="at">island =</span> <span class="fu">fct_lump_n</span>(island, <span class="at">n =</span> <span class="dv">2</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb16-5"><a></a>  <span class="fu">count</span>(island)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a aria-label="1"></a><span class="co"># Keep the 2 most common islands, lump the rest -------</span></span>
+<span id="cb16-2"><a aria-label="2"></a>penguins <span class="sc">%&gt;%</span></span>
+<span id="cb16-3"><a aria-label="3"></a>  <span class="fu">drop_na</span>(island) <span class="sc">%&gt;%</span></span>
+<span id="cb16-4"><a aria-label="4"></a>  <span class="fu">mutate</span>(<span class="at">island =</span> <span class="fu">fct_lump_n</span>(island, <span class="at">n =</span> <span class="dv">2</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb16-5"><a aria-label="5"></a>  <span class="fu">count</span>(island)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 3 × 2
   island     n
@@ -735,12 +738,12 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <p>Factors look like their labels, but underneath they’re <strong>integer codes</strong>. So this quietly gives the wrong answer:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a></a>years <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="st">"2010"</span>, <span class="st">"2011"</span>, <span class="st">"2012"</span>))</span>
-<span id="cb18-2"><a></a><span class="fu">as.numeric</span>(years)</span>
-<span id="cb18-3"><a></a><span class="co">#&gt; [1] 1 2 3      # the level CODES, not the years!</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a aria-label="1"></a>years <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="st">"2010"</span>, <span class="st">"2011"</span>, <span class="st">"2012"</span>))</span>
+<span id="cb18-2"><a aria-label="2"></a><span class="fu">as.numeric</span>(years)</span>
+<span id="cb18-3"><a aria-label="3"></a><span class="co">#&gt; [1] 1 2 3      # the level CODES, not the years!</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The fix — go through <code>character</code> first:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a></a><span class="fu">as.numeric</span>(<span class="fu">as.character</span>(years))</span>
-<span id="cb19-2"><a></a><span class="co">#&gt; [1] 2010 2011 2012</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a aria-label="1"></a><span class="fu">as.numeric</span>(<span class="fu">as.character</span>(years))</span>
+<span id="cb19-2"><a aria-label="2"></a><span class="co">#&gt; [1] 2010 2011 2012</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div><div class="column" style="width:40%;">
 <div class="callout callout-important callout-titled callout-style-default">
 <div class="callout-body">
@@ -793,24 +796,24 @@ Bill Perry
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🔮 Predict first:</strong> When you fit a model — the regression from Lecture 06, or the ANOVA coming next week — R compares everything to the <strong>first level</strong> (Adelie here). If we make <strong>Gentoo</strong> the reference, what changes — the overall test, or the coefficients?</p>
+<p><strong>🔮 Predict first:</strong> When you fit a model — the regression from Lecture 11, or the ANOVA from Lecture 13 — R compares everything to the <strong>first level</strong> (Adelie here). If we make <strong>Gentoo</strong> the reference, what changes — the overall test, or the coefficients?</p>
 </div>
 </div>
 </div>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a></a><span class="co"># Default reference = Adelie (alphabetical first) -----</span></span>
-<span id="cb20-2"><a></a><span class="fu">coef</span>(<span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a aria-label="1"></a><span class="co"># Default reference = Adelie (alphabetical first) -----</span></span>
+<span id="cb20-2"><a aria-label="2"></a><span class="fu">coef</span>(<span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     (Intercept) speciesChinstrap    speciesGentoo 
       3700.66225         32.42598       1375.35401 </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a></a><span class="co"># Make Gentoo the reference group ---------------------</span></span>
-<span id="cb22-2"><a></a>penguins_relevel <span class="ot">&lt;-</span> penguins_df <span class="sc">%&gt;%</span></span>
-<span id="cb22-3"><a></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_relevel</span>(species, <span class="st">"Gentoo"</span>))</span>
-<span id="cb22-4"><a></a></span>
-<span id="cb22-5"><a></a><span class="fu">coef</span>(<span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_relevel))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a aria-label="1"></a><span class="co"># Make Gentoo the reference group ---------------------</span></span>
+<span id="cb22-2"><a aria-label="2"></a>penguins_relevel <span class="ot">&lt;-</span> penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb22-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_relevel</span>(species, <span class="st">"Gentoo"</span>))</span>
+<span id="cb22-4"><a aria-label="4"></a></span>
+<span id="cb22-5"><a aria-label="5"></a><span class="fu">coef</span>(<span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_relevel))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     (Intercept)    speciesAdelie speciesChinstrap 
         5076.016        -1375.354        -1342.928 </code></pre>
@@ -831,15 +834,15 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a></a><span class="co"># Filter out Gentoo... but the level lingers ----------</span></span>
-<span id="cb24-2"><a></a>two_species <span class="ot">&lt;-</span> penguins_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(species <span class="sc">!=</span> <span class="st">"Gentoo"</span>)</span>
-<span id="cb24-3"><a></a><span class="fu">levels</span>(two_species<span class="sc">$</span>species)     <span class="co"># Gentoo is STILL a level!</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a aria-label="1"></a><span class="co"># Filter out Gentoo... but the level lingers ----------</span></span>
+<span id="cb24-2"><a aria-label="2"></a>two_species <span class="ot">&lt;-</span> penguins_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(species <span class="sc">!=</span> <span class="st">"Gentoo"</span>)</span>
+<span id="cb24-3"><a aria-label="3"></a><span class="fu">levels</span>(two_species<span class="sc">$</span>species)     <span class="co"># Gentoo is STILL a level!</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "Adelie"    "Chinstrap" "Gentoo"   </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a></a><span class="co"># Remove empty levels ---------------------------------</span></span>
-<span id="cb26-2"><a></a>two_species <span class="ot">&lt;-</span> two_species <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_drop</span>(species))</span>
-<span id="cb26-3"><a></a><span class="fu">levels</span>(two_species<span class="sc">$</span>species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a aria-label="1"></a><span class="co"># Remove empty levels ---------------------------------</span></span>
+<span id="cb26-2"><a aria-label="2"></a>two_species <span class="ot">&lt;-</span> two_species <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_drop</span>(species))</span>
+<span id="cb26-3"><a aria-label="3"></a><span class="fu">levels</span>(two_species<span class="sc">$</span>species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "Adelie"    "Chinstrap"</code></pre>
 </div>
@@ -871,30 +874,30 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a></a><span class="co"># Reordered + relabeled in one pipeline ---------------</span></span>
-<span id="cb28-2"><a></a>penguins_df <span class="sc">%&gt;%</span></span>
-<span id="cb28-3"><a></a>  <span class="fu">mutate</span>(</span>
-<span id="cb28-4"><a></a>    <span class="at">species =</span> <span class="fu">fct_recode</span>(species, <span class="st">"Adélie"</span> <span class="ot">=</span> <span class="st">"Adelie"</span>),</span>
-<span id="cb28-5"><a></a>    <span class="at">species =</span> <span class="fu">fct_reorder</span>(species, body_mass_g, <span class="at">.fun =</span> median)</span>
-<span id="cb28-6"><a></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb28-7"><a></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
-<span id="cb28-8"><a></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb28-9"><a></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">seed =</span> <span class="dv">42</span>),</span>
-<span id="cb28-10"><a></a>             <span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">1.4</span>) <span class="sc">+</span></span>
-<span id="cb28-11"><a></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Body mass (g)"</span>) <span class="sc">+</span></span>
-<span id="cb28-12"><a></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb28-13"><a></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a aria-label="1"></a><span class="co"># Reordered + relabeled in one pipeline ---------------</span></span>
+<span id="cb28-2"><a aria-label="2"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb28-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb28-4"><a aria-label="4"></a>    <span class="at">species =</span> <span class="fu">fct_recode</span>(species, <span class="st">"Adélie"</span> <span class="ot">=</span> <span class="st">"Adelie"</span>),</span>
+<span id="cb28-5"><a aria-label="5"></a>    <span class="at">species =</span> <span class="fu">fct_reorder</span>(species, body_mass_g, <span class="at">.fun =</span> median)</span>
+<span id="cb28-6"><a aria-label="6"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb28-7"><a aria-label="7"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
+<span id="cb28-8"><a aria-label="8"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb28-9"><a aria-label="9"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">seed =</span> <span class="dv">42</span>),</span>
+<span id="cb28-10"><a aria-label="10"></a>             <span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">1.4</span>) <span class="sc">+</span></span>
+<span id="cb28-11"><a aria-label="11"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Body mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb28-12"><a aria-label="12"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb28-13"><a aria-label="13"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="factors_lecture_files/figure-revealjs/together-10-1.png"></p>
+<p><img data-src="factors_lecture_files/figure-revealjs/together-10-1.png" alt="Boxplot of penguin body mass by species with individual points jittered on top, species relabeled with accented names and ordered from lowest to highest median body mass."></p>
 </figure>
 </div>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
 <p>Ordered by mass, relabeled, publication-ready — and the code that made it is three <code>fct_</code> calls inside one <code>mutate()</code>.</p>
-<p>This is the everyday payoff: <strong>factors are how you make categorical plots say what you mean.</strong></p>
+<p>Notice nothing here required touching the underlying data frame outside the pipe — <code>fct_recode()</code> and <code>fct_reorder()</code> did all the work on the fly, right where the plot is built.</p>
 </div></div>
 </section>
 
@@ -922,10 +925,10 @@ Bill Perry
 <li>📖 <a href="https://r4ds.hadley.nz/factors">R4DS Ch. 16 — Factors</a></li>
 <li>📖 <code>common_code/15_factors</code></li>
 </ul>
-<p><strong>Up next — Lecture 11:</strong></p>
+<p><strong>Up next — Lecture 17:</strong></p>
 <ul>
-<li><strong>One-way ANOVA</strong> — compare a numeric response across three or more groups</li>
-<li>Your factor levels are now in order, so the group comparisons read cleanly</li>
+<li><strong>Joins</strong> — combine two tables on a shared key</li>
+<li>The prerequisite for bigger datasets — and for maps</li>
 </ul>
 </div></div>
 

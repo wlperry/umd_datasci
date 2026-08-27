@@ -1,0 +1,381 @@
+---
+order: 10
+week: 5
+title: "Worksheet 10 - T-Tests II: Running & Reporting the Test"
+subtitle: "Running Welch's t-test, reading the output, and writing it up"
+author: "Bill Perry"
+date: today
+
+type: activity
+description: >
+  Hands-on companion to T-Tests II: run a Welch's two-sample t-test in R,
+  decode the output, make a decision, and write up the results.
+categories: [r-basics, project-setup]
+
+format:
+  html: default
+  docx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# In-class Activity 10: Running & Reporting the Test
+
+### Recap from Worksheet 09
+
+- Stated H₀ and Hₐ formally (two-tailed, α = 0.05)
+- Checked normality with a histogram and Shapiro-Wilk
+- Checked variance with Levene's test
+- Decided: proceed with Welch's t-test (`var.equal = FALSE`)
+
+### Today's Objectives
+
+1.  Run a Welch's two-sample t-test (`var.equal = FALSE`, two-tailed)
+2.  Read and decode every line of the `t.test()` output
+3.  Make a formal statistical decision and state a conclusion
+4.  Write a results sentence in proper scientific format
+
+> # **How to use this worksheet**
+>
+> - Work through each part in order — the steps build on each other. Type the code into your script in Positron and run it line by line.
+> - Code blocks marked **▶ Run this** should be executed as written.
+> - Blocks marked **✏️ Your turn** ask you to write, modify, or interpret something.
+> - The **Going further** section is optional if you finish early.
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 1 — Run & interpret *(after lecture Chunk 1)*
+>
+> Parts 1–3: run the test, decode the output, and decide.
+
+# Part 1 · Load libraries and data, and recap assumptions
+
+**▶ Run this at the top of your script:**
+
+``` r
+# Load all packages at the top of the script -----------
+library(readxl)      # reading Excel files
+library(tidyverse)   # data manipulation + ggplot2
+library(car)         # Levene's test for variance
+```
+
+``` r
+# Load the leaf data and rerun last lecture's checks ---
+tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
+
+recap_df <- tree_df %>%
+  group_by(side) %>%
+  summarize(
+    n       = sum(!is.na(weight_g)),
+    mean_wt = round(mean(weight_g, na.rm = TRUE), 2),
+    sd_wt   = round(sd(weight_g,   na.rm = TRUE), 2),
+    se_wt   = round(sd_wt / sqrt(n), 2)
+  )
+
+recap_df
+```
+
+✏️ **Your turn:** From Worksheet 09, what was your decision about normality and variance? Were you clear to proceed with Welch's?
+
+```
+Normality decision:
+Variance (Levene's) decision:
+Proceed with Welch's?  Y / N
+```
+
+------------------------------------------------------------------------
+
+# Part 2 · Run the Welch's t-test
+
+> 🔮 **Predict first:** Write down a guess for the *p*-value now — above or below 0.05? Then run `t.test()` and see how close you were.
+
+Now that we have checked our assumptions, we can run the test.
+
+**▶ Run this:**
+
+``` r
+# Welch's two-sample t-test --------------------------
+leaf_ttest_model <- t.test(
+  weight_g ~ side,          # response ~ grouping variable
+  data        = tree_df,
+  var.equal   = FALSE,      # Welch's — no pooled variance
+  alternative = "two.sided" # two-tailed test
+)
+
+leaf_ttest_model
+```
+
+✏️ **Your turn:** Copy the full output below:
+
+```
+Paste or write the t.test() output here:
+```
+
+------------------------------------------------------------------------
+
+# Part 3 · Decode the output and decide
+
+**▶ Run this to extract individual values:**
+
+``` r
+# Pull specific values from the model object ---------
+cat("t-statistic:", round(leaf_ttest_model$statistic,  3), "\n")
+cat("df (Welch): ", round(leaf_ttest_model$parameter,  2), "\n")
+cat("p-value:    ", signif(leaf_ttest_model$p.value,   3), "\n")
+cat("95% CI:     ", round(leaf_ttest_model$conf.int[1],2),
+    "to", round(leaf_ttest_model$conf.int[2], 2), "g\n")
+cat("Mean shady: ", round(leaf_ttest_model$estimate[1],2), "g\n")
+cat("Mean sunny: ", round(leaf_ttest_model$estimate[2],2), "g\n")
+```
+
+✏️ **Your turn:** Match each piece of output to its meaning:
+
+```
+t-statistic = _____
+
+  → This is large/small (circle one) because the difference in means
+    is large/small relative to the variability (circle one).
+
+df = _____
+
+  → This is a non-integer. Why? (hint: Welch-Satterthwaite equation)
+
+p-value = _____
+
+  → In plain language, this means: if H₀ were true, the probability
+    of seeing a t-statistic this extreme just by chance is _____.
+
+95% CI = _____ to _____ g
+
+  → This CI is for the ________________ (the true difference in means).
+    It does / does not include zero (circle one).
+    What does it mean when the CI excludes zero?
+
+Mean shady = _____ g
+Mean sunny = _____ g
+```
+
+✏️ **Your turn:** State your decision and conclusion. Use the formal language of hypothesis testing.
+
+```
+Our p-value:
+Our α:
+
+Decision (circle one):   REJECT H₀   /   FAIL TO REJECT H₀
+
+In one sentence, what does this mean biologically?
+```
+
+> 💡 **Key idea:** We never say "H₀ is true" or "H₀ is false." We say "we reject H₀" (evidence was strong enough) or "we fail to reject H₀" (evidence was not strong enough). Statistics gives us a decision rule, not certainty.
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 2 — Visualize & report *(after lecture Chunk 2)*
+>
+> Parts 4–5: build the figure with the statistics embedded, then write the results sentence.
+
+# Part 4 · Visualize the result
+
+### Boxplot with test statistics in the subtitle
+
+**▶ Run this:**
+
+``` r
+# Boxplot with t and p embedded in subtitle ----------
+leaf_box_10_plot <- tree_df %>%
+  ggplot(aes(x = side, y = weight_g, fill = side)) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+  geom_point(
+    position = position_jitter(width = 0.15, seed = 42),
+    alpha = 0.6, size = 2.5
+  ) +
+  labs(
+    title    = "Leaf Weight by Tree Side",
+    subtitle = paste0("Welch's t-test: t = ",
+                      round(leaf_ttest_model$statistic, 2),
+                      ", p = ",
+                      signif(leaf_ttest_model$p.value, 2)),
+    x = "Side of Tree",
+    y = "Leaf Weight (g)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+leaf_box_10_plot
+```
+
+✏️ **Your turn:** The `subtitle` line uses `paste0()` to build the label from the model object. What happens to the subtitle if you re-run this with different data? Why is this better than typing the numbers yourself?
+
+```
+Your answer:
+```
+
+### Save the plot
+
+**▶ Run this:**
+
+``` r
+ggsave("figures/leaf_weight_boxplot_ttest.png",
+       plot   = leaf_box_10_plot,
+       width  = 5,
+       height = 5,
+       units  = "in",
+       dpi    = 300)
+```
+
+------------------------------------------------------------------------
+
+# Part 5 · Write a scientific results sentence
+
+✏️ **Your turn:** Write a complete results sentence as you would in a lab report or paper. Include:
+
+- Which group was larger
+- The word "significantly" (if appropriate)
+- Test name, t-statistic, df, and *p*-value in parentheses
+- Mean ± SE for both groups with units
+
+Use this template:
+
+```
+"[Group] leaves were significantly [heavier / lighter] than [group] leaves
+(Welch's two-sample t-test: t(___) = ___, p = ___).
+Mean ± SE: [side 1] = ___ ± ___ g, [side 2] = ___ ± ___ g."
+```
+
+Write your sentence here:
+
+```
+Your results sentence:
+```
+
+> 💡 **Key idea:** Never write `p = 0.000`. Write `p < 0.001` instead. A *p*-value is never exactly zero — it is just too small to display at three decimal places.
+
+------------------------------------------------------------------------
+
+# Part 6 · Review and checkpoint
+
+At this point you should be able to:
+
+- [ ] Run `t.test(y ~ group, data, var.equal = FALSE, alternative = "two.sided")`
+- [ ] Extract t, df, p-value, CI, and group means from the model object
+- [ ] Make a formal reject / fail-to-reject decision at α = 0.05
+- [ ] Build a figure with the test statistics embedded in the subtitle
+- [ ] Write a complete results sentence in scientific format
+
+✏️ **Your turn:** Run your entire script from top to bottom with **Ctrl/Cmd + Shift + Enter**. Does it run without errors?
+
+```
+Ran cleanly?  Y / N
+If not, what error appeared:
+```
+
+------------------------------------------------------------------------
+
+# Part 7 · Going further
+
+> This section is optional — work through it if you finish early or want to push deeper.
+
+### Test a second variable: `height_cm`
+
+**▶ Try this:**
+
+``` r
+# Run the same t-test pipeline for height_cm ---------
+
+# 1. Stats recap
+tree_df %>%
+  group_by(side) %>%
+  summarize(
+    n        = sum(!is.na(height_cm)),
+    mean_ht  = round(mean(height_cm, na.rm = TRUE), 2),
+    sd_ht    = round(sd(height_cm,   na.rm = TRUE), 2),
+    se_ht    = round(sd_ht / sqrt(n), 2)
+  )
+```
+
+``` r
+# 2. Shapiro-Wilk for height_cm
+tree_df %>% filter(side == "sunny") %>% pull(height_cm) %>% shapiro.test()
+tree_df %>% filter(side == "shady") %>% pull(height_cm) %>% shapiro.test()
+```
+
+``` r
+# 3. Levene's test for height_cm
+leveneTest(height_cm ~ side, data = tree_df)
+```
+
+``` r
+# 4. Welch's t-test for height_cm
+height_ttest_model <- t.test(
+  height_cm ~ side,
+  data        = tree_df,
+  var.equal   = FALSE,
+  alternative = "two.sided"
+)
+height_ttest_model
+```
+
+✏️ **Your turn:** Is leaf height also significantly different between sides? Fill in the results:
+
+```
+t = _____   df = _____   p = _____
+Decision:
+One-sentence conclusion:
+```
+
+### Change the confidence level
+
+By default `t.test()` reports a 95% CI (`conf.level = 0.95`). Try 99%:
+
+**▶ Try this:**
+
+``` r
+# Run the weight t-test with 99% confidence interval --
+t.test(
+  weight_g ~ side,
+  data       = tree_df,
+  var.equal  = FALSE,
+  alternative = "two.sided",
+  conf.level  = 0.99        # 99% CI instead of 95%
+)
+```
+
+✏️ **Your turn:** How did the 99% CI compare to the 95% CI? Why is the 99% CI wider?
+
+```
+95% CI was: _____ to _____
+99% CI was: _____ to _____
+Why wider:
+```
+
+------------------------------------------------------------------------
+
+# What your finished `figures/` folder should contain
+
+```
+project/
+├── data/
+│   └── 2026_06_25_tree_experiment_raw_data.xlsx
+├── figures/
+│   ├── leaf_weight_mean_se.png            <- from Worksheet 03 (GGPlot I)
+│   └── leaf_weight_boxplot_ttest.png      <- from this worksheet
+└── scripts/
+    └── 10_leaf_ttest.R                    <- your script
+```
+
+------------------------------------------------------------------------
+
+# Getting unstuck
+
+1.  **Read the error message out loud.** R usually names the line and the problem.
+2.  **`t.test()` formula:** the grouping variable goes on the *right* of `~` and must have exactly **two levels**. Check with `unique(tree_df$side)`.
+3.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
+4.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
+
+> 💡 **Key idea:** Notice that nothing in the five-step sequence — hypotheses → normality → variance → test → report — was specific to leaf weight or to comparing exactly two sides. Swap in three species instead of two, and it's the same sequence you'll run for ANOVA next.
+
+------------------------------------------------------------------------
+
+*End of Worksheet 10. Next: Worksheet 11 — regression.*

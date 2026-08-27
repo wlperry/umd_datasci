@@ -5,14 +5,14 @@ author: "Bill Perry"
 date: today
 
 # --- Fields the SITE reads for ordering / listings / homepage ---
-order: 13
-week: 7
+order: 19
+week: 10
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
-  A fun 2-day intro to maps in R. Spatial data and coordinate systems, the sf
+  A 2-day intro to maps in R. Spatial data and coordinate systems, the sf
   package, turning latitude/longitude into a map with geom_sf(), drawing points
   on US states, and building a per-state choropleth by joining counts to the
-  map — all with 4,500+ real Bigfoot sighting reports.
+  map — all with ~4,600 real Bigfoot sighting reports.
 categories: [maps, sf, spatial, ggplot]
 
 format:
@@ -47,7 +47,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ::: callout-note
 **✅ Transition**
 
-You can wrangle, summarize, model, and join. Today we put data **on a map** — the single most fun payoff in the toolkit. Our dataset: **4,000+ real Bigfoot sightings** across the US, each with a latitude and longitude. 🦶
+You can wrangle, summarize, model, and join — today those skills point at a map instead of a table. Our dataset: **~4,600 real Bigfoot sightings** across the US, each with a latitude and longitude, ready to become points and then a choropleth. 🦶
 :::
 
 # Goals for today (a 2-day lecture)
@@ -99,9 +99,9 @@ This lecture runs in **four chunks over two days**. After each chunk you switch 
 ::: callout-note
 **✅ Why bother?**
 
--   **Predicting the pattern** ("Pacific Northwest?") makes the map mean something when it appears.
--   **Typing** builds the `sf` + `geom_sf` muscle memory.
--   **Chunk → practice** keeps each new idea from piling up.
+-   A choropleth is easy to accept at face value once it's drawn — naming the state you expect to be darkest *before* rendering it is what makes you actually look at the result instead of just admiring it.
+-   `st_as_sf(coords = ..., crs = ...)` and `geom_sf()` are new syntax with a specific argument order; typing them yourself is what keeps `coords = c("longitude", "latitude")` from becoming a copy-paste habit you never really learned.
+-   Spatial objects, basemaps, joins, and projections each get their own chunk so a CRS mismatch doesn't get confused with a join-key mismatch later.
 :::
 ::::
 :::::
@@ -189,13 +189,14 @@ nrow(bigfoot_df)
 # Make It Spatial — `st_as_sf()`
 
 ::: callout-note
-**🔮 Predict first:** We're about to turn 4,000+ rows of lat/long into points and plot them with **no basemap**. What shape do you think the cloud of points will make?
+**🔮 Predict first:** We're about to turn ~4,600 rows of lat/long into points and plot them with **no basemap**. What shape do you think the cloud of points will make?
 :::
 
 ::::: columns
 :::: {.column width="60%"}
 ```{r make-sf-13}
 #| fig-format: png
+#| fig-alt: "Scatter plot of Bigfoot sighting points by longitude and latitude with no basemap, the point cloud tracing the outline of the continental United States."
 # Build the geometry column from lon/lat -------------
 bigfoot_sf <- bigfoot_df %>%
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
@@ -264,6 +265,7 @@ The `ID` column holds the state name (lowercase) — we'll use it to join later.
 :::: {.column width="60%"}
 ```{r points-map-13}
 #| fig-format: png
+#| fig-alt: "Map of the lower 48 US states with Bigfoot sighting points overlaid, colored by report classification, showing denser clusters in the Pacific Northwest."
 # Basemap first, then points on top ------------------
 ggplot() +
   geom_sf(data = states_sf, fill = "grey96", color = "grey75") +
@@ -359,9 +361,9 @@ The fix — make both keys the **same case** before joining (`str_to_lower()`).
 
 :::: {.column width="40%"}
 ::: callout-important
-**✅ Why show a blank map?**
+**✅ Why show a blank choropleth?**
 
-A join only matches keys that are **exactly** equal. `"Washington"`, `"washington"`, and `" Washington"` are three different keys. A silent all-`NA` result is almost always a **key-mismatch** — check case and spelling first.
+`left_join()` doesn't know that `"Washington"` and `"washington"` mean the same state — as far as R is concerned they're two unrelated strings, so every row fails to match and `sightings` comes back `NA` everywhere. `scale_fill_viridis_c()` then has nothing to shade with, and you get a map that ran without a single error yet shows you nothing. Grey-everywhere is the signature of a key-mismatch, not a code bug.
 :::
 ::::
 :::::
@@ -372,6 +374,7 @@ A join only matches keys that are **exactly** equal. `"Washington"`, `"washingto
 :::: {.column width="60%"}
 ```{r choropleth-13}
 #| fig-format: png
+#| fig-alt: "Choropleth map of US states shaded by number of Bigfoot sightings using a magma color scale, with darker states indicating more reports."
 # Join sightings to the state polygons ---------------
 states_map <- states_sf %>%
   mutate(state = str_remove(ID, ":.*")) %>%   # drop ":north" etc.
@@ -413,6 +416,7 @@ Count sightings per state, join them to the map, and shade the choropleth. Predi
 :::: {.column width="60%"}
 ```{r albers-13}
 #| fig-format: png
+#| fig-alt: "Choropleth map of US states shaded by Bigfoot sighting counts, redrawn in an Albers equal-area projection so the country appears in its familiar proportions."
 # Albers Equal-Area (EPSG:5070) — the "textbook" US --
 ggplot(states_map) +
   geom_sf(aes(fill = sightings), color = "white") +
@@ -445,6 +449,7 @@ Different jobs use different CRSs — equal-area for choropleths, web maps use `
 :::: {.column width="60%"}
 ```{r season-13}
 #| fig-format: png
+#| fig-alt: "Four small maps of the lower 48 states, one per season, each showing Bigfoot sighting points in red, with summer showing the most reports."
 # Facet the point map by season ----------------------
 bigfoot_sf %>%
   filter(season %in% c("Spring","Summer","Fall","Winter")) %>%

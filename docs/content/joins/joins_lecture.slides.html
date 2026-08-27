@@ -7,12 +7,12 @@
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="../../site_libs/quarto-html/light-border.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-de63f62b328812d8e578a4d74e282472.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
-  <meta name="generator" content="quarto-1.9.38">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-bb62276ab45c84d9efd712f51ff97b5a.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.10.18">
 
   <meta name="author" content="Bill Perry">
-  <meta name="dcterms.date" content="2026-07-05">
-  <title>UMD DAta Science Biology – Lecture 12 — Joins: Combining Two Tables</title>
+  <meta name="dcterms.date" content="2026-08-27">
+  <title>UMD DAta Science Biology – Lecture 17 — Joins: Combining Two Tables</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -22,10 +22,13 @@
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
     */
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     ul.task-list{list-style: none;}
     ul.task-list li input[type="checkbox"] {
@@ -194,7 +197,7 @@
       margin-right: 0; 
     }
   </style>
-<meta property="og:title" content="Lecture 12 — Joins: Combining Two Tables – UMD DAta Science Biology">
+<meta property="og:title" content="Lecture 17 — Joins: Combining Two Tables – UMD DAta Science Biology">
 <meta property="og:description" content="Real projects spread data across several tables. This 2-day lecture teaches joins: what a key is, how to join two tables when the key columns are named differently, the mutating joins (left/inner/full), and the filtering joins (semi/anti) — by combining the Bigfoot report text with its coordinates to build exactly the dataset we map next week.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
@@ -203,24 +206,24 @@
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h1 class="title">Lecture 12 — Joins: Combining Two Tables</h1>
+  <h1 class="title">Lecture 17 — Joins: Combining Two Tables</h1>
   <p class="subtitle">Keys, mutating joins, and filtering joins with real Bigfoot report data</p>
 
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
 <div class="quarto-title-author-name">
-Bill Perry 
+Bill Perry
 </div>
 </div>
 </div>
 
-  <p class="date">2026-07-05</p>
+  <p class="date">2026-08-27</p>
 </section>
-<section id="where-we-left-off-anova-factors" class="title-slide slide level1 center">
-<h1>Where we left off — ANOVA &amp; Factors</h1>
+<section id="where-we-left-off-factors" class="title-slide slide level1 center">
+<h1>Where we left off — Factors</h1>
 <ul>
-<li><strong>One-way ANOVA</strong> — compared a numeric response across several groups</li>
-<li><strong>Factors</strong> — reordered and relabeled those groups for clean plots</li>
+<li><strong>Factors</strong> — reordered and relabeled categorical levels for clean plots and models</li>
+<li>Before that: reshaped messy data (Pivoting), started the final project, and ran a one-way ANOVA</li>
 <li>So far every analysis used <strong>one</strong> table</li>
 </ul>
 <div class="callout callout-note callout-titled callout-style-default">
@@ -304,9 +307,9 @@ Bill Perry
 <div class="callout-content">
 <p><strong>✅ Why bother?</strong></p>
 <ul>
-<li><strong>Predicting the row count</strong> is the whole skill — a join that returns the wrong number of rows is the #1 data bug.</li>
-<li><strong>Typing</strong> builds the <code>*_join()</code> muscle memory.</li>
-<li><strong>Chunk → practice</strong> keeps each join type distinct.</li>
+<li>A join can run without error and still hand you the wrong table — the only way to catch that is to know the row count you expected <em>before</em> you see the actual one.</li>
+<li>Every join in this lecture takes <code>by = c("a" = "b")</code> as an argument — typing that syntax a dozen times is what makes it automatic under deadline pressure.</li>
+<li>Four short chunks instead of one long one means <code>left_join</code>, <code>inner</code>/<code>full</code>, and <code>semi</code>/<code>anti</code> each get their own uncluttered mental slot.</li>
 </ul>
 </div>
 </div>
@@ -337,17 +340,17 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a></a><span class="co"># Load BOTH Bigfoot tables ---------------------------</span></span>
-<span id="cb1-2"><a></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-3"><a></a></span>
-<span id="cb1-4"><a></a>reports_df   <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_reports.csv"</span>)</span>
-<span id="cb1-5"><a></a>locations_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_locations.csv"</span>)</span>
-<span id="cb1-6"><a></a></span>
-<span id="cb1-7"><a></a><span class="fu">dim</span>(reports_df)      <span class="co"># the text: where/when/what</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a aria-label="1"></a><span class="co"># Load BOTH Bigfoot tables ---------------------------</span></span>
+<span id="cb1-2"><a aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-3"><a aria-label="3"></a></span>
+<span id="cb1-4"><a aria-label="4"></a>reports_df   <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_reports.csv"</span>)</span>
+<span id="cb1-5"><a aria-label="5"></a>locations_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_locations.csv"</span>)</span>
+<span id="cb1-6"><a aria-label="6"></a></span>
+<span id="cb1-7"><a aria-label="7"></a><span class="fu">dim</span>(reports_df)      <span class="co"># the text: where/when/what</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 5485   19</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a></a><span class="fu">dim</span>(locations_df)    <span class="co"># the coordinates</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a aria-label="1"></a><span class="fu">dim</span>(locations_df)    <span class="co"># the coordinates</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 4250    7</code></pre>
 </div>
@@ -366,8 +369,8 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a></a><span class="co"># The columns that identify a report -----------------</span></span>
-<span id="cb5-2"><a></a>reports_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(REPORT_NUMBER, YEAR, STATE, REPORT_CLASS) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="co"># The columns that identify a report -----------------</span></span>
+<span id="cb5-2"><a aria-label="2"></a>reports_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(REPORT_NUMBER, YEAR, STATE, REPORT_CLASS) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 3 × 4
   REPORT_NUMBER YEAR         STATE        REPORT_CLASS
@@ -376,7 +379,7 @@ Bill Perry
 2          1261 Early 1990's Alaska       Class A     
 3          6496 1974         Rhode Island Class A     </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a></a>locations_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(number, latitude, longitude) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a>locations_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(number, latitude, longitude) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 3 × 3
   number latitude longitude
@@ -415,16 +418,16 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a></a><span class="co"># Two fixes: drop duplicate reports, match key type --</span></span>
-<span id="cb9-2"><a></a>reports_df <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
-<span id="cb9-3"><a></a>  <span class="fu">distinct</span>(REPORT_NUMBER, <span class="at">.keep_all =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span>   <span class="co"># one row per report</span></span>
-<span id="cb9-4"><a></a>  <span class="fu">mutate</span>(<span class="at">REPORT_NUMBER =</span> <span class="fu">as.integer</span>(REPORT_NUMBER))</span>
-<span id="cb9-5"><a></a></span>
-<span id="cb9-6"><a></a><span class="fu">n_distinct</span>(reports_df<span class="sc">$</span>REPORT_NUMBER)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># Two fixes: drop duplicate reports, match key type --</span></span>
+<span id="cb9-2"><a aria-label="2"></a>reports_df <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a aria-label="3"></a>  <span class="fu">distinct</span>(REPORT_NUMBER, <span class="at">.keep_all =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span>   <span class="co"># one row per report</span></span>
+<span id="cb9-4"><a aria-label="4"></a>  <span class="fu">mutate</span>(<span class="at">REPORT_NUMBER =</span> <span class="fu">as.integer</span>(REPORT_NUMBER))</span>
+<span id="cb9-5"><a aria-label="5"></a></span>
+<span id="cb9-6"><a aria-label="6"></a><span class="fu">n_distinct</span>(reports_df<span class="sc">$</span>REPORT_NUMBER)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 5022</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a></a><span class="fu">n_distinct</span>(locations_df<span class="sc">$</span>number)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="fu">n_distinct</span>(locations_df<span class="sc">$</span>number)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 4250</code></pre>
 </div>
@@ -491,15 +494,15 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a></a><span class="co"># Match on differently-named keys with by = c() ------</span></span>
-<span id="cb13-2"><a></a>bigfoot_df <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
-<span id="cb13-3"><a></a>  <span class="fu">left_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
-<span id="cb13-4"><a></a></span>
-<span id="cb13-5"><a></a><span class="fu">nrow</span>(bigfoot_df)                    <span class="co"># every report is kept</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># Match on differently-named keys with by = c() ------</span></span>
+<span id="cb13-2"><a aria-label="2"></a>bigfoot_df <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a aria-label="3"></a>  <span class="fu">left_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<span id="cb13-4"><a aria-label="4"></a></span>
+<span id="cb13-5"><a aria-label="5"></a><span class="fu">nrow</span>(bigfoot_df)                    <span class="co"># every report is kept</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 5022</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a></a><span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(bigfoot_df<span class="sc">$</span>latitude))    <span class="co"># how many got coordinates</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a aria-label="1"></a><span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(bigfoot_df<span class="sc">$</span>latitude))    <span class="co"># how many got coordinates</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 4056</code></pre>
 </div>
@@ -519,11 +522,11 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <p>If I forget <code>by = ...</code>, dplyr looks for a <strong>shared column name</strong> — and both tables happen to have an <strong><code>index</code></strong> column:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a></a>reports_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(locations_df)</span>
-<span id="cb17-2"><a></a><span class="co">#&gt; Joining with `by = join_by(index)`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a aria-label="1"></a>reports_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(locations_df)</span>
+<span id="cb17-2"><a aria-label="2"></a><span class="co">#&gt; Joining with `by = join_by(index)`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>That matches <strong>row 1 to row 1, row 2 to row 2</strong> — nonsense! <code>index</code> is just a row number, not a report ID. You get coordinates glued to the wrong reports, with <strong>no error</strong>.</p>
 <p>The fix — always name the real key:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a></a>reports_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a aria-label="1"></a>reports_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div><div class="column" style="width:40%;">
 <div class="callout callout-important callout-titled callout-style-default">
 <div class="callout-body">
@@ -535,7 +538,7 @@ Bill Perry
 </div>
 <div class="callout-content">
 <p><strong>✅ Why show a silent wrong join?</strong></p>
-<p>When dplyr prints <em>“Joining with <code>by = ...</code>”</em> and you didn’t choose that column — <strong>stop</strong>. Auto-joining on an accidental shared name (<code>index</code>, <code>id</code>, <code>x</code>) is a classic silent bug. Name your key every time.</p>
+<p>Nothing here throws an error, so nothing forces you to notice — <code>reports_df</code> and <code>locations_df</code> both got the same made-up <code>index</code> column at some point, dplyr matches on it happily, and you end up with row 1’s coordinates glued to row 1’s report regardless of which Bigfoot sighting it actually was. If the message <em>“Joining with <code>by = ...</code>”</em> names a column you didn’t pick, treat it as a bug report, not a status update.</p>
 </div>
 </div>
 </div>
@@ -597,12 +600,12 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a></a><span class="co"># Same key, three different rules --------------------</span></span>
-<span id="cb19-2"><a></a>inner <span class="ot">&lt;-</span> <span class="fu">inner_join</span>(reports_df, locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
-<span id="cb19-3"><a></a>left  <span class="ot">&lt;-</span> <span class="fu">left_join</span> (reports_df, locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
-<span id="cb19-4"><a></a>full  <span class="ot">&lt;-</span> <span class="fu">full_join</span> (reports_df, locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
-<span id="cb19-5"><a></a></span>
-<span id="cb19-6"><a></a><span class="fu">c</span>(<span class="at">inner =</span> <span class="fu">nrow</span>(inner), <span class="at">left =</span> <span class="fu">nrow</span>(left), <span class="at">full =</span> <span class="fu">nrow</span>(full))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a aria-label="1"></a><span class="co"># Same key, three different rules --------------------</span></span>
+<span id="cb19-2"><a aria-label="2"></a>inner <span class="ot">&lt;-</span> <span class="fu">inner_join</span>(reports_df, locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<span id="cb19-3"><a aria-label="3"></a>left  <span class="ot">&lt;-</span> <span class="fu">left_join</span> (reports_df, locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<span id="cb19-4"><a aria-label="4"></a>full  <span class="ot">&lt;-</span> <span class="fu">full_join</span> (reports_df, locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<span id="cb19-5"><a aria-label="5"></a></span>
+<span id="cb19-6"><a aria-label="6"></a><span class="fu">c</span>(<span class="at">inner =</span> <span class="fu">nrow</span>(inner), <span class="at">left =</span> <span class="fu">nrow</span>(left), <span class="at">full =</span> <span class="fu">nrow</span>(full))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>inner  left  full 
  4056  5022  5216 </code></pre>
@@ -654,8 +657,8 @@ Bill Perry
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>✅ Key idea</strong></p>
-<p>Start from the question: <em>“Which rows do I refuse to lose?”</em> That answer picks your join. For mapping we refuse to lose reports, so <code>left_join</code>.</p>
+<p><strong>✅ Choosing among the three</strong></p>
+<p>Ask which rows you’d be upset to lose. Drop a report from the map and a real sighting vanishes; drop a stray location record and nothing is lost. That’s why the map keeps every report — <code>left_join</code>, not <code>inner_join</code>.</p>
 </div>
 </div>
 </div>
@@ -704,15 +707,15 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a></a><span class="co"># Reports that have NO location ----------------------</span></span>
-<span id="cb21-2"><a></a>missing_coords <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
-<span id="cb21-3"><a></a>  <span class="fu">anti_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
-<span id="cb21-4"><a></a></span>
-<span id="cb21-5"><a></a><span class="fu">nrow</span>(missing_coords)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a aria-label="1"></a><span class="co"># Reports that have NO location ----------------------</span></span>
+<span id="cb21-2"><a aria-label="2"></a>missing_coords <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
+<span id="cb21-3"><a aria-label="3"></a>  <span class="fu">anti_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<span id="cb21-4"><a aria-label="4"></a></span>
+<span id="cb21-5"><a aria-label="5"></a><span class="fu">nrow</span>(missing_coords)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 966</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a></a>missing_coords <span class="sc">%&gt;%</span> <span class="fu">count</span>(STATE, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a aria-label="1"></a>missing_coords <span class="sc">%&gt;%</span> <span class="fu">count</span>(STATE, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 4 × 2
   STATE            n
@@ -738,11 +741,11 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a></a><span class="co"># Keep only reports that DO have a location ----------</span></span>
-<span id="cb25-2"><a></a>mappable_reports <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
-<span id="cb25-3"><a></a>  <span class="fu">semi_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
-<span id="cb25-4"><a></a></span>
-<span id="cb25-5"><a></a><span class="fu">nrow</span>(mappable_reports)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a aria-label="1"></a><span class="co"># Keep only reports that DO have a location ----------</span></span>
+<span id="cb25-2"><a aria-label="2"></a>mappable_reports <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
+<span id="cb25-3"><a aria-label="3"></a>  <span class="fu">semi_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>))</span>
+<span id="cb25-4"><a aria-label="4"></a></span>
+<span id="cb25-5"><a aria-label="5"></a><span class="fu">nrow</span>(mappable_reports)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 4056</code></pre>
 </div>
@@ -761,14 +764,14 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a></a><span class="co"># Reports + coordinates, ready to map next week ------</span></span>
-<span id="cb27-2"><a></a>bigfoot_mappable <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
-<span id="cb27-3"><a></a>  <span class="fu">left_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb27-4"><a></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(latitude), <span class="sc">!</span><span class="fu">is.na</span>(longitude))</span>
-<span id="cb27-5"><a></a></span>
-<span id="cb27-6"><a></a>bigfoot_mappable <span class="sc">%&gt;%</span></span>
-<span id="cb27-7"><a></a>  <span class="fu">select</span>(REPORT_NUMBER, STATE, SEASON, REPORT_CLASS, latitude, longitude) <span class="sc">%&gt;%</span></span>
-<span id="cb27-8"><a></a>  <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a aria-label="1"></a><span class="co"># Reports + coordinates, ready to map next week ------</span></span>
+<span id="cb27-2"><a aria-label="2"></a>bigfoot_mappable <span class="ot">&lt;-</span> reports_df <span class="sc">%&gt;%</span></span>
+<span id="cb27-3"><a aria-label="3"></a>  <span class="fu">left_join</span>(locations_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"REPORT_NUMBER"</span> <span class="ot">=</span> <span class="st">"number"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb27-4"><a aria-label="4"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(latitude), <span class="sc">!</span><span class="fu">is.na</span>(longitude))</span>
+<span id="cb27-5"><a aria-label="5"></a></span>
+<span id="cb27-6"><a aria-label="6"></a>bigfoot_mappable <span class="sc">%&gt;%</span></span>
+<span id="cb27-7"><a aria-label="7"></a>  <span class="fu">select</span>(REPORT_NUMBER, STATE, SEASON, REPORT_CLASS, latitude, longitude) <span class="sc">%&gt;%</span></span>
+<span id="cb27-8"><a aria-label="8"></a>  <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 6
   REPORT_NUMBER STATE         SEASON REPORT_CLASS latitude longitude
@@ -783,7 +786,7 @@ Bill Perry
 </div>
 </div><div class="column" style="width:40%;">
 <p>This joined table — report text <strong>plus</strong> coordinates — is essentially <code>bfro_reports_geocoded.csv</code>, the file you’ll turn into a map in <strong>Lecture 13</strong>.</p>
-<p><strong>You just built a real dataset from two raw ones.</strong> That’s the everyday work of data science.</p>
+<p><strong>You just built a real dataset from two raw ones.</strong> <code>bigfoot_mappable</code> didn’t exist in either source file — it only exists because you joined them on a key, and it’s the exact table Lecture 13 opens with.</p>
 </div></div>
 </section>
 
@@ -816,7 +819,7 @@ Bill Perry
 <li>📖 <a href="https://r4ds.hadley.nz/joins">R4DS Ch. 19 — Joins</a></li>
 <li>📖 <code>common_code/13_joins</code></li>
 </ul>
-<p><strong>Up next — Lecture 13:</strong></p>
+<p><strong>Up next — Lecture 18:</strong></p>
 <ul>
 <li><strong>Mapping</strong> — turn this joined table into a map with <code>sf</code> and <code>geom_sf()</code></li>
 <li>Where <em>is</em> Bigfoot, anyway?</li>

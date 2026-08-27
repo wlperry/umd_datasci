@@ -1,17 +1,18 @@
 ---
-title: "Lecture 04 — Testing Our Hypothesis"
-subtitle: "The two-sample Welch's t-test from assumptions to results"
+title: "Lecture 09 — T-Tests I: Setting Up the Test"
+subtitle: "Hypotheses, the t-statistic, and checking assumptions before we test"
 author: "Bill Perry"
 date: today
 
 # --- Fields the SITE reads for ordering / listings / homepage ---
-# These are the ONLY things you need to edit to move this lecture around.
-# The folder name and filename never have to change.
-order: 4
-week: 2
+# order/week are auto-stamped from _schedule.yml by sync_order_from_schedule.R
+order: 9
+week: 5
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
-  What are T-Tests and how to run them and test assumptions and interpret.
+  Why comparing means isn't enough, the t-statistic, why Welch's is the
+  safe default, and checking normality and variance before we ever run
+  a test.
 categories: [tidyverse, descriptive-stats]
 
 format:
@@ -37,19 +38,18 @@ execute:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
-# Where we left off (Lecture 03)
+# Where we left off (Lectures 05–06)
 
 - **Wrangling** — `filter()`, `select()`, `mutate()`, `arrange()` as the core tidyverse verbs
 - **Descriptive stats** — mean, median, SD, SE with `group_by()` + `summarize()`
 - **NA handling** — `sum(!is.na())` is the safe way to count *n*
-- **`skimr`** — fast full-dataset overview in one line
-- **Boxplot** + jittered points; **mean ± SE** with `stat_summary()`
+- **Boxplot** + jittered points; **mean ± SE** with `stat_summary()` (Lecture 03, GGPlot I)
 - **Finding:** shady leaves appear heavier, taller, and wider than sunny leaves
 
 ::: callout-note
-**✅ Key idea from Lecture 03**
+**✅ Key idea from Lecture 06**
 
-We described the pattern in our data. Today we formally test whether that pattern is *statistically significant*.
+We described the pattern in our data. Over the next two lectures we formally test whether that pattern is *statistically significant* — today we set the test up, next time we run it.
 :::
 
 # Goals for Today
@@ -57,18 +57,16 @@ We described the pattern in our data. Today we formally test whether that patter
 :::::: columns
 :::: {.column width="60%"}
 - **Understand** why comparing means is not enough — we need a test
+- **Meet** the two-sample t-test and why we default to **Welch's**
 - **State** null and alternate hypotheses formally
 - **Check assumptions** before running any test
-  - normality: histogram, QQ plot, Shapiro-Wilk
+  - normality: histogram + Shapiro-Wilk
   - variance: Levene's test
-- **Run** Welch's two-sample t-test in R
-- **Read** every line of the `t.test()` output
-- **Report** results in scientific writing format
 
 ::: callout-tip
 **🖐 Try it yourself**
 
-By the end you will run and interpret a complete t-test on our leaf data.
+By the end of today your data will be fully checked and ready to test. Next lecture, we run it.
 :::
 ::::
 
@@ -79,8 +77,10 @@ By the end you will run and interpret a complete t-test on our leaf data.
 
 **References:**
 
+- 📖 Whitlock & Schluter, Ch. 4 — *Estimating with Uncertainty*
 - 📖 [R4DS §3](https://r4ds.hadley.nz/data-transform)
-- 🌐 [Data Carpentry](https://datacarpentry.github.io/R-ecology-lesson/)
+
+Both are in the course `readings/` folder.
 
 **Today's naming:**
 
@@ -121,7 +121,7 @@ We use a **two-tailed** test — we will detect a difference in *either* directi
 
 :::::: columns
 ::: {.column width="60%"}
-This lecture runs in **four short chunks**. After each chunk you switch to the **activity worksheet** and type the code yourself.
+This lecture runs in **two short chunks**. After each chunk you switch to the **activity worksheet** and type the code yourself.
 
 **For every code block, do three things:**
 
@@ -134,24 +134,22 @@ This lecture runs in **four short chunks**. After each chunk you switch to the *
 ::: callout-note
 **✅ Why bother? (the evidence)**
 
--   **Predicting first** forces your brain to *retrieve* what it knows. The gap between your guess and the real answer is what makes the idea stick — vital for slippery ideas like *p*-values.
--   **Typing by hand** builds the finger-memory and error-spotting that copy-paste skips.
--   **Chunk → immediate practice** keeps a new idea in working memory long enough to form a lasting schema.
+-   A *p*-value is easy to memorize and hard to actually understand. Guessing "above or below 0.05" *before* you see a test result forces you to reason about the test instead of just reading a number off the screen.
+-   Typing `var.equal = FALSE` yourself — rather than pasting it — is what makes you notice it's there at all, instead of skating past the one argument that separates Welch's from the standard t-test.
 :::
 ::::
 ::::::
 
 # Load Libraries and Data
 
-```{r load-libs-04}
+```{r load-libs-09}
 # Load all packages at the top ----------------------------
 library(readxl) # reading Excel files
 library(tidyverse) # data manipulation + ggplot2
-library(skimr) # fast summaries
 library(car) # Levene's test for variance equality
 ```
 
-```{r load-data-04}
+```{r load-data-09}
 # Load the leaf data from the data folder -----------------
 tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
 ```
@@ -162,45 +160,12 @@ tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
 Install once: `install.packages("car")`
 :::
 
-# What We Know So Far
+# 🧩 Chunk 1 of 2 · Why We Test & the t-Statistic
 
-::: callout-note
-**🔮 Predict first:** The two group means differ by about 4 g. With only 10 leaves per side — commit now to a yes/no: is that gap big enough to be *statistically significant*? You'll find out in Chunk 3.
-:::
+**We will cover:** why comparing means isn't enough, the five-step framework we'll use for every test this semester, what a two-sample t-test is, and why we default to Welch's.
 
-::::: columns
-::: {.column width="60%"}
-```{r recap-summary}
-# Quick recap from Lecture 03 ----------------------------
-recap_df <- tree_df %>%
-  group_by(side) %>%
-  summarize(
-    n = sum(!is.na(weight_g)),
-    mean_wt = round(mean(weight_g, na.rm = TRUE), 2),
-    sd_wt = round(sd(weight_g, na.rm = TRUE), 2),
-    se_wt = round(sd_wt / sqrt(n), 2)
-  )
-recap_df
-```
-:::
-
-::: {.column width="40%"}
-- RESULTS:
-  - Shady mean: **7.80 g**
-  - Sunny mean: **3.80 g**
-  - Difference: **4.0 g** — a big gap!
-- **But is that gap real, or could it just be sampling noise?**
-- With only n = 10 per group, random chance could produce apparent differences.
-- **We need a formal test to quantify the probability.**
-:::
-:::::
-
-# 🧩 Chunk 1 of 4 · Why We Test & the t-Statistic
-
-**We will cover:** why comparing means isn't enough, what a two-sample t-test is, why we default to Welch's, and the formula in action.
-
-::: callout-tip
-**🖐 After this chunk: Activity Parts 1–3** (load data, state hypotheses, recap the descriptive stats).
+::: {.activitybanner}
+**🛑 After this chunk: Activity Parts 1–2** (load data, recap the descriptive stats).
 :::
 
 # Why Comparing Means Is Not Enough
@@ -209,6 +174,7 @@ recap_df
 ::: {.column width="60%"}
 ```{r recap-plot}
 #| fig-format: png
+#| fig-alt: "Jittered points of leaf weight in grams for shady and sunny sides, with a black point and error bar showing the mean plus or minus one standard error for each side; the shady mean sits well above the sunny mean."
 # Remind ourselves what the data look like ---------------
 recap_plot <- tree_df %>%
   ggplot(aes(x = side, y = weight_g, color = side)) +
@@ -244,6 +210,32 @@ A *p*-value tells us:
 
 Small *p* → the gap is unlikely to be chance.
 :::
+:::::
+
+# Five Steps to a Hypothesis Test
+
+::::: columns
+::: {.column width="60%"}
+Every hypothesis test this semester — t-test, ANOVA, regression — follows the same sequence:
+
+| Step  | Action                                | When         |
+|-------|----------------------------------------|--------------|
+| **1** | State H₀ and Hₐ                        | Today        |
+| **2** | Check **normality**                    | Today        |
+| **3** | Check **variance**                     | Today        |
+| **4** | **Run** the test                       | Next lecture |
+| **5** | **Interpret** and **report**           | Next lecture |
+:::
+
+:::: {.column width="40%"}
+::: callout-important
+**Check assumptions BEFORE running the test.**
+
+If your data seriously violate assumptions, the *p*-value from the t-test is unreliable.
+
+With n = 10 per group, our main concern is **gross non-normality**. The t-test is quite robust to mild departures.
+:::
+::::
 :::::
 
 # What Is a Two-Sample t-Test?
@@ -303,7 +295,7 @@ In R: **`var.equal = FALSE`**
 ::::
 ::::::
 
-# The Welch's Formula in Action
+# Seeing the Formula in Action
 
 ::: callout-note
 **🔮 Predict first:** t = difference ÷ SE-of-the-difference, and the difference is 4 g. Do you expect |t| to land nearer 1, 5, or 10? Predict before the numbers appear.
@@ -312,7 +304,7 @@ In R: **`var.equal = FALSE`**
 ::::: columns
 ::: {.column width="60%"}
 ```{r formula-manual}
-# Pull stats and compute t by hand ----------------------
+# Watch the instructor plug numbers into the formula ----
 stats_df <- tree_df %>%
   group_by(side) %>%
   summarize(
@@ -344,47 +336,25 @@ cat("t-statistic:        ", round(t_manual, 3), "\n")
 2.  SE of the difference: $\sqrt{\frac{s^2_{shady}}{10} + \frac{s^2_{sunny}}{10}}$
 3.  t = difference / SE
 
-The observed difference is \~10 standard errors above zero — very far from what we'd expect if H₀ were true.
+The observed difference is \~10 standard errors above zero — very far from what we'd expect if H₀ were true. You'll try this yourself with a calculator in the activity's optional section — today the goal is just to see where the number comes from.
 :::
 :::::
 
-# 🛑 Pause — Do Activity Parts 1–3 Now
+# → ACTIVITY 9 Parts 1–2 now
 
-Load the data, write your hypotheses *before* looking at any results, and recompute the group means / SD / SE. Predict each output, type it, run it.
+::: {.activitybanner}
+**🛑 Do Activity Parts 1–2 now**
 
-# 🧩 Chunk 2 of 4 · Framework, Hypotheses & Assumptions
-
-**We will cover:** the five-step framework, stating H₀ / Hₐ, and checking normality (histogram, QQ, Shapiro-Wilk) and equal variance (Levene's).
-
-::: callout-tip
-**🖐 After this chunk: Activity Parts 4–7** (histogram, QQ, Shapiro, Levene).
+Load the data and recompute the group means, SD, and SE. Predict each output, type it, run it.
 :::
 
-# Five Steps to a Hypothesis Test
+# 🧩 Chunk 2 of 2 · Steps 1–3: Hypotheses & Assumptions
 
-:::::: columns
-::: {.column width="60%"}
-We will always follow this sequence:
+**We will cover:** stating H₀ / Hₐ formally, checking normality (histogram + Shapiro-Wilk), and checking equal variance (Levene's).
 
-| Step  | Action                                         |
-|-------|------------------------------------------------|
-| **1** | State H₀ and Hₐ                                |
-| **2** | Check **normality** — histogram/box plot       |
-| **3** | Check **normality** — QQ plot + Shapiro-Wilk   |
-| **4** | Check **variance** — Levene's test             |
-| **5** | **Run** the test; **interpret** and **report** |
+::: {.activitybanner}
+**🛑 After this chunk: Activity Parts 3–6** (hypotheses, histogram, Shapiro-Wilk, Levene's).
 :::
-
-:::: {.column width="40%"}
-::: callout-important
-**Check assumptions BEFORE running the test.**
-
-If your data seriously violate assumptions, the *p*-value from the t-test is unreliable.
-
-With n = 10 per group, our main concern is **gross non-normality**. The t-test is quite robust to mild departures.
-:::
-::::
-::::::
 
 # Step 1 — Hypotheses (Formal)
 
@@ -424,6 +394,7 @@ We will reject H₀ if *p* \< 0.05.
 ::: {.column width="60%"}
 ```{r histogram-norm}
 #| fig-format: png
+#| fig-alt: "Two histograms of leaf weight in grams, faceted by side, showing the count of leaves in each 1-gram bin for shady leaves and for sunny leaves."
 # Histogram per group to visually check normality -------
 hist_norm_plot <- tree_df %>%
   ggplot(aes(x = weight_g, fill = side)) +
@@ -449,48 +420,16 @@ hist_norm_plot
 
 With n = 10 per group, histograms look lumpy — that is **normal for small samples**.
 
-Histograms are a visual check only. We also use QQ plots and Shapiro-Wilk.
+::: callout-note
+A **QQ plot** is another common visual check — same idea, different picture. You'll find one in the activity's optional section if you want to compare.
+:::
 :::
 :::::
 
-# Step 3 — Check Normality: QQ Plot
-
-::::: columns
-::: {.column width="60%"}
-```{r qq-norm}
-#| fig-format: png
-# Q-Q plot — points should fall along the diagonal line --
-qq_norm_plot <- tree_df %>%
-  ggplot(aes(sample = weight_g, color = side)) +
-  stat_qq() +
-  stat_qq_line(color = "black", linewidth = 0.8) +
-  facet_wrap(~side, scales = "free") +
-  labs(
-    title = "Normal Q-Q Plots by Side",
-    x = "Theoretical Quantiles",
-    y = "Sample Quantiles"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "none")
-qq_norm_plot
-```
-:::
-
-::: {.column width="40%"}
-**How to read a QQ plot:**
-
-- Points **on the line** → data follow a normal distribution
-- Points **curving away** at ends → heavy tails or skew
-- With only n = 10, some deviation is expected and acceptable
-
-If points follow the line roughly, we are comfortable proceeding with the t-test.
-:::
-:::::
-
-# Step 3 — Check Normality: Shapiro-Wilk Test
+# Step 2 — Check Normality: Shapiro-Wilk Test
 
 ::: callout-note
-**🔮 Predict first:** Shapiro-Wilk's H₀ is "the data are normal." From the histogram and QQ plot you just saw, predict for each side: will *p* be **above** or **below** 0.05?
+**🔮 Predict first:** Shapiro-Wilk's H₀ is "the data are normal." From the histogram you just saw, predict for each side: will *p* be **above** or **below** 0.05?
 :::
 
 :::::: columns
@@ -521,12 +460,12 @@ tree_df %>%
 ::: callout-important
 **Small-sample caution:**
 
-With n = 10, this test has **low power** — it rarely detects non-normality even when present. The QQ plot is equally important.
+With n = 10, this test has **low power** — it rarely detects non-normality even when present. The histogram is equally important.
 :::
 ::::
 ::::::
 
-# Step 4 — Check Variance: Levene's Test
+# Step 3 — Check Variance: Levene's Test
 
 ::::: columns
 ::: {.column width="60%"}
@@ -562,7 +501,7 @@ leveneTest(weight_g ~ side, data = tree_df)
 
 R stops with:
 
-``` 
+```
 Error in leveneTest(weight_g ~ side, data = tree_df) :
   could not find function "leveneTest"
 ```
@@ -579,367 +518,40 @@ leveneTest(weight_g ~ side, data = tree_df)
 ::: callout-tip
 **✅ Why show a broken run?**
 
-"could not find function" almost always means a missing `library()` — not a typo. Watching me diagnose it here means you'll fix it in seconds when it happens to you.
+`leveneTest()` lives inside `car`, not base R — so R has no idea what the function is until the package is loaded. Seeing that exact error message once, on purpose, means you won't waste ten minutes hunting for a typo the next time it happens to you.
 :::
 ::::
 ::::::
 
-# 🛑 Pause — Do Activity Parts 4–7 Now
+# → ACTIVITY 9 Parts 3–6 now
 
-Check every assumption *before* you test: histogram, QQ plot, Shapiro-Wilk, and Levene's. Predict each p-value before you run it.
+::: {.activitybanner}
+**🛑 Go to Activity 9 — Parts 3–6**
 
-# 🧩 Chunk 3 of 4 · Run & Interpret the Test
-
-**We will cover:** running Welch's `t.test()`, reading every line of the output, and making a formal reject / fail-to-reject decision.
-
-::: callout-tip
-**🖐 After this chunk: Activity Parts 8–11** (run, decode, calculate t by hand, decide).
+Close the slides. State your hypotheses, then check normality (histogram + Shapiro-Wilk) and variance (Levene's). Predict every p-value before you run it.
 :::
-
-# Step 5 — Run the Welch's t-Test
-
-::: callout-note
-**🔮 Predict first:** Write down a guess for the *p*-value before you run `t.test()` — above or below 0.05? Then see how close you were.
-:::
-
-::::: columns
-::: {.column width="60%"}
-```{r welch-ttest}
-# Welch's two-sample t-test — unequal variance ---------
-leaf_ttest_model <- t.test(
-  weight_g ~ side, # formula: response ~ grouping variable
-  data = tree_df,
-  var.equal = FALSE, # Welch's — no pooled variance
-  alternative = "two.sided" # two-tailed test
-)
-
-leaf_ttest_model
-```
-:::
-
-::: {.column width="40%"}
-**Key arguments:**
-
-| argument                    | what it does                                |
-|-----------------------------|---------------------------------------------|
-| `weight_g ~ side`           | compare `weight_g` between levels of `side` |
-| `var.equal = FALSE`         | use Welch's correction                      |
-| `alternative = "two.sided"` | two-tailed test                             |
-
-The result is a model object. We decode each line of the output on the next slide.
-:::
-:::::
-
-# Reading the `t.test()` Output
-
-::::: columns
-::: {.column width="60%"}
-```{r ttest-parse}
-# Extract individual values from the model object ------
-cat("t-statistic  :", round(leaf_ttest_model$statistic, 3), "\n")
-cat("df (Welch)   :", round(leaf_ttest_model$parameter, 2), "\n")
-cat("p-value      :", signif(leaf_ttest_model$p.value, 3), "\n")
-cat(
-  "95% CI       :",
-  round(leaf_ttest_model$conf.int[1], 2),
-  "to",
-  round(leaf_ttest_model$conf.int[2], 2),
-  "g\n"
-)
-cat("Mean shady   :", round(leaf_ttest_model$estimate[1], 2), "g\n")
-cat("Mean sunny   :", round(leaf_ttest_model$estimate[2], 2), "g\n")
-```
-:::
-
-::: {.column width="40%"}
-**Line by line:**
-
-| output                | meaning                                          |
-|-----------------------|--------------------------------------------------|
-| `t`                   | our calculated t-statistic                       |
-| `df`                  | Welch-Satterthwaite df (non-integer is normal!)  |
-| `p-value`             | probability of this result if H₀ is true         |
-| `95% CI`              | plausible range for the true difference in means |
-| `mean of shady/sunny` | the two group means                              |
-
-The **95% CI** is the range we could expect to see if we repeated this study many times.
-:::
-:::::
-
-# Step 5 — Make a Decision
-
-:::::: columns
-::: {.column width="60%"}
-```{r decision-output}
-# State the decision formally --------------------------
-# if/else: R checks the condition and runs one of two blocks
-# We will learn these formally in the functions lecture
-p_val <- leaf_ttest_model$p.value
-alpha <- 0.05
-
-if (p_val < alpha) {
-  cat("p =", signif(p_val, 3), "< α =", alpha, "\n")
-  cat("Decision: REJECT H₀\n")
-  cat("Conclusion: leaf weight differs between sides.\n")
-} else {
-  cat("p =", signif(p_val, 3), ">= α =", alpha, "\n")
-  cat("Decision: FAIL TO REJECT H₀\n")
-  cat("Conclusion: insufficient evidence of a difference.\n")
-}
-```
-:::
-
-:::: {.column width="40%"}
-::: callout-important
-**What a small p-value means:**
-
-If H₀ were true (no real difference), we would get a t-statistic this large or larger less than `p` × 100% of the time just by chance.
-
-We set α = 0.05 *before* the test. If *p* \< α, we reject H₀.
-:::
-
-**What a small p-value does NOT mean:**
-
-- It is not the probability that H₀ is true
-- Statistical significance ≠ biological importance
-- Report the effect size (difference in means) alongside *p*
-::::
-::::::
-
-# 🛑 Pause — Do Activity Parts 8–11 Now
-
-Run the test, decode t / df / p / CI, reproduce t by hand, and state your decision in formal language. Predict the p-value first.
-
-# 🧩 Chunk 4 of 4 · Visualize & Report
-
-**We will cover:** embedding the test result in a boxplot and a mean ± SE plot, writing a scientific results sentence, and saving publication-quality figures.
-
-::: callout-tip
-**🖐 After this chunk: Activity Parts 12–13** (plots and the results sentence).
-:::
-
-# Visualize the Result — Boxplot
-
-:::::: columns
-::: {.column width="60%"}
-```{r boxplot-04}
-#| fig-format: png
-# Final boxplot with all points -----------------------
-leaf_box_04_plot <- tree_df %>%
-  ggplot(aes(x = side, y = weight_g, fill = side)) +
-  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
-  geom_point(
-    position = position_jitter(width = 0.15, seed = 42),
-    alpha = 0.6,
-    size = 2.5
-  ) +
-  labs(
-    title = "Leaf Weight by Tree Side",
-    subtitle = paste0(
-      "Welch's t-test: t = ",
-      round(leaf_ttest_model$statistic, 2),
-      ", p = ",
-      signif(leaf_ttest_model$p.value, 2)
-    ),
-    x = "Side of Tree",
-    y = "Leaf Weight (g)"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "none")
-leaf_box_04_plot
-```
-:::
-
-:::: {.column width="40%"}
-**Including the test result in the figure:**
-
-- `subtitle` pulls t and p directly from the model object
-- R fills in the actual numbers automatically
-- If you re-run with new data, the subtitle updates
-
-::: callout-tip
-Embedding test statistics in the plot subtitle saves you from copying numbers by hand — and avoids typos in your report.
-:::
-::::
-::::::
-
-# Visualize the Result — Mean ± SE
-
-::::: columns
-::: {.column width="60%"}
-```{r mean-se-04}
-#| fig-format: png
-# Mean ± SE plot with individual points ---------------
-leaf_mean_se_04_plot <- tree_df %>%
-  ggplot(aes(x = side, y = weight_g, color = side)) +
-  geom_point(
-    position = position_jitter(width = 0.15, seed = 42),
-    alpha = 0.35,
-    size = 2
-  ) +
-  stat_summary(fun = mean, geom = "point", size = 4) +
-  stat_summary(
-    fun.data = mean_se,
-    geom = "errorbar",
-    width = 0.15,
-    linewidth = 0.9
-  ) +
-  labs(
-    title = "Mean ± SE Leaf Weight by Tree Side",
-    subtitle = paste0(
-      "Welch's t: t(",
-      round(leaf_ttest_model$parameter, 1),
-      ") = ",
-      round(leaf_ttest_model$statistic, 2),
-      ", p < 0.001"
-    ),
-    x = "Side of Tree",
-    y = "Leaf Weight (g)"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "none")
-leaf_mean_se_04_plot
-```
-:::
-
-::: {.column width="40%"}
-**What the error bars tell you:**
-
-- Bars show **± 1 SE** — precision of the mean estimate
-- Non-overlapping bars suggest a significant difference
-
-**Rule of thumb:**
-
-If error bars overlap by less than half the bar length, the difference is *likely* significant at α = 0.05. The *p*-value from the t-test is the definitive answer.
-:::
-:::::
-
-# How to Report Results in Science
-
-::::: columns
-::: {.column width="60%"}
-```{r report-stats}
-# Compute reporting values from the model object -------
-t_val <- round(leaf_ttest_model$statistic, 2)
-df_val <- round(leaf_ttest_model$parameter, 1)
-p_val2 <- signif(leaf_ttest_model$p.value, 2)
-
-cat("--- Results sentence ---\n")
-cat("Shady-side leaves were significantly heavier than\n")
-cat(
-  "sunny-side leaves (Welch's t-test: t(",
-  df_val,
-  ") =",
-  t_val,
-  ", p =",
-  p_val2,
-  ").\n"
-)
-cat(
-  "Mean ± SE: shady =",
-  round(leaf_ttest_model$estimate[1], 2),
-  "±",
-  round(recap_df$se_wt[recap_df$side == "shady"], 2),
-  "g,\n"
-)
-cat(
-  "           sunny =",
-  round(leaf_ttest_model$estimate[2], 2),
-  "±",
-  round(recap_df$se_wt[recap_df$side == "sunny"], 2),
-  "g.\n"
-)
-```
-:::
-
-::: {.column width="40%"}
-**Standard format:**
-
-> *"\[Finding\] (Welch's t-test: t(df) = X.XX, p = X.XXX; mean ± SE: group1 = X.X ± X.X units, group2 = X.X ± X.X units)."*
-
-**Always include:**
-
-- Test type (Welch's t-test)
-- t-statistic and df
-- Exact *p*-value (or \< 0.001)
-- Group means ± SE
-- Units
-
-**Never report** "p = 0.000" — write "p \< 0.001" instead.
-:::
-:::::
-
-# Save Your Plots
-
-```{r save-plots-04}
-# Save both plots to the figures folder ----------------
-ggsave(
-  "figures/leaf_weight_boxplot_ttest.png",
-  plot = leaf_box_04_plot,
-  width = 5,
-  height = 5,
-  units = "in",
-  dpi = 300
-)
-
-ggsave(
-  "figures/leaf_weight_mean_se_ttest.png",
-  plot = leaf_mean_se_04_plot,
-  width = 5,
-  height = 5,
-  units = "in",
-  dpi = 300
-)
-```
-
-:::::: columns
-::: {.column width="60%"}
-Both plots are now in your `figures/` folder with the test statistics embedded in the subtitle — ready for a lab report or paper.
-:::
-
-:::: {.column width="40%"}
-::: callout-tip
-`dpi = 300` is publication quality. Use it for any figure that will appear in a paper, poster, or formal report.
-:::
-::::
-::::::
-
-# 🛑 Pause — Do Activity Parts 12–13 Now
-
-Build both figures with the statistics embedded in the subtitle, then write your results sentence. Predict what the subtitle will say before you run it.
 
 # What We Learned Today
 
 ::::: columns
 ::: {.column width="60%"}
-**Concepts:**
-
 - Why we need a hypothesis test — means alone are not enough
+- The **five-step framework** we'll reuse all semester
 - **Welch's t-test** — use `var.equal = FALSE` as the safe default
 - **Two-tailed** test — detects differences in either direction
-- **Five-step framework** — hypotheses → normality → variance → test → report
-- **Reading output** — t, df, *p*, CI, group means
-
-**R skills:**
-
-- `library(car)` + `leveneTest(y ~ group, data)` — variance check
-- `filter() %>% pull() %>% shapiro.test()` — normality per group
-- `t.test(y ~ group, data, var.equal = FALSE, alternative = "two.sided")`
-- `model$statistic`, `model$p.value`, `model$conf.int` — extract results
-- `paste0(...)` in subtitle — embed test statistics in figures
+- Checking assumptions **before** testing: normality (histogram + Shapiro-Wilk), variance (Levene's)
 :::
 
 ::: {.column width="40%"}
 **References:**
 
-- 📖 [R4DS §3](https://r4ds.hadley.nz/data-transform) — Data Transformation
-- 📖 [R4DS §13](https://r4ds.hadley.nz/numbers) — Numbers
-- 🌐 [Data Carpentry](https://datacarpentry.github.io/R-ecology-lesson/)
+- 📖 Whitlock & Schluter, Ch. 4 — *Estimating with Uncertainty*
+- 📖 [R4DS §3](https://r4ds.hadley.nz/data-transform)
 
-**Up next — Lecture 05:**
+**Up next — Lecture 10, T-Tests II:**
 
-- Linear regression — predicting leaf area from paper tracing mass
-- Building a calibration curve with `lm()`
-- R², residuals, and assumption checking
+- Run Welch's `t.test()`
+- Decode the output line by line
+- Make a formal decision and write a results sentence
 :::
 :::::

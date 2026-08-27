@@ -1,7 +1,7 @@
 ---
-order: 6
-week: 3
-title: "Worksheet 05 — Linear Regression"
+order: 11
+week: 6
+title: "Worksheet 11 — Linear Regression"
 subtitle: "Building a calibration curve to predict leaf area from paper tracing mass"
 author: "Bill Perry"
 date: today
@@ -22,13 +22,13 @@ execute:
 
 # Regression — Predicting Leaf Area
 
-### Recap from the Quarto intro (Worksheet 4.5)
+### Recap from Worksheets 07, 09–10
 
 - **Quarto** — one `.qmd` file holds your writing *and* your code and renders to Word, HTML, or PowerPoint
 - **Three ingredients** — YAML front matter, Markdown text, and uniquely **named** code chunks
 - **Reproducibility** — every number and figure is *computed*, never copied by hand
 - **Inline code** — a live result drops straight into a sentence with `` `r ` ``
-- **Carried forward (Worksheet 04)** — shady leaves were significantly *heavier* than sunny leaves (Welch's t-test, *p* \< 0.001)
+- **Carried forward (Worksheets 09–10)** — shady leaves were significantly *heavier* than sunny leaves (Welch's t-test, *p* \< 0.001)
 - **But:** weight in grams tells us about *mass* — not directly about *leaf surface area*
 
 ### Today's Objectives
@@ -54,10 +54,9 @@ execute:
 ::: callout-note
 ## 🔮 Predict before you run — and type, don't paste
 
-Before each **▶ Run this** block, cover the output and *predict* what R will print. Then type the code yourself. Two reasons:
+Before each **▶ Run this** block, cover the output and *predict* what R will print. Then type the code in yourself rather than pasting it.
 
-- **Predicting makes it stick.** Guessing the slope, R², or a residual pattern forces you to retrieve the idea — being surprised is when it sinks in.
-- **Typing beats pasting.** Typing trains your eye for the small errors (a flipped `lm()` formula, a wrong `newdata` column name) that you would otherwise spend real time hunting.
+A regression handout has a lot of numbers in it — slope, intercept, R², a t-value, a p-value — and it's tempting to just read them off the screen. Committing to a guess about one of them first (is R² closer to 0.5 or 1? is the slope positive?) gives you a reason to actually look at the output instead of skimming past it. Typing the formula by hand also has a side benefit: it's how you catch that you flipped `area_cm2 ~ mass_g` backwards, or typed `newdata` with the wrong column name — mistakes that copy-paste would have hidden.
 :::
 
 ::: callout-tip
@@ -194,7 +193,7 @@ Response (Y):
 Reason for this direction:
 ```
 
-> 💡 **Key idea:** In regression, *X* is what you measure (mass — easy with a balance), and *Y* is what you want to know (area — harder to measure on a complex leaf shape). We measure X to predict Y.
+> 💡 **Key idea:** You could measure leaf area directly with a planimeter or a scanner, but a balance is what's sitting on the lab bench. That's the whole point of a calibration curve — trade a hard measurement (area) for an easy one (mass) once you've established that the two move together.
 
 ------------------------------------------------------------------------
 
@@ -332,7 +331,7 @@ calibration_plot <- paper_df %>%
   ggplot(aes(x = mass_g, y = area_cm2)) +
   geom_point(alpha = 0.5, size = 1.8) +
   geom_smooth(method = "lm", se = TRUE,
-              color = "steelblue", fill = "lightblue") +
+              color = "darkblue", fill = "lightblue") +
   labs(
     title    = "Paper Calibration Curve",
     subtitle = paste0("area = ", round(b_slope, 2),
@@ -366,43 +365,24 @@ ggsave("figures/paper_calibration_curve.png",
 
 ------------------------------------------------------------------------
 
-# Part 9 · Check assumptions — residual plot
+# Part 9 · Check assumptions — the base R diagnostic plots
 
-> 🔮 **Predict first:** If the line fits well, what should the residuals-vs-fitted plot look like — a flat random cloud, a curve, or a funnel? Predict, then run.
+> 🔮 **Predict first:** `plot()` on a fitted model gives four panels at once. One is a QQ plot of the residuals — what do you predict the other three will show?
 
 **▶ Run this:**
 
 ``` r
-# Add fitted values and residuals to the data ----------
-paper_resid_df <- paper_df %>%
-  mutate(
-    fitted    = fitted(paper_lm_model),
-    residuals = residuals(paper_lm_model)
-  )
+# plot() on an lm object gives all four diagnostics -----
+par(mfrow = c(2, 2))
+plot(paper_lm_model)
 ```
 
-``` r
-# Residuals vs Fitted — checks linearity and equal variance
-resid_09_plot <- paper_resid_df %>%
-  ggplot(aes(x = fitted, y = residuals)) +
-  geom_point(alpha = 0.5) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  labs(
-    title = "Residuals vs Fitted Values",
-    x     = "Fitted Values (cm²)",
-    y     = "Residuals (cm²)"
-  ) +
-  theme_minimal()
-
-resid_09_plot
-```
-
-✏️ **Your turn:** Describe the residual plot. Do the points form a random cloud around zero, or is there a pattern?
+✏️ **Your turn:** Describe panel 1 (Residuals vs Fitted). Do the points form a random cloud around zero, or is there a pattern?
 
 ```
 Pattern or random cloud?:
 Any evidence of non-linearity (curved pattern)?  Y / N
-Any evidence of unequal variance (funnel shape)?  Y / N
+Any evidence of unequal variance (funnel shape in panel 1 or 3)?  Y / N
 ```
 
 > ⚠️ **Watch out!** A funnel shape (residuals getting larger at higher fitted values) means variance is *not* constant — a violation of the equal variance assumption. A curved pattern means the relationship is not linear.
@@ -411,25 +391,9 @@ Any evidence of unequal variance (funnel shape)?  Y / N
 
 ------------------------------------------------------------------------
 
-# Part 10 · Check assumptions — QQ plot and Shapiro-Wilk
+# Part 10 · Confirming normality — Shapiro-Wilk
 
 **▶ Run this:**
-
-``` r
-# QQ plot of residuals — checks normality assumption ---
-qq_resid_09_plot <- paper_resid_df %>%
-  ggplot(aes(sample = residuals)) +
-  stat_qq() +
-  stat_qq_line(color = "red", linewidth = 0.8) +
-  labs(
-    title = "Normal QQ Plot of Residuals",
-    x     = "Theoretical Quantiles",
-    y     = "Sample Quantiles"
-  ) +
-  theme_minimal()
-
-qq_resid_09_plot
-```
 
 ``` r
 # Shapiro-Wilk test on residuals — NOT on raw data -----
@@ -441,6 +405,12 @@ shapiro.test(residuals(paper_lm_model))
 ```
 W = _____   p = _____
 Decision (normal / not normal):
+```
+
+✏️ **Your turn:** Does the Shapiro-Wilk decision agree with what panel 2 (Normal Q-Q) of `plot(paper_lm_model)` showed you?
+
+```
+Your answer:
 ```
 
 ✏️ **Your turn:** An important distinction — in regression, normality is checked on the **residuals**, not on Y or X directly. Why does that matter?
@@ -477,13 +447,13 @@ cat("Shady tracing:", mass_shady, "g →",
     round(area_shady, 2), "cm²\n")
 ```
 
-✏️ **Your turn:** Does the shady leaf have a larger predicted area? In Worksheet 04 we found shady leaves were significantly *heavier*. Does a larger predicted area match that finding? What does this tell you about the relationship between leaf weight and leaf area?
+✏️ **Your turn:** Does the shady leaf have a larger predicted area? In Worksheets 09–10 we found shady leaves were significantly *heavier*. Does a larger predicted area match that finding? What does this tell you about the relationship between leaf weight and leaf area?
 
 ```
 Sunny predicted area:
 Shady predicted area:
 Larger side:
-Does larger area match the heavier weight from Worksheet 04?  Y / N
+Does larger area match the heavier weight from Worksheets 09–10?  Y / N
 What does this tell you about the relationship between weight and area in leaves?
 ```
 
@@ -526,9 +496,16 @@ Your answer:
 
 # Part 12 · Write a scientific results paragraph
 
-✏️ **Your turn:** Write a complete results paragraph using the information below. Follow the format from Lecture 05.
+✏️ **Your turn:** Write a complete results paragraph using the information below. Follow the format from Lecture 11.
 
-**Information to include:** - What the regression tested - F-statistic, df₁, df₂, and p-value (from the F-statistic line in `summary()`) - R² - The calibration equation (slope and intercept) - 95% confidence interval for the slope (use `confint(paper_lm_model)`) - Brief mention of assumption checks
+**Information to include:**
+
+- What the regression tested
+- F-statistic, df₁, df₂, and p-value (from the F-statistic line in `summary()`)
+- R²
+- The calibration equation (slope and intercept)
+- 95% confidence interval for the slope (use `confint(paper_lm_model)`)
+- Brief mention of assumption checks
 
 ``` r
 # Get the 95% CI for the slope -------------------------
@@ -556,9 +533,9 @@ At this point you should be able to:
 - [ ] Fit a linear regression with `lm(Y ~ X, data)` and call `summary()`
 - [ ] Extract slope, intercept, and R² from the model
 - [ ] Interpret slope, intercept, t-value, p-value, and R² in biological terms
-- [ ] Add fitted values and residuals to a data frame with `fitted()` and `residuals()`
-- [ ] Check the residual vs fitted plot for linearity and equal variance
-- [ ] Check the QQ plot and Shapiro-Wilk on **residuals** for normality
+- [ ] Run `plot(model)` and read all four diagnostic panels
+- [ ] Check the residuals vs fitted panel for linearity and equal variance
+- [ ] Check the Normal Q-Q panel and Shapiro-Wilk on **residuals** for normality
 - [ ] Use `coef(model)` to write the prediction equation
 - [ ] Use `predict(model, newdata, interval = "prediction")` for predictions with uncertainty
 - [ ] Write a complete scientific results paragraph with F, df, p, R², and equation
@@ -640,9 +617,9 @@ Why:
 
 > 📖 **Whitlock & Schluter §17.2 p. 550:** *"Extrapolation is the prediction of Y at values of X beyond the range of X-values in the data. Extrapolation is problematic because there is no way to ensure the relationship between X and Y continues to be linear."*
 
-### Connect to Worksheet 04
+### Connect to Worksheets 09–10
 
-In Worksheet 04 you ran a Welch's t-test comparing leaf **weight** (grams) between sunny and shady sides and found a significant difference (*p* \< 0.001). Now you have a calibration curve that converts tracing weight to **area** (cm²) — a more biologically meaningful measurement. You could use the regression equation as a `mutate()` step to add predicted area to a leaf data frame, then redo the t-test on *area* rather than weight.
+In Worksheets 09–10 you ran a Welch's t-test comparing leaf **weight** (grams) between sunny and shady sides and found a significant difference (*p* \< 0.001). Now you have a calibration curve that converts tracing weight to **area** (cm²) — a more biologically meaningful measurement. You could use the regression equation as a `mutate()` step to add predicted area to a leaf data frame, then redo the t-test on *area* rather than weight.
 
 **▶ Sketch the code (do not necessarily run it — you would need actual tracing masses):**
 
@@ -678,13 +655,13 @@ figures/
 
 1.  **`lm()` error:** the formula must be `lm(Y ~ X, data)` — response on the left, predictor on the right. Check column names with `names(paper_df)`.
 2.  **`coef()` gives two values:** `coef(model)[1]` is the intercept, `coef(model)[2]` is the slope for the first predictor.
-3.  **`residuals()` vs raw data:** always apply `shapiro.test()` and `ggplot(aes(sample = residuals))` to `residuals(model)`, not to the raw Y column.
+3.  **`residuals()` vs raw data:** always apply `shapiro.test()` and `plot(model)` to the fitted model — the residuals they check come from `residuals(model)`, not the raw Y column.
 4.  **`predict()` needs a tibble:** `newdata` must be a data frame or tibble with the exact same column name as the predictor (`mass_g`). A typo here is the most common error.
 5.  **`geom_smooth(se = TRUE)` shows confidence band, not prediction interval.** For prediction intervals, use `predict()` manually.
 6.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
 
-> 💡 **Key idea:** The five-step logic of regression (plot → fit → check assumptions → interpret → predict) is the same framework you'll use for multiple regression, ANOVA, and every other linear model in your career.
+> 💡 **Key idea:** Plot it, fit it, check the residuals, interpret the coefficients, then predict — you followed those same five steps for this one calibration curve, and you'll follow them again, mostly unchanged, the first time you run an ANOVA next module.
 
 ------------------------------------------------------------------------
 
-*End of Worksheet 05. Next: Worksheet 06 — applying the calibration curve to measured leaf tracings and comparing sunny vs. shady leaf areas with a t-test.*
+*End of Worksheet 11. Next: Worksheet 12 — downloading and summarizing real climate data.*

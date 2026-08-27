@@ -1,0 +1,321 @@
+---
+order: 3
+week: 2
+title: "Activity 03 - GGPlot I"
+subtitle: "Grouped summaries, facets, and the pipe into ggplot"
+author: "Bill Perry"
+date: today
+
+type: activity
+description: >
+  Hands-on companion to the GGPlot I lecture. Pipe into ggplot(), choose
+  colors on purpose, split plots with facets, and build a mean ± SE plot
+  with stat_summary().
+categories: [ggplot, tidyverse]
+
+format:
+  html: default
+  docx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# Grouped Summaries and Facets
+
+### Recap from Worksheet 02
+
+- Installed R and Positron; created a project folder (`data/`, `scripts/`, `figures/`)
+- Loaded our leaf data with `read_excel()` and `clean_names()`
+- Used the pipe `%>%` to chain steps
+- Made a first `geom_point()` plot
+
+### Today's Objectives
+
+1.  Start every plot by piping the data frame into `ggplot()`
+2.  Assign exact colors to exact groups with `scale_fill_manual()` / `scale_color_manual()`
+3.  Split a plot into panels with `facet_wrap()` and `facet_grid()`
+4.  Build a mean ± SE plot with `stat_summary()`
+5.  Save the finished plot to `figures/`
+
+> # **How to use this worksheet**
+>
+> Work through each part at your own pace. Type the code into a new R script in Positron and run it line by line. Code blocks marked **▶ Run this** should be executed exactly as written. Blocks marked **✏️ Your turn** ask you to write or modify something.
+
+> ## 🔮 Predict before you run — and type, don't paste
+>
+> Before you run any **▶ Run this** block, cover the output and *predict* what R will draw. Typing `scale_fill_manual()`, `facet_wrap()`, and `stat_summary()` by hand — instead of pasting — is what makes the syntax stick.
+
+------------------------------------------------------------------------
+
+# Part 1 · Load libraries and data
+
+**▶ Run this at the top of your script:**
+
+``` r
+library(readxl)      # reading Excel files
+library(tidyverse)   # data manipulation + ggplot2
+library(janitor)     # cleans up messy column names
+```
+
+``` r
+tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx") %>%
+  clean_names()
+
+glimpse(tree_df)
+```
+
+------------------------------------------------------------------------
+
+# Part 2 · Piping into ggplot, and choosing colors
+
+### Pipe the data frame straight into `ggplot()`
+
+**▶ Run this:**
+
+``` r
+tree_df %>%
+  ggplot(aes(x = side, y = weight_g, fill = side)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6) +
+  labs(
+    title = "Leaf Weight by Tree Side",
+    x = "Side of Tree",
+    y = "Leaf Weight (g)",
+    fill = "Side"
+  ) +
+  theme_minimal()
+```
+
+> ⚠️ **Watch out!** `%>%` connects data steps. `+` connects plot layers. Do not mix them up.
+
+✏️ **Your turn:** Fill in the blank to pipe `tree_df` into a plot of `height_cm` by `side`:
+
+``` r
+tree_df ___
+  ggplot(aes(x = side, y = height_cm, fill = side)) ___
+  geom_boxplot(alpha = 0.6)
+```
+
+### Assign colors on purpose
+
+**▶ Run this:**
+
+> 🔮 **Predict first:** We have two groups, `sunny` and `shady`. How many colors do we need to list inside `scale_fill_manual()`?
+
+``` r
+tree_df %>%
+  ggplot(aes(x = side, y = weight_g, fill = side)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6) +
+  scale_fill_manual(values = c(
+    "sunny" = "goldenrod",
+    "shady" = "forestgreen"
+  )) +
+  labs(
+    title = "Leaf Weight by Tree Side",
+    x = "Side of Tree",
+    y = "Leaf Weight (g)",
+    fill = "Side"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+✏️ **Your turn:** Change the two colors to `"orange"` and `"darkgreen"`. What happens if you misspell `"shady"` as `"Shady"` in `values = c(...)`?
+
+``` r
+# Write your modified code here:
+```
+
+```
+What happened when you misspelled the name:
+```
+
+------------------------------------------------------------------------
+
+# Part 3 · Facets — `facet_wrap()` and `facet_grid()`
+
+### `facet_wrap()` — one panel per group
+
+**▶ Run this:**
+
+``` r
+tree_df %>%
+  ggplot(aes(x = weight_g, fill = side)) +
+  geom_histogram(binwidth = 1, color = "white") +
+  facet_wrap(~side) +
+  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(x = "Leaf Weight (g)", y = "Count", title = "Weight Distribution by Side") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+✏️ **Your turn:** Make the same faceted histogram for `height_cm` instead of `weight_g`.
+
+``` r
+# Write your code here:
+```
+
+### `facet_grid()` — a strict grid
+
+**▶ Run this:**
+
+``` r
+tree_df %>%
+  ggplot(aes(x = weight_g, fill = side)) +
+  geom_histogram(binwidth = 1, color = "white") +
+  facet_grid(side ~ .) +
+  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(x = "Leaf Weight (g)", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+✏️ **Your turn:** Change `facet_grid(side ~ .)` to `facet_grid(. ~ side)`. What changes — rows or columns?
+
+``` r
+# Write your modified code here:
+```
+
+```
+What changed:
+```
+
+✏️ **Your turn:** In one sentence, when would you reach for `facet_grid()` instead of `facet_wrap()`?
+
+```
+Your answer:
+```
+
+------------------------------------------------------------------------
+
+# Part 4 · Mean ± SE with `stat_summary()`
+
+### The mean as a layer
+
+**▶ Run this:**
+
+``` r
+tree_df %>%
+  ggplot(aes(x = side, y = weight_g, color = side)) +
+  geom_jitter(width = 0.15, alpha = 0.4, size = 2) +
+  stat_summary(fun = mean, geom = "point", size = 4, color = "black") +
+  scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(
+    title = "Leaf Weight with Group Means",
+    x = "Side of Tree", y = "Leaf Weight (g)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+### Mean ± SE
+
+**▶ Run this:**
+
+> 🔮 **Predict first:** `fun.data = mean_se` returns three numbers per group. Two of them are the top and bottom of the error bar. What's the third?
+
+``` r
+tree_mean_se_plot <- tree_df %>%
+  ggplot(aes(x = side, y = weight_g, color = side)) +
+  geom_jitter(width = 0.15, alpha = 0.35, size = 2) +
+  stat_summary(fun = mean, geom = "point", size = 4) +
+  stat_summary(
+    fun.data = mean_se,
+    geom = "errorbar",
+    width = 0.15,
+    linewidth = 0.9
+  ) +
+  scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(
+    title = "Mean ± SE Leaf Weight by Tree Side",
+    x = "Side of Tree", y = "Leaf Weight (g)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+tree_mean_se_plot
+```
+
+✏️ **Your turn:** Change `fun = mean` in the first `stat_summary()` to `fun = median`. What changes in the plot?
+
+``` r
+# Write your modified code here:
+```
+
+```
+What changed:
+```
+
+✏️ **Your turn:** Do the error bars for sunny and shady overlap? What might that suggest about whether the two groups actually differ?
+
+```
+Do the error bars overlap?  Y / N
+What that might suggest:
+```
+
+------------------------------------------------------------------------
+
+# Part 5 · Save your plot
+
+**▶ Run this:**
+
+``` r
+ggsave("figures/leaf_weight_mean_se.png",
+       plot   = tree_mean_se_plot,
+       width  = 5,
+       height = 5,
+       units  = "in",
+       dpi    = 300)
+```
+
+------------------------------------------------------------------------
+
+# Part 6 · Review and checkpoint
+
+At this point you should be able to:
+
+- [ ] Pipe a data frame straight into `ggplot()`
+- [ ] Assign exact colors to exact groups with `scale_fill_manual()` / `scale_color_manual()`
+- [ ] Split a plot into panels with `facet_wrap()`
+- [ ] Split a plot into panels with `facet_grid()`
+- [ ] Add a mean layer with `stat_summary(fun = mean, geom = "point")`
+- [ ] Add a mean ± SE layer with `stat_summary(fun.data = mean_se, geom = "errorbar")`
+- [ ] Save a plot with `ggsave()` at `dpi = 300`
+
+✏️ **Your turn — before you move on:** Run your entire script with **Ctrl/Cmd + Shift + Enter**. Does it complete without errors?
+
+```
+Ran cleanly?  Y / N
+If not, what error appeared:
+```
+
+------------------------------------------------------------------------
+
+# What your `figures/` folder should contain
+
+```
+tree_project/
+├── data/
+│   └── 2026_06_25_tree_experiment_raw_data.xlsx   <- never edit this
+├── figures/
+│   └── leaf_weight_mean_se.png                     <- Part 5
+└── scripts/
+    └── 03_ggplot_1.R                               <- your script
+```
+
+------------------------------------------------------------------------
+
+# Getting unstuck
+
+1.  **Read the error message out loud.** R usually names the line and the problem.
+2.  **`%>%` or `+`?** Data steps use `%>%`. Plot layers use `+`. Mixing them is the #1 ggplot error.
+3.  **Color not showing up?** Check that the names inside `scale_*_manual(values = c(...))` exactly match the values in your data — spelling and case both count.
+4.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
+5.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
+
+------------------------------------------------------------------------
+
+*End of Worksheet 03. Next: Worksheet 04 continues with more geoms, `coord_cartesian()`, and themes.*

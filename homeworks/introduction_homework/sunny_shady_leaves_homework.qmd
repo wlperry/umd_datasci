@@ -1,13 +1,13 @@
 ---
 title: "Homework 01 — Sunny vs. Shady Leaves"
-subtitle: "First steps in R: loading data, descriptive statistics, and a first plot"
+subtitle: "First steps in R: project setup, loading data, and a first plot"
 author: "Name: _________________________________ | Date: _____________"
 order: 1
 week: 1
 type: homework
 description: >
-  One or two sentences describing what this homework covers — shows up
-  in the homeworks/index.qmd table.
+  Set up a project, load the class leaf dataset, inspect it, and make a
+  first geom_point plot — the skills from Lectures 01–02.
 categories: []                     # optional filter tags, e.g. [ggplot, t-test]
 
 format:
@@ -19,23 +19,22 @@ execute:
   message: false
 ---
 
-![Leaves on the shady side of a tree tend to be larger — a classic example of phenotypic plasticity. Plants adjust leaf size and shape depending on available light. Your class collected leaves from both the sunny and shady sides of trees to test this prediction. (Photo: public domain)](images/tree_sun_shade.jpg){width="50%"}
+![A tree photographed to compare its sun-exposed and shaded sides, with visibly smaller, thicker leaves on the sunny side and larger, thinner leaves on the shady side. (Photo: public domain)](images/tree_sun_shade.jpg){width="50%"}
 
 ------------------------------------------------------------------------
 
 # Overview
 
-In Lectures 01–02 and Worksheets 01–02 your class designed an experiment, collected leaf measurements, organized the data in a spreadsheet, and wrote your first R code. This homework asks you to take the next step: **load your class dataset into R, compute descriptive statistics, and make two publication-quality figures**.
+In Lectures 01–02 and Worksheets 01–02 your class designed an experiment, collected leaf measurements, organized the data in a spreadsheet, and wrote your first R code. This homework asks you to take the next step on your own: **set up a project, load the class dataset into R, inspect it, and make a first plot** — then push a little further and connect it back to the science, in your own hand.
 
 You will practice the skills from Lectures 01–02:
 
 - Setting up an R project with the correct folder structure
-- Loading data with `read_csv()` or `read_excel()`
+- Installing packages once, loading libraries every session
+- Loading data with `read_excel()` and cleaning names with `clean_names()`
 - Inspecting a data frame with `glimpse()`, `head()`, and `dim()`
 - Using the pipe `%>%` to chain steps
-- Calculating descriptive statistics with `summarize()` — and understanding *why* `sum(!is.na())` is safer than `length()`
-- Making a boxplot with jittered points using `ggplot2`
-- Saving plots as PNG at `dpi = 300`
+- Making a `geom_point()` plot
 
 **Science context — Our hypotheses:**
 
@@ -43,25 +42,23 @@ You will practice the skills from Lectures 01–02:
 >
 > **Alternate Hypothesis (Hₐ):** Leaf size differs between the sunny and shady sides of a tree (shady leaves are predicted to be larger).
 
-> **Submit to Canvas:** (1) your completed `01_leaves.R` script and (2) two saved PNG figures. Fill in all answer boxes **in the script as `#` comments** below the relevant code. The question numbers here match the `# Q__` markers in the skeleton script.
+> **Submit to Canvas:** (1) your completed `01_leaves.R` script, (2) one saved PNG figure, and (3) **one photo of your handwritten Part 4 and Part 5 answers** (a clear phone photo is fine — a single page, both sides if needed). Fill in Parts 1–3 as `#` comments in the script below the relevant code, matching the `# Q__` markers in the skeleton script. **Parts 4 and 5 must be handwritten on paper and photographed — typed answers to those two parts receive at most half credit, even if correct.** I want to see your own reasoning and your own numbers in your own hand, not a pasted answer.
 
 ------------------------------------------------------------------------
 
 # The Data
 
-Your class measured leaves from the sunny and shady sides of trees. The data file `tree_leaves.csv` (posted on Canvas) has the following columns:
+Your class measured leaves from the sunny and shady sides of a tree. The data file `2026_06_25_tree_experiment_raw_data.xlsx` (posted on Canvas) has the following columns:
 
-| Column      | Type | What it holds                                    |
-|-------------|------|--------------------------------------------------|
-| `tree_id`   | chr  | Which tree the leaf came from (T1–T5)            |
-| `side`      | chr  | `"sunny"` or `"shady"`                           |
-| `leaf_num`  | num  | Leaf number within that tree and side            |
-| `weight_g`  | num  | Leaf weight **(g)**                              |
-| `width_cm`  | num  | Leaf width at the widest point **(cm)**          |
-| `height_cm` | num  | Leaf length from base to tip **(cm)**            |
-| `area_cm2`  | num  | Estimated leaf area **(cm²)** — may contain `NA` |
+| Column      | Type | What it holds                           |
+|-------------|------|------------------------------------------|
+| `index`     | num  | Row number                                |
+| `side`      | chr  | `"sunny"` or `"shady"`                    |
+| `weight_g`  | num  | Leaf weight **(g)**                       |
+| `width_cm`  | num  | Leaf width at the widest point **(cm)**   |
+| `height_cm` | num  | Leaf length from base to tip **(cm)**     |
 
-**Reference:** Lectures 01–02 and Worksheets 01–02; [R for Data Science Ch. 1–3](https://r4ds.hadley.nz/); [Data Carpentry — R for Ecology](https://datacarpentry.github.io/R-ecology-lesson/)
+**Reference:** Lectures 01–02 and Worksheets 01–02; Whitlock & Schluter, Ch. 1 — *Statistics and Samples*; [R for Data Science Ch. 1–2](https://r4ds.hadley.nz/)
 
 ------------------------------------------------------------------------
 
@@ -71,20 +68,20 @@ Your class measured leaves from the sunny and shady sides of trees. The data fil
 
 Before writing any code, confirm that your project folder looks like this:
 
-```         
+```
 tree_project/
 ├── data/
-│   └── tree_leaves.csv      ← copy from Canvas; never touch this file
+│   └── 2026_06_25_tree_experiment_raw_data.xlsx   ← copy from Canvas; never touch this file
 ├── scripts/
-│   └── 01_leaves.R          ← your script for this homework
-└── figures/                 ← plots you save will go here
+│   └── 01_leaves.R                                ← your script for this homework
+└── figures/                                        ← plots you save will go here
 ```
 
 Open `tree_project` as your workspace in Positron (**File → Open Folder**).
 
 ### Load the data
 
-In your skeleton script, the `read_csv()` call is already written. Run it, then use `glimpse()` and `dim()` to inspect the result.
+In your skeleton script, load `tidyverse`, `readxl`, and `janitor`, then load the data with `read_excel()` and clean the column names with `clean_names()`.
 
 After loading, answer:
 
@@ -94,7 +91,7 @@ After loading, answer:
 >
 > **Q3 — Data type of the `side` column (from `glimpse()`):** \_\_\_\_\_\_\_\_
 
-Count leaves by side using `count(leaf_df, side)`:
+Count leaves by side using `count(tree_df, side)`:
 
 > **Q4 — Number of sunny leaves:** \_\_\_\_\_\_\_\_
 >
@@ -102,168 +99,71 @@ Count leaves by side using `count(leaf_df, side)`:
 
 ------------------------------------------------------------------------
 
-# Part 2 · Why `sum(!is.na())` beats `length()` (→ Lecture 02)
+# Part 2 · Inspecting the data (→ Lecture 02, Worksheet 02)
 
-Real data has missing values (`NA`). The function `length()` counts **all** values — including `NA`s — so it can give you the wrong sample size. The safer approach is `sum(!is.na(variable))`, which counts only the values that are actually there.
+Run `head(tree_df)`, `glimpse(tree_df)`, and `dim(tree_df)` in the skeleton script.
 
-Run the two lines in the skeleton and answer:
-
-> **Q6 — What does `length(leaf_df$area_cm2)` return?** \_\_\_\_\_\_\_\_
->
-> **Q7 — What does `sum(!is.na(leaf_df$area_cm2))` return?** \_\_\_\_\_\_\_\_
->
-> **Q8 — Are those numbers the same?** Y / N
->
-> **Q9 — If they differ, what does the difference tell you?**
+> **Q6 — Paste the first row's `weight_g`, `width_cm`, and `height_cm` values:**
 >
 > ------------------------------------------------------------------------
-
-::: callout-note
-## Why `!is.na()` works
-
-`is.na(x)` returns `TRUE` for each missing value and `FALSE` for each real value. The `!` flips those, so `!is.na(x)` is `TRUE` for every real value. Wrapping that in `sum()` adds up the `TRUE`s — giving you the count of real observations. This is the right way to count *n* whenever your data might have gaps.
-
-**📖 R4DS reference:** [Chapter 18 — Missing values](https://r4ds.hadley.nz/missing-values.html)
-:::
-
-------------------------------------------------------------------------
-
-# Part 3 · Descriptive statistics with `summarize()` (→ Lecture 02, Worksheet 02)
-
-### What do the statistics actually mean?
-
-Before running any code it helps to know what you are calculating:
-
-| Statistic | Symbol | What it tells you |
-|--------------------|------------------|----------------------------------|
-| Mean | x̄ | The arithmetic average — add all values, divide by n |
-| Median | — | The middle value when sorted — not pulled by extremes |
-| Variance | s² | Average squared deviation from the mean — in squared units |
-| Std dev | s | Square root of variance — back in the original units |
-| Std error | SE | How much the *mean* would vary if you repeated the study; SE = s / √n |
-| n | n | Number of real (non-missing) observations |
-
-The **p-value** you will learn to calculate formally later in the course, but here is the idea: if there really were no difference between sunny and shady leaves, how often would you get a difference as large as the one you observed just by chance? A small p-value (typically \< 0.05) means that chance alone is unlikely — your data support the alternate hypothesis.
-
-### Run the `group_by() %>% summarize()` pipeline
-
-Complete the pipeline in the skeleton script. After running `leaf_stats_df`, fill in the table:
-
-|                  | **Sunny** | **Shady** |
-|------------------|-----------|-----------|
-| n (weight_g)     |           |           |
-| Mean weight (g)  |           |           |
-| SD weight (g)    |           |           |
-| SE weight (g)    |           |           |
-| Mean width (cm)  |           |           |
-| Mean height (cm) |           |           |
-
-> **Q10 — Is the mean weight higher for shady leaves than sunny leaves?** Y / N
 >
-> **Q11 — Difference in mean weight (shady − sunny):** \_\_\_\_\_\_\_\_ g
->
-> **Q12 — Which side has a larger SE for weight?** \_\_\_\_\_\_\_\_\_\_\_\_
->
-> **Q13 — What does a larger SE tell you about that group?**
+> **Q7 — In your own words, what does `glimpse()` show you that `head()` does not?**
 >
 > ------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
 
-# Part 4 · Quick summary with `skimr` (→ Lecture 02)
+# Part 3 · Your first plot — `geom_point()` (→ Lecture 02, Worksheet 02)
 
-The `skim()` function from the `skimr` package gives you a fast, readable overview of an entire data frame — means, missing counts, histograms in text, and more. It is especially handy for a first look at new data.
+Complete the plot in the skeleton script: `weight_g` on the y-axis, `width_cm` on the x-axis, colored by `side`. Save it as a PNG at `dpi = 300`.
 
-Run `skim(leaf_df)` in the skeleton.
-
-> **Q14 — How many `NA` values does `skim()` report for `area_cm2`?** \_\_\_\_\_\_\_\_
+> **Q8 — Do heavier leaves also tend to be wider? Y / N**
 >
-> **Q15 — Does this match what you found with `sum(!is.na())` in Part 2?** Y / N
+> **Q9 — Which side (sunny or shady) looks like it has the heavier leaves, just from eyeballing the plot?**
+>
+> ------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
 
-# Part 5 · The `[[ ]]` shortcut for quick statistics (→ Lecture 02)
+# Part 4 · Predict, then check — **by hand, on paper** (→ Lecture 02)
 
-When you just want the mean or SE of one column fast — without a full pipeline — you can pull the column out as a vector using `[[`:
+Do this part **in this order** — predicting after you already know the answer defeats the point, and it is easy for a grader to tell.
+
+**Your ID number for this assignment:** take the last two digits of your student ID (e.g., ID ...4471 → use `71`). Write that number here: \_\_\_\_\_\_\_\_ — call it your **ID code**.
+
+1. **Before running anything new**, sketch by hand what you expect a boxplot of `weight_g` by `side` to look like (just two rough boxes, roughly where you think the middles and spreads will fall). Do this from memory of your Part 3 scatterplot — no peeking at new output yet.
+2. Now run this in your script (new code, not covered in Worksheet 02 — figure it out from the shape of the `geom_point()` code you already wrote):
 
 ``` r
-# Mean of one column — the fast way
-mean(leaf_df[["weight_g"]], na.rm = TRUE)
-
-# Standard error the same way
-sd(leaf_df[["weight_g"]], na.rm = TRUE) /
-  sqrt(sum(!is.na(leaf_df[["weight_g"]])))
+tree_df %>%
+  ggplot(aes(x = side, y = weight_g)) +
+  geom_boxplot()
 ```
 
-`leaf_df[["weight_g"]]` extracts the `weight_g` column as a plain vector. This is the most direct path to a single number — useful for quick checks.
-
-Run the four lines in the skeleton (mean, SD, n, SE for `weight_g` across all leaves combined) and answer:
-
-> **Q16 — Overall mean leaf weight (all leaves, both sides):** \_\_\_\_\_\_\_\_ g
->
-> **Q17 — Overall SE of leaf weight:** \_\_\_\_\_\_\_\_ g
->
-> **Q18 — Why do we write `na.rm = TRUE` inside `mean()` and `sd()`?**
->
-> ------------------------------------------------------------------------
+3. **By hand**, compare your sketch to the real plot: were you right about which side is higher, and about which side is more spread out? What surprised you, if anything?
+4. In your script, run `tree_df %>% filter(index == <your ID code>)` (if your ID code is larger than the number of rows, use `index == (<your ID code> %% nrow(tree_df))` instead — ask if this is unclear). **By hand**, write down that one leaf's `side`, `weight_g`, `width_cm`, and `height_cm`. This is *your* specific leaf — your answer to Q10 below must use these exact numbers, not the class averages.
 
 ------------------------------------------------------------------------
 
-# Part 6 · Boxplot with jittered points (→ Lecture 02, Worksheet 02)
+# Part 5 · Connecting back to the science — **by hand, on paper**
 
-A boxplot shows the median, quartiles, and outliers. Overlaying the individual points lets you see how many observations are behind each box — an important check when sample sizes are small.
+Answer these in your own words, **as if explaining to a friend who has never taken a science class** — no textbook jargon. There are no wrong answers here; we are thinking like scientists. Use your own specific numbers from Part 4 where asked.
 
-Complete the boxplot code in the skeleton and save it as a PNG.
-
-Describe what you see:
-
-> **Q19 — Which side has a higher median weight (from the box)?** \_\_\_\_\_\_\_\_
->
-> **Q20 — Do the boxes overlap substantially, somewhat, or not at all?** \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
->
-> **Q21 — Approximate median weight for sunny leaves (read from the box):** \_\_\_\_\_\_\_\_ g
->
-> **Q22 — Approximate median weight for shady leaves (read from the box):** \_\_\_\_\_\_\_\_ g
->
-> **Q23 — Looking at the individual points, are there any leaves that seem unusually large or small (possible outliers)?** Y / N If yes, which side?
-
-------------------------------------------------------------------------
-
-# Part 7 · Mean ± SE plot with `stat_summary` (→ Lecture 02, Worksheet 02)
-
-A mean ± SE plot is often used in biology to show whether two group means are different. If the SE bars do not overlap at all, the difference is likely meaningful — though you will not know for sure until you run a formal test.
-
-Complete the `stat_summary` plot in the skeleton and save it as a PNG.
-
-> **Q24 — Do the SE error bars for sunny and shady overlap?** Y / N
->
-> **Q25 — Based on the mean ± SE plot and your descriptive statistics, does the data appear to support the alternate hypothesis (shady leaves are larger)?** Y / N Explain in one sentence:
+> **Q10 — Using your specific leaf from Part 4 (Q4 above) and the boxplot from Part 4, explain in plain language whether *that one leaf* looks typical for its side or unusual, and why.**
 >
 > ------------------------------------------------------------------------
 >
-> ------------------------------------------------------------------------
-
-------------------------------------------------------------------------
-
-# Part 8 · Connecting back to the science
-
-Answer these questions in your own words. There are no wrong answers — we are thinking like scientists.
-
-> **Q26 — Restate the null hypothesis in your own words:**
+> **Q11 — Restate the null and alternate hypotheses in your own words — no copying the wording from the slides.**
 >
 > ------------------------------------------------------------------------
 >
-> **Q27 — Restate the alternate hypothesis in your own words:**
->
-> ------------------------------------------------------------------------
->
-> **Q28 — Why do shady leaves need to be larger to survive? (Think about what a leaf does and what it has less of on the shady side.)**
+> **Q12 — Why might shady leaves need to be larger to survive? (Think about what a leaf does and what it has less of on the shady side.)**
 >
 > ------------------------------------------------------------------------
 >
 > ------------------------------------------------------------------------
 >
-> **Q29 — Your class measured leaves from multiple trees. Why is it important to measure leaves from more than one tree rather than just one tree?**
+> **Q13 — Your class measured multiple leaves per side. Why is it important to measure more than one leaf per side rather than just one? Answer using your own analogy — a comparison to something outside of science.**
 >
 > ------------------------------------------------------------------------
 >
@@ -276,47 +176,29 @@ Answer these questions in your own words. There are no wrong answers — we are 
 Before uploading to Canvas, confirm:
 
 - [ ] `01_leaves.R` runs top to bottom without errors (**Ctrl/Cmd + Shift + Enter**)
-- [ ] All `# Q__` answers are filled in the script as comments
-- [ ] `figures/leaf_weight_boxplot.png` exists (6 × 6 in, dpi = 300)
-- [ ] `figures/leaf_weight_mean_se.png` exists (6 × 6 in, dpi = 300)
-- [ ] Questions Q26–Q29 are written in your own words
+- [ ] Parts 1–3 answers (Q1–Q9) are filled in the script as comments
+- [ ] `figures/leaf_weight_vs_width.png` exists (dpi = 300)
+- [ ] Parts 4–5 (including your sketch, your ID-code leaf, and Q10–Q13) are **handwritten on paper**
+- [ ] A single clear photo of your handwritten pages is uploaded to Canvas
 
 ------------------------------------------------------------------------
 
 # Going further (optional — no points)
 
-### Make a scatter plot of width vs. height
-
-Does wider also mean taller? Try this in your script:
+You have not learned `group_by()`, faceting, or trend lines yet — those are coming in Lectures 03–06. If you want a preview, try this in your script (it's fine if you don't fully understand every line yet):
 
 ``` r
-scatter_plot <- ggplot(leaf_df, aes(x = width_cm, y = height_cm, color = side)) +
+tree_df %>%
+  ggplot(aes(x = width_cm, y = weight_g, color = side)) +
   geom_point(size = 3, alpha = 0.7) +
   geom_smooth(method = "lm", se = TRUE) +
-  labs(x     = "Leaf width (cm)",
-       y     = "Leaf height (cm)",
+  labs(x = "Leaf width (cm)", y = "Leaf weight (g)",
        color = "Side of tree",
-       title = "Leaf dimensions — sunny vs. shady") +
+       title = "Leaf weight vs. width — sunny vs. shady") +
   theme_bw()
-
-scatter_plot
 ```
 
-Do the regression lines look similar for sunny and shady leaves? What does it mean if they have different slopes?
-
-### Faceted histogram
-
-``` r
-ggplot(leaf_df, aes(x = weight_g, fill = side)) +
-  geom_histogram(binwidth = 0.5, color = "white", alpha = 0.8) +
-  facet_wrap(~side, ncol = 1) +
-  labs(x = "Leaf weight (g)", y = "Count",
-       title = "Distribution of leaf weight by side") +
-  theme_minimal() +
-  theme(legend.position = "none")
-```
-
-Do the two distributions look roughly bell-shaped or skewed? Are they similar in spread? These observations will matter when we choose a statistical test later in the semester.
+Do the trend lines look similar for sunny and shady leaves? What does it mean if they have different slopes? We'll answer this properly in the GGPlot units.
 
 ------------------------------------------------------------------------
 

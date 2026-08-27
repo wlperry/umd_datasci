@@ -1,0 +1,250 @@
+---
+order: 4
+week: 2
+title: "Activity 04 - GGPlot II"
+subtitle: "More geoms, zooming safely, and picking a theme"
+author: "Bill Perry"
+date: today
+
+type: activity
+description: >
+  Hands-on companion to the GGPlot II lecture. Map shape alongside color,
+  add a trend line, compare coord_cartesian() to xlim()/ylim(), and pick
+  and save a themed figure.
+categories: [ggplot, tidyverse]
+
+format:
+  html: default
+  docx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# More Geoms, Coordinates, and Themes
+
+### Recap from Worksheet 03
+
+- Piped `tree_df` straight into `ggplot()`
+- Assigned exact colors with `scale_fill_manual()` / `scale_color_manual()`
+- Split plots with `facet_wrap()` and `facet_grid()`
+- Built a mean ± SE plot with `stat_summary()`
+
+### Today's Objectives
+
+1.  Map shape alongside color, and add a `geom_smooth()` trend line
+2.  Compare `coord_cartesian()` to `xlim()`/`ylim()`
+3.  Pick a built-in theme and adjust it with `theme()`
+4.  Save a plot as both PNG and PDF
+
+> # **How to use this worksheet**
+>
+> Work through each part at your own pace. Type the code into a new R script in Positron and run it line by line. Code blocks marked **▶ Run this** should be executed exactly as written. Blocks marked **✏️ Your turn** ask you to write or modify something.
+
+------------------------------------------------------------------------
+
+# Part 0 · Load libraries and data
+
+**▶ Run this at the top of your script:**
+
+``` r
+library(readxl)
+library(tidyverse)
+library(janitor)
+
+tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx") %>%
+  clean_names()
+```
+
+------------------------------------------------------------------------
+
+# Part 1 · Shape, color, and a trend line
+
+**▶ Run this:**
+
+> 🔮 **Predict first:** We map `color = side` and `shape = side` to the same variable. One legend or two?
+
+``` r
+tree_df %>%
+  ggplot(aes(x = width_cm, y = weight_g, color = side, shape = side)) +
+  geom_point(size = 2.5, alpha = 0.8) +
+  scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(
+    title = "Leaf Weight vs. Width",
+    x = "Width (cm)", y = "Weight (g)",
+    color = "Side", shape = "Side"
+  ) +
+  theme_minimal()
+```
+
+✏️ **Your turn:** Add a `geom_smooth(method = "lm")` layer to the plot above (no color/fill needed — let it default). Does the line slope up or down?
+
+``` r
+# Write your modified code here:
+```
+
+```
+Slope direction (up/down):
+```
+
+------------------------------------------------------------------------
+
+# Part 2 · `coord_cartesian()` vs. `xlim()`/`ylim()`
+
+**▶ Run this — Version A, `coord_cartesian()`:**
+
+``` r
+tree_df %>%
+  ggplot(aes(x = width_cm, y = weight_g)) +
+  geom_point(alpha = 0.6, color = "grey40") +
+  geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
+  coord_cartesian(xlim = c(12, 15), ylim = c(2, 5)) +
+  labs(title = "Zoomed with coord_cartesian()", x = "Width (cm)", y = "Weight (g)") +
+  theme_minimal()
+```
+
+**▶ Run this — Version B, `xlim()`/`ylim()`:**
+
+> 🔮 **Predict first:** Will the trend line in Version B look the same as Version A, or different? Why?
+
+``` r
+tree_df %>%
+  ggplot(aes(x = width_cm, y = weight_g)) +
+  geom_point(alpha = 0.6, color = "grey40") +
+  geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
+  xlim(12, 15) +
+  ylim(2, 5) +
+  labs(title = "Zoomed with xlim()/ylim()", x = "Width (cm)", y = "Weight (g)") +
+  theme_minimal()
+```
+
+✏️ **Your turn:** Compare the two trend lines. Are they the same? Explain why, in terms of what each function does to the data *before* the line is fit.
+
+```
+Same or different?
+Why:
+```
+
+------------------------------------------------------------------------
+
+# Part 3 · Pick a theme
+
+**▶ Run this, trying each theme in turn:**
+
+``` r
+leaf_plot <- tree_df %>%
+  ggplot(aes(x = side, y = weight_g, fill = side)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(x = "Side of Tree", y = "Leaf Weight (g)", title = "Leaf Weight by Side")
+
+leaf_plot + theme_grey()
+leaf_plot + theme_bw()
+leaf_plot + theme_minimal()
+leaf_plot + theme_classic()
+leaf_plot + theme_light()
+```
+
+✏️ **Your turn:** Which theme do you like best for this plot, and why?
+
+```
+Theme chosen:
+Why:
+```
+
+### Adjust it with `theme()`
+
+**▶ Run this:**
+
+``` r
+leaf_plot_final <- leaf_plot +
+  theme_classic() +
+  theme(
+    legend.position = "none",
+    axis.text  = element_text(size = 12),
+    axis.title = element_text(size = 13)
+  )
+
+leaf_plot_final
+```
+
+✏️ **Your turn:** Change `axis.text` to `size = 16`. Too big, too small, or just right?
+
+``` r
+# Write your modified code here:
+```
+
+```
+Your judgment:
+```
+
+------------------------------------------------------------------------
+
+# Part 4 · Save in two formats
+
+**▶ Run this:**
+
+``` r
+ggsave("figures/leaf_weight_theme.png",
+       plot = leaf_plot_final, width = 5, height = 5,
+       units = "in", dpi = 300)
+
+ggsave("figures/leaf_weight_theme.pdf",
+       plot = leaf_plot_final, width = 5, height = 5, units = "in")
+```
+
+✏️ **Your turn:** Open both files. In one sentence, when would you send a colleague the `.pdf` instead of the `.png`?
+
+```
+Your answer:
+```
+
+------------------------------------------------------------------------
+
+# Part 5 · Review and checkpoint
+
+At this point you should be able to:
+
+- [ ] Map shape alongside color and merge the legends
+- [ ] Add a `geom_smooth(method = "lm")` trend line
+- [ ] Explain why `coord_cartesian()` and `xlim()`/`ylim()` can produce different trend lines
+- [ ] Try all five built-in themes on the same plot
+- [ ] Adjust a theme with `theme()`
+- [ ] Save a plot as both `.png` and `.pdf`
+
+✏️ **Your turn — before you move on:** Run your entire script with **Ctrl/Cmd + Shift + Enter**. Does it complete without errors?
+
+```
+Ran cleanly?  Y / N
+If not, what error appeared:
+```
+
+------------------------------------------------------------------------
+
+# What your `figures/` folder should contain
+
+```
+tree_project/
+├── data/
+│   └── 2026_06_25_tree_experiment_raw_data.xlsx   <- never edit this
+├── figures/
+│   ├── leaf_weight_theme.png                       <- Part 4
+│   └── leaf_weight_theme.pdf                       <- Part 4
+└── scripts/
+    └── 04_ggplot_2.R                               <- your script
+```
+
+------------------------------------------------------------------------
+
+# Getting unstuck
+
+1.  **Read the error message out loud.** R usually names the line and the problem.
+2.  **Line looks wrong after zooming?** Check whether you used `xlim()`/`ylim()` (deletes data) instead of `coord_cartesian()` (keeps it).
+3.  **Legend didn't merge?** `color` and `shape` (or the matching `labs()` titles) must reference the exact same variable name.
+4.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
+5.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
+
+------------------------------------------------------------------------
+
+*End of Worksheet 04. Next: Worksheet 05 covers wrangling with filter, select, mutate, and arrange.*
