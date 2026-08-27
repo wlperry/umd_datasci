@@ -17,21 +17,35 @@ plan; check items off in §0 as you finish them so a fresh session can resume.*
 > - **`8828aff`** — **Extension** sections added to `one_way_anova_2` and
 >   `t_tests_2` activities (the two-part topics carry the extension on Part II).
 >
+> ### Also done (later commits)
+> - **All 16 activity Extensions** written (§5.3 checklist all green).
+> - **`syllabus.qmd` + `admin/syllabus.qmd` + `overview.qmd` (both copies)** —
+>   grading table now "In-class activities + Extensions 40%" (Homework folded
+>   in); new section describes the extension + 4-point rubric.
+> - **Joins reworked to fishers** — `content/joins/data/fisher_individuals.csv`
+>   + `fisher_captures.csv` (simulated, generator `make_fisher_data.R`).
+>   Lecture (19/19 chunks) + activity fully rewritten. Key-clean is now
+>   `str_to_upper()` (`f07`→`F07`); the accidental-join trap is a shared `site`
+>   column. Joins no longer feeds mapping. Mapping stays Bigfoot.
+> - **New slots wired**: `content/final_project_pitch/` (wk10, both days) and
+>   `content/final_project_poster/` (wk15) activities created; module 13 =
+>   final-project intro lecture, module 14 "Finding Data" = the existing
+>   "Find Your Own Data" activity.
+> - `~$*` Excel temp files gitignored.
+>
 > ### Still open
-> - **Joins content** (`content/joins/`) is currently the **Bigfoot** BFRO
->   example. The instructor wants it reworked around **fishers / the weasel
->   family (Mustelidae)** — needs a dataset. The wk11 Excel note: *"add in most
->   surprising thing at the end… only grade that."* → the Joins extension = a
->   short "what surprised you most" reflection, and that is the only graded part.
-> - **Extensions for the other ~12 activities** (see §5.3) — not started.
-> - **`syllabus.qmd` / `admin/syllabus.qmd`** still say "Homework 20%" and
->   describe reading-homework — update the grading table + policy to the
->   activity+extension model.
-> - New slots (`Finding Data & Examples` wk7, `Final Project Pitches` wk10,
->   `Poster Presentations` wk15) have topic strings but no content files.
-> - `site_libs/` has 3 stray tracked (empty) files — should be `.gitignore`d.
-> - `check_schedule_links.R` / `index.qmd` / `sync_order_from_schedule.R` still
->   list a `homework` key — harmless (no module uses it), tidy later.
+> - **Worksheet NN cross-references** — many activities/lectures still say
+>   "Worksheet 12", "Recap from Worksheet 14", etc. from the old numbering.
+>   Cosmetic; a global pass to drop the numbers (or renumber) is a clean-up job.
+> - **`check_schedule_links.R` / `index.qmd` / `sync_order_from_schedule.R`**
+>   still list a `homework` key — harmless (no module uses it), tidy later.
+> - `content/joins/data/bfro_*.csv` — orphaned (old Bigfoot join data); safe to
+>   delete once the fisher rework is reviewed.
+> - **`content/_parked/`** — GLM, ANCOVA, PCA I/II, multivariate, logistic,
+>   tbd_20–30: `git mv` back into `content/` + add to `_schedule.yml` when a
+>   flex week gets a topic. Add an Extension to each when its activity is built.
+> - `common_code/15_factors` — has a one-line pointer to ANOVA I now; full
+>   intro rewrite optional.
 
 This plan captures a restructuring the instructor decided on after doing the
 same thing on the Ecostats site:
