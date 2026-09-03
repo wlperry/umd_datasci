@@ -845,18 +845,46 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 //  * MS Word (.docx) / PowerPoint (.pptx) links should just download the file
 //    without navigating the main window away. The `download` attribute forces
 //    that (these are same-origin files on the published site).
-document.addEventListener("DOMContentLoaded", function () {
-  var links = document.querySelectorAll(".quarto-alternate-formats a[href]");
-  links.forEach(function (a) {
+(function () {
+  function isSlides(href) {
+    return /slides\.html($|[?#])/i.test(href) || /-revealjs\.html($|[?#])/i.test(href);
+  }
+
+  function wireLinks() {
+    var links = document.querySelectorAll(".quarto-alternate-formats a[href]");
+    links.forEach(function (a) {
+      var href = a.getAttribute("href") || "";
+      if (isSlides(href)) {
+        a.target = "_blank";
+        a.rel = "noopener";
+      } else if (/\.(docx|pptx)($|[?#])/i.test(href)) {
+        a.setAttribute("download", "");
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", wireLinks);
+  } else {
+    // Script ran after the DOM was already parsed — wire immediately.
+    wireLinks();
+  }
+
+  // Safety net: some Quarto builds attach their own handler to these links, or
+  // re-render the panel after load, which can drop the target we set above.
+  // Catch the click itself and force the new tab.
+  document.addEventListener("click", function (event) {
+    var a = event.target && event.target.closest
+      ? event.target.closest(".quarto-alternate-formats a[href]")
+      : null;
+    if (!a) return;
     var href = a.getAttribute("href") || "";
-    if (href.endsWith("slides.html")) {
-      a.target = "_blank";
-      a.rel = "noopener";
-    } else if (/\.(docx|pptx)$/i.test(href)) {
-      a.setAttribute("download", "");
+    if (isSlides(href) && !event.defaultPrevented) {
+      event.preventDefault();
+      window.open(a.href, "_blank", "noopener");
     }
   });
-});
+})();
 </script>
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
