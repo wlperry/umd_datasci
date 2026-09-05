@@ -26,8 +26,8 @@ execute:
 ### Recap from Activity 1
 
 - Collected leaf samples from **sunny and shady sides** of trees
-- Identified the independent variable (side of tree) and dependent variables (leaf mass, dimensions)
-- Measured and recorded leaf weight, width, and height in a spreadsheet
+- Identified the independent variable (shade of tree) and dependent variables (leaf mass, dimensions)
+- Measured and recorded leaf mass, petiole length, and thickness in a spreadsheet
 - Agreed on column names, units, and metadata conventions
 - **Finding:** shady leaves appeared larger — today we start exploring this in R
 
@@ -75,7 +75,7 @@ Four panes you will use constantly:
 ✏️ **Your turn:** Click the **Console** tab. Type `1 + 1` and press Enter. What did R return?
 
 ```         
-Your answer: 
+Your answer:
 ```
 
 ------------------------------------------------------------------------
@@ -111,11 +111,14 @@ You should see `tree_project` appear in the Explorer panel on the left.
 ```         
 Your answer: 
 
+
+
+ 
 ```
 
 ### Copy the data file
 
-Copy `2026_06_25_tree_experiment_raw_data.xlsx` into `tree_project/data/`.
+Copy `2026_09_03_data_sci_leaf_area.csv` and `2026_09_03_data_sci_leaf_area.xlsx` into `tree_project/data/`.
 
 > ⚠️ **Important:** Leave this copy alone — it is your raw data. We will read it but never overwrite it.
 
@@ -127,13 +130,6 @@ Copy `2026_06_25_tree_experiment_raw_data.xlsx` into `tree_project/data/`.
   - and save it inside `tree_project/scripts/`.
 
 > 💡 **Key idea:** Console = scratch paper. Script = the lab notebook you keep.
-
-✏️ **Your turn:** What is your script named?
-
-```         
-Your answer: 
-
-```
 
 ------------------------------------------------------------------------
 
@@ -158,7 +154,6 @@ sqrt(144)
 
 ```         
 Your answer: 
-
 ```
 
 ------------------------------------------------------------------------
@@ -183,12 +178,10 @@ Look at the **Variables** pane on the right — `x` should appear there.
 
 ``` r
 # Write your code here:
-
 ```
 
 ```         
 Your answer: 
-
 ```
 
 ------------------------------------------------------------------------
@@ -199,7 +192,7 @@ Good names make code readable months later:
 
 - Be explicit but not too long: `leaf_mass` not `x2`
 - Cannot start with a number — `x2` ✅, `2x` ❌
-- R is **case-sensitive** — `weight_g` ≠ `Weight_g`
+- R is **case-sensitive** — `mass_g` ≠ `Mass_g`
 - Use **`lower_snake_case`** — words separated by underscores, all lowercase
 
 ✏️ **Your turn:** Which of these names are valid in R? Write Y or N next to each. You can try it too!
@@ -207,9 +200,9 @@ Good names make code readable months later:
 ```         
 leaf_mass       — 
 3rd_leaf        — 
-Width_cm        — 
+Petiole_mm        — 
 my.leaf.data    — 
-side            — 
+shade            — 
 ```
 
 ------------------------------------------------------------------------
@@ -244,27 +237,6 @@ round(3.14159, 2)                # two decimal places → 3.14
 round(x = 3.14159, digits = 2)  # same, with named arguments
 ```
 
-To get help on any function:
-
-``` r
-?round          # open the help page
-args(round)     # list what arguments it takes
-```
-
-✏️ **Your turn:** Use `round()` to round `pi` (R knows `pi` by name — just type it) to 4 decimal places.
-
-``` r
-# Write your code here:
-
-
-```
-
-```         
-Your answer: 
-
-
-```
-
 ------------------------------------------------------------------------
 
 ### Vectors — a row of values
@@ -274,23 +246,14 @@ A **vector** is a series of values built with `c()` — the *combine* function. 
 **▶ Run this in your Script:**
 
 ``` r
-weight_g <- c(4, 3, 5, 7)          # numeric vector
-side     <- c("sunny", "shady")    # character vector — needs quotes
+mass_g <- c(4, 3, 5, 7)          # numeric vector
+shade     <- c("sunny", "shady")    # character vector — needs quotes
 
-length(weight_g)    # how many values?
-class(weight_g)     # what type is it?
-str(weight_g)       # structure overview
+length(mass_g)    # how many values?
+class(mass_g)     # what type is it?
 ```
 
 > ⚠️ **Watch out!** Quotes matter: `"sunny"` is text. Without quotes, R searches for an *object* named `sunny` and throws an error when it cannot find one.
-
-✏️ **Your turn:** Make a character vector called `my_colors` with three color names of your choice. Check its `length()` and `class()`.
-
-``` r
-# Write your code here:
-
-
-```
 
 ------------------------------------------------------------------------
 
@@ -345,8 +308,6 @@ library(janitor)
 
 ```         
 Your answer: 
-
-
 ```
 
 ------------------------------------------------------------------------
@@ -360,11 +321,12 @@ Your answer:
 ``` r
 # ── Load data ────────────────────────────────────────────────
 # load csv files
-tree_df <- read_excel("data/name_of_file.csv") 
+tree_df <- read_csv("data/2026_09_03_data_sci_leaf_area.csv") 
 
 # Excel files (.xlsx) — needs library(readxl)
-tree_df <- read_excel("data/name_of_file.xlsx") 
+tree_2_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") 
 
+# note the names below may vary with the names you chose
 
 
 
@@ -372,7 +334,7 @@ tree_df <- read_excel("data/name_of_file.xlsx")
 tree_df    # print to the console
 ```
 
-> 💡 **Coming from Excel?** `read_excel()` is the bridge from your spreadsheet into R. Your sheet's first row becomes the **column names** in R. `clean_names()` (from `janitor`) then tidies up messy headers like `"Leaf Weight (g)"` into `leaf_weight_g` automatically.
+> 💡 **Coming from Excel?** `read_excel()` is the bridge from your spreadsheet into R. Your sheet's first row becomes the **column names** in R. `clean_names()` (from `janitor`) then tidies up messy headers like `"Leaf Mass (g)"` into `leaf_mass_g` automatically.
 
 The path `"data/..."` is *relative* to your project folder. It works on anyone's computer — not just yours.
 
@@ -382,7 +344,8 @@ Many public datasets (NOAA climate data, iNaturalist, eBird) come as `.csv` file
 
 ``` r
 # CSV files (.csv) — comes with tidyverse, no extra install
-# noaa_df <- read_csv("data/noaa_global_yearly_temps.csv")
+# station (USW00014913) is Minneapolis–St. Paul Airport
+weather_df <- read_csv("https://www.ncei.noaa.gov/access/services/data/v1?dataset=daily-summaries&stations=USW00014913&startDate=2020-01-01&endDate=2020-12-31&format=csv")
 ```
 
 > 💡 **Key difference:** `read_excel()` needs `library(readxl)`. `read_csv()` comes with `library(tidyverse)` — no extra install needed.
@@ -393,20 +356,23 @@ Many public datasets (NOAA climate data, iNaturalist, eBird) come as `.csv` file
 
 A **data frame** is R's word for a spreadsheet-style table. Each column is a vector of one type; the rows line up.
 
-Our `tree_df` has five columns:
+Our `tree_df` has eight columns:
 
-| Column      | Type      | What it holds              |
-|-------------|-----------|----------------------------|
-| `index`     | numeric   | leaf number (1–20)         |
-| `side`      | character | `"sunny"` or `"shady"`     |
-| `weight_g`  | numeric   | leaf weight in grams       |
-| `width_cm`  | numeric   | leaf width in centimetres  |
-| `height_cm` | numeric   | leaf height in centimetres |
+| Column         | Type      | What it holds                                        |
+|----------------|-----------|-------------------------------------------------------|
+| `twig_id`      | character | which twig the leaf came from (e.g. `"twig_1"`)      |
+| `leaf_id`      | character | leaf identifier within a twig (e.g. `"l01"`)         |
+| `teams`        | character | student team that collected the sample               |
+| `shade`        | character | `"sunny"` or `"shady"`                               |
+| `mass_g`       | numeric   | leaf mass in grams                                    |
+| `petiole_mm`   | numeric   | petiole length in millimetres                         |
+| `thickness_mm` | numeric   | leaf thickness in millimetres                         |
+| `paper_mass_g` | numeric   | mass of the paper cutout used to estimate leaf area  |
 
 Pull a single column with `$`:
 
 ``` r
-tree_df$weight_g     # just the weight column, as a vector
+tree_df$mass_g    # just the mass column, as a vector
 ```
 
 ------------------------------------------------------------------------
@@ -424,9 +390,7 @@ head(tree_df)       # first 6 rows
 glimpse(tree_df)    # column names, types, first values
 
 # Base R equivalents (give similar info)
-dim(tree_df)        # (rows, columns)
 names(tree_df)      # column names
-str(tree_df)        # type of every column
 summary(tree_df)    # min / mean / max per column
 ```
 
@@ -435,11 +399,19 @@ summary(tree_df)    # min / mean / max per column
 ✏️ **Your turn:** Answer these questions from the output above.
 
 ```         
-How many rows does tree_df have?          
-How many columns?                         
-What type does R report for `side`?       
-What is the mean weight_g?                
-What is the maximum height_cm?            
+How many rows does tree_df have?  
+
+
+How many columns?    
+
+
+What type does R report for `shade`?   
+
+
+What is the mean mass_g?   
+
+
+What is the maximum thickness_mm?   
 ```
 
 > ⚠️ **Watch out!** If a number column shows as `<chr>` in `glimpse()`, a stray letter or comma snuck into your spreadsheet. Check your raw data file.
@@ -454,31 +426,20 @@ The pipe sends a result straight into the next function. Read `%>%` as the word 
 
 ``` r
 # Simple examples — read each %>% as "then"
-tree_df %>% nrow()          # take tree_df, THEN count rows
+
 tree_df %>% names()         # take tree_df, THEN list column names
+
 tree_df %>% summary()       # take tree_df, THEN summarize everything
-
-# Chain multiple steps
-tree_df %>%
-  head(3)                   # take tree_df, THEN show first 3 rows
 ```
 
-> 💡 **Two pipes — same idea:** `%>%` — from tidyverse (we use this one throughout the course) The native pipe (a vertical bar then greater-than sign) — built into R 4.1+; you will see it in code online They behave identically for everything in this course.
-
-✏️ **Your turn:** Using the pipe, write code to show only the last 3 rows of `tree_df`. Hint: look at `tail()`.
-
-``` r
-# Write your code here:
-
-```
+> 💡 **Two pipes — same idea:** `%>%` or `|>` — from tidyverse (we use this one throughout the course) The native pipe (a vertical bar then greater-than sign) — built into R 4.1+; you will see it in code online They behave identically for everything in this course.
 
 ``` r
 # if you have odd variable names and want to fix all of them at the end you can add clean names to the end
 #the %>% or |> are pipes that pass one set of information to the next command
 # the pipe passes the read in data to a command to clean the variable names
 
-tree_df <- read_excel("data/name_of_file.xlsx") %>% clean_names()
-
+tree_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>% clean_names()
 ```
 
 In Lecture 03 we will use `%>%` with `group_by()` and `summarize()` to compute statistics by group — this is where the pipe really pays off.
@@ -498,7 +459,7 @@ Every ggplot is built in three pieces, joined with `+`:
 **▶ Run this in your Script — the simplest possible plot:**
 
 ``` r
-ggplot(tree_df, aes(x = side, y = weight_g)) +
+ggplot(tree_df, aes(x = shade, y = mass_g)) +
   geom_point()
 ```
 
@@ -511,45 +472,41 @@ ggplot(tree_df, aes(x = side, y = weight_g)) +
 **▶ Run this in your Script:**
 
 ``` r
-ggplot(tree_df, aes(x = side, y = weight_g)) +
+ggplot(tree_df, aes(x = shade, y = mass_g)) +
   geom_boxplot() +
-  geom_jitter(width = 0.15, alpha = 0.6, color = "tomato") +
+  geom_jitter(width = 0.15, color = "tomato") +
   labs(x     = "Side of tree",
-       y     = "Leaf weight (g)",
-       title = "Sunny vs. shady leaves")
+       y     = "Leaf mass (g)")
 ```
 
-✏️ **Your turn:** Make the same plot but for `height_cm` instead of `weight_g`. Copy the code above and change the relevant parts.
-
-``` r
-# Write your modified code here:
-```
+✏️ **Your turn:** Make the same plot but for `thickness_mm` instead of `mass_g`. Copy the code above and change the relevant parts.
 
 What pattern do you see — do sunny or shady leaves tend to be taller?
 
 ```         
 Your answer: 
+
 ```
 
 ------------------------------------------------------------------------
 
-### Save your plot as a PNG
+### Save your plot as a PDF
 
 Store the plot in an object, then save it to your `figures/` folder.
 
 **▶ Run this in your Script:**
 
 ``` r
-# Save the weight plot — always use PNG, always use dpi = 300
-weight_plot <- ggplot(tree_df, aes(x = side, y = weight_g)) +
+# Save the mass plot — always use PNG, always use dpi = 300
+mass_plot <- ggplot(tree_df, aes(x = shade, y = mass_g)) +
   geom_boxplot() +
   geom_jitter(width = 0.15, alpha = 0.6, color = "tomato") +
   labs(x     = "Side of tree",
-       y     = "Leaf weight (g)",
+       y     = "Leaf mass (g)",
        title = "Sunny vs. shady leaves")
 
-ggsave("figures/leaf_weight.png",
-       plot   = weight_plot,
+ggsave("figures/leaf_mass.png",
+       plot   = mass_plot,
        width  = 6,
        height = 6,
        units  = "in",
@@ -559,8 +516,6 @@ ggsave("figures/leaf_weight.png",
 Check your `figures/` folder — the PNG should be there.
 
 > ⚠️ **Watch out!** `ggsave()` wants the **filename first**, then `plot =`. Mixing that order is the classic first-save mistake.
-
-> 💡 **Always use `dpi = 300`** — that is publication quality (300 dots per inch). The default (72 dpi) looks blurry in reports and on posters.
 
 ------------------------------------------------------------------------
 
@@ -598,15 +553,14 @@ If not, what error did you see?
 **▶ Try this:**
 
 ``` r
-ggplot(tree_df, aes(x = width_cm, y = height_cm, color = side)) +
+ggplot(tree_df, aes(x = petiole_mm, y = thickness_mm, color = shade)) +
   geom_point(size = 3, alpha = 0.7) +
-  labs(x     = "Leaf width (cm)",
-       y     = "Leaf height (cm)",
-       color = "Side of tree",
-       title = "Leaf dimensions by side of tree")
+  labs(x     = "Petiole length (mm)",
+       y     = "Leaf thickness (mm)",
+       color = "Side of tree")
 ```
 
-✏️ **Your turn:** Does width predict height? Do the two groups cluster separately or overlap?
+✏️ **Your turn:** Does petiole length predict thickness? Do the two groups cluster separately or overlap?
 
 ```         
 Your observation: 
@@ -619,13 +573,12 @@ Your observation:
 **▶ Try this:**
 
 ``` r
-ggplot(tree_df, aes(x = width_cm, y = height_cm, color = side)) +
+ggplot(tree_df, aes(x = petiole_mm, y = thickness_mm, color = shade)) +
   geom_point(size = 3, alpha = 0.7) +
   geom_smooth(method = "lm", se = TRUE) +
-  labs(x     = "Leaf width (cm)",
-       y     = "Leaf height (cm)",
-       color = "Side of tree",
-       title = "Leaf dimensions with regression lines")
+  labs(x     = "Petiole length (mm)",
+       y     = "Leaf thickness (mm)",
+       color = "Side of tree")
 ```
 
 ✏️ **Your turn:** Do the slopes look similar or different for sunny vs. shady leaves? What might that mean biologically?
@@ -641,13 +594,11 @@ Your observation:
 **▶ Try this:**
 
 ``` r
-ggplot(tree_df, aes(x = side, y = weight_g, fill = side)) +
+ggplot(tree_df, aes(x = shade, y = mass_g, fill = shade)) +
   geom_violin(alpha = 0.5) +
   geom_jitter(width = 0.1, size = 2) +
   labs(x     = "Side of tree",
-       y     = "Leaf weight (g)",
-       title = "Violin plot of leaf weight") +
-  theme(legend.position = "none")
+       y     = "Leaf mass (g)") 
 ```
 
 ✏️ **Your turn:** What does the width of the violin show you that a boxplot does not?
@@ -665,12 +616,11 @@ Facets split one plot into panels, one per group.
 **▶ Try this:**
 
 ``` r
-ggplot(tree_df, aes(x = weight_g)) +
+ggplot(tree_df, aes(x = mass_g)) +
   geom_histogram(binwidth = 1, fill = "darkblue", color = "white") +
-  facet_wrap(~side, ncol = 1) +
-  labs(x     = "Leaf weight (g)",
-       y     = "Count",
-       title = "Distribution of leaf weight by side")
+  facet_wrap(~shade, ncol = 1) +
+  labs(x     = "Leaf mass (g)",
+       y     = "Count")
 ```
 
 ✏️ **Your turn:** Do the histograms look roughly symmetric, or skewed? Are the shapes similar between sunny and shady?
@@ -705,18 +655,17 @@ Your answer:
 **▶ Try this:**
 
 ``` r
-scatter_plot <- ggplot(tree_df, aes(x = width_cm, y = height_cm, color = side)) +
+scatter_plot <- ggplot(tree_df, aes(x = petiole_mm, y = thickness_mm, color = shade)) +
   geom_point(size = 3, alpha = 0.7) +
   geom_smooth(method = "lm", se = TRUE) +
-  labs(x = "Leaf width (cm)", y = "Leaf height (cm)", color = "Side") +
+  labs(x = "Petiole length (mm)", y = "Leaf thickness (mm)", color = "Side") +
   theme_bw()
 
 ggsave("figures/leaf_dimensions_scatter.png",
        plot   = scatter_plot,
        width  = 7,
        height = 5,
-       units  = "in",
-       dpi    = 300)
+       units  = "in")
 ```
 
 ✏️ **Your turn:** Why do we save as `.png` rather than `.pdf` for most class submissions?
@@ -734,11 +683,12 @@ After working through this worksheet your `tree_project/` folder should contain:
 ```         
 tree_project/
 ├── data/
-│   └── 2026_06_25_tree_experiment_raw_data.xlsx   <- never touch this
+│   ├── 2026_09_03_data_sci_leaf_area.csv          <- never touch this
+│   └── 2026_09_03_data_sci_leaf_area.xlsx         <- never touch this
 ├── scripts/
 │   └── 02_tree_analysis.R                          <- your complete script
 └── figures/
-    ├── leaf_weight.png                             <- Part 8
+    ├── leaf_mass.png                               <- Part 8
     └── leaf_dimensions_scatter.png                 <- Going further
 ```
 
@@ -749,46 +699,6 @@ This is the project structure we will use **for every analysis** in this course:
 | `data/`    | All data files  | Read only — never overwrite    |
 | `scripts/` | `.R` code files | One script per topic           |
 | `figures/` | Saved plots     | Always PNG, always `dpi = 300` |
-
-------------------------------------------------------------------------
-
-# Extension — out of class (\~30–40 min)
-
-*Turn this in with your worksheet. In class we split leaves at an arbitrary weight. Now you split them at a number **you compute**, and reason about why that changes the picture.*
-
-::: callout-important
-**E2 and E3 must be handwritten** on paper, photographed, and embedded (`![caption](my_photo.jpg)`). Typed answers to E2/E3 get **at most half credit, even if correct** — I want your own sketch and your own reasoning about *your own* number.
-:::
-
-## E1 · Your own size cutoff (3 pts)
-
-``` r
-# 1. Compute the real mean leaf weight (don't eyeball it)
-cutoff <- mean(tree_df$weight_g, na.rm = TRUE)
-cutoff
-
-# 2. Use YOUR cutoff to make a size class, then facet the boxplot
-tree_df %>%
-  mutate(size_class = if_else(weight_g > cutoff, "large", "small")) %>%
-  ggplot(aes(x = side, y = weight_g, fill = side)) +
-  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
-  geom_point(position = position_jitter(width = 0.15, seed = 42),
-             alpha = 0.5) +
-  facet_wrap(~ size_class) +
-  theme_minimal()
-```
-
-Save the figure to `figures/` at `dpi = 300`. Record your exact `cutoff`.
-
-## E2 · Predict, then check — ✍️ by hand (2 pts)
-
-**Before running E1:** sketch the faceted plot using your mean as the cutoff. Will the "large" and "small" panels hold roughly equal numbers of points, or not? Guess and say why. Then run it and write whether you were right, and why cutting at the mean behaves differently from cutting at a round number like 5.
-
-## E3 · Interpret — ✍️ by hand, in your own words (2 pts)
-
-1.  State the exact mean `weight_g` you computed.
-2.  From your plots: does one side of the tree seem to have heavier leaves? Explain as if to a friend who's never seen a boxplot — describe the shapes, not the stats vocabulary.
-3.  What would you want to test *formally* next, and why isn't eyeballing the boxplot enough on its own?
 
 ------------------------------------------------------------------------
 

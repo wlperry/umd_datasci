@@ -49,7 +49,7 @@ execute:
 - **Science fundamentals** — falsifiable predictions; null vs. alternate hypotheses
 - **Our class project** — leaf morphology: *sunny vs. shady* sides of trees
 - **Design** — randomization, replication (multiple trees), sampling limits
-- **Variables** — dependent (leaf mass/size) vs. independent (side of tree)
+- **Variables** — dependent (leaf mass/size) vs. independent (shade of tree)
 - **Spreadsheet hygiene** — metadata, consistent column names, units, clean sheet design
 - **Installed** R and Positron before today
 
@@ -242,7 +242,7 @@ Good names make code readable months later:
 
 - Be **explicit**, not too long: `leaf_mass`, not `x2`
 - **Cannot start with a number** — `x2` ✅, `2x` ❌
-- R is **case-sensitive** — `weight_g` ≠ `Weight_g`
+- R is **case-sensitive** — `mass_g` ≠ `Mass_g`
 - Use **`lower_snake_case`** — words separated by underscores
 
 ``` r
@@ -254,7 +254,7 @@ leaf.mass   <- c(4, 3, 5, 7)   # avoid dots
 ::: callout-warning
 **⚠️ Watch out!**
 
-`weight_g` and `weight_G` are two *different* objects. Pick one style and stick with it. I **URGE** you to use lower case and underscores — `lower_snake_case`, always.
+`mass_g` and `mass_G` are two *different* objects. Pick one style and stick with it. I **URGE** you to use lower case and underscores — `lower_snake_case`, always.
 :::
 ::::
 
@@ -347,16 +347,16 @@ args(round)   # what arguments does it take?
 A **vector** is a series of values built with `c()` ("combine") or concatenated list:
 
 ``` r
-weight_g <- c(4, 3, 5, 7)          # numbers
-side     <- c("sunny", "shady")     # text needs quotes
+mass_g <- c(4, 3, 5, 7)          # numbers
+shade     <- c("sunny", "shady")     # text needs quotes
 ```
 
 Inspect any vector:
 
 ``` r
-length(weight_g)   # how many values?
-class(weight_g)    # what type?
-str(weight_g)      # quick structure overview
+length(mass_g)   # how many values?
+class(mass_g)    # what type?
+str(mass_g)      # quick structure overview
 ```
 
 ::: callout-warning
@@ -492,7 +492,7 @@ library(readxl)
 library(janitor)
 
 # Excel files (.xlsx)
-tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx") %>%
+tree_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
   clean_names()
 
 # CSV files (.csv) — used by NOAA, iNaturalist, many databases
@@ -507,7 +507,7 @@ noaa_df <- read_csv("data/noaa_global_yearly_temps.csv") %>%
 - `read_excel()`  - needs `library(readxl)`.
 - `read_csv()`  - needs `library(tidyverse)`
 - `clean_names()` - needs `library(janitor)`; turns messy Excel headers like
-  `"Leaf Weight (g)"` into tidy names like `leaf_weight_g` automatically
+  `"Leaf Mass (g)"` into tidy names like `leaf_mass_g` automatically
 :::
 ::::
 
@@ -532,16 +532,16 @@ R for Data Science (2e), Ch. 7 — *Data import*. Covers `read_csv()` in depth, 
 :::: {.column width="60%"}
 A **data frame** is a table: each **column is a vector** of one type, and the rows line up.
 
-Our `tree_df` has five columns:
+Our `tree_df` has eight columns:
 
-- `index` — leaf number *(numeric)*
-- `side` — `"sunny"` / `"shady"` *(character)*
-- `weight_g`, `width_cm`, `height_cm` *(numeric)*
+- `twig_id`, `leaf_id`, `teams` — sample identifiers *(character)*
+- `shade` — `"sunny"` / `"shady"` *(character)*
+- `mass_g`, `petiole_mm`, `thickness_mm`, `paper_mass_g` *(numeric)*
 
 Pull a single column with `$`:
 
 ``` r
-tree_df$weight_g     # just the weights, as a vector
+tree_df$mass_g     # just the leaf masses, as a vector
 ```
 
 ::: callout-note
@@ -552,7 +552,7 @@ tree_df$weight_g     # just the weights, as a vector
 ::::
 
 ::: {.column width="40%"}
-![Diagram of a data frame as columns of vectors: a side column (character), weight_g column (numeric), and height_cm column (numeric), with rows lining up across columns.](images/diagram_dataframe.png){width="55%"}
+![Diagram of a data frame as columns of vectors: a shade column (character), mass_g column (numeric), and petiole_mm column (numeric), with rows lining up across columns.](images/diagram_dataframe.png){width="55%"}
 :::
 ::::::
 
@@ -565,7 +565,7 @@ Always eyeball a new data frame:
 ``` r
 head(tree_df)      # first 6 rows
 tail(tree_df)      # last 6 rows
-dim(tree_df)       # rows, columns  → 20  5
+dim(tree_df)       # rows, columns  → 41  8
 names(tree_df)     # column names
 
 # Tidyverse-style structure check (prefer this over str):
@@ -578,7 +578,7 @@ str(tree_df)       # same information, different layout
 ::: callout-tip
 **🖐 Try it yourself**
 
-Run `glimpse(tree_df)`. How many rows? What type is `side`?
+Run `glimpse(tree_df)`. How many rows? What type is `shade`?
 :::
 ::::
 
@@ -624,7 +624,7 @@ In Lecture 03 we will chain more steps together.
 ::::
 
 :::: {.column width="40%"}
-![Diagram of the pipe operator: tree_df flows down into filter(side == "sunny"), then flows down into summary(), read as "take tree_df, then filter, then summarise."](images/diagram_pipe.png){width="55%"}
+![Diagram of the pipe operator: tree_df flows down into filter(shade == "sunny"), then flows down into summary(), read as "take tree_df, then filter, then summarise."](images/diagram_pipe.png){width="55%"}
 
 ::: callout-note
 **Two pipes — same idea:**
@@ -645,7 +645,7 @@ In Lecture 03 we will chain more steps together.
 Plots are built from three core pieces, joined with `+`:
 
 ``` r
-ggplot(tree_df, aes(x = side, y = weight_g))
+ggplot(tree_df, aes(x = shade, y = mass_g))
 ```
 
 1.  **data** — which data frame (`tree_df`)
@@ -653,7 +653,7 @@ ggplot(tree_df, aes(x = side, y = weight_g))
 3.  **geom** — how to draw it (add with `+`)
 
 ``` r
-ggplot(tree_df, aes(x = side, y = weight_g)) +
+ggplot(tree_df, aes(x = shade, y = mass_g)) +
   geom_point()
 ```
 
@@ -679,23 +679,23 @@ R for Data Science (2e), Ch. 1 — *Data Visualization*, and Whitlock & Schluter
 
 :::::: columns
 :::: {.column width="60%"}
-Since `side` is a category, a **boxplot** with the raw points on top tells the story well:
+Since `shade` is a category, a **boxplot** with the raw points on top tells the story well:
 
 ``` r
-ggplot(tree_df, aes(x = side, y = weight_g)) +
+ggplot(tree_df, aes(x = shade, y = mass_g)) +
   geom_boxplot() +
   geom_jitter(width = 0.15, alpha = 0.6, color = "tomato") +
   geom_point(position = position_dodge(width = 0.15, alpha = 0.6, color = "tomato")) + 
 # the two above are about the same but I prefer the lower one for a few reasons....
   labs(x = "Side of tree",
-       y = "Leaf weight (g)",
+       y = "Leaf mass (g)",
        title = "Sunny vs. shady leaves")
 ```
 
 ::: callout-tip
 **🖐 Try it yourself**
 
-Swap `weight_g` for `height_cm`. What changes? Try `geom_violin()` instead of `geom_boxplot()`.
+Swap `mass_g` for `thickness_mm`. What changes? Try `geom_violin()` instead of `geom_boxplot()`.
 :::
 ::::
 
@@ -711,11 +711,11 @@ Swap `weight_g` for `height_cm`. What changes? Try `geom_violin()` instead of `g
 Store the plot in an object, then save it as a PNG:
 
 ``` r
-leaf_plot <- ggplot(tree_df, aes(x = side, y = weight_g)) +
+leaf_plot <- ggplot(tree_df, aes(x = shade, y = mass_g)) +
   geom_boxplot()
 
 # Save to the figures/ folder — always use PNG, dpi = 300
-ggsave("figures/leaf_weight.png",
+ggsave("figures/leaf_mass.png",
        plot   = leaf_plot,
        width  = 6,
        height = 6,
@@ -736,7 +736,7 @@ ggsave("figures/leaf_weight.png",
 
 :::: {.column width="40%"}
 ::: callout-note
-![Screenshot of the Save Plot dialog in Positron's Plots pane, with the leaf weight boxplot ready to save as a PNG.](images/paste-3.png){width="55%"}
+![Screenshot of the Save Plot dialog in Positron's Plots pane, with the leaf mass boxplot ready to save as a PNG.](images/paste-3.png){width="55%"}
 :::
 ::::
 :::::::
@@ -758,7 +758,7 @@ ggsave("figures/leaf_weight.png",
 ::: callout-tip
 **🖐 Before next class**
 
-Load `tree_df`, run `glimpse()`, and make one plot of `width_cm` by `side`. Save it to `figures/`.
+Load `tree_df`, run `glimpse()`, and make one plot of `petiole_mm` by `shade`. Save it to `figures/`.
 :::
 ::::
 
