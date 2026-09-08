@@ -54,7 +54,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 # Where we left off (Lecture 09 — T-Tests I)
 
 - **H₀:** $\mu_{shady} = \mu_{sunny}$ · **Hₐ:** $\mu_{shady} \neq \mu_{sunny}$ (two-tailed, α = 0.05)
-- **Normality checked** — histogram + Shapiro-Wilk, both sides roughly bell-shaped for n = 10
+- **Normality checked** — histogram + Shapiro-Wilk, roughly bell-shaped for ~25 per group
 - **Variance checked** — Levene's test run (we use Welch's either way)
 - **Decision:** proceed with Welch's two-sample t-test
 
@@ -77,7 +77,7 @@ Every box is checked. Today we actually run the test, decode what R hands back, 
 ::: callout-tip
 **🖐 Try it yourself**
 
-By the end you will have a complete, reportable t-test result and a publication-style figure to go with it.
+By the end you will have a complete, reportable t-test result and a publication-style figure to go with it — whatever the test says.
 :::
 ::::
 
@@ -100,7 +100,7 @@ Both are in the course `readings/` folder.
 
 :::::: columns
 ::: {.column width="60%"}
-This lecture runs in **two short chunks**. After each chunk you switch to the **activity worksheet** and type the code yourself.
+This lecture runs in **two short chunks**. After each chunk you switch to the **activity** and type the code yourself into your R script.
 
 **For every code block, do three things:**
 
@@ -124,12 +124,14 @@ Guessing "above or below 0.05" before you see `t.test()` output forces you to re
 # Load all packages at the top ----------------------------
 library(readxl) # reading Excel files
 library(tidyverse) # data manipulation + ggplot2
+library(janitor) # clean_names()
 library(car) # Levene's test for variance equality
 ```
 
 ```{r load-data-10}
 # Load the leaf data from the data folder -----------------
-tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names()
 ```
 
 # Quick Recap of Our Assumption Checks
@@ -138,17 +140,17 @@ tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
 ::: {.column width="60%"}
 ```{r recap-checks}
 # Rerun the assumption checks quickly for reference -----
-recap_df <- tree_df %>%
-  group_by(side) %>%
+recap_df <- leaf_df %>%
+  group_by(shade) %>%
   summarize(
-    n = sum(!is.na(weight_g)),
-    mean_wt = round(mean(weight_g, na.rm = TRUE), 2),
-    sd_wt = round(sd(weight_g, na.rm = TRUE), 2),
-    se_wt = round(sd_wt / sqrt(n), 2)
+    n = sum(!is.na(mass_g)),
+    mean_mass = round(mean(mass_g, na.rm = TRUE), 3),
+    sd_mass = round(sd(mass_g, na.rm = TRUE), 3),
+    se_mass = round(sd_mass / sqrt(n), 3)
   )
 recap_df
 
-leveneTest(weight_g ~ side, data = tree_df)
+leveneTest(mass_g ~ shade, data = leaf_df)
 ```
 :::
 
@@ -158,7 +160,7 @@ leveneTest(weight_g ~ side, data = tree_df)
 - We proceed with **Welch's** (`var.equal = FALSE`)
 
 ::: callout-tip
-If your Worksheet 09 numbers don't match exactly, that's fine — small rounding differences don't change the conclusion.
+If your Activity 09 numbers don't match exactly, that's fine — small rounding differences don't change the conclusion.
 :::
 :::
 :::::
@@ -182,8 +184,8 @@ If your Worksheet 09 numbers don't match exactly, that's fine — small rounding
 ```{r welch-ttest}
 # Welch's two-sample t-test — unequal variance ---------
 leaf_ttest_model <- t.test(
-  weight_g ~ side, # formula: response ~ grouping variable
-  data = tree_df,
+  mass_g ~ shade, # formula: response ~ grouping variable
+  data = leaf_df,
   var.equal = FALSE, # Welch's — no pooled variance
   alternative = "two.sided" # two-tailed test
 )
@@ -195,11 +197,11 @@ leaf_ttest_model
 ::: {.column width="40%"}
 **Key arguments:**
 
-| argument                    | what it does                                |
-|-----------------------------|---------------------------------------------|
-| `weight_g ~ side`           | compare `weight_g` between levels of `side` |
-| `var.equal = FALSE`         | use Welch's correction                      |
-| `alternative = "two.sided"` | two-tailed test                             |
+| argument                    | what it does                                  |
+|-----------------------------|-----------------------------------------------|
+| `mass_g ~ shade`            | compare `mass_g` between levels of `shade`    |
+| `var.equal = FALSE`         | use Welch's correction                        |
+| `alternative = "two.sided"` | two-tailed test                               |
 
 The result is a model object. We decode each line of the output on the next slide.
 :::
@@ -216,13 +218,13 @@ cat("df (Welch)   :", round(leaf_ttest_model$parameter, 2), "\n")
 cat("p-value      :", signif(leaf_ttest_model$p.value, 3), "\n")
 cat(
   "95% CI       :",
-  round(leaf_ttest_model$conf.int[1], 2),
+  round(leaf_ttest_model$conf.int[1], 3),
   "to",
-  round(leaf_ttest_model$conf.int[2], 2),
+  round(leaf_ttest_model$conf.int[2], 3),
   "g\n"
 )
-cat("Mean shady   :", round(leaf_ttest_model$estimate[1], 2), "g\n")
-cat("Mean sunny   :", round(leaf_ttest_model$estimate[2], 2), "g\n")
+cat("Mean shady   :", round(leaf_ttest_model$estimate[1], 3), "g\n")
+cat("Mean sunny   :", round(leaf_ttest_model$estimate[2], 3), "g\n")
 ```
 :::
 
@@ -237,7 +239,7 @@ cat("Mean sunny   :", round(leaf_ttest_model$estimate[2], 2), "g\n")
 | `95% CI`              | plausible range for the true difference in means |
 | `mean of shady/sunny` | the two group means                              |
 
-The **95% CI** is the range we could expect to see if we repeated this study many times.
+If the **95% CI includes zero**, "no difference" is one of the plausible values — consistent with a *p* above 0.05.
 :::
 :::::
 
@@ -255,29 +257,29 @@ alpha <- 0.05
 if (p_val < alpha) {
   cat("p =", signif(p_val, 3), "< α =", alpha, "\n")
   cat("Decision: REJECT H₀\n")
-  cat("Conclusion: leaf weight differs between sides.\n")
+  cat("Conclusion: mean leaf mass differs between sides.\n")
 } else {
   cat("p =", signif(p_val, 3), ">= α =", alpha, "\n")
   cat("Decision: FAIL TO REJECT H₀\n")
-  cat("Conclusion: insufficient evidence of a difference.\n")
+  cat("Conclusion: no evidence that mean leaf mass differs between sides.\n")
 }
 ```
 :::
 
 :::: {.column width="40%"}
 ::: callout-important
-**What a small p-value means:**
+**What the p-value means:**
 
-If H₀ were true (no real difference), we would get a t-statistic this large or larger less than `p` × 100% of the time just by chance.
+If H₀ were true (no real difference), we would get a t-statistic at least this large `p` × 100% of the time just by chance.
 
-We set α = 0.05 *before* the test. If *p* \< α, we reject H₀.
+We set α = 0.05 *before* the test. If *p* \< α, we reject H₀; otherwise we fail to reject it.
 :::
 
-**What a small p-value does NOT mean:**
+**What "fail to reject" does NOT mean:**
 
-- It is not the probability that H₀ is true
-- Statistical significance ≠ biological importance
-- Report the effect size (difference in means) alongside *p*
+- It is **not** proof that H₀ is true
+- It means this sample did not provide enough evidence of a difference
+- Report the effect size (difference in means) and CI alongside *p*
 ::::
 ::::::
 
@@ -303,10 +305,10 @@ Run the test, decode t / df / p / CI, and state your decision in formal language
 ::: {.column width="60%"}
 ```{r boxplot-10}
 #| fig-format: png
-#| fig-alt: "Boxplot of leaf weight in grams by tree side with jittered individual points overlaid, subtitled with the Welch's t-test statistic and p-value showing shady leaves heavier than sunny leaves."
+#| fig-alt: "Boxplot of leaf mass in grams by shade with jittered individual points overlaid, subtitled with the Welch's t-test statistic and p-value."
 # Final boxplot with all points -----------------------
-leaf_box_10_plot <- tree_df %>%
-  ggplot(aes(x = side, y = weight_g, fill = side)) +
+leaf_box_10_plot <- leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +
   geom_point(
     position = position_jitter(width = 0.15, seed = 42),
@@ -314,15 +316,15 @@ leaf_box_10_plot <- tree_df %>%
     size = 2.5
   ) +
   labs(
-    title = "Leaf Weight by Tree Side",
+    title = "Leaf Mass by Shade",
     subtitle = paste0(
       "Welch's t-test: t = ",
       round(leaf_ttest_model$statistic, 2),
       ", p = ",
       signif(leaf_ttest_model$p.value, 2)
     ),
-    x = "Side of Tree",
-    y = "Leaf Weight (g)"
+    x = "Shade",
+    y = "Leaf Mass (g)"
   ) +
   theme_minimal() +
   theme(legend.position = "none")
@@ -348,34 +350,31 @@ Embedding test statistics in the plot subtitle saves you from copying numbers by
 ::::: columns
 ::: {.column width="60%"}
 ```{r report-stats}
-# Compute reporting values from the model object -------
-t_val <- round(leaf_ttest_model$statistic, 2)
+# Build the results sentence from the model object -----
+t_val  <- round(leaf_ttest_model$statistic, 2)
 df_val <- round(leaf_ttest_model$parameter, 1)
 p_val2 <- signif(leaf_ttest_model$p.value, 2)
 
+heavier <- if (leaf_ttest_model$estimate[1] > leaf_ttest_model$estimate[2]) "shady" else "sunny"
+lighter <- if (heavier == "shady") "sunny" else "shady"
+
 cat("--- Results sentence ---\n")
-cat("Shady-side leaves were significantly heavier than\n")
-cat(
-  "sunny-side leaves (Welch's t-test: t(",
-  df_val,
-  ") =",
-  t_val,
-  ", p =",
-  p_val2,
-  ").\n"
-)
+if (leaf_ttest_model$p.value < 0.05) {
+  cat(heavier, "-side leaves were significantly heavier than ",
+      lighter, "-side leaves\n", sep = "")
+} else {
+  cat("Mean leaf mass did not differ significantly between sides\n")
+}
+cat("(Welch's t-test: t(", df_val, ") = ", t_val, ", p = ", p_val2, ").\n", sep = "")
 cat(
   "Mean ± SE: shady =",
-  round(leaf_ttest_model$estimate[1], 2),
+  round(leaf_ttest_model$estimate[1], 3),
   "±",
-  round(recap_df$se_wt[recap_df$side == "shady"], 2),
-  "g,\n"
-)
-cat(
-  "           sunny =",
-  round(leaf_ttest_model$estimate[2], 2),
+  round(recap_df$se_mass[recap_df$shade == "shady"], 3),
+  "g,  sunny =",
+  round(leaf_ttest_model$estimate[2], 3),
   "±",
-  round(recap_df$se_wt[recap_df$side == "sunny"], 2),
+  round(recap_df$se_mass[recap_df$shade == "sunny"], 3),
   "g.\n"
 )
 ```
@@ -391,8 +390,9 @@ cat(
 - Test type (Welch's t-test)
 - t-statistic and df
 - Exact *p*-value (or \< 0.001)
-- Group means ± SE
-- Units
+- Group means ± SE with units
+
+A **non-significant** result is still a result — report it plainly ("did not differ significantly"), never as "proved there is no difference."
 
 **Never report** "p = 0.000" — write "p \< 0.001" instead.
 :::
@@ -403,7 +403,7 @@ cat(
 ```{r save-plots-10}
 # Save the plot to the figures folder ------------------
 ggsave(
-  "figures/leaf_weight_boxplot_ttest.png",
+  "figures/leaf_mass_boxplot_ttest.png",
   plot = leaf_box_10_plot,
   width = 5,
   height = 5,
@@ -441,6 +441,7 @@ Build the figure with the statistics embedded in the subtitle, then write your r
 - Steps 4–5 of the five-step framework — run, interpret, report
 - **Reading output** — t, df, *p*, CI, group means
 - A results sentence needs: test name, t, df, *p*, means ± SE, units
+- A non-significant result is reported plainly — not as proof of "no difference"
 
 **R skills:**
 

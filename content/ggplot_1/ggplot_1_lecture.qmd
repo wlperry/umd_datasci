@@ -57,7 +57,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 - **Project structure** — `data/`, `scripts/`, `figures/`
 - **Packages** — `install.packages()` once, `library()` every session
-- **Loading data** — `read_excel()`, `clean_names()`
+- **Loading data** — `read_excel()`, `clean_names()` into `leaf_df`
 - **The pipe** — `%>%` reads as "then"
 - **Our first plot** — a bare `geom_point()`
 
@@ -71,7 +71,7 @@ You can already load data and make one honest point on a page. Today that one ge
 
 :::::: columns
 :::: {.column width="60%"}
-- Start every plot with the pipe: `tree_df %>% ggplot(...)`
+- Start every plot with the pipe: `leaf_df %>% ggplot(...)`
 - Assign colors on purpose with `scale_color_manual()`
 - Split one plot into panels with `facet_wrap()` and `facet_grid()`
 - Build a **mean ± SE plot** with `stat_summary()`
@@ -103,7 +103,7 @@ Both PDFs are in the course `readings/` folder.
 
 :::::: columns
 ::: {.column width="60%"}
-This lecture runs in **three short chunks**. After each chunk you switch to the activity worksheet and type the code yourself.
+This lecture runs in **three short chunks**. After each chunk you switch to the activity and type the code yourself into your R script.
 
 **For every code block, do three things:**
 
@@ -133,10 +133,10 @@ library(janitor) # cleans up messy column names
 
 ```{r load-data-03}
 # Read the leaf data from the data folder ---------------
-tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx") %>%
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
   clean_names()
 
-glimpse(tree_df)
+glimpse(leaf_df)
 ```
 
 # 🧩 Chunk 1 of 3 · Piping into ggplot, on Purpose
@@ -153,26 +153,26 @@ glimpse(tree_df)
 ::: {.column width="60%"}
 ```{r pipe-into-ggplot}
 #| fig-format: png
-#| fig-alt: "Boxplot of leaf weight in grams by tree side, with jittered points overlaid, using default ggplot colors."
+#| fig-alt: "Boxplot of leaf mass in grams by shade, with jittered points overlaid, using default ggplot colors."
 # Pipe the data frame straight into ggplot() -----------
-tree_df %>%
-  ggplot(aes(x = side, y = weight_g, fill = side)) +
+leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   geom_jitter(width = 0.15, alpha = 0.6) +
   labs(
-    title = "Leaf Weight by Tree Side",
-    x = "Side of Tree",
-    y = "Leaf Weight (g)",
-    fill = "Side"
+    title = "Leaf Mass by Shade",
+    x = "Shade",
+    y = "Leaf Mass (g)",
+    fill = "Shade"
   ) +
   theme_minimal()
 ```
 :::
 
 ::: {.column width="40%"}
-- `tree_df %>% ggplot(...)` reads as *"take `tree_df`, then plot it"* — the same pipe you've already used
+- `leaf_df %>% ggplot(...)` reads as *"take `leaf_df`, then plot it"* — the same pipe you've already used
 - Everything after `ggplot()` is added with `+`, not `%>%` — **ggplot layers use plus, pipelines use the pipe**
-- `fill = side` maps a **column** to color — ggplot chooses the colors *for* you
+- `fill = shade` maps a **column** to color — ggplot chooses the colors *for* you
 
 ::: callout-warning
 **⚠️ Watch out!**
@@ -192,10 +192,10 @@ tree_df %>%
 ::: {.column width="60%"}
 ```{r scale-manual-demo}
 #| fig-format: png
-#| fig-alt: "Boxplot of leaf weight in grams by tree side with jittered points, using custom gold and forest-green colors for sunny and shady sides respectively."
+#| fig-alt: "Boxplot of leaf mass in grams by shade with jittered points, using custom gold and forest-green colors for sunny and shady respectively."
 # scale_fill_manual() assigns exact colors to exact groups
-tree_df %>%
-  ggplot(aes(x = side, y = weight_g, fill = side)) +
+leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   geom_jitter(width = 0.15, alpha = 0.6) +
   scale_fill_manual(values = c(
@@ -203,10 +203,10 @@ tree_df %>%
     "shady" = "forestgreen"
   )) +
   labs(
-    title = "Leaf Weight by Tree Side",
-    x = "Side of Tree",
-    y = "Leaf Weight (g)",
-    fill = "Side"
+    title = "Leaf Mass by Shade",
+    x = "Shade",
+    y = "Leaf Mass (g)",
+    fill = "Shade"
   ) +
   theme_minimal() +
   theme(legend.position = "none")
@@ -248,23 +248,23 @@ Pipe into `ggplot()`, then assign sunny/shady their own colors with `scale_fill_
 ::: {.column width="60%"}
 ```{r facet-wrap-demo}
 #| fig-format: png
-#| fig-alt: "Two histograms of leaf weight in grams, one panel per tree side, arranged side by side by facet_wrap."
+#| fig-alt: "Two histograms of leaf mass in grams, one panel per shade, arranged side by side by facet_wrap."
 # facet_wrap() splits into one panel per level ---------
-tree_df %>%
-  ggplot(aes(x = weight_g, fill = side)) +
-  geom_histogram(binwidth = 1, color = "white") +
-  facet_wrap(~side) +
+leaf_df %>%
+  ggplot(aes(x = mass_g, fill = shade)) +
+  geom_histogram(binwidth = 0.05, color = "white") +
+  facet_wrap(~shade) +
   scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
-  labs(x = "Leaf Weight (g)", y = "Count", title = "Weight Distribution by Side") +
+  labs(x = "Leaf Mass (g)", y = "Count", title = "Mass Distribution by Shade") +
   theme_minimal() +
   theme(legend.position = "none")
 ```
 :::
 
 :::: {.column width="40%"}
-- `~side` reads as *"by side"* — the `~` is required
+- `~shade` reads as *"by shade"* — the `~` is required
 - Each panel gets its **own copy of the plot**, filtered to that group
-- `facet_wrap(~side, scales = "free_y")` lets each panel's y-axis rescale independently
+- `facet_wrap(~shade, scales = "free_y")` lets each panel's y-axis rescale independently
 
 📖 [R4DS §9 — Layers](https://r4ds.hadley.nz/layers)
 ::::
@@ -276,23 +276,23 @@ tree_df %>%
 ::: {.column width="60%"}
 ```{r facet-grid-demo}
 #| fig-format: png
-#| fig-alt: "Two histograms of leaf weight stacked in one column, one row per tree side, arranged by facet_grid."
+#| fig-alt: "Two histograms of leaf mass stacked in one column, one row per shade, arranged by facet_grid."
 # facet_grid(rows ~ cols) — use "." for "no grouping" --
-tree_df %>%
-  ggplot(aes(x = weight_g, fill = side)) +
-  geom_histogram(binwidth = 1, color = "white") +
-  facet_grid(side ~ .) +
+leaf_df %>%
+  ggplot(aes(x = mass_g, fill = shade)) +
+  geom_histogram(binwidth = 0.05, color = "white") +
+  facet_grid(shade ~ .) +
   scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
-  labs(x = "Leaf Weight (g)", y = "Count") +
+  labs(x = "Leaf Mass (g)", y = "Count") +
   theme_minimal() +
   theme(legend.position = "none")
 ```
 :::
 
 :::: {.column width="40%"}
-- `facet_grid(side ~ .)` stacks panels in **rows**; `facet_grid(. ~ side)` arranges them in **columns**
+- `facet_grid(shade ~ .)` stacks panels in **rows**; `facet_grid(. ~ shade)` arranges them in **columns**
 - The dot `.` means "nothing on this side of the grid"
-- `facet_grid()` really shines with **two** grouping variables (`rows ~ cols`) — we only have one (`side`) today, but you'll use the two-variable form the moment your data has a second grouping column
+- `facet_grid()` really shines with **two** grouping variables (`rows ~ cols`) — we only have one (`shade`) today, but you'll use the two-variable form the moment your data has a second grouping column
 
 ::: callout-note
 **💡 `facet_wrap` vs `facet_grid`**
@@ -324,16 +324,16 @@ Build both a `facet_wrap()` and a `facet_grid()` version of the histogram. Predi
 ::: {.column width="60%"}
 ```{r stat-summary-mean}
 #| fig-format: png
-#| fig-alt: "Jittered points of leaf weight by tree side in gold and green, with a larger black point marking the mean for each side."
+#| fig-alt: "Jittered points of leaf mass by shade in gold and green, with a larger black point marking the mean for each group."
 # stat_summary() computes the mean straight from the data
-tree_df %>%
-  ggplot(aes(x = side, y = weight_g, color = side)) +
+leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, color = shade)) +
   geom_jitter(width = 0.15, alpha = 0.4, size = 2) +
   stat_summary(fun = mean, geom = "point", size = 4, color = "black") +
   scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
   labs(
-    title = "Leaf Weight with Group Means",
-    x = "Side of Tree", y = "Leaf Weight (g)"
+    title = "Leaf Mass with Group Means",
+    x = "Shade", y = "Leaf Mass (g)"
   ) +
   theme_minimal() +
   theme(legend.position = "none")
@@ -358,10 +358,10 @@ tree_df %>%
 ::: {.column width="60%"}
 ```{r stat-summary-se}
 #| fig-format: png
-#| fig-alt: "Jittered points of leaf weight by tree side in gold and green with mean plus or minus one standard error error bars overlaid for each side."
+#| fig-alt: "Jittered points of leaf mass by shade in gold and green with mean plus or minus one standard error error bars overlaid for each group."
 # fun.data = returns THREE values: y, ymin, ymax -------
-tree_mean_se_plot <- tree_df %>%
-  ggplot(aes(x = side, y = weight_g, color = side)) +
+leaf_mean_se_plot <- leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, color = shade)) +
   geom_jitter(width = 0.15, alpha = 0.35, size = 2) +
   stat_summary(fun = mean, geom = "point", size = 4) +
   stat_summary(
@@ -372,13 +372,13 @@ tree_mean_se_plot <- tree_df %>%
   ) +
   scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
   labs(
-    title = "Mean ± SE Leaf Weight by Tree Side",
-    x = "Side of Tree", y = "Leaf Weight (g)"
+    title = "Mean ± SE Leaf Mass by Shade",
+    x = "Shade", y = "Leaf Mass (g)"
   ) +
   theme_minimal() +
   theme(legend.position = "none")
 
-tree_mean_se_plot
+leaf_mean_se_plot
 ```
 :::
 
@@ -410,7 +410,7 @@ Close the slides. Build your own mean ± SE plot, then save it to `figures/`.
 
 ::::: columns
 ::: {.column width="60%"}
-- Pipe straight into a plot: `tree_df %>% ggplot(...)`
+- Pipe straight into a plot: `leaf_df %>% ggplot(...)`
 - `scale_color_manual()` / `scale_fill_manual()` — colors you choose, not colors ggplot guesses
 - `facet_wrap(~var)` — one panel per group, wraps automatically
 - `facet_grid(rows ~ cols)` — strict grid, best with two grouping variables

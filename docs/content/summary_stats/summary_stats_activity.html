@@ -449,8 +449,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="describing-our-leaf-data" class="level1">
 <h1>Describing Our Leaf Data</h1>
-<section id="recap-from-worksheet-05" class="level3">
-<h3 class="anchored" data-anchor-id="recap-from-worksheet-05">Recap from Worksheet 05</h3>
+<section id="recap-from-activity-05" class="level3">
+<h3 class="anchored" data-anchor-id="recap-from-activity-05">Recap from Activity 05</h3>
 <ul>
 <li>Used <code>filter()</code>, <code>select()</code>, <code>mutate()</code>, and <code>arrange()</code> to wrangle the leaf data</li>
 <li>Chained all four verbs into a single pipeline</li>
@@ -458,7 +458,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 </section>
 <section id="todays-objectives" class="level3">
-<h3 class="anchored" data-anchor-id="todays-objectives">Today’s Objectives</h3>
+<h3 class="anchored">Today’s Objectives</h3>
 <ol type="1">
 <li>Understand why <code>NA</code> values require special handling with <code>sum(!is.na())</code></li>
 <li>Calculate mean, median, SD, and SE using <code>filter()</code> and <code>pull()</code></li>
@@ -467,54 +467,78 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Explore data quickly with <code>skimr</code></li>
 </ol>
 <blockquote class="blockquote">
-<h1 id="how-to-use-this-worksheet"><strong>How to use this worksheet</strong></h1>
-<p>Work through each part at your own pace. Type the code into a new R script in Positron and run it line by line. Code blocks marked <strong>▶ Run this</strong> should be executed exactly as written. Blocks marked <strong>✏️ Your turn</strong> ask you to write or modify something.</p>
+<h1 id="how-this-activity-works"><strong>How this activity works</strong></h1>
+<p><strong>You are building one R script this whole class, and you turn it in.</strong> Create it now: <code>scripts/06_summary_stats.R</code>.</p>
+<ul>
+<li><strong>Every line you run goes in that script</strong> — not in the Console, not typed into this page. Type it, don’t paste it.</li>
+<li><strong>Start every code chunk in your script with a short <code>#</code> comment</strong> that says what it does. The comments are part of the grade.</li>
+<li><strong>The top of your script, in this order:</strong> a title comment, then your <code>library()</code> calls, then the line that loads the data into <code>leaf_df</code>.</li>
+<li>Code marked <strong>▶ Run this</strong> is typed into your script exactly as shown. Code marked <strong>✏️ Your turn</strong> is a change you make in that same script and run.</li>
+</ul>
+<h2 id="predict-before-you-run" class="anchored" data-anchor-id="todays-objectives">🔮 Predict before you run</h2>
+<p>Before you run any <strong>▶ Run this</strong> block, predict the answer — a row count, a mean, which group comes out larger. Predicting is what turns “I saw it on a slide” into “I can write it.”</p>
 </blockquote>
 <hr>
 </section>
 </section>
 <section id="part-1-load-libraries-and-data" class="level1">
 <h1>Part 1 · Load libraries and data</h1>
-<p><strong>▶ Run this at the top of your script:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load all packages — always at the top of the script --------</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)      <span class="co"># reading Excel files</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># data manipulation + ggplot2</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(skimr)       <span class="co"># fast descriptive summaries</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the Excel file — path is relative to your project folder</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>tree_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/2026_06_25_tree_experiment_raw_data.xlsx"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>📂 Get the data
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Same leaf file you have used since Activity 02 — it should already be in your project’s <code>data/</code> folder. If not: <strong><a href="data/2026_09_03_data_sci_leaf_area.xlsx"><code>2026_09_03_data_sci_leaf_area.xlsx</code></a></strong> → put it in <code>data/</code>.</p>
+</div>
+</div>
+<p><strong>▶ Type this at the very top of <code>scripts/06_summary_stats.R</code>:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Activity 06: Summary statistics ---------------------</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># your name, today's date</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Libraries -------------------------------------------</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)      <span class="co"># read Excel files</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># dplyr + ggplot2</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)     <span class="co"># clean_names()</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(skimr)       <span class="co"># fast descriptive summaries</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Load data ------------------------------------------</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/2026_09_03_data_sci_leaf_area.xlsx"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(leaf_df)     <span class="co"># look at the data right after loading</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
 <section id="part-2-the-na-problem-counting-observations-correctly" class="level1">
 <h1>Part 2 · The NA problem — counting observations correctly</h1>
 <section id="what-is-an-na" class="level3">
 <h3 class="anchored" data-anchor-id="what-is-an-na">What is an NA?</h3>
-<p><code>NA</code> stands for “Not Available” — it marks a <strong>missing value</strong>. Missing data are common in real ecological studies.</p>
+<p><code>NA</code> stands for “Not Available” — it marks a <strong>missing value</strong>. Missing data are common in real ecological studies. Our leaf data has some: not every leaf got a <code>paper_mass_g</code> measurement.</p>
 </section>
 <section id="the-problem-with-length" class="level3">
 <h3 class="anchored" data-anchor-id="the-problem-with-length">The problem with <code>length()</code></h3>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a small vector with missing values for demonstration</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">3</span>, <span class="cn">NA</span>, <span class="dv">7</span>, <span class="cn">NA</span>)</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># a small vector with two missing values, for demonstration</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.4</span>, <span class="fl">0.3</span>, <span class="cn">NA</span>, <span class="fl">0.7</span>, <span class="cn">NA</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># length() counts ALL positions — including NAs</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># length() counts ALL positions — including the NAs</span></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(x)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> What did <code>length(x)</code> return? How many of those positions are real data values?</p>
 <pre><code>length(x) returned:
 Number of real (non-NA) values:</code></pre>
 </section>
 <section id="breaking-down-is.na-step-by-step" class="level3">
 <h3 class="anchored" data-anchor-id="breaking-down-is.na-step-by-step">Breaking down <code>is.na()</code> step by step</h3>
 <p><strong>▶ Run each line one at a time:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1: is.na() marks where the NAs are</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">is.na</span>(x)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2: ! flips TRUE to FALSE and FALSE to TRUE</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="sc">!</span><span class="fu">is.na</span>(x)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 3: sum() counts the TRUEs — TRUEs are real values!</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(x))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Trace through what each step does to <code>c(4, 3, NA, 7, NA)</code>:</p>
-<pre><code>is.na(x)       produces:
-!is.na(x)      produces:
-sum(!is.na(x)) produces:</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">is.na</span>(x)          <span class="co"># TRUE where a value is missing</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="sc">!</span><span class="fu">is.na</span>(x)         <span class="co"># ! flips it: TRUE where a value is REAL</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(x))    <span class="co"># sum() counts the TRUEs = the real values</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Now do the same on the real data. Compare <code>nrow(leaf_df)</code> to <code>sum(!is.na(leaf_df$paper_mass_g))</code>.</p>
+<pre><code>nrow(leaf_df):
+sum(!is.na(leaf_df$paper_mass_g)):
+How many paper_mass_g values are missing?</code></pre>
 <blockquote class="blockquote">
 <p>⚠️ <strong>Watch out!</strong> Any stats function on a vector containing <code>NA</code> returns <code>NA</code> — not an error. R will not tell you something went wrong. Always include <code>na.rm = TRUE</code>.</p>
 </blockquote>
@@ -526,36 +550,33 @@ sum(!is.na(x)) produces:</code></pre>
 <section id="extract-one-group-with-filter-and-pull" class="level3">
 <h3 class="anchored" data-anchor-id="extract-one-group-with-filter-and-pull">Extract one group with <code>filter()</code> and <code>pull()</code></h3>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract sunny leaf weights as a plain vector --------</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>sunny_wt <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(side <span class="sc">==</span> <span class="st">"sunny"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(weight_g)</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>sunny_wt    <span class="co"># print the raw values</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Write the code to extract the shady leaf weights as a vector called <code>shady_wt</code>.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Write your code here:</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># pull the sunny leaf masses out as a plain vector</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>sunny_mass <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(shade <span class="sc">==</span> <span class="st">"sunny"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(mass_g)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>sunny_mass    <span class="co"># print the raw values</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Write the code to extract the shady leaf masses as a vector called <code>shady_mass</code>.</p>
 </section>
 <section id="mean" class="level3">
 <h3 class="anchored" data-anchor-id="mean">Mean</h3>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mean for the sunny side ----------------------------</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>mean_sunny <span class="ot">&lt;-</span> <span class="fu">mean</span>(sunny_wt, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Mean sunny weight:"</span>, <span class="fu">round</span>(mean_sunny, <span class="dv">2</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Calculate the mean for the shady side. Store it as <code>mean_shady</code> and print it.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Write your code here:</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>Mean shady leaf weight (g):
-Is the shady mean larger than sunny?  Y / N
-Does this match the hypothesis?       Y / N</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># mean mass for the sunny side</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>mean_sunny <span class="ot">&lt;-</span> <span class="fu">mean</span>(sunny_mass, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Mean sunny mass:"</span>, <span class="fu">round</span>(mean_sunny, <span class="dv">3</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Calculate the mean for the shady side. Store it as <code>mean_shady</code> and print it.</p>
+<pre><code>Mean shady leaf mass (g):
+Is the shady mean larger than sunny?  Y / N</code></pre>
 </section>
 <section id="median" class="level3">
 <h3 class="anchored" data-anchor-id="median">Median</h3>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Median for each side --------------------------------</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>med_sunny <span class="ot">&lt;-</span> <span class="fu">median</span>(sunny_wt, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>med_shady <span class="ot">&lt;-</span> <span class="fu">median</span>(shady_wt, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Median sunny:"</span>, <span class="fu">round</span>(med_sunny, <span class="dv">2</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Median shady:"</span>, <span class="fu">round</span>(med_shady, <span class="dv">2</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># median mass for each side</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>med_sunny <span class="ot">&lt;-</span> <span class="fu">median</span>(sunny_mass, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>med_shady <span class="ot">&lt;-</span> <span class="fu">median</span>(shady_mass, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Median sunny:"</span>, <span class="fu">round</span>(med_sunny, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Median shady:"</span>, <span class="fu">round</span>(med_shady, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn:</strong> Compare the mean and median for the sunny side. If they are about equal, what does that tell you about the shape of the distribution?</p>
 <pre><code>Mean sunny:
 Median sunny:
@@ -564,128 +585,113 @@ What it suggests about distribution shape:</code></pre>
 <section id="standard-deviation" class="level3">
 <h3 class="anchored" data-anchor-id="standard-deviation">Standard Deviation</h3>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># SD for each side ------------------------------------</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>sd_sunny <span class="ot">&lt;-</span> <span class="fu">sd</span>(sunny_wt, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>sd_shady <span class="ot">&lt;-</span> <span class="fu">sd</span>(shady_wt, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"SD sunny:"</span>, <span class="fu">round</span>(sd_sunny, <span class="dv">2</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"SD shady:"</span>, <span class="fu">round</span>(sd_shady, <span class="dv">2</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Which side has more variable leaf weights? What does a larger SD tell you biologically?</p>
-<pre><code>More variable side:
-Biological interpretation:</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># SD for each side</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>sd_sunny <span class="ot">&lt;-</span> <span class="fu">sd</span>(sunny_mass, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>sd_shady <span class="ot">&lt;-</span> <span class="fu">sd</span>(shady_mass, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"SD sunny:"</span>, <span class="fu">round</span>(sd_sunny, <span class="dv">3</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"SD shady:"</span>, <span class="fu">round</span>(sd_shady, <span class="dv">3</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Which side has more variable leaf mass?
+What does a larger SD tell you biologically?</code></pre>
 </section>
 <section id="standard-error" class="level3">
 <h3 class="anchored" data-anchor-id="standard-error">Standard Error</h3>
-<p><strong>▶ Run this:</strong></p>
 <blockquote class="blockquote">
-<p>🔮 <strong>Predict first:</strong> SE = SD / √n.&nbsp;Since n is larger than 1, will the SE be <strong>larger or smaller</strong> than the SD you just calculated? Predict, then run.</p>
+<p>🔮 <strong>Predict first:</strong> SE = SD / √n.&nbsp;Since n is larger than 1, will the SE be <strong>larger or smaller</strong> than the SD you just calculated?</p>
 </blockquote>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># SE = SD / sqrt(n) — must use the correct n ----------</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>n_sun  <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(sunny_wt))</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>n_sha  <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(shady_wt))</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>se_sunny <span class="ot">&lt;-</span> sd_sunny <span class="sc">/</span> <span class="fu">sqrt</span>(n_sun)</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>se_shady <span class="ot">&lt;-</span> sd_shady <span class="sc">/</span> <span class="fu">sqrt</span>(n_sha)</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"n sunny  ="</span>, n_sun, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"SE sunny ="</span>, <span class="fu">round</span>(se_sunny, <span class="dv">2</span>), <span class="st">"g</span><span class="sc">\n\n</span><span class="st">"</span>)</span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"n shady  ="</span>, n_sha, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"SE shady ="</span>, <span class="fu">round</span>(se_shady, <span class="dv">2</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> In your own words, what does the SE tell you that the SD does not?</p>
-<pre><code>Your answer:</code></pre>
-<p>✏️ <strong>Your turn:</strong> If you collected 40 leaves per side instead of 10, would the SE get larger or smaller? Why?</p>
-<pre><code>Your answer:</code></pre>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># SE = SD / sqrt(n) — n must be the count of REAL values</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>n_sun <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(sunny_mass))</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>n_sha <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(shady_mass))</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>se_sunny <span class="ot">&lt;-</span> sd_sunny <span class="sc">/</span> <span class="fu">sqrt</span>(n_sun)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>se_shady <span class="ot">&lt;-</span> sd_shady <span class="sc">/</span> <span class="fu">sqrt</span>(n_sha)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"n sunny  ="</span>, n_sun, <span class="st">"   SE sunny ="</span>, <span class="fu">round</span>(se_sunny, <span class="dv">3</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"n shady  ="</span>, n_sha, <span class="st">"   SE shady ="</span>, <span class="fu">round</span>(se_shady, <span class="dv">3</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> In your own words, what does the SE tell you that the SD does not? And if you collected 40 leaves per side instead of ~25, would the SE get larger or smaller?</p>
+<pre><code>SE vs SD:
+40 leaves per side → SE gets:</code></pre>
 <hr>
 </section>
 </section>
 <section id="part-4-tidy-stats-with-group_by-summarize" class="level1">
 <h1>Part 4 · Tidy stats with <code>group_by()</code> + <code>summarize()</code></h1>
-<section id="all-groups-all-stats-one-pipeline" class="level3">
-<h3 class="anchored" data-anchor-id="all-groups-all-stats-one-pipeline">All groups, all stats, one pipeline</h3>
+<blockquote class="blockquote">
+<p>🔮 <strong>Predict first:</strong> How many <strong>rows</strong> will <code>stats_df</code> have? (How many values does <code>shade</code> take?)</p>
+</blockquote>
 <p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># group_by() + summarize() — the core tidyverse pattern</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>stats_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n         =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(mass_g)),</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_mass =</span> <span class="fu">round</span>(<span class="fu">mean</span>(mass_g,   <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>),</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">med_mass  =</span> <span class="fu">round</span>(<span class="fu">median</span>(mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>),</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd_mass   =</span> <span class="fu">round</span>(<span class="fu">sd</span>(mass_g,     <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>),</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">se_mass   =</span> <span class="fu">round</span>(sd_mass <span class="sc">/</span> <span class="fu">sqrt</span>(n), <span class="dv">3</span>)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>stats_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <blockquote class="blockquote">
-<p>🔮 <strong>Predict first:</strong> How many <strong>rows</strong> will <code>stats_df</code> have? (How many values does <code>side</code> take?) Predict the number before running.</p>
+<p>💡 <strong>Key idea:</strong> <code>group_by(shade)</code> splits the data by the <code>shade</code> column, and every <code>summarize()</code> calculation runs separately within each group — that’s why <code>stats_df</code> comes back with one row per shade instead of one row overall.</p>
 </blockquote>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># group_by() + summarize() — the core tidyverse pattern ------</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>stats_df <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(side) <span class="sc">%&gt;%</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n       =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(weight_g)),</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_wt =</span> <span class="fu">round</span>(<span class="fu">mean</span>(weight_g,   <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">2</span>),</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">med_wt  =</span> <span class="fu">round</span>(<span class="fu">median</span>(weight_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">2</span>),</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd_wt   =</span> <span class="fu">round</span>(<span class="fu">sd</span>(weight_g,     <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">2</span>),</span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">se_wt   =</span> <span class="fu">round</span>(sd_wt <span class="sc">/</span> <span class="fu">sqrt</span>(n), <span class="dv">2</span>)</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>stats_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> <code>group_by(side)</code> splits the data by the <code>side</code> column, and every <code>summarize()</code> calculation runs separately within each group — that’s why <code>stats_df</code> comes back with exactly one row per side instead of one row overall.</p>
-</blockquote>
-<p>✏️ <strong>Your turn:</strong> The <code>se_wt</code> line references <code>sd_wt</code> and <code>n</code> that were just created in the same <code>summarize()</code> call. Rewrite the SE formula in plain words:</p>
-<pre><code>SE equals:</code></pre>
 <p>✏️ <strong>Your turn:</strong> Do the numbers in <code>stats_df</code> match what you calculated by hand in Part 3?</p>
 <pre><code>Y / N — if not, explain any differences:</code></pre>
-</section>
 <section id="summary-across-multiple-variables" class="level3">
 <h3 class="anchored" data-anchor-id="summary-across-multiple-variables">Summary across multiple variables</h3>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Summarize all three measurements at once -----------</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>size_stats_df <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(side) <span class="sc">%&gt;%</span></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n       =</span> <span class="fu">n</span>(),</span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_wt =</span> <span class="fu">round</span>(<span class="fu">mean</span>(weight_g,  <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">2</span>),</span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_ht =</span> <span class="fu">round</span>(<span class="fu">mean</span>(height_cm, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">2</span>),</span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_wd =</span> <span class="fu">round</span>(<span class="fu">mean</span>(width_cm,  <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">2</span>)</span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>size_stats_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># mean of all three leaf measurements, by shade</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>size_stats_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n         =</span> <span class="fu">n</span>(),</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_mass =</span> <span class="fu">round</span>(<span class="fu">mean</span>(mass_g,       <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>),</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_pet  =</span> <span class="fu">round</span>(<span class="fu">mean</span>(petiole_mm,   <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">1</span>),</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_thick =</span> <span class="fu">round</span>(<span class="fu">mean</span>(thickness_mm, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>size_stats_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn:</strong> Looking at <code>size_stats_df</code>, fill in the table:</p>
 <pre><code>Measurement    | Sunny mean | Shady mean | Shady larger? (Y/N)
 ---------------|------------|------------|---------------------
-weight_g       |            |            |
-height_cm      |            |            |
-width_cm       |            |            |
-
-Overall: does the data support the hypothesis?</code></pre>
+mass_g         |            |            |
+petiole_mm     |            |            |
+thickness_mm   |            |            |</code></pre>
 <hr>
 </section>
 </section>
 <section id="part-5-the-fast-way-across" class="level1">
 <h1>Part 5 · The fast way — <code>across()</code></h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply the SAME function to every measurement column ------</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>mean_all_df <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(side) <span class="sc">%&gt;%</span></span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">c</span>(weight_g, width_cm, height_cm),</span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="fu">round</span>(<span class="fu">mean</span>(.x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">2</span>)</span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>mean_all_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Compare <code>mean_all_df</code> to <code>size_stats_df</code> from Part 4. Same numbers?</p>
-<pre><code>Same numbers?  Y / N</code></pre>
-<p>✏️ <strong>Your turn:</strong> Change <code>mean</code> inside <code>across()</code> to <code>sd</code>. What do you get back?</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Write your modified code here:</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>What changed:</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># apply the SAME function to every measurement column at once</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>mean_all_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">c</span>(mass_g, petiole_mm, thickness_mm),</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span> <span class="fu">round</span>(<span class="fu">mean</span>(.x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>)</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>mean_all_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Change <code>mean</code> inside <code>across()</code> to <code>sd</code> and run it.</p>
+<pre><code>Same numbers as size_stats_df?  Y / N
+What changed:</code></pre>
 <hr>
 </section>
 <section id="part-6-fast-overview-with-skimr" class="level1">
 <h1>Part 6 · Fast overview with <code>skimr</code></h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># skim() grouped by side — everything at once --------</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(side) <span class="sc">%&gt;%</span></span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">skim</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Look at the <code>n_missing</code> row for <code>weight_g</code>. How many values are missing per group?</p>
-<pre><code>n_missing sunny weight_g:
-n_missing shady weight_g:</code></pre>
-<p>✏️ <strong>Your turn:</strong> Look at the <code>mean</code> and <code>p50</code> (50th percentile = median) values for <code>weight_g</code>. Are mean and median close for each group? What does that suggest about skewness?</p>
-<pre><code>Your answer:</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># skim() grouped by shade — n_missing, mean, SD, and percentiles at once</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">skim</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn:</strong> Look at the <code>n_missing</code> row for <code>paper_mass_g</code>, and the <code>mean</code> vs <code>p50</code> (median) for <code>mass_g</code>.</p>
+<pre><code>n_missing paper_mass_g (sunny / shady):
+Are mean and median of mass_g close for each group? What does that suggest about skew?</code></pre>
 <blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> one line of <code>skim()</code> gets you <code>n_missing</code>, mean, SD, and percentiles for every column, grouped by <code>side</code> — the same numbers you just computed by hand in Part 3, produced without writing <code>filter()</code> or <code>pull()</code> at all.</p>
+<p>💡 <strong>Key idea:</strong> one line of <code>skim()</code> gets you <code>n_missing</code>, mean, SD, and percentiles for every column, grouped by <code>shade</code> — the same numbers you computed by hand in Part 3, without writing <code>filter()</code> or <code>pull()</code> at all.</p>
 </blockquote>
 <hr>
 </section>
@@ -700,50 +706,37 @@ n_missing shady weight_g:</code></pre>
 <li><label><input type="checkbox">Use <code>across()</code> to apply one function to many columns at once</label></li>
 <li><label><input type="checkbox">Use <code>skim()</code> for a fast full-dataset overview</label></li>
 </ul>
-<p>✏️ <strong>Your turn — before you move on:</strong> Run your entire script with <strong>Ctrl/Cmd + Shift + Enter</strong>. Does it complete without errors?</p>
+<p>✏️ <strong>Your turn — before you move on:</strong> Run your entire script top to bottom with <strong>Ctrl/Cmd + Shift + Enter</strong> (Source). Does it complete without errors?</p>
 <pre><code>Ran cleanly?  Y / N
 If not, what error appeared:</code></pre>
 <hr>
 </section>
 <section id="extension-out-of-class-3040-min" class="level1">
 <h1>Extension — out of class (~30–40 min)</h1>
-<p><em>Turn this in with your worksheet. In class you computed n, mean, SD, and SE. Now you add three spread statistics — one of them new — and reason about what each one tells you.</em></p>
-<div class="callout callout-style-default callout-important callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Important
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>E2 and E3 must be handwritten</strong> on paper, photographed, and embedded (<code>![caption](my_photo.jpg)</code>). Typed answers to E2/E3 get <strong>at most half credit, even if correct</strong> — I want your own prediction and reasoning about <em>your own</em> numbers.</p>
-</div>
-</div>
+<p><em>Add this to the bottom of <code>scripts/06_summary_stats.R</code> and turn it in with the rest. Put your written answers in <code>#</code> comments right under the code they go with. In class you computed n, mean, SD, and SE. Now you add three spread statistics — one of them new — and reason about what each one tells you.</em></p>
 <section id="e1-three-more-spread-statistics-4-pts" class="level2">
 <h2 class="anchored" data-anchor-id="e1-three-more-spread-statistics-4-pts">E1 · Three more spread statistics (4 pts)</h2>
-<p>Extend your grouped-by-<code>side</code> summary of <code>weight_g</code> to also include:</p>
+<p>Extend your grouped-by-<code>shade</code> summary of <code>mass_g</code> to also include:</p>
 <ul>
-<li><code>iqr_wt</code> — the interquartile range (<code>IQR()</code>, mind <code>na.rm</code>)</li>
-<li><code>range_wt</code> — <code>max(weight_g) - min(weight_g)</code></li>
-<li><code>cv_wt</code> — the <strong>coefficient of variation</strong>, computed by hand as <code>sd(weight_g) / mean(weight_g)</code> (a unitless measure of <em>relative</em> spread — you have not been shown this one; work it out from the definition)</li>
+<li><code>iqr_mass</code> — the interquartile range (<code>IQR()</code>, mind <code>na.rm</code>)</li>
+<li><code>range_mass</code> — <code>max(mass_g, na.rm = TRUE) - min(mass_g, na.rm = TRUE)</code></li>
+<li><code>cv_mass</code> — the <strong>coefficient of variation</strong>, computed by hand as <code>sd(mass_g) / mean(mass_g)</code> (a unitless measure of <em>relative</em> spread — you have not been shown this one; work it out from the definition)</li>
 </ul>
-<p>Show the full table (n, mean, sd, iqr_wt, range_wt, cv_wt) by side.</p>
+<p>Show the full table (n, mean, sd, iqr_mass, range_mass, cv_mass) by shade.</p>
 </section>
-<section id="e2-predict-then-check-by-hand-3-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e2-predict-then-check-by-hand-3-pts">E2 · Predict, then check — ✍️ by hand (3 pts)</h2>
-<p><strong>Before running E1:</strong></p>
+<section id="e2-predict-then-check-3-pts" class="level2">
+<h2 class="anchored" data-anchor-id="e2-predict-then-check-3-pts">E2 · Predict, then check (3 pts)</h2>
+<p><strong>Before running E1</strong>, write in comments:</p>
 <ol type="1">
-<li>Which side do you predict has the larger <code>sd</code>? The larger <code>cv_wt</code>? (They need not be the same side — think about why.)</li>
-<li>One reason, based on the raw Part-1 numbers you already saw.</li>
+<li>Which side do you predict has the larger <code>sd</code>? The larger <code>cv_mass</code>? (They need not be the same side — think about why.)</li>
+<li>One reason, based on the raw Part-3 numbers you already saw.</li>
 </ol>
-<p>Then run E1 and, by hand, say whether both predictions held. If the bigger-SD side did <em>not</em> have the bigger CV, explain why that can happen.</p>
+<p>Then run E1 and say whether both predictions held. If the bigger-SD side did <em>not</em> have the bigger CV, explain why that can happen.</p>
 </section>
-<section id="e3-explain-it-by-hand-with-your-values-3-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e3-explain-it-by-hand-with-your-values-3-pts">E3 · Explain it — ✍️ by hand, with YOUR values (3 pts)</h2>
+<section id="e3-explain-it-with-your-values-3-pts" class="level2">
+<h2 class="anchored" data-anchor-id="e3-explain-it-with-your-values-3-pts">E3 · Explain it, with YOUR values (3 pts)</h2>
 <ol type="1">
-<li>In plain language, what does your <code>cv_wt</code> tell you about the <em>relative</em> variability of each side that the raw <code>sd</code> alone does not?</li>
+<li>In plain language, what does your <code>cv_mass</code> tell you about the <em>relative</em> variability of each side that the raw <code>sd</code> alone does not?</li>
 <li>Why is the CV useful for comparing spread between two groups with different means, when the raw SD can mislead?</li>
 </ol>
 <hr>
@@ -754,16 +747,16 @@ Important
 <ol type="1">
 <li><strong>Read the error message out loud.</strong> R usually names the line and the problem.</li>
 <li><strong>Check the usual suspects:</strong> Did you load <code>library(readxl)</code>, <code>library(tidyverse)</code>, and <code>library(skimr)</code>?</li>
-<li><strong>Spelling?</strong> R is <strong>case-sensitive</strong> — <code>"Sunny"</code> ≠ <code>"sunny"</code>. Check with <code>names(tree_df)</code>.</li>
+<li><strong>Spelling?</strong> R is <strong>case-sensitive</strong> — <code>"Sunny"</code> ≠ <code>"sunny"</code>. Check with <code>names(leaf_df)</code>.</li>
 <li><strong><code>na.rm = TRUE</code> missing?</strong> Any stat function on a column with NAs returns <code>NA</code> without it — no error, just a silent wrong answer.</li>
 <li><strong>Cheat sheets</strong> — <a href="https://posit.co/resources/cheatsheets/" class="uri">https://posit.co/resources/cheatsheets/</a></li>
 <li><strong>Bring the exact error</strong> (copy-paste it) to class, Canvas, or office hours.</li>
 </ol>
 <blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> a missing <code>na.rm = TRUE</code>, a typo’d column name — these are the errors this worksheet is built around, and reading the message before you panic will solve most of them.</p>
+<p>💡 <strong>Key idea:</strong> a missing <code>na.rm = TRUE</code>, a typo’d column name — these are the errors this activity is built around, and reading the message before you panic will solve most of them.</p>
 </blockquote>
 <hr>
-<p><em>End of the Summary Statistics worksheet. Next: Quarto — writing reproducible reports that mix prose, code, and results in one document.</em></p>
+<p><em>End of the Summary Statistics activity. Next: Quarto — writing reproducible reports that mix prose, code, and results in one document.</em></p>
 
 
 </section>

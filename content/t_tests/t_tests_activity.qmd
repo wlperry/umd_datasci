@@ -1,7 +1,7 @@
 ---
 order: 9
 week: 5
-title: "Worksheet 09 — T-Tests I: Setting Up the Test"
+title: "Activity 09 — T-Tests I: Setting Up the Test"
 subtitle: "Hypotheses, the t-statistic, and checking assumptions before we test"
 author: "Bill Perry"
 date: today
@@ -23,13 +23,13 @@ execute:
 
 # In-class Activity 9: Setting Up the Test
 
-### Recap from Worksheets 05–06
+### Recap from Activities 05–06
 
-- Loaded our Excel leaf data with `read_excel()`
+- Loaded the leaf data with `read_excel()` and `clean_names()` into `leaf_df`
 - Used `group_by()` + `summarize()` to compute mean, SD, and SE per group
 - Checked for missing values with `sum(!is.na())`
-- Made boxplots with jittered points and mean ± SE plots with `stat_summary()` (Worksheet 03, GGPlot I)
-- **Prediction:** shady leaves appeared heavier, taller, and wider than sunny leaves
+- Made boxplots with jittered points and mean ± SE plots with `stat_summary()` (Activity 03)
+- **Prediction:** shady-side leaves would be heavier than sunny-side leaves
 
 ### Today's Objectives
 
@@ -38,19 +38,19 @@ execute:
 3.  Check the normality assumption — histogram and Shapiro-Wilk test
 4.  Check the variance assumption — Levene's test
 
-> # **How to use this worksheet**
+> # **How this activity works**
 >
-> - Work through each part in order — the steps build on each other. Type the code into your script in Positron and run it line by line.
-> - Code blocks marked **▶ Run this** should be executed as written.
-> - Blocks marked **✏️ Your turn** ask you to write, modify, or interpret something.
+> **You are building one R script this whole class, and you turn it in.** Create it now: `scripts/09_t_tests_1.R`.
+>
+> - **Every line you run goes in that script** — not the Console, not this page. Type it, don't paste it.
+> - **Start every code chunk in your script with a short `#` comment** saying what it does. The comments are part of the grade.
+> - **The top of your script, in order:** a title comment, then your `library()` calls, then the line that loads the data into `leaf_df`.
+> - Code marked **▶ Run this** is typed into your script exactly as shown. Code marked **✏️ Your turn** is a change you make and run.
 > - The **Going further** section is optional if you finish early.
 >
-> ## 🔮 Predict before you run — and type, don't paste
+> ## 🔮 Predict before you run
 >
-> Before you run any **▶ Run this** block, cover the output and *predict* what R will print. Jot your guess down, then run it and compare. Two reasons it is worth the extra few seconds:
->
-> -   **A t-test lives or dies on the p-value**, and p-values are notoriously easy to misread. Committing to "above or below 0.05" before you see the real number is what forces you to actually reason about the test rather than just glance at the output.
-> -   **Type `var.equal = FALSE` yourself.** It is one argument in a long function call, easy to skim past if you paste the code — but it is the whole reason we default to Welch's instead of the standard t-test.
+> Before you run any **▶ Run this** block, cover the output and predict what R will print. A t-test lives or dies on the *p*-value — committing to "above or below 0.05" before you see the real number is what forces you to reason about the test instead of skimming the output.
 
 ------------------------------------------------------------------------
 
@@ -60,59 +60,60 @@ execute:
 
 # Part 1 · Load libraries and data
 
-### Libraries
+::: callout-tip
+## 📂 Get the data
 
-**▶ Run this at the top of your script — in this exact order:**
+Same leaf file you have used since Activity 02 — it should already be in your project's `data/` folder. If not: **[`2026_09_03_data_sci_leaf_area.xlsx`](data/2026_09_03_data_sci_leaf_area.xlsx)** → put it in `data/`.
+:::
+
+**▶ Type this at the top of `scripts/09_t_tests_1.R` — in this exact order:**
 
 ``` r
-# Load all packages at the top of the script -----------
-library(readxl)      # reading Excel files
-library(tidyverse)   # data manipulation + ggplot2
+# ---- Activity 09: T-Tests I -----------------------------
+# your name, today's date
+
+# ---- Libraries -----------------------------------------
+library(readxl)      # read Excel files
+library(tidyverse)   # dplyr + ggplot2
+library(janitor)     # clean_names()
 library(car)         # Levene's test for variance
 ```
 
-> ⚠️ **Watch out!**
->
-> - If R says `"could not find function 'leveneTest'"`
->   - you forgot `library(car)`.
-> - Install it once with `install.packages("car")`, then load it every session `library(car)`
-
-### Load the data
-
-**▶ Run this:**
+> ⚠️ **Watch out!** If R says `"could not find function 'leveneTest'"` you forgot `library(car)`. Install it once with `install.packages("car")`, then load it every session.
 
 ``` r
-# Load the leaf data from the data folder --------------
-tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
-head(tree_df)
+# ---- Load data ----------------------------------------
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names()
+
+glimpse(leaf_df)
 ```
 
-✏️ **Your turn:** Before anything else — do you remember the structure of this data frame? Fill in from memory, then check with `glimpse(tree_df)`.
+✏️ **Your turn:** From the `glimpse()` output, fill in:
 
 ```
 Number of rows:
-Number of columns:
 Column holding the grouping variable (sunny/shady):
-Column we are testing today:
+Column we are testing today (leaf mass):
 ```
 
 ------------------------------------------------------------------------
 
 # Part 2 · Quick descriptive stats review
 
-> 🔮 **Predict first:** Before running, guess the mean weight for each side (shady vs sunny) and the gap between them. Write your guesses, then check.
+> 🔮 **Predict first:** Before running, guess the mean mass for each side (shady vs sunny) and the gap between them. Write your guesses, then check.
 
 **▶ Run this:**
 
 ``` r
-# Recap stats from Lecture 06 — both groups at once ----
-recap_df <- tree_df %>%
-  group_by(side) %>%
+# Recap stats from Activity 06 — both groups at once ----
+recap_df <- leaf_df %>%
+  group_by(shade) %>%
   summarize(
-    n       = sum(!is.na(weight_g)),
-    mean_wt = round(mean(weight_g, na.rm = TRUE), 2),
-    sd_wt   = round(sd(weight_g,   na.rm = TRUE), 2),
-    se_wt   = round(sd_wt / sqrt(n), 2)
+    n         = sum(!is.na(mass_g)),
+    mean_mass = round(mean(mass_g, na.rm = TRUE), 3),
+    sd_mass   = round(sd(mass_g,   na.rm = TRUE), 3),
+    se_mass   = round(sd_mass / sqrt(n), 3)
   )
 
 recap_df
@@ -123,7 +124,7 @@ recap_df
 ```
 Shady:  mean = _____ g   SD = _____   n = _____
 Sunny:  mean = _____ g   SD = _____   n = _____
-Difference in means = _____  g
+Difference in means = _____ g
 ```
 
 ✏️ **Your turn:** Looking at the SD values, do the two groups appear to have **similar** or **different** variance? (Does one group have much more spread than the other?)
@@ -142,7 +143,7 @@ Your observation:
 
 > 💡 **Key idea:** Always write down your hypotheses *before* you look at the data or run any test. This is how you stay scientifically honest.
 
-✏️ **Your turn:** Write the null and alternate hypotheses for leaf weight. Use words first, then symbols.
+✏️ **Your turn:** Write the null and alternate hypotheses for leaf mass. Use words first, then symbols.
 
 ```
 In words:
@@ -174,14 +175,14 @@ The t-test assumes that data within each group are approximately normally distri
 **▶ Run this:**
 
 ``` r
-# Histogram per group — look for bell-shaped distribution
-hist_norm_plot <- tree_df %>%
-  ggplot(aes(x = weight_g, fill = side)) +
-  geom_histogram(binwidth = 1, color = "white", alpha = 0.8) +
-  facet_wrap(~side, ncol = 2) +
+# Histogram per group — look for a bell-shaped distribution
+hist_norm_plot <- leaf_df %>%
+  ggplot(aes(x = mass_g, fill = shade)) +
+  geom_histogram(binwidth = 0.05, color = "white", alpha = 0.8) +
+  facet_wrap(~shade, ncol = 2) +
   labs(
-    title = "Leaf Weight Distribution by Side",
-    x     = "Leaf Weight (g)",
+    title = "Leaf Mass Distribution by Shade",
+    x     = "Leaf Mass (g)",
     y     = "Count"
   ) +
   theme_minimal() +
@@ -194,16 +195,8 @@ hist_norm_plot
 
 ```
 Sunny side shape (bell-shaped, skewed, flat, bimodal?):
-
 Shady side shape:
-
 Any obvious outliers?  Y / N
-```
-
-✏️ **Your turn:** With only 10 values per group, histograms will look lumpy even if the data are normal. Does this mean we should reject normality? Why or why not?
-
-```
-Your answer:
 ```
 
 ------------------------------------------------------------------------
@@ -211,8 +204,6 @@ Your answer:
 # Part 5 · Check normality — Shapiro-Wilk test
 
 > 🔮 **Predict first:** Shapiro-Wilk's H₀ is "data are normal." From your histogram, predict whether *p* will be above or below 0.05 for each side before you run it.
-
-The Shapiro-Wilk test formally tests whether a sample could have come from a normal distribution.
 
 - **H₀ (Shapiro-Wilk):** the data are normally distributed
 - **p \> 0.05** → fail to reject normality → proceed with t-test
@@ -222,17 +213,17 @@ The Shapiro-Wilk test formally tests whether a sample could have come from a nor
 
 ``` r
 # Shapiro-Wilk for the sunny side --------------------
-tree_df %>%
-  filter(side == "sunny") %>%
-  pull(weight_g) %>%
+leaf_df %>%
+  filter(shade == "sunny") %>%
+  pull(mass_g) %>%
   shapiro.test()
 ```
 
 ``` r
 # Shapiro-Wilk for the shady side -------------------
-tree_df %>%
-  filter(side == "shady") %>%
-  pull(weight_g) %>%
+leaf_df %>%
+  filter(shade == "shady") %>%
+  pull(mass_g) %>%
   shapiro.test()
 ```
 
@@ -243,21 +234,13 @@ Sunny:  W = _____   p = _____   Decision (normal / not normal):
 Shady:  W = _____   p = _____   Decision (normal / not normal):
 ```
 
-✏️ **Your turn:** With n = 10 per group, the Shapiro-Wilk test has low **statistical power**. What does that mean in plain language for interpreting this result?
-
-```
-Your answer:
-```
-
-> ⚠️ **Watch out!** Even if Shapiro-Wilk returns *p* \< 0.05 with very small samples, the t-test may still be appropriate — the histogram gives important visual context. Neither check alone is definitive.
+> ⚠️ **Watch out!** One side may come back *p* \< 0.05 while the other does not. A borderline Shapiro result with a roughly bell-shaped histogram is not a reason to abandon the t-test — the test is fairly robust to mild non-normality. Look at the histogram and the test together.
 
 ------------------------------------------------------------------------
 
 # Part 6 · Check variance — Levene's test
 
 > 🔮 **Predict first:** Look back at the two SD values from Part 2. Predict whether Levene's will call the variances equal (*p* > 0.05) or not, before you run it.
-
-Levene's test checks whether the two groups have the same population variance.
 
 - **H₀ (Levene's):** the two groups have equal variance
 - **p \> 0.05** → variances are not significantly different
@@ -267,7 +250,7 @@ Levene's test checks whether the two groups have the same population variance.
 
 ``` r
 # Levene's test for equal variance -------------------
-leveneTest(weight_g ~ side, data = tree_df)
+leveneTest(mass_g ~ shade, data = leaf_df)
 ```
 
 ✏️ **Your turn:** Record the result and decide:
@@ -295,7 +278,7 @@ At this point you should be able to:
 - [ ] Run `shapiro.test()` per group using `filter()` and `pull()`
 - [ ] Run `leveneTest()` and explain why we use Welch's regardless of the result
 
-✏️ **Your turn:** Run your entire script from top to bottom with **Ctrl/Cmd + Shift + Enter**. Does it run without errors?
+✏️ **Your turn:** Run your entire script from top to bottom with **Ctrl/Cmd + Shift + Enter** (Source). Does it run without errors?
 
 ```
 Ran cleanly?  Y / N
@@ -306,7 +289,7 @@ If not, what error appeared:
 
 # Part 8 · Going further
 
-> This section is optional — work through it if you finish early or want to push deeper. Next lecture assumes you've completed Parts 1–7 only, not this section.
+> Optional — work through it if you finish early. Next lecture assumes you've completed Parts 1–7 only, not this section.
 
 ### An alternative normality check: the QQ plot
 
@@ -316,13 +299,13 @@ A QQ (quantile-quantile) plot compares your data's quantiles to what a perfect n
 
 ``` r
 # Q-Q plot — points should fall along the diagonal ----
-qq_norm_plot <- tree_df %>%
-  ggplot(aes(sample = weight_g, color = side)) +
+qq_norm_plot <- leaf_df %>%
+  ggplot(aes(sample = mass_g, color = shade)) +
   stat_qq() +
   stat_qq_line(color = "black", linewidth = 0.8) +
-  facet_wrap(~side, scales = "free") +
+  facet_wrap(~shade, scales = "free") +
   labs(
-    title = "Normal Q-Q Plots by Side",
+    title = "Normal Q-Q Plots by Shade",
     x     = "Theoretical Quantiles",
     y     = "Sample Quantiles"
   ) +
@@ -332,10 +315,9 @@ qq_norm_plot <- tree_df %>%
 qq_norm_plot
 ```
 
-✏️ **Your turn:** Do the points for each group fall approximately along the diagonal line? Does this agree with what the histogram and Shapiro-Wilk test told you?
-
 ```
-Your answer:
+Do the points for each group fall approximately along the diagonal?
+Does this agree with the histogram and Shapiro-Wilk?
 ```
 
 ### Calculate t by hand
@@ -344,28 +326,26 @@ The lecture showed you where the t-statistic comes from. Try reproducing it your
 
 ``` r
 # Reproduce the t-statistic manually -----------------
-m_sha <- recap_df$mean_wt[recap_df$side == "shady"]
-m_sun <- recap_df$mean_wt[recap_df$side == "sunny"]
-s_sha <- recap_df$sd_wt[recap_df$side == "shady"]
-s_sun <- recap_df$sd_wt[recap_df$side == "sunny"]
-n_sha <- recap_df$n[recap_df$side == "shady"]
-n_sun <- recap_df$n[recap_df$side == "sunny"]
+m_sha <- recap_df$mean_mass[recap_df$shade == "shady"]
+m_sun <- recap_df$mean_mass[recap_df$shade == "sunny"]
+s_sha <- recap_df$sd_mass[recap_df$shade == "shady"]
+s_sun <- recap_df$sd_mass[recap_df$shade == "sunny"]
+n_sha <- recap_df$n[recap_df$shade == "shady"]
+n_sun <- recap_df$n[recap_df$shade == "sunny"]
 
 # Welch's SE of the difference
-se_diff  <- sqrt((s_sha^2 / n_sha) + (s_sun^2 / n_sun))
+se_diff <- sqrt((s_sha^2 / n_sha) + (s_sun^2 / n_sun))
 
 # t-statistic
 t_manual <- (m_sha - m_sun) / se_diff
 
-cat("Difference in means:", round(m_sha - m_sun, 2), "g\n")
+cat("Difference in means:", round(m_sha - m_sun, 3), "g\n")
 cat("SE of difference:   ", round(se_diff, 4), "\n")
 cat("Manual t:           ", round(t_manual, 3), "\n")
 ```
 
-✏️ **Your turn:** Next lecture you'll run `t.test()` and get a t-statistic back automatically. Write down your manually-calculated value now so you can compare:
-
 ```
-Manual t = _____
+Manual t = _____   (write it down — you'll compare to t.test() next lecture)
 ```
 
 ------------------------------------------------------------------------
@@ -373,15 +353,12 @@ Manual t = _____
 # Getting unstuck
 
 1.  **Read the error message out loud.** R usually names the line and the problem.
-2.  **Check the usual suspects:**
-    - Loaded `library(car)`, `library(readxl)`, `library(tidyverse)`?
-    - Spelling of column names? Check with `names(tree_df)`
-    - Missing `)` or `%>%`?
-3.  **`leveneTest` not found?** You need `library(car)` — not just `car::leveneTest`.
+2.  **Check the usual suspects:** loaded `library(car)`, `library(readxl)`, `library(tidyverse)`, `library(janitor)`? Column spelling? Check `names(leaf_df)`.
+3.  **`leveneTest` not found?** You need `library(car)`.
 4.  **Shapiro-Wilk needs \> 3 values.** If you filtered to a tiny subset, you may get an error.
 5.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
 6.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
 
 ------------------------------------------------------------------------
 
-*End of Worksheet 09. Next: Worksheet 10 — T-Tests II: running the test, decoding the output, and writing a results sentence.*
+*End of Activity 09. Next: Activity 10 — T-Tests II: running the test, decoding the output, and writing a results sentence.*

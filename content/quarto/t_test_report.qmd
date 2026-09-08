@@ -3,15 +3,15 @@ order: 5
 week: 3
 # =====================================================================
 #  t_test_report.qmd
-#  A WORKED EXAMPLE for the Quarto intro (Lecture 4.5).
-#  This is the analysis from Worksheets 09–10 (the Welch's t-test) written
+#  A WORKED EXAMPLE for the Quarto intro (Lecture 07).
+#  This is the analysis from Activities 09–10 (the Welch's t-test) written
 #  up as a Quarto report. Open it after the Quarto lecture to SEE why we
 #  bother: the same t-test you ran in a script becomes a finished Word
 #  document, with the t-statistic, p-value, and means dropped straight
-#  into the sentences — nothing copied by hand.
+#  into the tables — nothing copied by hand, whatever the test says.
 # =====================================================================
 title: "Do Shady Leaves Weigh More? A Two-Sample t-Test"
-subtitle: "A reproducible write-up of the Worksheets 09–10 analysis"
+subtitle: "A reproducible write-up of the Activities 09–10 analysis"
 author: "Your Name Here"
 date: today
 
@@ -36,12 +36,14 @@ execute:
 # Load all packages in one chunk at the top ----------------------------
 library(readxl)
 library(tidyverse)
+library(janitor)
 library(broom)   # tidy() turns the t-test object into a data frame
 ```
 
 ```{r load-data}
-# Read the leaf data ---------------------------------------------------
-tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
+# Read the leaf data --------------------------------------------------
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names()
 ```
 
 <!--
@@ -55,11 +57,11 @@ lines appear in the rendered Word document.
 # Introduction
 
 Leaves on the **shady** side of a tree may grow larger and heavier to capture
-more of the limited light beneath the canopy. We measured the weight (g) of ten
-leaves from each side of a tree and tested whether mean leaf weight differs
-between sides.
+more of the limited light beneath the canopy. We measured the mass (g) of leaves
+from the sunny and shady sides of a tree and tested whether mean leaf mass
+differs between sides.
 
-- **Null hypothesis (H₀):** $\mu_{shady} = \mu_{sunny}$ — no difference in mean weight
+- **Null hypothesis (H₀):** $\mu_{shady} = \mu_{sunny}$ — no difference in mean mass
 - **Alternate hypothesis (Hₐ):** $\mu_{shady} \neq \mu_{sunny}$ — the means differ
 
 We used a two-tailed test at $\alpha = 0.05$.
@@ -74,24 +76,24 @@ every value below is computed directly from the raw data.
 
 # Results
 
-<!-- 🔮 PREDICT before you Render: what mean weight do you expect for shady vs sunny leaves in Table 1? Jot a guess, then render and compare. -->
+<!-- 🔮 PREDICT before you Render: what mean mass do you expect for shady vs sunny leaves in Table 1? Jot a guess, then render and compare. -->
 
 ```{r summary-table}
 # Descriptive statistics per side --------------------------------------
-summary_df <- tree_df %>%
-  group_by(side) %>%
+summary_df <- leaf_df %>%
+  group_by(shade) %>%
   summarize(
-    n = sum(!is.na(weight_g)),
-    mean_wt = round(mean(weight_g, na.rm = TRUE), 2),
-    sd_wt = round(sd(weight_g, na.rm = TRUE), 2),
-    se_wt = round(sd_wt / sqrt(n), 2)
+    n = sum(!is.na(mass_g)),
+    mean_mass = round(mean(mass_g, na.rm = TRUE), 3),
+    sd_mass = round(sd(mass_g, na.rm = TRUE), 3),
+    se_mass = round(sd_mass / sqrt(n), 3)
   )
 ```
 
 ```{r print-table}
 knitr::kable(
   summary_df,
-  caption = "Table 1. Leaf weight (g) by side of tree (mean, SD, SE)."
+  caption = "Table 1. Leaf mass (g) by shade (n, mean, SD, SE)."
 )
 ```
 
@@ -100,8 +102,8 @@ knitr::kable(
 ```{r run-test}
 # Welch's two-sample t-test --------------------------------------------
 leaf_ttest_model <- t.test(
-  weight_g ~ side,
-  data = tree_df,
+  mass_g ~ shade,
+  data = leaf_df,
   var.equal = FALSE,
   alternative = "two.sided"
 )
@@ -113,29 +115,31 @@ p_val <- signif(leaf_ttest_model$p.value, 2)
 leaf_ttest_model |>
   tidy() |>
   select(estimate1, estimate2, statistic, parameter, p.value) |>
-  knitr::kable(digits = c(2, 2, 2, 1, 20),
+  knitr::kable(digits = c(3, 3, 2, 1, 20),
                col.names = c("Mean (shady)", "Mean (sunny)", "t",
                              "df", "p-value"),
-               caption = "Table 2. Welch's two-sample t-test of leaf weight by side.")
+               caption = "Table 2. Welch's two-sample t-test of leaf mass by shade.")
 ```
 
-Shady-side leaves were significantly **heavier** than sunny-side leaves: the
-group means, SE, and *n* are in Table 1, and the *t*, df, and *p*-value of the
-Welch's test are in Table 2. The *p*-value is below the 0.05 threshold, so the
-difference is significant.
+The group means, SD, SE, and *n* are in Table 1; the *t*, df, and *p*-value of the
+Welch's test are in Table 2. The two means are very close, the 95% confidence
+interval for the difference includes zero, and the *p*-value is **above** the 0.05
+threshold — so we do **not** find a significant difference in mean leaf mass
+between the sunny and shady sides.
 
 ::: {.callout-note appearance="simple"}
 Every number in Tables 1 and 2 is computed from the raw data when the document
 renders — nothing was typed or pasted. If a leaf measurement changed, you would
-fix the data file, press **Render**, and both tables would update themselves. In
-a plain script you would retype all of these by hand.
+fix the data file, press **Render**, and both tables would update themselves —
+and so would the sentence above, if you wrote it with inline code. In a plain
+script you would retype all of these by hand.
 :::
 
 ```{r boxplot}
-#| fig-cap: "Figure 1. Leaf weight by side of tree. Points show individual leaves; the test result is printed in the subtitle."
-#| fig-alt: "Boxplot comparing leaf weight in grams between the shady and sunny sides of the tree, with individual leaf weights overlaid as jittered points. The subtitle reports the Welch's t-test statistic and p-value."
-leaf_box_plot <- tree_df %>%
-  ggplot(aes(x = side, y = weight_g, fill = side)) +
+#| fig-cap: "Figure 1. Leaf mass by shade. Points show individual leaves; the test result is printed in the subtitle."
+#| fig-alt: "Boxplot comparing leaf mass in grams between the shady and sunny sides of the tree, with individual leaf masses overlaid as jittered points. The subtitle reports the Welch's t-test statistic and p-value."
+leaf_box_plot <- leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +
   geom_point(
     position = position_jitter(width = 0.15, seed = 42),
@@ -144,8 +148,8 @@ leaf_box_plot <- tree_df %>%
   ) +
   labs(
     subtitle = paste0("Welch's t-test: t = ", t_val, ", p = ", p_val),
-    x = "Side of tree",
-    y = "Leaf weight (g)"
+    x = "Shade",
+    y = "Leaf mass (g)"
   ) +
   theme_minimal() +
   theme(legend.position = "none")
@@ -155,10 +159,13 @@ leaf_box_plot
 
 # Conclusion
 
-At $\alpha = 0.05$ we **reject the null hypothesis**: mean leaf weight differs
-between the sunny and shady sides of the tree, with shady leaves heavier. This
-matches the biological prediction that shade leaves grow larger to capture more
-of the limited light. *(Add a sentence of your own interpretation here.)*
+At $\alpha = 0.05$ we **fail to reject the null hypothesis**: this sample does not
+show a difference in mean leaf mass between the sunny and shady sides of the tree.
+That is not proof that the sides are identical — only that any difference, if one
+exists, was too small to detect with this sample. The biological prediction that
+shade leaves grow heavier is **not supported** by these data.
+*(Add a sentence of your own interpretation here — e.g. would a larger sample, or
+a different measure such as leaf area, tell a different story?)*
 
 # References
 

@@ -32,11 +32,10 @@ execute:
 This activity parallels the lecture. Go slowly — you do **not** need to type fast. Each step is small, and there is a finished template you can lean on.
 
 ::: callout-tip
-## 📥 Download the template
+## 📥 Download the template and the data
 
-[**Download the template report → `leaf_report_template.qmd`**](leaf_report_template.qmd)
-
-Save it into your project's `documents/` folder. It already has the YAML, the library chunk, a summary table, and a figure. You will study it in Step 6 and use it as a safety net if you fall behind.
+- [**Template report → `leaf_report_template.qmd`**](leaf_report_template.qmd) — save it into your project's `documents/` folder. It already has the YAML, the library chunk, a summary table, and a figure. You study it in Step 6 and lean on it if you fall behind.
+- [**Leaf data → `2026_09_03_data_sci_leaf_area.xlsx`**](data/2026_09_03_data_sci_leaf_area.xlsx) — the same file you have used since Activity 02; it should already be in your `data/` folder.
 :::
 
 ::: callout-note
@@ -44,7 +43,7 @@ Save it into your project's `documents/` folder. It already has the YAML, the li
 
 Before you build your own, open this worked example and render it:
 
-[**`t_test_report.qmd`**](t_test_report.qmd) — a **preview of the t-test you'll run in Worksheet 09**, already written up as a Quarto report. The t-statistic, *p*-value, and group means are dropped straight into the sentences with inline code, and it renders to a clean Word document. That is the payoff of everything in this activity: an analysis becomes a report that writes its own numbers. Notice you would never copy a single value by hand — and in a few weeks, this will be *your* analysis.
+[**`t_test_report.qmd`**](t_test_report.qmd) — a **preview of the t-test you'll run in Activities 09–10**, already written up as a Quarto report. The t-statistic, *p*-value, and group means are computed into the tables directly from the data, and it renders to a clean Word document. That is the payoff of everything in this activity: an analysis becomes a report that writes its own numbers — and reports them honestly, whether or not the test is significant. Notice you would never copy a single value by hand — and in a few weeks, this will be *your* analysis.
 :::
 
 **What you need open:** Positron, your class project folder (`data/`, `documents/`, `figures/`, `scripts/`), and your leaf data in `data/`.
@@ -89,7 +88,7 @@ Below the YAML, write a few lines using Markdown symbols:
 ``` markdown
 # Introduction
 
-We measured leaf weight on the **sunny** and **shady** sides of a tree.
+We measured leaf mass on the **sunny** and **shady** sides of a tree.
 
 - Null hypothesis: no difference between sides
 - Alternate hypothesis: sides differ
@@ -107,13 +106,15 @@ Insert a chunk with **Ctrl/Cmd + Alt + I**, then make it load your packages and 
 #| label: libraries
 library(readxl)
 library(tidyverse)
+library(janitor)
 ```
 
 Add a second, **uniquely named** chunk to read your data:
 
 ``` r
 #| label: load-data
-tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") |>
+  clean_names()
 ```
 
 Render. If it breaks, the message names the chunk — go straight to it.
@@ -124,26 +125,28 @@ Same habit as your scripts: **small, uniquely named chunks** make errors easy to
 
 ------------------------------------------------------------------------
 
-## Step 5 · Compute a result and drop it into a sentence
+## Step 5 · Compute a summary and print it into the report
 
-Add a chunk that calculates the group means:
+Add a chunk that calculates the group means and **prints the result**:
 
 ``` r
 #| label: means
-summary_df <- tree_df %>%
-  group_by(side) %>%
-  summarize(mean_wt = round(mean(weight_g, na.rm = TRUE), 2))
+summary_df <- leaf_df %>%
+  group_by(shade) %>%
+  summarize(mean_mass = round(mean(mass_g, na.rm = TRUE), 3))
 
-mean_shady <- summary_df$mean_wt[summary_df$side == "shady"]
+summary_df
 ```
 
-Then, in your text, use **inline code** to insert the number automatically:
+Then, in your text, refer to the value straight from the printed table:
 
 ``` markdown
-Shady-side leaves averaged `r mean_shady` g.
+Read the mean mass for each side from the `mean_mass` column of the table above.
+Because the table is built from the data every render, it updates itself when the
+data changes — you never retype a number.
 ```
 
-Render. The real number appears in the sentence — and you never typed it.
+Render. The number in your report always matches the data — because you never typed it.
 
 ------------------------------------------------------------------------
 
@@ -203,14 +206,9 @@ Open [**`leaf_report_template.qmd`**](leaf_report_template.qmd), render it as-is
 
 # Extension — out of class (~30–40 min)
 
-*Turn this in with your worksheet, in the same `.qmd` you built in class. This
-adds Quarto features you have **not** seen yet — cross-references and callouts.*
-
-::: callout-important
-**E2 and E3 must be handwritten** on paper, photographed, and embedded in the
-report. Typed answers get **at most half credit, even if correct** — E2 is your
-prediction *before* the render.
-:::
+*Turn this in in the same `.qmd` you built in class. This adds Quarto features you
+have **not** seen yet — cross-references and callouts. Put your written answers in
+the report prose (or in `<!-- comments -->`) right where they belong.*
 
 ## E1 · Cross-reference your table and figure (4 pts)
 
@@ -228,7 +226,7 @@ number automatically, so it stays correct even if you reorder things.
 Record the `label:` lines you added and the exact sentence where you used
 `@tbl-summary` or `@fig-leaf`.
 
-## E2 · Predict, then check — ✍️ by hand (3 pts)
+## E2 · Predict, then check (3 pts)
 
 **Before touching any chunk options:** if you added `#| echo: false` to *only*
 the chunk that computes your summary table (not the whole document), what
@@ -236,7 +234,7 @@ exactly changes in the rendered Word doc, and what stays identical? Be specific
 about which chunks are affected. Then make the change, render, and write whether
 you were right.
 
-## E3 · Explain it — ✍️ by hand (3 pts)
+## E3 · Explain it (3 pts)
 
 As if explaining to a classmate who missed this unit:
 

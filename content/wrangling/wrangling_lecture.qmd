@@ -58,7 +58,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 # Where we left off (Lecture 04 — GGPlot II)
 
 - **Setup** — R and Positron installed; project folders created (`data/`, `figures/`, `scripts/`)
-- **Loading data** — `read_excel()` and `read_csv()`; inspecting with `glimpse()`, `head()`, `dim()`
+- **Loading data** — `read_excel()` and `read_csv()`; a first look with `glimpse()`
 - **Pipe** — `%>%` reads as "then"; chains steps together
 - **GGPlot I & II** — geoms, facets, `stat_summary()`, `scale_color_manual()`, coordinates, and themes
 
@@ -111,7 +111,7 @@ By the end you will wrangle our leaf data into exactly the columns and rows you 
 
 :::::: columns
 ::: {.column width="60%"}
-This is a **shorter lecture than usual** — one focused idea, wrangling, done properly. You will switch to the activity worksheet once, at the end, and type the code yourself there.
+This is a **shorter lecture than usual** — one focused idea, wrangling, done properly. You will switch to the activity once, at the end, and type the code yourself into your R script there.
 
 **For every code block, do three things:**
 
@@ -136,38 +136,24 @@ This is a **shorter lecture than usual** — one focused idea, wrangling, done p
 # Load all packages at the top of every script ----------
 library(readxl) # reading Excel files
 library(tidyverse) # data wrangling + ggplot2
+library(janitor) # clean_names()
 ```
 
 ```{r load-data-05}
 # Read the leaf data from the data folder ---------------
-tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names()
 ```
 
-# Inspect the Data
+# Take a First Look
 
-::::: columns
-::: {.column width="60%"}
-```{r inspect-head-05}
-# Preview the first rows ----------------------------
-head(tree_df)
-```
-:::
-
-::: {.column width="40%"}
 ```{r inspect-glimpse-05}
-# Column names, types, first values -----------------
-glimpse(tree_df)
+# glimpse(): one row per column — name, type, first values
+glimpse(leaf_df)
 ```
 
-```{r inspect-dim-05}
-# Rows × columns
-dim(tree_df)
-```
-
-- `<chr>` = character
-- `<dbl>` = numeric
-:::
-:::::
+- `<chr>` = character (`shade`, `teams`)
+- `<dbl>` = numeric (`mass_g`, `petiole_mm`, `thickness_mm`, `paper_mass_g`)
 
 # The Core Tidyverse Verbs
 
@@ -210,7 +196,7 @@ summarize()→ collapse to summaries (next lecture)
 # `filter()` — Picking Rows
 
 ::: callout-note
-**🔮 Predict first:** We have 20 leaves. Before you run it, guess how many rows `filter(side == "sunny")` returns. Write your number down, then run it and check.
+**🔮 Predict first:** We have 53 leaves. Before you run it, guess how many rows `filter(shade == "sunny")` returns. Write your number down, then run it and check.
 :::
 
 :::::: columns
@@ -219,13 +205,13 @@ summarize()→ collapse to summaries (next lecture)
 # filter() keeps rows where the condition is TRUE -------
 
 # Keep only sunny leaves
-tree_df %>% filter(side == "sunny") %>% head()
+leaf_df %>% filter(shade == "sunny") %>% head()
 
-# Keep only leaves heavier than 5 g
-tree_df %>% filter(weight_g > 5) %>% head()
+# Keep only leaves heavier than 0.5 g
+leaf_df %>% filter(mass_g > 0.5) %>% head()
 
-# Combine two conditions with & (AND)
-tree_df %>% filter(side == "shady", weight_g > 7) %>% head()
+# Combine two conditions with , (AND)
+leaf_df %>% filter(shade == "shady", mass_g > 0.5) %>% head()
 ```
 :::
 
@@ -246,8 +232,8 @@ tree_df %>% filter(side == "shady", weight_g > 7) %>% head()
 
 - `=` assigns a value.
 - `==` tests equality.
-- `filter(side = "sunny")` → error.
-- `filter(side == "sunny")` → correct.
+- `filter(shade = "sunny")` → error.
+- `filter(shade == "sunny")` → correct.
 :::
 ::::
 ::::::
@@ -260,7 +246,7 @@ I will type this **wrong** on purpose:
 
 ``` r
 # One equals sign — a very common mistake
-tree_df %>% filter(side = "sunny")
+leaf_df %>% filter(shade = "sunny")
 ```
 
 R stops and tells us:
@@ -274,7 +260,7 @@ i This usually means that you've used `=` instead of `==`.
 Now the fix — two equals signs:
 
 ``` r
-tree_df %>% filter(side == "sunny")
+leaf_df %>% filter(shade == "sunny")
 ```
 :::
 
@@ -282,7 +268,7 @@ tree_df %>% filter(side == "sunny")
 ::: callout-tip
 **✅ Why show a broken `filter()`?**
 
-`filter(side = "sunny")` is the single most common typo in this whole unit, because `=` and `==` look almost identical and only one of them tests equality. dplyr's error message actually names the mistake — "you've used `=` instead of `==`" — so once you've seen it fixed here, the next time R prints it at you it's a fix, not a mystery.
+`filter(shade = "sunny")` is the single most common typo in this whole unit, because `=` and `==` look almost identical and only one of them tests equality. dplyr's error message actually names the mistake — "you've used `=` instead of `==`" — so once you've seen it fixed here, the next time R prints it at you it's a fix, not a mystery.
 :::
 ::::
 ::::::
@@ -294,14 +280,14 @@ tree_df %>% filter(side == "sunny")
 ```{r select-demo}
 # select() keeps the columns you name ------------------
 
-# Keep only side and weight
-tree_df %>% select(side, weight_g) %>% head()
+# Keep only shade and mass
+leaf_df %>% select(shade, mass_g) %>% head()
 
-# Drop the index column (use minus sign)
-tree_df %>% select(-index) %>% head()
+# Drop the paper_mass_g column (use minus sign)
+leaf_df %>% select(-paper_mass_g) %>% head()
 
 # Keep columns that start with a word
-tree_df %>% select(starts_with("weight")) %>% head()
+leaf_df %>% select(starts_with("mass")) %>% head()
 ```
 :::
 
@@ -312,8 +298,8 @@ tree_df %>% select(starts_with("weight")) %>% head()
   - `select()` keeps your workspace clean
 - **Useful helpers:**
   - `starts_with("x")` — columns starting with "x"
-  - `ends_with("_g")` — columns ending with "_g"
-  - `contains("cm")` — columns containing "cm"
+  - `ends_with("_mm")` — columns ending with "_mm"
+  - `contains("mass")` — columns containing "mass"
 
 📖 [R4DS §3.3](https://r4ds.hadley.nz/data-transform#select)
 :::
@@ -322,7 +308,7 @@ tree_df %>% select(starts_with("weight")) %>% head()
 # `mutate()` — Creating New Columns
 
 ::: callout-note
-**🔮 Predict first:** `weight_g * 1000` converts grams to milligrams. Before running: will `mutate()` **replace** `weight_g` or **add** a new column? How many columns will the result have?
+**🔮 Predict first:** `mass_g * 1000` converts grams to milligrams. Before running: will `mutate()` **replace** `mass_g` or **add** a new column? How many columns will the result have?
 :::
 
 :::::: columns
@@ -331,20 +317,20 @@ tree_df %>% select(starts_with("weight")) %>% head()
 # mutate() adds a new column to the data frame ---------
 
 # Convert grams to milligrams
-tree_df %>%
-  mutate(weight_mg = weight_g * 1000) %>%
+leaf_df %>%
+  mutate(mass_mg = mass_g * 1000) %>%
   head()
 
-# Add a size category based on weight
-tree_df %>%
-  mutate(size_class = if_else(weight_g > 5, "large", "small")) %>%
+# Add a size category based on mass
+leaf_df %>%
+  mutate(size_class = if_else(mass_g > 0.5, "large", "small")) %>%
   head()
 
-# mutate() can reference multiple existing columns
-tree_df %>%
+# mutate() can create several new columns at once
+leaf_df %>%
   mutate(
-    weight_mg = weight_g * 1000,
-    area_approx = width_cm * height_cm # rough area estimate
+    mass_mg    = mass_g * 1000,
+    petiole_cm = petiole_mm / 10 # petiole length in cm
   ) %>%
   head()
 ```
@@ -357,9 +343,9 @@ tree_df %>%
 ::: callout-note
 **✅ Watch the column count**
 
-`mutate()` never removes columns — it adds to the right of your data frame, so `tree_df` gains one column per new variable you create.
+`mutate()` never removes columns — it adds to the right of your data frame, so `leaf_df` gains one column per new variable you create.
 
-To overwrite a column instead of adding one, reuse the same name on the left: `mutate(weight_g = round(weight_g, 1))`
+To overwrite a column instead of adding one, reuse the same name on the left: `mutate(mass_g = round(mass_g, 2))`
 :::
 
 📖 [R4DS §3.3](https://r4ds.hadley.nz/data-transform#sec-mutate)
@@ -374,13 +360,13 @@ To overwrite a column instead of adding one, reuse the same name on the left: `m
 # arrange() sorts rows by one or more columns ----------
 
 # Lightest leaves first
-tree_df %>% arrange(weight_g)
+leaf_df %>% arrange(mass_g)
 
 # Heaviest leaves first (use desc() to reverse)
-tree_df %>% arrange(desc(weight_g))
+leaf_df %>% arrange(desc(mass_g))
 
-# Sort by side, then by weight within each side
-tree_df %>% arrange(side, desc(weight_g))
+# Sort by shade, then by mass within each shade
+leaf_df %>% arrange(shade, desc(mass_g))
 ```
 :::
 
@@ -403,14 +389,14 @@ tree_df %>% arrange(side, desc(weight_g))
 # Chain all the verbs together -------------------------
 # Read it top to bottom like a recipe
 
-wrangled_df <- tree_df %>%
-  filter(weight_g > 0) %>% # remove any zeros
-  select(side, weight_g, height_cm) %>% # keep only needed cols
+wrangled_df <- leaf_df %>%
+  filter(mass_g > 0) %>% # remove any zeros
+  select(shade, mass_g, thickness_mm) %>% # keep only needed cols
   mutate(
-    weight_mg = weight_g * 1000,
-    size_class = if_else(weight_g > 5, "large", "small")
+    mass_mg = mass_g * 1000,
+    size_class = if_else(mass_g > 0.5, "large", "small")
   ) %>%
-  arrange(side, desc(weight_g)) # sort by side, then weight
+  arrange(shade, desc(mass_g)) # sort by shade, then mass
 
 head(wrangled_df)
 ```
@@ -419,16 +405,16 @@ head(wrangled_df)
 :::: {.column width="40%"}
 **Read the pipeline out loud:**
 
-> - Take `tree_df`,
->   - **then** filter to non-zero weights,
+> - Take `leaf_df`,
+>   - **then** filter to non-zero masses,
 >     - **then** select three columns,
 >       - **then** add two new columns,
->         - **then** sort by side and weight.
+>         - **then** sort by shade and mass.
 
 ::: callout-note
 **✅ Compare it to nested calls**
 
-Write the same pipeline as nested functions — `arrange(mutate(select(filter(tree_df, weight_g > 0), side, weight_g, height_cm), weight_mg = weight_g * 1000, size_class = if_else(weight_g > 5, "large", "small")), side, desc(weight_g))` — and the *first* thing that runs is buried in the middle. The pipe lets you read top to bottom in the order R actually executes.
+Write the same pipeline as nested functions — `arrange(mutate(select(filter(leaf_df, mass_g > 0), shade, mass_g, thickness_mm), mass_mg = mass_g * 1000, size_class = if_else(mass_g > 0.5, "large", "small")), shade, desc(mass_g))` — and the *first* thing that runs is buried in the middle. The pipe lets you read top to bottom in the order R actually executes.
 :::
 ::::
 ::::::
@@ -438,7 +424,7 @@ Write the same pipeline as nested functions — `arrange(mutate(select(filter(tr
 ::: {.activitybanner}
 **🛑 Go to Activity 5 — Wrangling**
 
-Close the slides. Open the Activity 5 worksheet and work through `filter`, `select`, `mutate`, `arrange`, and the full pipeline. Type every line yourself; predict before you run.
+Close the slides. Open the Activity 5 and work through `filter`, `select`, `mutate`, `arrange`, and the full pipeline. Type every line yourself into your script; predict before you run.
 :::
 
 # What We Learned Today

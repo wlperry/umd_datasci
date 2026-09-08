@@ -59,12 +59,12 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 - **Descriptive stats** — mean, median, SD, SE with `group_by()` + `summarize()`
 - **NA handling** — `sum(!is.na())` is the safe way to count *n*
 - **Boxplot** + jittered points; **mean ± SE** with `stat_summary()` (Lecture 03, GGPlot I)
-- **Finding:** shady leaves appear heavier, taller, and wider than sunny leaves
+- **Prediction:** shady-side leaves would be heavier than sunny-side leaves
 
 ::: callout-note
 **✅ Key idea from Lecture 06**
 
-We described the pattern in our data. Over the next two lectures we formally test whether that pattern is *statistically significant* — today we set the test up, next time we run it.
+We described the pattern in our data. Over the next two lectures we formally test whether the sides really differ — today we set the test up, next time we run it.
 :::
 
 # Goals for Today
@@ -114,8 +114,8 @@ Shady-side leaves will be **larger and heavier** — they need more surface area
 
 |   | Formal statement |
 |------------------------------------|------------------------------------|
-| **H₀ — null** | $\mu_{shady} = \mu_{sunny}$ — no difference in mean leaf weight |
-| **Hₐ — alternate** | $\mu_{shady} \neq \mu_{sunny}$ — mean leaf weight differs by side |
+| **H₀ — null** | $\mu_{shady} = \mu_{sunny}$ — no difference in mean leaf mass |
+| **Hₐ — alternate** | $\mu_{shady} \neq \mu_{sunny}$ — mean leaf mass differs by side |
 
 We use a **two-tailed** test — we will detect a difference in *either* direction.
 :::
@@ -136,7 +136,7 @@ We use a **two-tailed** test — we will detect a difference in *either* directi
 
 :::::: columns
 ::: {.column width="60%"}
-This lecture runs in **two short chunks**. After each chunk you switch to the **activity worksheet** and type the code yourself.
+This lecture runs in **two short chunks**. After each chunk you switch to the **activity** and type the code yourself into your R script.
 
 **For every code block, do three things:**
 
@@ -149,7 +149,7 @@ This lecture runs in **two short chunks**. After each chunk you switch to the **
 ::: callout-note
 **✅ Why bother? (the evidence)**
 
--   A *p*-value is easy to memorize and hard to actually understand. Guessing "above or below 0.05" *before* you see a test result forces you to reason about the test instead of just reading a number off the screen.
+-   A *p*-value is easy to memorize and hard to actually understand. Guessing "above or below 0.05" *before* you see a test result forces you to reason about the test instead of reading a number off the screen.
 -   Typing `var.equal = FALSE` yourself — rather than pasting it — is what makes you notice it's there at all, instead of skating past the one argument that separates Welch's from the standard t-test.
 :::
 ::::
@@ -161,12 +161,14 @@ This lecture runs in **two short chunks**. After each chunk you switch to the **
 # Load all packages at the top ----------------------------
 library(readxl) # reading Excel files
 library(tidyverse) # data manipulation + ggplot2
+library(janitor) # clean_names()
 library(car) # Levene's test for variance equality
 ```
 
 ```{r load-data-09}
 # Load the leaf data from the data folder -----------------
-tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names()
 ```
 
 ::: callout-note
@@ -189,10 +191,10 @@ Install once: `install.packages("car")`
 ::: {.column width="60%"}
 ```{r recap-plot}
 #| fig-format: png
-#| fig-alt: "Jittered points of leaf weight in grams for shady and sunny sides, with a black point and error bar showing the mean plus or minus one standard error for each side; the shady mean sits well above the sunny mean."
+#| fig-alt: "Jittered points of leaf mass in grams for shady and sunny sides, with a black point and error bar showing the mean plus or minus one standard error for each side; the two means sit close together with overlapping error bars."
 # Remind ourselves what the data look like ---------------
-recap_plot <- tree_df %>%
-  ggplot(aes(x = side, y = weight_g, color = side)) +
+recap_plot <- leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, color = shade)) +
   geom_point(
     position = position_jitter(width = 0.15, seed = 42),
     alpha = 0.5,
@@ -205,7 +207,7 @@ recap_plot <- tree_df %>%
     width = 0.15,
     linewidth = 0.9
   ) +
-  labs(x = "Side", y = "Leaf Weight (g)") +
+  labs(x = "Shade", y = "Leaf Mass (g)") +
   theme_minimal() +
   theme(legend.position = "none")
 recap_plot
@@ -213,17 +215,17 @@ recap_plot
 :::
 
 ::: {.column width="40%"}
-The means look different — but:
+The two means look **close** — and with this much scatter, they could easily be the same:
 
-- We only have **10 leaves per group**
-- There is **natural variability** within each group
-- The groups' ranges **overlap** somewhat
+- About **25 leaves per group**
+- Lots of **natural variability** within each group
+- The groups' ranges **overlap heavily**
 
 A *p*-value tells us:
 
-> *"If H₀ were true, how often would we see a gap this large just by chance?"*
+> *"If H₀ were true, how often would we see a gap at least this large just by chance?"*
 
-Small *p* → the gap is unlikely to be chance.
+Large *p* → a gap this small is nothing unusual.
 :::
 :::::
 
@@ -248,7 +250,7 @@ Every hypothesis test this semester — t-test, ANOVA, regression — follows th
 
 If your data seriously violate assumptions, the *p*-value from the t-test is unreliable.
 
-With n = 10 per group, our main concern is **gross non-normality**. The t-test is quite robust to mild departures.
+With ~25 per group, our main concern is **gross non-normality**. The t-test is quite robust to mild departures.
 :::
 ::::
 :::::
@@ -276,7 +278,7 @@ $$t = \frac{\bar{x}_1 - \bar{x}_2}{\text{SE}_{\text{diff}}}$$
 |-------------|--------------------------------|
 | Group 1     | Shady leaves                   |
 | Group 2     | Sunny leaves                   |
-| Measurement | `weight_g`                     |
+| Measurement | `mass_g`                       |
 | H₀          | $\mu_{shady} = \mu_{sunny}$    |
 | Hₐ          | $\mu_{shady} \neq \mu_{sunny}$ |
 :::
@@ -313,32 +315,32 @@ In R: **`var.equal = FALSE`**
 # Seeing the Formula in Action
 
 ::: callout-note
-**🔮 Predict first:** t = difference ÷ SE-of-the-difference, and the difference is 4 g. Do you expect |t| to land nearer 1, 5, or 10? Predict before the numbers appear.
+**🔮 Predict first:** t = difference ÷ SE-of-the-difference, and the two means differ by only about 0.02 g. Do you expect |t| to land nearer 0.5, 3, or 10? Predict before the numbers appear.
 :::
 
 ::::: columns
 ::: {.column width="60%"}
 ```{r formula-manual}
 # Watch the instructor plug numbers into the formula ----
-stats_df <- tree_df %>%
-  group_by(side) %>%
+stats_df <- leaf_df %>%
+  group_by(shade) %>%
   summarize(
-    n = sum(!is.na(weight_g)),
-    m = mean(weight_g, na.rm = TRUE),
-    s = sd(weight_g, na.rm = TRUE)
+    n = sum(!is.na(mass_g)),
+    m = mean(mass_g, na.rm = TRUE),
+    s = sd(mass_g, na.rm = TRUE)
   )
 
-m_sha <- stats_df$m[stats_df$side == "shady"]
-m_sun <- stats_df$m[stats_df$side == "sunny"]
-s_sha <- stats_df$s[stats_df$side == "shady"]
-s_sun <- stats_df$s[stats_df$side == "sunny"]
-n_sha <- stats_df$n[stats_df$side == "shady"]
-n_sun <- stats_df$n[stats_df$side == "sunny"]
+m_sha <- stats_df$m[stats_df$shade == "shady"]
+m_sun <- stats_df$m[stats_df$shade == "sunny"]
+s_sha <- stats_df$s[stats_df$shade == "shady"]
+s_sun <- stats_df$s[stats_df$shade == "sunny"]
+n_sha <- stats_df$n[stats_df$shade == "shady"]
+n_sun <- stats_df$n[stats_df$shade == "sunny"]
 
 se_diff <- sqrt((s_sha^2 / n_sha) + (s_sun^2 / n_sun))
 t_manual <- (m_sha - m_sun) / se_diff
 
-cat("Difference in means:", round(m_sha - m_sun, 2), "g\n")
+cat("Difference in means:", round(m_sha - m_sun, 3), "g\n")
 cat("SE of difference:   ", round(se_diff, 4), "\n")
 cat("t-statistic:        ", round(t_manual, 3), "\n")
 ```
@@ -347,11 +349,11 @@ cat("t-statistic:        ", round(t_manual, 3), "\n")
 ::: {.column width="40%"}
 **Step by step:**
 
-1.  Difference in means: 7.80 − 3.80 = **4.0 g**
-2.  SE of the difference: $\sqrt{\frac{s^2_{shady}}{10} + \frac{s^2_{sunny}}{10}}$
+1.  Difference in means: shady − sunny ≈ **0.02 g**
+2.  SE of the difference: $\sqrt{\frac{s^2_{shady}}{n_{shady}} + \frac{s^2_{sunny}}{n_{sunny}}}$
 3.  t = difference / SE
 
-The observed difference is \~10 standard errors above zero — very far from what we'd expect if H₀ were true. You'll try this yourself with a calculator in the activity's optional section — today the goal is just to see where the number comes from.
+The observed difference is **well under one standard error** from zero — right in the range you'd expect if H₀ were true. You'll try this yourself with a calculator in the activity's optional section — today the goal is just to see where the number comes from.
 :::
 :::::
 
@@ -379,13 +381,13 @@ Load the data and recompute the group means, SD, and SE. Predict each output, ty
 
 $$H_0: \mu_{shady} = \mu_{sunny}$$
 
-Shady and sunny leaves have the **same mean weight** in the population.
+Shady and sunny leaves have the **same mean mass** in the population.
 
 **Alternate hypothesis (two-tailed):**
 
 $$H_A: \mu_{shady} \neq \mu_{sunny}$$
 
-The mean leaf weights **differ** between sides — in either direction.
+The mean leaf masses **differ** between sides — in either direction.
 
 **Significance level:** α = 0.05
 
@@ -409,15 +411,15 @@ We will reject H₀ if *p* \< 0.05.
 ::: {.column width="60%"}
 ```{r histogram-norm}
 #| fig-format: png
-#| fig-alt: "Two histograms of leaf weight in grams, faceted by side, showing the count of leaves in each 1-gram bin for shady leaves and for sunny leaves."
+#| fig-alt: "Two histograms of leaf mass in grams, faceted by shade, showing the count of leaves in each mass bin for shady leaves and for sunny leaves."
 # Histogram per group to visually check normality -------
-hist_norm_plot <- tree_df %>%
-  ggplot(aes(x = weight_g, fill = side)) +
-  geom_histogram(binwidth = 1, color = "white", alpha = 0.8) +
-  facet_wrap(~side, ncol = 2) +
+hist_norm_plot <- leaf_df %>%
+  ggplot(aes(x = mass_g, fill = shade)) +
+  geom_histogram(binwidth = 0.05, color = "white", alpha = 0.8) +
+  facet_wrap(~shade, ncol = 2) +
   labs(
-    title = "Leaf Weight Distribution by Side",
-    x = "Leaf Weight (g)",
+    title = "Leaf Mass Distribution by Shade",
+    x = "Leaf Mass (g)",
     y = "Count"
   ) +
   theme_minimal() +
@@ -433,7 +435,7 @@ hist_norm_plot
 - No obvious **bimodal** peaks
 - No extreme **outliers**
 
-With n = 10 per group, histograms look lumpy — that is **normal for small samples**.
+With ~25 per group these are readable, but still lumpy — that is normal for real ecological data.
 
 ::: callout-note
 A **QQ plot** is another common visual check — same idea, different picture. You'll find one in the activity's optional section if you want to compare.
@@ -451,17 +453,17 @@ A **QQ plot** is another common visual check — same idea, different picture. Y
 ::: {.column width="60%"}
 ```{r shapiro-sunny}
 # Shapiro-Wilk test for the sunny side -----------------
-tree_df %>%
-  filter(side == "sunny") %>%
-  pull(weight_g) %>%
+leaf_df %>%
+  filter(shade == "sunny") %>%
+  pull(mass_g) %>%
   shapiro.test()
 ```
 
 ```{r shapiro-shady}
 # Shapiro-Wilk test for the shady side -----------------
-tree_df %>%
-  filter(side == "shady") %>%
-  pull(weight_g) %>%
+leaf_df %>%
+  filter(shade == "shady") %>%
+  pull(mass_g) %>%
   shapiro.test()
 ```
 :::
@@ -473,9 +475,9 @@ tree_df %>%
 - *p* \< 0.05 → evidence of non-normality → consider a non-parametric alternative
 
 ::: callout-important
-**Small-sample caution:**
+**One side may fail, the other pass.**
 
-With n = 10, this test has **low power** — it rarely detects non-normality even when present. The histogram is equally important.
+A borderline Shapiro result (*p* just under 0.05) with a roughly bell-shaped histogram is not a reason to abandon the t-test — it is robust to mild non-normality. Read the histogram and the test together.
 :::
 ::::
 ::::::
@@ -486,7 +488,7 @@ With n = 10, this test has **low power** — it rarely detects non-normality eve
 ::: {.column width="60%"}
 ```{r levene-test}
 # Levene's test — are the variances similar? -----------
-leveneTest(weight_g ~ side, data = tree_df)
+leveneTest(mass_g ~ shade, data = leaf_df)
 ```
 :::
 
@@ -511,13 +513,13 @@ Welch's is valid whether or not the variances are equal. We run Levene's to *und
 Suppose I forgot `library(car)` and run Levene's:
 
 ``` r
-leveneTest(weight_g ~ side, data = tree_df)
+leveneTest(mass_g ~ shade, data = leaf_df)
 ```
 
 R stops with:
 
 ```
-Error in leveneTest(weight_g ~ side, data = tree_df) :
+Error in leveneTest(mass_g ~ shade, data = leaf_df) :
   could not find function "leveneTest"
 ```
 
@@ -525,7 +527,7 @@ The fix — load the package that *contains* the function:
 
 ``` r
 library(car)
-leveneTest(weight_g ~ side, data = tree_df)
+leveneTest(mass_g ~ shade, data = leaf_df)
 ```
 :::
 

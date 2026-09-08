@@ -24,9 +24,9 @@ execute:
 
 # More Geoms, Coordinates, and Themes
 
-### Recap from Worksheet 03
+### Recap from Activity 03
 
-- Piped `tree_df` straight into `ggplot()`
+- Piped `leaf_df` straight into `ggplot()`
 - Assigned exact colors with `scale_fill_manual()` / `scale_color_manual()`
 - Split plots with `facet_wrap()` and `facet_grid()`
 - Built a mean ± SE plot with `stat_summary()`
@@ -38,84 +38,107 @@ execute:
 3.  Pick a built-in theme and adjust it with `theme()`
 4.  Save a plot as both PNG and PDF
 
-> # **How to use this worksheet**
+> # **How this activity works**
 >
-> Work through each part at your own pace. Type the code into a new R script in Positron and run it line by line. Code blocks marked **▶ Run this** should be executed exactly as written. Blocks marked **✏️ Your turn** ask you to write or modify something.
+> **You are building one R script this whole class, and you turn it in.** Create it now: `scripts/04_ggplot_2.R`.
+>
+> - **Every line you run goes in that script** — not in the Console, not typed into this page. Type it, don't paste it.
+> - **Start every code chunk in your script with a short `#` comment** that says what it does. The comments are part of the grade.
+> - **The top of your script, in this order:** a title comment, then your `library()` calls, then the line that loads the data into `leaf_df`.
+> - Code marked **▶ Run this** is typed into your script exactly as shown. Code marked **✏️ Your turn** is a change you make in that same script and run.
+>
+> ## 🔮 Predict before you run
+>
+> Before you run any **▶ Run this** block, cover the output and predict what R will draw. Predicting is what turns "I saw it on a slide" into "I can write it."
 
 ------------------------------------------------------------------------
 
-# Part 0 · Load libraries and data
+# Part 1 · Load libraries and data
 
-**▶ Run this at the top of your script:**
+::: callout-tip
+## 📂 Get the data
+
+Same leaf file as Activity 02–03 — it should already be in your project's `data/` folder. If not: **[`2026_09_03_data_sci_leaf_area.xlsx`](data/2026_09_03_data_sci_leaf_area.xlsx)** → put it in `data/`.
+:::
+
+**▶ Type this at the very top of `scripts/04_ggplot_2.R`:**
 
 ``` r
-library(readxl)
-library(tidyverse)
-library(janitor)
+# ---- Activity 04: GGPlot II ------------------------------
+# your name, today's date
 
-tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx") %>%
+# ---- Libraries -------------------------------------------
+library(readxl)      # read Excel files
+library(tidyverse)   # dplyr + ggplot2
+library(janitor)     # clean_names()
+```
+
+``` r
+# ---- Load data ------------------------------------------
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
   clean_names()
+
+glimpse(leaf_df)     # look at the data right after loading
 ```
 
 ------------------------------------------------------------------------
 
-# Part 1 · Shape, color, and a trend line
+# Part 2 · Shape, color, and a trend line
+
+> 🔮 **Predict first:** We map `color = shade` and `shape = shade` to the same variable. One legend or two?
 
 **▶ Run this:**
 
-> 🔮 **Predict first:** We map `color = side` and `shape = side` to the same variable. One legend or two?
-
 ``` r
-tree_df %>%
-  ggplot(aes(x = width_cm, y = weight_g, color = side, shape = side)) +
+# scatter of mass vs petiole length, one color + shape per shade
+leaf_df %>%
+  ggplot(aes(x = petiole_mm, y = mass_g, color = shade, shape = shade)) +
   geom_point(size = 2.5, alpha = 0.8) +
   scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
   labs(
-    title = "Leaf Weight vs. Width",
-    x = "Width (cm)", y = "Weight (g)",
-    color = "Side", shape = "Side"
+    title = "Leaf Mass vs. Petiole Length",
+    x = "Petiole Length (mm)", y = "Leaf Mass (g)",
+    color = "Shade", shape = "Shade"
   ) +
   theme_minimal()
 ```
 
-✏️ **Your turn:** Add a `geom_smooth(method = "lm")` layer to the plot above (no color/fill needed — let it default). Does the line slope up or down?
-
-``` r
-# Write your modified code here:
-```
+✏️ **Your turn — in your script:** Add a `geom_smooth(method = "lm")` layer to the plot above (no color/fill needed — let it default). Run it.
 
 ```
-Slope direction (up/down):
+Does the trend line slope up or down?
 ```
 
 ------------------------------------------------------------------------
 
-# Part 2 · `coord_cartesian()` vs. `xlim()`/`ylim()`
+# Part 3 · `coord_cartesian()` vs. `xlim()`/`ylim()`
 
 **▶ Run this — Version A, `coord_cartesian()`:**
 
 ``` r
-tree_df %>%
-  ggplot(aes(x = width_cm, y = weight_g)) +
+# zoom the view WITHOUT dropping data: coord_cartesian()
+leaf_df %>%
+  ggplot(aes(x = petiole_mm, y = mass_g)) +
   geom_point(alpha = 0.6, color = "grey40") +
   geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
-  coord_cartesian(xlim = c(12, 15), ylim = c(2, 5)) +
-  labs(title = "Zoomed with coord_cartesian()", x = "Width (cm)", y = "Weight (g)") +
+  coord_cartesian(xlim = c(50, 70), ylim = c(0.4, 0.6)) +
+  labs(title = "Zoomed with coord_cartesian()", x = "Petiole Length (mm)", y = "Leaf Mass (g)") +
   theme_minimal()
 ```
 
-**▶ Run this — Version B, `xlim()`/`ylim()`:**
-
 > 🔮 **Predict first:** Will the trend line in Version B look the same as Version A, or different? Why?
 
+**▶ Run this — Version B, `xlim()`/`ylim()`:**
+
 ``` r
-tree_df %>%
-  ggplot(aes(x = width_cm, y = weight_g)) +
+# zoom the view by DELETING rows outside the window: xlim() / ylim()
+leaf_df %>%
+  ggplot(aes(x = petiole_mm, y = mass_g)) +
   geom_point(alpha = 0.6, color = "grey40") +
   geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
-  xlim(12, 15) +
-  ylim(2, 5) +
-  labs(title = "Zoomed with xlim()/ylim()", x = "Width (cm)", y = "Weight (g)") +
+  xlim(50, 70) +
+  ylim(0.4, 0.6) +
+  labs(title = "Zoomed with xlim()/ylim()", x = "Petiole Length (mm)", y = "Leaf Mass (g)") +
   theme_minimal()
 ```
 
@@ -128,16 +151,17 @@ Why:
 
 ------------------------------------------------------------------------
 
-# Part 3 · Pick a theme
+# Part 4 · Pick a theme
 
 **▶ Run this, trying each theme in turn:**
 
 ``` r
-leaf_plot <- tree_df %>%
-  ggplot(aes(x = side, y = weight_g, fill = side)) +
+# build the base plot once, then add each theme on top
+leaf_plot <- leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
-  labs(x = "Side of Tree", y = "Leaf Weight (g)", title = "Leaf Weight by Side")
+  labs(x = "Shade", y = "Leaf Mass (g)", title = "Leaf Mass by Shade")
 
 leaf_plot + theme_grey()
 leaf_plot + theme_bw()
@@ -146,11 +170,8 @@ leaf_plot + theme_classic()
 leaf_plot + theme_light()
 ```
 
-✏️ **Your turn:** Which theme do you like best for this plot, and why?
-
 ```
-Theme chosen:
-Why:
+Which theme do you like best for this plot, and why?
 ```
 
 ### Adjust it with `theme()`
@@ -158,6 +179,7 @@ Why:
 **▶ Run this:**
 
 ``` r
+# start from theme_classic(), then override a few individual elements
 leaf_plot_final <- leaf_plot +
   theme_classic() +
   theme(
@@ -169,40 +191,35 @@ leaf_plot_final <- leaf_plot +
 leaf_plot_final
 ```
 
-✏️ **Your turn:** Change `axis.text` to `size = 16`. Too big, too small, or just right?
-
-``` r
-# Write your modified code here:
-```
+✏️ **Your turn — in your script:** Change `axis.text` to `size = 16` and run it.
 
 ```
-Your judgment:
+Too big, too small, or just right?
 ```
 
 ------------------------------------------------------------------------
 
-# Part 4 · Save in two formats
+# Part 5 · Save in two formats
 
 **▶ Run this:**
 
 ``` r
-ggsave("figures/leaf_weight_theme.png",
+# PNG for slides and web, PDF for print / vector editing
+ggsave("figures/leaf_mass_theme.png",
        plot = leaf_plot_final, width = 5, height = 5,
        units = "in", dpi = 300)
 
-ggsave("figures/leaf_weight_theme.pdf",
+ggsave("figures/leaf_mass_theme.pdf",
        plot = leaf_plot_final, width = 5, height = 5, units = "in")
 ```
 
-✏️ **Your turn:** Open both files. In one sentence, when would you send a colleague the `.pdf` instead of the `.png`?
-
 ```
-Your answer:
+Open both files. When would you send a colleague the .pdf instead of the .png?
 ```
 
 ------------------------------------------------------------------------
 
-# Part 5 · Review and checkpoint
+# Part 6 · Review and checkpoint
 
 At this point you should be able to:
 
@@ -213,7 +230,7 @@ At this point you should be able to:
 - [ ] Adjust a theme with `theme()`
 - [ ] Save a plot as both `.png` and `.pdf`
 
-✏️ **Your turn — before you move on:** Run your entire script with **Ctrl/Cmd + Shift + Enter**. Does it complete without errors?
+✏️ **Your turn — before you move on:** Run your entire script top to bottom with **Ctrl/Cmd + Shift + Enter** (Source). Does it complete without errors?
 
 ```
 Ran cleanly?  Y / N
@@ -222,64 +239,43 @@ If not, what error appeared:
 
 ------------------------------------------------------------------------
 
-# What your `figures/` folder should contain
+# What your project folder should contain
 
 ```
 tree_project/
 ├── data/
-│   └── 2026_06_25_tree_experiment_raw_data.xlsx   <- never edit this
+│   └── 2026_09_03_data_sci_leaf_area.xlsx   <- never edit this
 ├── figures/
-│   ├── leaf_weight_theme.png                       <- Part 4
-│   └── leaf_weight_theme.pdf                       <- Part 4
+│   ├── leaf_mass_theme.png                  <- Part 5
+│   └── leaf_mass_theme.pdf                  <- Part 5
 └── scripts/
-    └── 04_ggplot_2.R                               <- your script
+    └── 04_ggplot_2.R                        <- your script (turn this in)
 ```
 
 ------------------------------------------------------------------------
 
 # Extension — out of class (~30–40 min)
 
-*Turn this in with your worksheet. In class you zoomed a fixed window on
-`weight_g` vs `height_cm`. Now the variable pair **and** the window are yours.*
-
-::: callout-important
-**E2 and E3 must be handwritten** on paper, photographed, and embedded
-(`![caption](my_photo.jpg)`). Typed answers to E2/E3 get **at most half credit,
-even if correct** — I want your own prediction and reasoning about *your own*
-numbers.
-:::
+*Add this to the bottom of `scripts/04_ggplot_2.R` and turn it in with the rest. Put your written answers in `#` comments right under the code they go with. In class you zoomed a fixed window on `mass_g` vs `petiole_mm`. Now the variable pair **and** the window are yours.*
 
 ## E1 · Your own zoom window (4 pts)
 
-1.  Pick **your own pair of numeric variables** from `tree_df` that class did
-    *not* use together (not `weight_g` vs `height_cm`). `width_cm` is available.
-2.  Look at the range of your x-variable (`range()` / `summary()`), then pick a
-    **zoom window that cuts the data roughly in half** — a real cut, not a guess.
-3.  Build the `coord_cartesian()` version and the `xlim()` version of a scatter
-    with `geom_smooth(method = "lm")`, exactly like the in-class Part 3.
-4.  Run `nrow(tree_df)`, then `filter()` `tree_df` to your window and check
-    `nrow()` again — that's the row count `xlim()` is silently using.
+1.  Pick **your own pair of numeric variables** from `leaf_df` that class did *not* use together (not `mass_g` vs `petiole_mm`). `thickness_mm` is available.
+2.  Look at the range of your x-variable (`range()` / `summary()`), then pick a **zoom window that cuts the data roughly in half** — a real cut, not a guess.
+3.  Build the `coord_cartesian()` version and the `xlim()` version of a scatter with `geom_smooth(method = "lm")`, exactly like the in-class Part 3.
+4.  Run `nrow(leaf_df)`, then `filter()` `leaf_df` to your window and check `nrow()` again — that's the row count `xlim()` is silently using.
 
-Record your exact window and both row counts (they'll differ for everyone).
+Record your exact window and both row counts in comments.
 
-## E2 · Predict, then check — ✍️ by hand (3 pts)
+## E2 · Predict, then check (3 pts)
 
-**Before running E1:** write your variable pair and window, and predict — will
-the `xlim()` trend line be the same slope as the `coord_cartesian()` one,
-steeper, or shallower? Also predict, as a number, how many rows land in your
-window. Run the code, then write how close your row-count guess was and whether
-the trend lines differed as predicted.
+**Before running E1:** in a comment, write your variable pair and window, and predict — will the `xlim()` trend line be the same slope as the `coord_cartesian()` one, steeper, or shallower? Also predict, as a number, how many rows land in your window. Run the code, then write how close your row-count guess was and whether the trend lines differed as predicted.
 
-## E3 · Explain it — ✍️ by hand, using YOUR numbers (3 pts)
+## E3 · Explain it, using YOUR numbers (3 pts)
 
-1.  Using your before/after row counts, explain why `xlim()` gave a different
-    line than `coord_cartesian()` for *your* window. If the counts came out
-    equal, explain how that can happen.
-2.  In your own words, why is it dangerous that `xlim()`/`ylim()` delete rows
-    *silently*? Give a realistic case where that silent deletion leads to a
-    wrong conclusion.
-3.  Name the theme you chose in the in-class Part 4 and say, in a sentence or
-    two, why you'd pick it over `theme_grey()` for a figure in a report.
+1.  Using your before/after row counts, explain why `xlim()` gave a different line than `coord_cartesian()` for *your* window. If the counts came out equal, explain how that can happen.
+2.  In your own words, why is it dangerous that `xlim()`/`ylim()` delete rows *silently*? Give a realistic case where that silent deletion leads to a wrong conclusion.
+3.  Name the theme you chose in Part 4 and say, in a sentence or two, why you'd pick it over `theme_grey()` for a figure in a report.
 
 ------------------------------------------------------------------------
 
@@ -293,4 +289,4 @@ the trend lines differed as predicted.
 
 ------------------------------------------------------------------------
 
-*End of the GGplot II worksheet. Next: wrangling with filter, select, mutate, and arrange.*
+*End of the GGplot II activity. Next: wrangling with filter, select, mutate, and arrange.*

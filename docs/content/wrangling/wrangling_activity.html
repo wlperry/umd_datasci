@@ -448,10 +448,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="wrangling-our-leaf-data" class="level1">
 <h1>Wrangling Our Leaf Data</h1>
-<section id="recap-from-worksheet-04-ggplot-ii" class="level3">
-<h3 class="anchored" data-anchor-id="recap-from-worksheet-04-ggplot-ii">Recap from Worksheet 04 (GGPlot II)</h3>
+<section id="recap-from-activity-04-ggplot-ii" class="level3">
+<h3 class="anchored" data-anchor-id="recap-from-activity-04-ggplot-ii">Recap from Activity 04 (GGPlot II)</h3>
 <ul>
-<li>Loaded our leaf data with <code>read_excel()</code></li>
+<li>Loaded the leaf data with <code>read_excel()</code> and <code>clean_names()</code></li>
 <li>Built faceted plots, mean ± SE plots with <code>stat_summary()</code>, and custom colors with <code>scale_color_manual()</code></li>
 <li>Adjusted axis limits with <code>coord_cartesian()</code> and picked a theme</li>
 <li>Used the pipe <code>%&gt;%</code> to chain steps</li>
@@ -464,57 +464,67 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Chain all four verbs into a single pipeline</li>
 </ol>
 <blockquote class="blockquote">
-<h1 id="how-to-use-this-worksheet"><strong>How to use this worksheet</strong></h1>
-<p>Work through each part at your own pace. Type the code into a new R script in Positron and run it line by line. Code blocks marked <strong>▶ Run this</strong> should be executed exactly as written. Blocks marked <strong>✏️ Your turn</strong> ask you to write or modify something.</p>
-</blockquote>
-<blockquote class="blockquote">
-<h2 id="predict-before-you-run-and-type-dont-paste" class="anchored" data-anchor-id="todays-objectives">🔮 Predict before you run — and type, don’t paste</h2>
-<p>Before you run any <strong>▶ Run this</strong> block, cover the output and <em>predict</em> what R will print — how many rows, how many columns, which value comes out on top. Then run it and compare. Two reasons it is worth the extra few seconds:</p>
+<h1 id="how-this-activity-works"><strong>How this activity works</strong></h1>
+<p><strong>You are building one R script this whole class, and you turn it in.</strong> Create it now: <code>scripts/05_wrangling.R</code>.</p>
 <ul>
-<li><strong>Predicting exposes what you don’t actually know yet.</strong> It’s easy to nod along at <code>filter()</code> vs <code>select()</code> on a slide; it’s much harder to fake a row count you have to commit to in writing first.</li>
-<li><strong>Typing beats pasting.</strong> You’ll write <code>%&gt;%</code>, <code>filter()</code>, and <code>mutate()</code> dozens of times today — typing them by hand is what turns the syntax into muscle memory, and it trains your eye to spot the <code>=</code> vs <code>==</code> typo before R does.</li>
+<li><strong>Every line you run goes in that script</strong> — not in the Console, not typed into this page. Type it, don’t paste it.</li>
+<li><strong>Start every code chunk in your script with a short <code>#</code> comment</strong> that says what it does. The comments are part of the grade.</li>
+<li><strong>The top of your script, in this order:</strong> a title comment, then your <code>library()</code> calls, then the line that loads the data into <code>leaf_df</code>.</li>
+<li>Code marked <strong>▶ Run this</strong> is typed into your script exactly as shown. Code marked <strong>✏️ Your turn</strong> is a change you make in that same script and run.</li>
 </ul>
+<h2 id="predict-before-you-run" class="anchored" data-anchor-id="todays-objectives">🔮 Predict before you run</h2>
+<p>Before you run any <strong>▶ Run this</strong> block, predict what R will print — how many rows, how many columns, which value comes out on top. Then run it and compare. Predicting exposes what you don’t actually know yet, and typing (not pasting) is what trains your eye to catch the <code>=</code> vs <code>==</code> typo before R does.</p>
 </blockquote>
 <hr>
 </section>
 </section>
 <section id="part-1-load-libraries-and-data" class="level1">
 <h1>Part 1 · Load libraries and data</h1>
-<section id="libraries-first" class="level3">
-<h3 class="anchored" data-anchor-id="libraries-first">Libraries first</h3>
-<p>Always load all packages at the very top of your script.</p>
-<p><strong>▶ Run this at the top of your script:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load all packages — always at the top of the script --------</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)      <span class="co"># reading Excel files</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># data manipulation + ggplot2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>📂 Get the data
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Same leaf file you have used since Activity 02 — it should already be in your project’s <code>data/</code> folder. If not: <strong><a href="data/2026_09_03_data_sci_leaf_area.xlsx"><code>2026_09_03_data_sci_leaf_area.xlsx</code></a></strong> → put it in <code>data/</code>.</p>
+</div>
+</div>
+<p><strong>▶ Type this at the very top of <code>scripts/05_wrangling.R</code>:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Activity 05: Wrangling data -------------------------</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># your name, today's date</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Libraries -------------------------------------------</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)      <span class="co"># read Excel files</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># dplyr for wrangling + ggplot2</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)     <span class="co"># clean_names()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Load data ------------------------------------------</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/2026_09_03_data_sci_leaf_area.xlsx"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(leaf_df)     <span class="co"># look at the data right after loading</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <blockquote class="blockquote">
 <p>⚠️ <strong>Watch out!</strong> If R says <em>“could not find function <code>read_excel</code>”</em> you forgot <code>library(readxl)</code>. You must reload libraries every time you restart R.</p>
 </blockquote>
-</section>
-<section id="load-the-leaf-data" class="level3">
-<h3 class="anchored" data-anchor-id="load-the-leaf-data">Load the leaf data</h3>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the Excel file — path is relative to your project folder</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>tree_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/2026_06_25_tree_experiment_raw_data.xlsx"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
-</section>
 </section>
 <section id="part-2-inspect-the-data" class="level1">
 <h1>Part 2 · Inspect the data</h1>
-<p><strong>▶ Run each of these:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(tree_df)       <span class="co"># first 6 rows</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(tree_df)    <span class="co"># column names, types, first values — use this!</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(tree_df)        <span class="co"># rows × columns</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># glimpse() is the one to reach for: one row per column, with type + first values</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(leaf_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn:</strong> Fill in the table below from the <code>glimpse()</code> output.</p>
-<pre><code>Column name     | Data type (&lt;chr&gt; / &lt;dbl&gt;)  | Example value
-----------------|----------------------------|---------------
-index           |                            |
-side            |                            |
-weight_g        |                            |
-width_cm        |                            |
-height_cm       |                            |</code></pre>
-<p>✏️ <strong>Your turn:</strong> How many leaves are from the sunny side and how many from the shady side? Use <code>table(tree_df$side)</code>.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Write your code here:</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Column name    | Data type (&lt;chr&gt; / &lt;dbl&gt;)  | Example value
+---------------|----------------------------|---------------
+shade          |                            |
+mass_g         |                            |
+petiole_mm     |                            |
+thickness_mm   |                            |
+paper_mass_g   |                            |</code></pre>
+<p>✏️ <strong>Your turn — in your script:</strong> How many leaves are from the sunny side and how many from the shady side? Use <code>table(leaf_df$shade)</code>.</p>
 <pre><code>Sunny leaves:
 Shady leaves:
 Is the design balanced (equal n per group)?  Y / N</code></pre>
@@ -525,44 +535,42 @@ Is the design balanced (equal n per group)?  Y / N</code></pre>
 <p>These four functions do most of the work in data wrangling. All take a data frame and return a data frame.</p>
 <section id="filter-keeping-rows-you-want" class="level3">
 <h3 class="anchored" data-anchor-id="filter-keeping-rows-you-want"><code>filter()</code> — keeping rows you want</h3>
-<p><strong>▶ Run this:</strong></p>
 <blockquote class="blockquote">
-<p>🔮 <strong>Predict first:</strong> There are 20 leaves in total. Before running, guess how many rows <code>filter(side == "sunny")</code> will return. Write your number, then check.</p>
+<p>🔮 <strong>Predict first:</strong> Before running, guess how many rows <code>filter(shade == "sunny")</code> will return. Write your number, then check.</p>
 </blockquote>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># filter() keeps rows where the condition is TRUE ------</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep only sunny leaves</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(side <span class="sc">==</span> <span class="st">"sunny"</span>)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep only leaves heavier than 5 g</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(weight_g <span class="sc">&gt;</span> <span class="dv">5</span>)</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine conditions (AND = both must be true)</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(side <span class="sc">==</span> <span class="st">"shady"</span>, weight_g <span class="sc">&gt;</span> <span class="dv">7</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># filter() keeps rows where the condition is TRUE</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># keep only sunny leaves</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(shade <span class="sc">==</span> <span class="st">"sunny"</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co"># keep only leaves heavier than 0.5 g</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(mass_g <span class="sc">&gt;</span> <span class="fl">0.5</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co"># combine conditions (comma = AND = both must be true)</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(shade <span class="sc">==</span> <span class="st">"shady"</span>, mass_g <span class="sc">&gt;</span> <span class="fl">0.5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <blockquote class="blockquote">
 <p>⚠️ <strong>Watch out!</strong> <code>=</code> assigns a value. <code>==</code> tests equality. Always use <code>==</code> inside <code>filter()</code>.</p>
 </blockquote>
-<p>✏️ <strong>Your turn:</strong> Use <code>filter()</code> to find all leaves where <code>height_cm</code> is greater than 25. How many rows does the result have?</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Write your code here:</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>Number of leaves with height_cm &gt; 25:
-Are they mostly sunny or shady side?</code></pre>
+<p>✏️ <strong>Your turn — in your script:</strong> Use <code>filter()</code> to find all leaves where <code>thickness_mm</code> is greater than <code>0.16</code>.</p>
+<pre><code>Number of leaves with thickness_mm &gt; 0.16:
+Are they mostly sunny or shady?</code></pre>
 <hr>
 </section>
 <section id="select-keeping-columns-you-want" class="level3">
 <h3 class="anchored" data-anchor-id="select-keeping-columns-you-want"><code>select()</code> — keeping columns you want</h3>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># select() keeps the columns you name ------------------</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep only side and weight</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(side, weight_g)</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Drop the index column (use minus sign)</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>index)</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep columns that end with a unit label</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(side, <span class="fu">ends_with</span>(<span class="st">"_cm"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Create a data frame called <code>lean_df</code> that has only <code>side</code> and <code>height_cm</code>. Then run <code>glimpse(lean_df)</code> to verify.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Write your code here:</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># select() keeps (or drops) the columns you name</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># keep only shade and mass</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(shade, mass_g)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co"># drop the paper_mass_g column (minus sign = drop)</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>paper_mass_g)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co"># keep shade plus every column whose name ends in "_mm"</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(shade, <span class="fu">ends_with</span>(<span class="st">"_mm"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Create a data frame called <code>lean_df</code> that has only <code>shade</code> and <code>thickness_mm</code>. Then run <code>glimpse(lean_df)</code> to verify.</p>
 <pre><code>How many columns does lean_df have?
 What are they?</code></pre>
 <hr>
@@ -570,59 +578,56 @@ What are they?</code></pre>
 <section id="mutate-adding-new-columns" class="level3">
 <h3 class="anchored" data-anchor-id="mutate-adding-new-columns"><code>mutate()</code> — adding new columns</h3>
 <p><code>mutate()</code> adds new columns (or changes existing ones) without removing anything.</p>
-<p><strong>▶ Run this:</strong></p>
 <blockquote class="blockquote">
-<p>🔮 <strong>Predict first:</strong> Will <code>mutate(weight_mg = weight_g * 1000)</code> <strong>replace</strong> <code>weight_g</code> or <strong>add</strong> a new column? How many columns will the result have — more, fewer, or the same?</p>
+<p>🔮 <strong>Predict first:</strong> Will <code>mutate(mass_mg = mass_g * 1000)</code> <strong>replace</strong> <code>mass_g</code> or <strong>add</strong> a new column? How many columns will the result have — more, fewer, or the same?</p>
 </blockquote>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># mutate() adds a new column to the data frame ---------</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert grams to milligrams</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">weight_mg =</span> weight_g <span class="sc">*</span> <span class="dv">1000</span>)</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Add a size category based on weight</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">size_class =</span> <span class="fu">if_else</span>(weight_g <span class="sc">&gt;</span> <span class="dv">5</span>, <span class="st">"large"</span>, <span class="st">"small"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Use <code>mutate()</code> to add a column called <code>height_mm</code> (height converted to millimetres — multiply by 10). What is the maximum height in mm?</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Write your code here:</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># mutate() adds a new column to the data frame</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># convert grams to milligrams</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mass_mg =</span> mass_g <span class="sc">*</span> <span class="dv">1000</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># add a size category based on mass</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">size_class =</span> <span class="fu">if_else</span>(mass_g <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="st">"large"</span>, <span class="st">"small"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Use <code>mutate()</code> to add a column called <code>petiole_cm</code> (petiole length in centimetres — divide <code>petiole_mm</code> by 10). What is the maximum petiole length in cm?</p>
 <pre><code>Column name you added:
-Maximum height in mm:</code></pre>
+Maximum petiole length in cm:</code></pre>
 <hr>
 </section>
 <section id="arrange-sorting-rows" class="level3">
 <h3 class="anchored" data-anchor-id="arrange-sorting-rows"><code>arrange()</code> — sorting rows</h3>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># arrange() sorts rows by a column ---------------------</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Lightest leaves first (ascending — default)</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(weight_g)</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Heaviest leaves first (descending — use desc())</span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(<span class="fu">desc</span>(weight_g))</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort by side, then by weight within each side</span></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(side, <span class="fu">desc</span>(weight_g))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Sort the data by <code>height_cm</code> descending. What is the <code>index</code> number and <code>side</code> of the tallest leaf?</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Write your code here:</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>Index of tallest leaf:
-Side (sunny or shady):
-Height (cm):</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># arrange() sorts rows by a column</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># lightest leaves first (ascending — the default)</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(mass_g)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co"># heaviest leaves first (descending — wrap in desc())</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(<span class="fu">desc</span>(mass_g))</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co"># sort by shade, then by mass within each shade</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(shade, <span class="fu">desc</span>(mass_g))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Sort the data by <code>thickness_mm</code> descending. What is the <code>shade</code> of the thickest leaf?</p>
+<pre><code>Shade of the thickest leaf (sunny or shady):
+Its thickness (mm):</code></pre>
 <hr>
 </section>
 <section id="the-full-pipeline-chaining-all-four-verbs" class="level3">
 <h3 class="anchored" data-anchor-id="the-full-pipeline-chaining-all-four-verbs">The full pipeline — chaining all four verbs</h3>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Chain all four verbs — read it as a recipe ----------</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>tree_clean_df <span class="ot">&lt;-</span> tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(weight_g <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">%&gt;%</span>              <span class="co"># remove any zeros</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(side, weight_g, height_cm) <span class="sc">%&gt;%</span>  <span class="co"># keep three columns</span></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">weight_mg   =</span> weight_g <span class="sc">*</span> <span class="dv">1000</span>,</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">size_class  =</span> <span class="fu">if_else</span>(weight_g <span class="sc">&gt;</span> <span class="dv">5</span>, <span class="st">"large"</span>, <span class="st">"small"</span>)</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(side, <span class="fu">desc</span>(weight_g))          <span class="co"># sort by side, then weight</span></span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(tree_clean_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># chain all four verbs — read it as a recipe, one %&gt;% at a time</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>leaf_clean_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(mass_g <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">%&gt;%</span>                      <span class="co"># drop any zeros</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(shade, mass_g, thickness_mm) <span class="sc">%&gt;%</span>     <span class="co"># keep three columns</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mass_mg    =</span> mass_g <span class="sc">*</span> <span class="dv">1000</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">size_class =</span> <span class="fu">if_else</span>(mass_g <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="st">"large"</span>, <span class="st">"small"</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(shade, <span class="fu">desc</span>(mass_g))                <span class="co"># sort by shade, then mass</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(leaf_clean_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn:</strong> Read the pipeline out loud, one <code>%&gt;%</code> step at a time. Write in plain English what each step does:</p>
 <pre><code>Step 1 (filter):
 Step 2 (select):
@@ -635,14 +640,14 @@ Step 4 (arrange):</code></pre>
 <h1>Part 4 · Review and checkpoint</h1>
 <p>At this point you should be able to:</p>
 <ul class="task-list">
-<li><label><input type="checkbox">Load an Excel file with <code>read_excel()</code> and inspect with <code>glimpse()</code>, <code>head()</code>, <code>dim()</code></label></li>
+<li><label><input type="checkbox">Load an Excel file with <code>read_excel()</code> and inspect it with <code>glimpse()</code></label></li>
 <li><label><input type="checkbox">Use <code>filter()</code> to keep rows matching a condition</label></li>
 <li><label><input type="checkbox">Use <code>select()</code> to keep specific columns</label></li>
 <li><label><input type="checkbox">Use <code>mutate()</code> to add a new calculated column</label></li>
 <li><label><input type="checkbox">Use <code>arrange()</code> to sort rows</label></li>
 <li><label><input type="checkbox">Chain all four verbs into a single <code>%&gt;%</code> pipeline</label></li>
 </ul>
-<p>✏️ <strong>Your turn — before you move on:</strong> Run your entire script with <strong>Ctrl/Cmd + Shift + Enter</strong>. Does it complete without errors?</p>
+<p>✏️ <strong>Your turn — before you move on:</strong> Run your entire script top to bottom with <strong>Ctrl/Cmd + Shift + Enter</strong> (Source). Does it complete without errors?</p>
 <pre><code>Ran cleanly?  Y / N
 If not, what error appeared:</code></pre>
 <hr>
@@ -655,15 +660,15 @@ If not, what error appeared:</code></pre>
 <section id="use-mutate-to-add-a-column-then-plot-it" class="level3">
 <h3 class="anchored" data-anchor-id="use-mutate-to-add-a-column-then-plot-it">Use <code>mutate()</code> to add a column, then plot it</h3>
 <p><strong>▶ Try this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Add size_class column, then make a bar chart</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">size_class =</span> <span class="fu">if_else</span>(weight_g <span class="sc">&gt;</span> <span class="dv">5</span>, <span class="st">"large"</span>, <span class="st">"small"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> side, <span class="at">fill =</span> size_class)) <span class="sc">+</span></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Number of large vs small leaves by side"</span>,</span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Side"</span>, <span class="at">y =</span> <span class="st">"Count"</span>, <span class="at">fill =</span> <span class="st">"Size class"</span>) <span class="sc">+</span></span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> What does <code>position = "dodge"</code> do to the bars? What happens if you change it to <code>position = "fill"</code>?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># add size_class, then count large vs small leaves per shade</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">size_class =</span> <span class="fu">if_else</span>(mass_g <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="st">"large"</span>, <span class="st">"small"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">fill =</span> size_class)) <span class="sc">+</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Large vs small leaves by shade"</span>,</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Shade"</span>, <span class="at">y =</span> <span class="st">"Count"</span>, <span class="at">fill =</span> <span class="st">"Size class"</span>) <span class="sc">+</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Change <code>position = "dodge"</code> to <code>position = "fill"</code>.</p>
 <pre><code>dodge does:
 fill does:</code></pre>
 <hr>
@@ -671,36 +676,23 @@ fill does:</code></pre>
 </section>
 <section id="extension-out-of-class-3040-min" class="level1">
 <h1>Extension — out of class (~30–40 min)</h1>
-<p><em>Turn this in with your worksheet. In class you split leaves into two groups at a fixed weight. Now you build <strong>three</strong> categories with cutoffs <strong>you</strong> pick.</em></p>
-<div class="callout callout-style-default callout-important callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Important
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>E2 and E3 must be handwritten</strong> on paper, photographed, and embedded (<code>![caption](my_photo.jpg)</code>). Typed answers to E2/E3 get <strong>at most half credit, even if correct</strong> — I want your own prediction and reasoning about <em>your own</em> counts.</p>
-</div>
-</div>
+<p><em>Add this to the bottom of <code>scripts/05_wrangling.R</code> and turn it in with the rest. Put your written answers in <code>#</code> comments right under the code they go with. In class you split leaves into two groups at a fixed mass. Now you build <strong>three</strong> categories with cutoffs <strong>you</strong> pick.</em></p>
 <section id="e1-three-size-categories-4-pts" class="level2">
 <h2 class="anchored" data-anchor-id="e1-three-size-categories-4-pts">E1 · Three size categories (4 pts)</h2>
-<p>Use <code>mutate()</code> with <code>case_when()</code> to sort every leaf into <code>"small"</code>, <code>"medium"</code>, <code>"large"</code> based on <code>weight_g</code>. <strong>You pick the two cutoff weights</strong> — look at the data first (<code>summary(tree_df$weight_g)</code>) so they are reasonable, not 0 and Inf.</p>
-<p>State your two cutoffs, then show <code>count(side, size_category)</code> — how many leaves land in each category on each side.</p>
+<p>Use <code>mutate()</code> with <code>case_when()</code> to sort every leaf into <code>"small"</code>, <code>"medium"</code>, <code>"large"</code> based on <code>mass_g</code>. <strong>You pick the two cutoff masses</strong> — look at the data first (<code>summary(leaf_df$mass_g)</code>) so they are reasonable, not 0 and Inf.</p>
+<p>State your two cutoffs in a comment, then show <code>count(shade, size_category)</code> — how many leaves land in each category on each side.</p>
 </section>
-<section id="e2-predict-then-check-by-hand-3-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e2-predict-then-check-by-hand-3-pts">E2 · Predict, then check — ✍️ by hand (3 pts)</h2>
-<p><strong>Before running the <code>count()</code>:</strong></p>
+<section id="e2-predict-then-check-3-pts" class="level2">
+<h2 class="anchored" data-anchor-id="e2-predict-then-check-3-pts">E2 · Predict, then check (3 pts)</h2>
+<p><strong>Before running the <code>count()</code></strong>, write in comments:</p>
 <ol type="1">
 <li>Which size category do you expect to hold the most leaves overall, and why?</li>
 <li>Do you expect <code>sunny</code> or <code>shady</code> leaves to skew toward <code>"large"</code>? One reason.</li>
 </ol>
-<p>Then run it and, by hand, write whether you were right and — if not — your best guess for why the data came out that way.</p>
+<p>Then run it and write whether you were right and — if not — your best guess for why the data came out that way.</p>
 </section>
-<section id="e3-explain-it-by-hand-with-your-counts-3-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e3-explain-it-by-hand-with-your-counts-3-pts">E3 · Explain it — ✍️ by hand, with YOUR counts (3 pts)</h2>
+<section id="e3-explain-it-with-your-counts-3-pts" class="level2">
+<h2 class="anchored" data-anchor-id="e3-explain-it-with-your-counts-3-pts">E3 · Explain it, with YOUR counts (3 pts)</h2>
 <ol type="1">
 <li>In plain language, what did your cutoff choices do to the data — why would different cutoffs have changed your counts? Use your actual numbers.</li>
 <li><code>case_when()</code> and <code>filter()</code> can both split data into groups. In your own words, what is the actual difference in what each one <em>does</em> to the dataset?</li>
@@ -713,16 +705,16 @@ Important
 <ol type="1">
 <li><strong>Read the error message out loud.</strong> R usually names the line and the problem.</li>
 <li><strong>Check the usual suspects:</strong> Did you load <code>library(readxl)</code> and <code>library(tidyverse)</code>?</li>
-<li><strong>Spelling?</strong> R is <strong>case-sensitive</strong> — <code>"Sunny"</code> ≠ <code>"sunny"</code>. Check with <code>names(tree_df)</code>.</li>
+<li><strong>Spelling?</strong> R is <strong>case-sensitive</strong> — <code>"Sunny"</code> ≠ <code>"sunny"</code>. Check with <code>names(leaf_df)</code>.</li>
 <li><strong>File not found?</strong> Check with <code>getwd()</code> and confirm the <code>data/</code> folder is inside your project.</li>
 <li><strong>Cheat sheets</strong> — <a href="https://posit.co/resources/cheatsheets/" class="uri">https://posit.co/resources/cheatsheets/</a></li>
 <li><strong>Bring the exact error</strong> (copy-paste it) to class, Canvas, or office hours.</li>
 </ol>
 <blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> an <code>=</code> where you meant <code>==</code>, a typo’d column name — these are the errors this worksheet is built around, and reading the message before you panic will solve most of them.</p>
+<p>💡 <strong>Key idea:</strong> an <code>=</code> where you meant <code>==</code>, a typo’d column name — these are the errors this activity is built around, and reading the message before you panic will solve most of them.</p>
 </blockquote>
 <hr>
-<p><em>End of the Wrangling worksheet. Next: summary statistics — mean, median, SD, SE, <code>group_by()</code> + <code>summarize()</code>, and <code>skimr</code>.</em></p>
+<p><em>End of the Wrangling activity. Next: summary statistics — mean, median, SD, SE, <code>group_by()</code> + <code>summarize()</code>, and <code>skimr</code>.</em></p>
 
 
 </section>

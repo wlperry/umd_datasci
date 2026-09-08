@@ -48,38 +48,40 @@ Tip: keep chunks small and uniquely named so errors are easy to find.
 # --- Load all packages at the top, in ONE library chunk -----------------
 library(readxl) # read Excel files
 library(tidyverse) # wrangling + ggplot2
+library(janitor) # clean_names()
 ```
 
 ```{r load-data}
 # --- Read the leaf data from the data/ folder ---------------------------
 # Swap in your own file name here:
-tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names()
 ```
 
 # Introduction
 
-Leaves on the shady side of a tree may grow **larger** to capture more of the limited light. In this study we measured leaf weight on the *sunny* and *shady* sides of a tree and tested whether the two sides differ.
+Leaves on the shady side of a tree may grow **larger** to capture more of the limited light. In this study we measured leaf mass on the *sunny* and *shady* sides of a tree and tested whether the two sides differ.
 
-- **Null hypothesis (H₀):** there is no difference in mean leaf weight between sides.
-- **Alternate hypothesis (Hₐ):** mean leaf weight differs between sides.
+- **Null hypothesis (H₀):** there is no difference in mean leaf mass between sides.
+- **Alternate hypothesis (Hₐ):** mean leaf mass differs between sides.
 
 # Methods
 
-We recorded the weight (g) of leaves sampled from each side of the tree. All analysis was done in R with the tidyverse, and this report was produced in Quarto so that every number and figure below is computed directly from the raw data.
+We recorded the mass (g) of leaves sampled from each side of the tree. All analysis was done in R with the tidyverse, and this report was produced in Quarto so that every number and figure below is computed directly from the raw data.
 
 # Results
 
-<!-- 🔮 PREDICT before you Render: what mean weight do you expect for shady vs sunny in Table 1? Guess, then render. (Comment lines don't appear in the Word output.) -->
+<!-- 🔮 PREDICT before you Render: what mean mass do you expect for shady vs sunny in Table 1? Guess, then render. (Comment lines don't appear in the Word output.) -->
 
 ```{r summary-table}
 # --- Descriptive statistics for each side -------------------------------
-summary_df <- tree_df %>%
-  group_by(side) %>%
+summary_df <- leaf_df %>%
+  group_by(shade) %>%
   summarize(
-    n = sum(!is.na(weight_g)), # correct n (ignores NA)
-    mean_wt = round(mean(weight_g, na.rm = TRUE), 2),
-    sd_wt = round(sd(weight_g, na.rm = TRUE), 2),
-    se_wt = round(sd_wt / sqrt(n), 2)
+    n = sum(!is.na(mass_g)), # correct n (ignores NA)
+    mean_mass = round(mean(mass_g, na.rm = TRUE), 3),
+    sd_mass = round(sd(mass_g, na.rm = TRUE), 3),
+    se_mass = round(sd_mass / sqrt(n), 3)
   )
 ```
 
@@ -88,30 +90,30 @@ Table 1 shows the summary statistics for each side of the tree.
 ```{r print-table}
 #| echo: false
 # Print the summary table into the report
-knitr::kable(summary_df, caption = "Table 1. Leaf weight (g) by side of tree.")
+knitr::kable(summary_df, caption = "Table 1. Leaf mass (g) by shade.")
 ```
 
-<!-- 🔮 PREDICT before you Render: which side has the higher mean weight in Table 1, and by how much? -->
+<!-- 🔮 PREDICT before you Render: which side has the higher mean mass in Table 1, and by how much? -->
 
-Read the mean weight for each side straight from the `mean_wt` column of Table 1.
+Read the mean mass for each side straight from the `mean_mass` column of Table 1.
 Because the table is built from the data every time the document renders, the
 numbers update themselves whenever the data file changes — nothing is typed by
 hand.
 
 ```{r leaf-plot}
 #| echo: false
-#| fig-cap: "Figure 1. Leaf weight by side of tree, with individual leaves shown."
-#| fig-alt: "Boxplot comparing leaf weight in grams between the shady and sunny sides of the tree, with individual leaf weights overlaid as jittered points and outliers hidden."
+#| fig-cap: "Figure 1. Leaf mass by shade, with individual leaves shown."
+#| fig-alt: "Boxplot comparing leaf mass in grams between the shady and sunny sides of the tree, with individual leaf masses overlaid as jittered points and outliers hidden."
 # --- Boxplot with the raw points overlaid -------------------------------
-leaf_box_plot <- tree_df %>%
-  ggplot(aes(x = side, y = weight_g, fill = side)) +
+leaf_box_plot <- leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +
   geom_point(
     position = position_jitter(width = 0.15, seed = 42),
     alpha = 0.6,
     size = 2.5
   ) +
-  labs(x = "Side of tree", y = "Leaf weight (g)") +
+  labs(x = "Shade", y = "Leaf mass (g)") +
   theme_minimal() +
   theme(legend.position = "none")
 
@@ -120,7 +122,7 @@ leaf_box_plot
 
 # Discussion
 
-Write one short paragraph here: did the data support the hypothesis? Were shady leaves heavier? Mention the size of the difference and anything you noticed in Figure 1. In Lecture 05 you will add the formal t-test result to this section.
+Write one short paragraph here: did the data support the hypothesis? Were shady leaves heavier? Mention the size of the difference and anything you noticed in Figure 1. In Activity 10 you will add the formal t-test result to this section.
 
 # References
 

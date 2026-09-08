@@ -211,7 +211,7 @@ Imagine a reviewer finds one bad leaf measurement. With Quarto the fix is: delet
 ::::
 
 :::: {.column width="40%"}
-![Diagram of the pipe operator: tree_df flows down into filter(side == "sunny"), then flows down into summary(), read as "take tree_df, then filter, then summarise."](images/diagram_pipe.png){width="90%"}
+![Diagram of the pipe operator: leaf_df flows down into filter(shade == "sunny"), then flows down into summary(), read as "take leaf_df, then filter, then summarise."](images/diagram_pipe.png){width="90%"}
 
 ::: callout-note
 Same philosophy as Lecture 02: **never overwrite your raw numbers** — let the document rebuild from them.
@@ -383,7 +383,7 @@ Give each chunk a short **label** after `r`:
 
 ```{{r load-data}}
 library(readxl)
-tree_df <- read_excel("data/paper_area_weights.xlsx")
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx")
 ```
 
 - If rendering fails, Quarto tells you **which named chunk** broke
@@ -412,7 +412,7 @@ Small, **named** chunks = easy to find the one line that failed. This is the sam
 I'll give **two chunks the same label** and Render:
 
 ```{{r plot}}
-tree_box_plot
+leaf_box_plot
 ```
 
 ... the *same* label again ...
@@ -447,12 +447,12 @@ Quarto names the exact problem — *"Duplicate chunk label 'plot'"*. Once you kn
 Type the YAML by hand (spaces, not tabs), add a heading and bullets in Markdown, and create two uniquely named chunks. Predict what each renders before you press Render.
 :::
 
-# 🧩 Chunk 3 of 4 · Chunk Options & Inline Code
+# 🧩 Chunk 3 of 4 · Chunk Options & Computed Values
 
-**We will cover:** `#|` options to control what shows, and inline `` `r ` `` to drop live numbers into sentences.
+**We will cover:** `#|` options to control what shows, and printing a computed table so the report always matches the data.
 
 ::: callout-tip
-**🖐 After this chunk: Activity Step 5** (compute a value and drop it into a sentence).
+**🖐 After this chunk: Activity Step 5** (compute a summary and print it into the report).
 :::
 
 # Chunk options — control what shows
@@ -464,7 +464,7 @@ Lines starting with `#|` are **chunk options**:
 ```{{r leaf-plot}}
 #| echo: false      # hide the code, show the plot
 #| fig-width: 6
-#tree_box_plot
+# leaf_box_plot
 ```
 
 | Option           | Effect                          |
@@ -486,31 +486,36 @@ For a clean report set `echo: false` — readers see the **results**, not the co
 ::::
 ::::::
 
-# Inline code — numbers inside sentences
+# Computed values — let the chunk print them
 
 ::: callout-note
-**🔮 Predict first:** If `mean(shady_wt)` is 7.8, what exact sentence will render from the inline-code line below? Say it out loud before you check.
+**🔮 Predict first:** The chunk below builds a one-row-per-group summary. How many rows and columns will the printed table have?
 :::
 
 ::::::: columns
 :::: {.column width="60%"}
-Drop a live result **into a sentence** with `` `r ` ``:
+Compute the numbers in a chunk and **print the result** — then refer to it in your prose:
 
-``` markdown
-# Shady leaves averaged `# r mean(shady_wt)` g.
+```{{r means}}
+#| echo: false
+summary_df <- leaf_df |>
+  group_by(shade) |>
+  summarize(mean_mass = round(mean(mass_g, na.rm = TRUE), 3))
+summary_df
 ```
 
-renders as:
+Then, in the text:
 
-> Shady leaves averaged **7.8** g.
+> Read the mean mass for each side from the `mean_mass` column of the table above.
 
-- The number is **computed**, never typed
-- Fix the data → the sentence fixes itself
+- The numbers are **computed**, never typed
+- Fix the data → press Render → the table fixes itself
+- No copy-paste, no stale numbers in your writing
 
 ::: callout-note
 **✅ Key idea**
 
-This is why inline code is worth the syntax: your *prose* stays true to your *data* without you retyping a single number.
+Keep every number your reader sees inside a chunk's **printed output** (a table or a `cat()` line). Your prose then *points at* the results instead of restating them.
 :::
 ::::
 
@@ -518,7 +523,7 @@ This is why inline code is worth the syntax: your *prose* stays true to your *da
 ::: callout-warning
 **⚠️ Watch out!**
 
-Inline code only works if the object exists. Load and compute it in a chunk **above** the sentence.
+The chunk that computes the value must run **above** the text that refers to it — Quarto renders top to bottom.
 :::
 ::::
 :::::::
@@ -528,7 +533,7 @@ Inline code only works if the object exists. Load and compute it in a chunk **ab
 ::: {.activitybanner}
 **🛑 Do Activity Step 5 now**
 
-Compute a group mean, then insert it into a sentence with inline code. Predict the number that will appear before you Render.
+Compute a group-means summary in a chunk and print it into the report. Predict the shape of the table before you Render.
 :::
 
 # 🧩 Chunk 4 of 4 · Rendering to Word & Beyond
@@ -651,7 +656,7 @@ Upgrade the YAML for a TOC and numbered sections, copy in the template's table a
 - Explain **why** a Quarto report beats a bare script
 - Recognize the three parts: **YAML**, **Markdown**, **code chunks**
 - Write and **name** a code chunk, set `echo`/`warning` options
-- Put a **live number in a sentence** with inline code
+- **Compute values in a chunk and print them** so the report always matches the data
 - Set up YAML to render a **professional Word document**
 - Render one file to **Word, HTML, and PowerPoint**
 

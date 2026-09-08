@@ -54,7 +54,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 # Where we left off (Lecture 03 — GGPlot I)
 
-- Piping straight into a plot: `tree_df %>% ggplot(...)`
+- Piping straight into a plot: `leaf_df %>% ggplot(...)`
 - `scale_color_manual()` / `scale_fill_manual()` — colors you choose
 - `facet_wrap()` and `facet_grid()` — one panel per group
 - `stat_summary()` — mean and mean ± SE, drawn from raw data
@@ -95,7 +95,7 @@ Both PDFs are in the course `readings/` folder.
 
 :::::: columns
 ::: {.column width="60%"}
-This lecture runs in **three short chunks**. After each chunk you switch to the activity worksheet and type the code yourself.
+This lecture runs in **three short chunks**. After each chunk you switch to the activity and type the code yourself into your R script.
 :::
 
 :::: {.column width="40%"}
@@ -118,7 +118,7 @@ library(janitor) # cleans up messy column names
 
 ```{r load-data-04}
 # Read the leaf data from the data folder ---------------
-tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx") %>%
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
   clean_names()
 ```
 
@@ -127,29 +127,29 @@ tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx") %>%
 **We will cover:** mapping shape alongside color, and `geom_smooth()`.
 
 ::: {.activitybanner}
-**🛑 After this chunk you will do Activity Part 1.**
+**🛑 After this chunk you will do Activity Parts 1–2.**
 :::
 
 # Mapping Shape Alongside Color
 
 ::: callout-note
-**🔮 Predict first:** We map both `color = side` and `shape = side` to the *same* variable. Will ggplot draw one legend or two?
+**🔮 Predict first:** We map both `color = shade` and `shape = shade` to the *same* variable. Will ggplot draw one legend or two?
 :::
 
 :::::: columns
 ::: {.column width="60%"}
 ```{r shape-color-demo}
 #| fig-format: png
-#| fig-alt: "Scatter plot of leaf weight against leaf width, with sunny leaves shown as gold triangles and shady leaves as green circles."
+#| fig-alt: "Scatter plot of leaf mass against petiole length, with sunny leaves shown as gold triangles and shady leaves as green circles."
 # Map color AND shape to the same variable -------------
-tree_df %>%
-  ggplot(aes(x = width_cm, y = weight_g, color = side, shape = side)) +
+leaf_df %>%
+  ggplot(aes(x = petiole_mm, y = mass_g, color = shade, shape = shade)) +
   geom_point(size = 2.5, alpha = 0.8) +
   scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
   labs(
-    title = "Leaf Weight vs. Width",
-    x = "Width (cm)", y = "Weight (g)",
-    color = "Side", shape = "Side"
+    title = "Leaf Mass vs. Petiole Length",
+    x = "Petiole Length (mm)", y = "Leaf Mass (g)",
+    color = "Shade", shape = "Shade"
   ) +
   theme_minimal()
 ```
@@ -170,15 +170,15 @@ tree_df %>%
 ::: {.column width="60%"}
 ```{r geom-smooth-demo}
 #| fig-format: png
-#| fig-alt: "Scatter plot of leaf weight against width with a linear trend line and shaded confidence ribbon added."
+#| fig-alt: "Scatter plot of leaf mass against petiole length with a linear trend line and shaded confidence ribbon added."
 # geom_smooth() fits a line straight from the data -----
-tree_df %>%
-  ggplot(aes(x = width_cm, y = weight_g)) +
+leaf_df %>%
+  ggplot(aes(x = petiole_mm, y = mass_g)) +
   geom_point(alpha = 0.6, color = "grey40") +
   geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
   labs(
-    title = "Leaf Weight vs. Width, with Trend Line",
-    x = "Width (cm)", y = "Weight (g)"
+    title = "Leaf Mass vs. Petiole Length, with Trend Line",
+    x = "Petiole Length (mm)", y = "Leaf Mass (g)"
   ) +
   theme_minimal()
 ```
@@ -195,12 +195,12 @@ tree_df %>%
 ::::
 ::::::
 
-# → ACTIVITY 4 Part 1 now
+# → ACTIVITY 4 Parts 1–2 now
 
 ::: {.activitybanner}
-**🛑 Do Activity Part 1 now**
+**🛑 Do Activity Parts 1–2 now**
 
-Map shape and color to `side`, then add a `geom_smooth()` trend line. Predict, type, run.
+Load the data, map shape and color to `shade`, then add a `geom_smooth()` trend line. Predict, type, run.
 :::
 
 # 🧩 Chunk 2 of 3 · Zooming Without Losing Data
@@ -208,7 +208,7 @@ Map shape and color to `side`, then add a `geom_smooth()` trend line. Predict, t
 **We will cover:** `coord_cartesian()` vs. `xlim()`/`ylim()` — they look the same until they don't.
 
 ::: {.activitybanner}
-**🛑 After this chunk you will do Activity Part 2.**
+**🛑 After this chunk you will do Activity Part 3.**
 :::
 
 # `coord_cartesian()` — Zoom Without Removing Data
@@ -217,16 +217,16 @@ Map shape and color to `side`, then add a `geom_smooth()` trend line. Predict, t
 ::: {.column width="60%"}
 ```{r coord-cartesian-demo}
 #| fig-format: png
-#| fig-alt: "Scatter plot of leaf weight against width zoomed to a narrower window using coord_cartesian, with the same underlying data and trend line as the full plot."
+#| fig-alt: "Scatter plot of leaf mass against petiole length zoomed to a narrower window using coord_cartesian, with the same underlying data and trend line as the full plot."
 # coord_cartesian() zooms the VIEW, keeps all the data -
-tree_df %>%
-  ggplot(aes(x = width_cm, y = weight_g)) +
+leaf_df %>%
+  ggplot(aes(x = petiole_mm, y = mass_g)) +
   geom_point(alpha = 0.6, color = "grey40") +
   geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
-  coord_cartesian(xlim = c(12, 15), ylim = c(2, 5)) +
+  coord_cartesian(xlim = c(50, 70), ylim = c(0.4, 0.6)) +
   labs(
     title = "Zoomed with coord_cartesian()",
-    x = "Width (cm)", y = "Weight (g)"
+    x = "Petiole Length (mm)", y = "Leaf Mass (g)"
   ) +
   theme_minimal()
 ```
@@ -234,7 +234,7 @@ tree_df %>%
 
 :::: {.column width="40%"}
 - Zooms the **view** — every point still contributes to the trend line
-- The trend line is fit on **all 20 leaves**, then the plot window is cropped afterward
+- The trend line is fit on **all 53 leaves**, then the plot window is cropped afterward
 - Safe to use anytime you just want a closer look
 ::::
 ::::::
@@ -249,17 +249,17 @@ tree_df %>%
 ::: {.column width="60%"}
 ```{r xlim-demo}
 #| fig-format: png
-#| fig-alt: "Scatter plot of leaf weight against width using xlim and ylim, showing a trend line refit only on the remaining visible points after out-of-range leaves were silently dropped."
+#| fig-alt: "Scatter plot of leaf mass against petiole length using xlim and ylim, showing a trend line refit only on the remaining visible points after out-of-range leaves were silently dropped."
 # xlim()/ylim() DELETE rows outside the range first ----
-tree_df %>%
-  ggplot(aes(x = width_cm, y = weight_g)) +
+leaf_df %>%
+  ggplot(aes(x = petiole_mm, y = mass_g)) +
   geom_point(alpha = 0.6, color = "grey40") +
   geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
-  xlim(12, 15) +
-  ylim(2, 5) +
+  xlim(50, 70) +
+  ylim(0.4, 0.6) +
   labs(
     title = "Zoomed with xlim() / ylim() — different line!",
-    x = "Width (cm)", y = "Weight (g)"
+    x = "Petiole Length (mm)", y = "Leaf Mass (g)"
   ) +
   theme_minimal()
 ```
@@ -276,10 +276,10 @@ tree_df %>%
 ::::
 ::::::
 
-# → ACTIVITY 4 Part 2 now
+# → ACTIVITY 4 Part 3 now
 
 ::: {.activitybanner}
-**🛑 Do Activity Part 2 now**
+**🛑 Do Activity Part 3 now**
 
 Zoom the same plot two ways and compare the trend lines. Predict, type, run.
 :::
@@ -289,7 +289,7 @@ Zoom the same plot two ways and compare the trend lines. Predict, type, run.
 **We will cover:** picking a built-in theme, `theme()` tweaks, and choosing a file format with `ggsave()`.
 
 ::: {.activitybanner}
-**🛑 After this chunk you will do Activity Parts 3–4.**
+**🛑 After this chunk you will do Activity Parts 4–5.**
 :::
 
 # Picking a Theme
@@ -298,13 +298,13 @@ Zoom the same plot two ways and compare the trend lines. Predict, type, run.
 ::: {.column width="60%"}
 ```{r themes-demo}
 #| fig-format: png
-#| fig-alt: "Boxplot of leaf weight by side rendered in theme_classic, with a white background and axis lines only."
+#| fig-alt: "Boxplot of leaf mass by shade rendered in theme_classic, with a white background and axis lines only."
 # theme_classic() — clean, close to journal defaults ---
-tree_df %>%
-  ggplot(aes(x = side, y = weight_g, fill = side)) +
+leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
-  labs(x = "Side of Tree", y = "Leaf Weight (g)", title = "Leaf Weight by Side") +
+  labs(x = "Shade", y = "Leaf Mass (g)", title = "Leaf Mass by Shade") +
   theme_classic() +
   theme(legend.position = "none")
 ```
@@ -333,13 +333,13 @@ tree_df %>%
 ::: {.column width="60%"}
 ```{r theme-tweak-demo}
 #| fig-format: png
-#| fig-alt: "The same boxplot of leaf weight by side, with legend removed and larger axis text via theme adjustments."
+#| fig-alt: "The same boxplot of leaf mass by shade, with legend removed and larger axis text via theme adjustments."
 # theme() overrides individual elements afterward -----
-tree_df %>%
-  ggplot(aes(x = side, y = weight_g, fill = side)) +
+leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
-  labs(x = "Side of Tree", y = "Leaf Weight (g)", title = "Leaf Weight by Side") +
+  labs(x = "Shade", y = "Leaf Mass (g)", title = "Leaf Mass by Shade") +
   theme_classic() +
   theme(
     legend.position = "none",
@@ -368,21 +368,21 @@ You rarely need to build a theme from scratch. Start from a built-in theme and o
 ::: {.column width="60%"}
 ```{r ggsave-formats}
 #| eval: false
-leaf_plot <- tree_df %>%
-  ggplot(aes(x = side, y = weight_g, fill = side)) +
+leaf_plot <- leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
-  labs(x = "Side of Tree", y = "Leaf Weight (g)") +
+  labs(x = "Shade", y = "Leaf Mass (g)") +
   theme_classic() +
   theme(legend.position = "none")
 
 # PNG — good for Word docs, slides, web
-ggsave("figures/leaf_weight_theme.png",
+ggsave("figures/leaf_mass_theme.png",
        plot = leaf_plot, width = 5, height = 5,
        units = "in", dpi = 300)
 
 # PDF — vector, scales to any size, good for print
-ggsave("figures/leaf_weight_theme.pdf",
+ggsave("figures/leaf_mass_theme.pdf",
        plot = leaf_plot, width = 5, height = 5, units = "in")
 ```
 :::
@@ -400,10 +400,10 @@ ggsave("figures/leaf_weight_theme.pdf",
 ::::
 ::::::
 
-# → ACTIVITY 4 Parts 3–4 now
+# → ACTIVITY 4 Parts 4–5 now
 
 ::: {.activitybanner}
-**🛑 Go to Activity 4 — Parts 3–4**
+**🛑 Go to Activity 4 — Parts 4–5**
 
 Close the slides. Pick a theme, tweak it, and save your plot as both PNG and PDF.
 :::

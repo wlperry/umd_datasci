@@ -2,7 +2,7 @@
 order: 2
 week: 1
 title: "Activity — Introduction to R and Positron"
-subtitle: "From the console to your first plot with the tree leaf data"
+subtitle: "From the console to your first plot with the leaf data"
 author: "Bill Perry"
 date: today
 
@@ -38,14 +38,20 @@ execute:
 3.  Use R as a calculator and store values with `<-`
 4.  Write and run a script with `#` comments
 5.  Call functions, build vectors, understand data types
-6.  Load our leaf data from Excel with `read_excel()` and from CSV with `read_csv()`
-7.  Inspect a data frame with `head()`, `glimpse()`, and `dim()`
+6.  Load the leaf data from Excel with `read_excel()` (and see how `read_csv()` differs)
+7.  Take a first look at a data frame with `glimpse()`
 8.  Use the pipe `%>%` to chain steps
 9.  Make and save a first `ggplot` figure
 
-> # **How to use this worksheet**
+> # **How this activity works**
 >
-> Work through each section at your own pace. Type the code into your script file in Positron and run it line by line. Code blocks marked **▶ Run this** are the ones you should execute. Blocks marked **✏️ Your turn** ask you to write or modify something. The **Going further** section is optional — work through it if you finish early.
+> **You are building one R script this whole class, and you turn it in.** Create it in Part 2 and name it `scripts/02_leaf_analysis.R`.
+>
+> - **Every line you run goes in that script** — the Console is scratch paper, the script is the lab notebook you keep and hand in. (A few Part 3 warm-ups say "in the Console" — those are the only exceptions.)
+> - **Start every code chunk in your script with a short `#` comment** saying what it does. The comments are part of the grade.
+> - **The top of your script, in order:** a title comment, then your `library()` calls, then the line that loads the data into `leaf_df`.
+> - Code marked **▶ Run this** is typed into your script exactly as shown. Code marked **✏️ Your turn** is a change you make and run. Type it — don't paste.
+> - The **Going further** section is optional — work through it if you finish early.
 
 ------------------------------------------------------------------------
 
@@ -74,7 +80,7 @@ Four panes you will use constantly:
 
 ✏️ **Your turn:** Click the **Console** tab. Type `1 + 1` and press Enter. What did R return?
 
-```         
+```
 Your answer:
 ```
 
@@ -88,13 +94,13 @@ In R we keep everything for one project together in one folder. Every file path 
 
 ### Create the folder structure
 
-On your computer, make a new folder called `tree_project`. Inside it, create these three sub-folders:
+On your computer, make a new folder called `tree_project`. Inside it, create these sub-folders:
 
-```         
+```
 tree_project/
 ├── data/        ← your Excel and CSV files go here
 ├── scripts/     ← your .R code goes here
-├── output/     ← your cleaned data go here
+├── output/      ← your cleaned data go here
 └── figures/     ← plots you save go here
 ```
 
@@ -108,17 +114,20 @@ You should see `tree_project` appear in the Explorer panel on the left.
 
 ✏️ **Your turn:** What is the full path to your `tree_project` folder on your computer?
 
-```         
-Your answer: 
-
-
-
- 
+```
+Your answer:
 ```
 
-### Copy the data file
+### Get the data file
 
-Copy `2026_09_03_data_sci_leaf_area.csv` and `2026_09_03_data_sci_leaf_area.xlsx` into `tree_project/data/`.
+::: callout-tip
+## 📂 Download the leaf data
+
+- **[`2026_09_03_data_sci_leaf_area.xlsx`](data/2026_09_03_data_sci_leaf_area.xlsx)** — the Excel version (this is the one we use)
+- **[`2026_09_03_data_sci_leaf_area.csv`](data/2026_09_03_data_sci_leaf_area.csv)** — the same data as a CSV
+
+Download both and put them in `tree_project/data/`.
+:::
 
 > ⚠️ **Important:** Leave this copy alone — it is your raw data. We will read it but never overwrite it.
 
@@ -126,10 +135,10 @@ Copy `2026_09_03_data_sci_leaf_area.csv` and `2026_09_03_data_sci_leaf_area.xlsx
 
 - In Positron:
   - **File → New File → R File**.
-  - Save it immediately with **Ctrl/Cmd + S**, name it `02_tree_analysis.R`,
+  - Save it immediately with **Ctrl/Cmd + S**, name it `02_leaf_analysis.R`,
   - and save it inside `tree_project/scripts/`.
 
-> 💡 **Key idea:** Console = scratch paper. Script = the lab notebook you keep.
+> 💡 **Key idea:** Console = scratch paper. Script = the lab notebook you keep and turn in.
 
 ------------------------------------------------------------------------
 
@@ -137,7 +146,7 @@ Copy `2026_09_03_data_sci_leaf_area.csv` and `2026_09_03_data_sci_leaf_area.xlsx
 
 ### R as a calculator
 
-Type each line below into your **Console** (not the script yet) and press Enter after each one.
+Type each line below into your **Console** and press Enter after each one. (These few warm-ups are the exception to the "everything goes in the script" rule.)
 
 **▶ Run this in the Console:**
 
@@ -152,8 +161,8 @@ sqrt(144)
 
 ✏️ **Your turn:** What does `2 ^ 10` return? What does the `^` operator do?
 
-```         
-Your answer: 
+```
+Your answer:
 ```
 
 ------------------------------------------------------------------------
@@ -176,12 +185,8 @@ Look at the **Variables** pane on the right — `x` should appear there.
 
 ✏️ **Your turn:** Store the number `42` under the name `my_number`, then multiply `my_number` by `x`. What is the result?
 
-``` r
-# Write your code here:
 ```
-
-```         
-Your answer: 
+Your answer:
 ```
 
 ------------------------------------------------------------------------
@@ -197,12 +202,12 @@ Good names make code readable months later:
 
 ✏️ **Your turn:** Which of these names are valid in R? Write Y or N next to each. You can try it too!
 
-```         
-leaf_mass       — 
-3rd_leaf        — 
-Petiole_mm        — 
-my.leaf.data    — 
-shade            — 
+```
+leaf_mass       —
+3rd_leaf        —
+Petiole_mm      —
+my.leaf.data    —
+shade           —
 ```
 
 ------------------------------------------------------------------------
@@ -210,6 +215,8 @@ shade            —
 ### Comments with `#`
 
 Anything to the right of `#` is **ignored by R** — it is a note for humans. Shortcut to toggle: **Ctrl/Cmd + Shift + C**.
+
+From here on, **every code chunk you add to your script starts with a `#` comment** saying what it does.
 
 **▶ Run this in your Script:**
 
@@ -219,8 +226,6 @@ leaf_mass <- c(4, 3, 5, 7)
 
 mean(leaf_mass)   # average leaf mass
 ```
-
-> 💡 **Key idea:** If a line confused you while writing it, write a comment explaining *why* you did it.
 
 ------------------------------------------------------------------------
 
@@ -234,7 +239,7 @@ A **function** is a mini-program you call by name. You feed it **arguments** (in
 sqrt(10)                         # one argument
 round(3.14159)                   # default: 0 decimal places → 3
 round(3.14159, 2)                # two decimal places → 3.14
-round(x = 3.14159, digits = 2)  # same, with named arguments
+round(x = 3.14159, digits = 2)   # same, with named arguments
 ```
 
 ------------------------------------------------------------------------
@@ -246,8 +251,9 @@ A **vector** is a series of values built with `c()` — the *combine* function. 
 **▶ Run this in your Script:**
 
 ``` r
-mass_g <- c(4, 3, 5, 7)          # numeric vector
-shade     <- c("sunny", "shady")    # character vector — needs quotes
+# build one numeric and one character vector
+mass_g <- c(4, 3, 5, 7)           # numeric vector
+shade  <- c("sunny", "shady")     # character vector — needs quotes
 
 length(mass_g)    # how many values?
 class(mass_g)     # what type is it?
@@ -285,70 +291,54 @@ install.packages("readxl")
 install.packages("janitor")
 ```
 
-**Load every session** — put this at the **top of every script you write**:
-
-``` r
-library(tidyverse)   # data wrangling + ggplot2 for plotting
-library(readxl)      # reading Excel files
-library(janitor)      # cleans up messy column names
-```
+**Load every session** — these go at the **top of every script you write**:
 
 > ⚠️ **Watch out!** If R says *"could not find function `read_excel`"*, you forgot `library(readxl)`. You must reload libraries every time you restart R.
 
-**▶ Run this at the very top of your Script:**
+**▶ Type this at the very top of `02_leaf_analysis.R`:**
 
 ``` r
-# ── Packages ────────────────────────────────────────────────
-library(tidyverse)
-library(readxl)
-library(janitor)
-```
+# ---- Activity 02: leaf data ------------------------------
+# your name, today's date
 
-✏️ **Your turn:** What message does R print after `library(tidyverse)`? Write the first line here:
-
-```         
-Your answer: 
+# ---- Libraries ------------------------------------------
+library(tidyverse)   # data wrangling + ggplot2 for plotting
+library(readxl)      # reading Excel files
+library(janitor)     # cleans up messy column names
 ```
 
 ------------------------------------------------------------------------
 
-# Part 5 · Load the tree data
+# Part 5 · Load the leaf data
 
-### Two functions — two file types
+### `read_excel()` — the bridge from a spreadsheet into R
 
-**▶ Run this in your Script:**
+**▶ Add this to your script, just below the libraries:**
 
 ``` r
-# ── Load data ────────────────────────────────────────────────
-# load csv files
-tree_df <- read_csv("data/2026_09_03_data_sci_leaf_area.csv") 
+# ---- Load data -----------------------------------------
+# path is relative to your project folder; clean_names() tidies the headers
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names()
 
-# Excel files (.xlsx) — needs library(readxl)
-tree_2_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") 
-
-# note the names below may vary with the names you chose
-
-
-
-
-tree_df    # print to the console
+leaf_df    # print it to the Console
 ```
 
-> 💡 **Coming from Excel?** `read_excel()` is the bridge from your spreadsheet into R. Your sheet's first row becomes the **column names** in R. `clean_names()` (from `janitor`) then tidies up messy headers like `"Leaf Mass (g)"` into `leaf_mass_g` automatically.
+> 💡 **Coming from Excel?** `read_excel()` is the bridge from your spreadsheet into R. Your sheet's first row becomes the **column names**. `clean_names()` (from `janitor`) then tidies messy headers like `"Leaf Mass (g)"` into `leaf_mass_g` automatically.
 
 The path `"data/..."` is *relative* to your project folder. It works on anyone's computer — not just yours.
 
-### Also: read CSV files with `read_csv()`
+### The same data also comes as a CSV
 
-Many public datasets (NOAA climate data, iNaturalist, eBird) come as `.csv` files. The tidyverse provides `read_csv()` for these:
+Many public datasets (NOAA climate data, iNaturalist, eBird) come as `.csv` files. The tidyverse provides `read_csv()` for those — no extra package needed:
 
 ``` r
-# CSV files (.csv) — comes with tidyverse, no extra install
-# station (USW00014913) is Minneapolis–St. Paul Airport
-weather_df <- read_csv("https://www.ncei.noaa.gov/access/services/data/v1?dataset=daily-summaries&stations=USW00014913&startDate=2020-01-01&endDate=2020-12-31&format=csv")
+# read_csv() comes with tidyverse — no library(readxl) required
+leaf_csv_df <- read_csv("data/2026_09_03_data_sci_leaf_area.csv") %>%
+  clean_names()
 ```
 
-> 💡 **Key difference:** `read_excel()` needs `library(readxl)`. `read_csv()` comes with `library(tidyverse)` — no extra install needed.
+> 💡 **Key difference:** `read_excel()` needs `library(readxl)`. `read_csv()` comes with `library(tidyverse)`. We use `leaf_df` (the Excel one) for the rest of the course.
 
 ------------------------------------------------------------------------
 
@@ -356,62 +346,46 @@ weather_df <- read_csv("https://www.ncei.noaa.gov/access/services/data/v1?datase
 
 A **data frame** is R's word for a spreadsheet-style table. Each column is a vector of one type; the rows line up.
 
-Our `tree_df` has eight columns:
+`leaf_df` has these columns:
 
 | Column         | Type      | What it holds                                        |
-|----------------|-----------|-------------------------------------------------------|
-| `twig_id`      | character | which twig the leaf came from (e.g. `"twig_1"`)      |
-| `leaf_id`      | character | leaf identifier within a twig (e.g. `"l01"`)         |
+|----------------|-----------|-----------------------------------------------------|
+| `twig_id`      | character | which twig the leaf came from (often blank)          |
+| `leaf_id`      | character | leaf identifier within a twig (often blank)          |
 | `teams`        | character | student team that collected the sample               |
 | `shade`        | character | `"sunny"` or `"shady"`                               |
-| `mass_g`       | numeric   | leaf mass in grams                                    |
-| `petiole_mm`   | numeric   | petiole length in millimetres                         |
-| `thickness_mm` | numeric   | leaf thickness in millimetres                         |
+| `mass_g`       | numeric   | leaf mass in grams                                   |
+| `petiole_mm`   | numeric   | petiole length in millimetres                        |
+| `thickness_mm` | numeric   | leaf thickness in millimetres                        |
 | `paper_mass_g` | numeric   | mass of the paper cutout used to estimate leaf area  |
 
 Pull a single column with `$`:
 
 ``` r
-tree_df$mass_g    # just the mass column, as a vector
+leaf_df$mass_g    # just the mass column, as a vector
 ```
 
 ------------------------------------------------------------------------
 
-# Part 6 · Inspect a new dataset
+# Part 6 · Take a first look
 
-**Always eyeball a new dataset before doing any analysis.**
+**Always eyeball a new dataset before doing any analysis.** For that, reach for one function: `glimpse()`.
 
-**▶ Run each of these in your Script:**
+**▶ Run this in your Script:**
 
 ``` r
-head(tree_df)       # first 6 rows
-
-# glimpse() is the tidyverse way — one line per column
-glimpse(tree_df)    # column names, types, first values
-
-# Base R equivalents (give similar info)
-names(tree_df)      # column names
-summary(tree_df)    # min / mean / max per column
+# one row per column: name, type, and the first few values
+glimpse(leaf_df)
 ```
 
-> 💡 **Prefer `glimpse()` over `str()`** — it is the tidyverse-friendly version and is easier to read.
+> 💡 **Why `glimpse()`?** It shows every column name, its type (`<chr>`, `<dbl>`), and its first values on one screen. That is almost always what you want first. (`head()`, `summary()`, and `str()` exist too — we'll use them when we actually need them.)
 
-✏️ **Your turn:** Answer these questions from the output above.
+✏️ **Your turn:** From the `glimpse()` output:
 
-```         
-How many rows does tree_df have?  
-
-
-How many columns?    
-
-
-What type does R report for `shade`?   
-
-
-What is the mean mass_g?   
-
-
-What is the maximum thickness_mm?   
+```
+How many rows (observations) does leaf_df have?
+How many columns?
+What type does R report for shade?  ( <chr> / <dbl> )
 ```
 
 > ⚠️ **Watch out!** If a number column shows as `<chr>` in `glimpse()`, a stray letter or comma snuck into your spreadsheet. Check your raw data file.
@@ -425,24 +399,24 @@ The pipe sends a result straight into the next function. Read `%>%` as the word 
 **▶ Run this in your Script:**
 
 ``` r
-# Simple examples — read each %>% as "then"
+# take leaf_df, THEN list its column names
+leaf_df %>% names()
 
-tree_df %>% names()         # take tree_df, THEN list column names
-
-tree_df %>% summary()       # take tree_df, THEN summarize everything
+# take leaf_df, THEN show the glimpse
+leaf_df %>% glimpse()
 ```
 
-> 💡 **Two pipes — same idea:** `%>%` or `|>` — from tidyverse (we use this one throughout the course) The native pipe (a vertical bar then greater-than sign) — built into R 4.1+; you will see it in code online They behave identically for everything in this course.
+> 💡 **Two pipes — same idea:** `%>%` (from the tidyverse — we use this one all course) and `|>` (the native pipe, built into R 4.1+, which you'll see in code online) behave identically for everything in this course.
+
+You already used the pipe once, in Part 5, to send the freshly-read data into `clean_names()`:
 
 ``` r
-# if you have odd variable names and want to fix all of them at the end you can add clean names to the end
-#the %>% or |> are pipes that pass one set of information to the next command
-# the pipe passes the read in data to a command to clean the variable names
-
-tree_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>% clean_names()
+# read the file, THEN clean the column names
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names()
 ```
 
-In Lecture 03 we will use `%>%` with `group_by()` and `summarize()` to compute statistics by group — this is where the pipe really pays off.
+In Activity 03 we use `%>%` with `group_by()` and `summarize()` to compute statistics by group — that is where the pipe really pays off.
 
 ------------------------------------------------------------------------
 
@@ -450,7 +424,7 @@ In Lecture 03 we will use `%>%` with `group_by()` and `summarize()` to compute s
 
 ### ggplot builds pictures in layers
 
-Every ggplot is built in three pieces, joined with `+`:
+Every ggplot is built in pieces, joined with `+`:
 
 1.  `ggplot(data, aes(...))` — which data frame, which columns map to x and y
 2.  `geom_*()` — the shape to draw (points, boxes, bars, …)
@@ -459,11 +433,12 @@ Every ggplot is built in three pieces, joined with `+`:
 **▶ Run this in your Script — the simplest possible plot:**
 
 ``` r
-ggplot(tree_df, aes(x = shade, y = mass_g)) +
+# leaf mass by shade, one point per leaf
+ggplot(leaf_df, aes(x = shade, y = mass_g)) +
   geom_point()
 ```
 
-> ⚠️ **Watch out!** The `+` must sit at the **end** of a line, never the start. A `+` at the start causes an error.
+> ⚠️ **Watch out!** The `+` must sit at the **end** of a line, never the start.
 
 ------------------------------------------------------------------------
 
@@ -472,37 +447,35 @@ ggplot(tree_df, aes(x = shade, y = mass_g)) +
 **▶ Run this in your Script:**
 
 ``` r
-ggplot(tree_df, aes(x = shade, y = mass_g)) +
+# boxplot + raw points + axis labels
+ggplot(leaf_df, aes(x = shade, y = mass_g)) +
   geom_boxplot() +
   geom_jitter(width = 0.15, color = "tomato") +
-  labs(x     = "Side of tree",
-       y     = "Leaf mass (g)")
+  labs(x = "Side of tree",
+       y = "Leaf mass (g)")
 ```
 
-✏️ **Your turn:** Make the same plot but for `thickness_mm` instead of `mass_g`. Copy the code above and change the relevant parts.
+✏️ **Your turn — in your script:** Make the same plot for `thickness_mm` instead of `mass_g`.
 
-What pattern do you see — do sunny or shady leaves tend to be taller?
-
-```         
-Your answer: 
-
+```
+Do sunny or shady leaves tend to be thicker?
 ```
 
 ------------------------------------------------------------------------
 
-### Save your plot as a PDF
+### Save your plot
 
 Store the plot in an object, then save it to your `figures/` folder.
 
 **▶ Run this in your Script:**
 
 ``` r
-# Save the mass plot — always use PNG, always use dpi = 300
-mass_plot <- ggplot(tree_df, aes(x = shade, y = mass_g)) +
+# build the plot, store it, then write it to figures/ at print resolution
+mass_plot <- ggplot(leaf_df, aes(x = shade, y = mass_g)) +
   geom_boxplot() +
   geom_jitter(width = 0.15, alpha = 0.6, color = "tomato") +
-  labs(x     = "Side of tree",
-       y     = "Leaf mass (g)",
+  labs(x = "Side of tree",
+       y = "Leaf mass (g)",
        title = "Sunny vs. shady leaves")
 
 ggsave("figures/leaf_mass.png",
@@ -527,43 +500,42 @@ At this point you can:
 - [ ] Build a project folder with `data/`, `scripts/`, `figures/`
 - [ ] Use R as a calculator and store values with `<-`
 - [ ] Write a script with `#` comments, save it, and re-run it
-- [ ] Call functions with arguments and use `?` for help
+- [ ] Call functions with arguments
 - [ ] Build numeric and character vectors with `c()`
 - [ ] Install and load packages with `install.packages()` and `library()`
 - [ ] Load an Excel file with `read_excel()` and understand how `read_csv()` differs
-- [ ] Inspect a data frame with `glimpse()`, `head()`, `dim()`
+- [ ] Take a first look at a data frame with `glimpse()`
 - [ ] Use the pipe `%>%` to chain steps together
 - [ ] Build a `ggplot` boxplot and save it as a PNG with `dpi = 300`
 
-✏️ **Your turn — before you move on:** Run the full script from top to bottom by pressing **Ctrl/Cmd + Shift + Enter** (runs the whole file). Does it complete without errors?
+✏️ **Your turn — before you move on:** Run the full script top to bottom with **Ctrl/Cmd + Shift + Enter** (Source). Does it complete without errors?
 
-```         
-Did it run cleanly? Y / N
-If not, what error did you see?
+```
+Ran cleanly?  Y / N
+If not, what error appeared:
 ```
 
 ------------------------------------------------------------------------
 
 # Part 10 · Going further — more plotting
 
-> This section is optional — work through it if you finish early or want to explore. There are no wrong answers here; the goal is to see what ggplot can do.
+> This section is optional — work through it if you finish early or want to explore. There are no wrong answers here; the goal is to see what ggplot can do. Keep adding to the same script.
 
 ### Scatter plots — two numeric variables
 
 **▶ Try this:**
 
 ``` r
-ggplot(tree_df, aes(x = petiole_mm, y = thickness_mm, color = shade)) +
+# petiole length vs thickness, colored by shade
+ggplot(leaf_df, aes(x = petiole_mm, y = thickness_mm, color = shade)) +
   geom_point(size = 3, alpha = 0.7) +
-  labs(x     = "Petiole length (mm)",
-       y     = "Leaf thickness (mm)",
+  labs(x = "Petiole length (mm)",
+       y = "Leaf thickness (mm)",
        color = "Side of tree")
 ```
 
-✏️ **Your turn:** Does petiole length predict thickness? Do the two groups cluster separately or overlap?
-
-```         
-Your observation: 
+```
+Does petiole length predict thickness? Do the groups cluster separately or overlap?
 ```
 
 ------------------------------------------------------------------------
@@ -573,18 +545,17 @@ Your observation:
 **▶ Try this:**
 
 ``` r
-ggplot(tree_df, aes(x = petiole_mm, y = thickness_mm, color = shade)) +
+# same scatter, with a linear trend line per group
+ggplot(leaf_df, aes(x = petiole_mm, y = thickness_mm, color = shade)) +
   geom_point(size = 3, alpha = 0.7) +
   geom_smooth(method = "lm", se = TRUE) +
-  labs(x     = "Petiole length (mm)",
-       y     = "Leaf thickness (mm)",
+  labs(x = "Petiole length (mm)",
+       y = "Leaf thickness (mm)",
        color = "Side of tree")
 ```
 
-✏️ **Your turn:** Do the slopes look similar or different for sunny vs. shady leaves? What might that mean biologically?
-
-```         
-Your observation: 
+```
+Do the slopes look similar or different for sunny vs shady leaves?
 ```
 
 ------------------------------------------------------------------------
@@ -594,17 +565,16 @@ Your observation:
 **▶ Try this:**
 
 ``` r
-ggplot(tree_df, aes(x = shade, y = mass_g, fill = shade)) +
+# a violin shows the full shape of the distribution
+ggplot(leaf_df, aes(x = shade, y = mass_g, fill = shade)) +
   geom_violin(alpha = 0.5) +
   geom_jitter(width = 0.1, size = 2) +
-  labs(x     = "Side of tree",
-       y     = "Leaf mass (g)") 
+  labs(x = "Side of tree",
+       y = "Leaf mass (g)")
 ```
 
-✏️ **Your turn:** What does the width of the violin show you that a boxplot does not?
-
-```         
-Your observation: 
+```
+What does the width of the violin show you that a boxplot does not?
 ```
 
 ------------------------------------------------------------------------
@@ -616,17 +586,15 @@ Facets split one plot into panels, one per group.
 **▶ Try this:**
 
 ``` r
-ggplot(tree_df, aes(x = mass_g)) +
-  geom_histogram(binwidth = 1, fill = "darkblue", color = "white") +
+# one histogram panel per shade
+ggplot(leaf_df, aes(x = mass_g)) +
+  geom_histogram(binwidth = 0.05, fill = "darkblue", color = "white") +
   facet_wrap(~shade, ncol = 1) +
-  labs(x     = "Leaf mass (g)",
-       y     = "Count")
+  labs(x = "Leaf mass (g)", y = "Count")
 ```
 
-✏️ **Your turn:** Do the histograms look roughly symmetric, or skewed? Are the shapes similar between sunny and shady?
-
-```         
-Your observation: 
+```
+Do the histograms look symmetric or skewed? Similar between sunny and shady?
 ```
 
 ------------------------------------------------------------------------
@@ -642,10 +610,8 @@ ggplot comes with built-in themes. Try swapping by adding one to any plot above:
 + theme_dark()        # dark background
 ```
 
-✏️ **Your turn:** Which theme do you prefer for this kind of biological comparison data? Why?
-
-```         
-Your answer: 
+```
+Which theme do you prefer for this kind of comparison data? Why?
 ```
 
 ------------------------------------------------------------------------
@@ -655,7 +621,8 @@ Your answer:
 **▶ Try this:**
 
 ``` r
-scatter_plot <- ggplot(tree_df, aes(x = petiole_mm, y = thickness_mm, color = shade)) +
+# build, store, and save the scatter
+scatter_plot <- ggplot(leaf_df, aes(x = petiole_mm, y = thickness_mm, color = shade)) +
   geom_point(size = 3, alpha = 0.7) +
   geom_smooth(method = "lm", se = TRUE) +
   labs(x = "Petiole length (mm)", y = "Leaf thickness (mm)", color = "Side") +
@@ -665,34 +632,29 @@ ggsave("figures/leaf_dimensions_scatter.png",
        plot   = scatter_plot,
        width  = 7,
        height = 5,
-       units  = "in")
-```
-
-✏️ **Your turn:** Why do we save as `.png` rather than `.pdf` for most class submissions?
-
-```         
-Your answer: 
+       units  = "in",
+       dpi    = 300)
 ```
 
 ------------------------------------------------------------------------
 
 # What your finished project folder looks like
 
-After working through this worksheet your `tree_project/` folder should contain:
+After working through this activity your `tree_project/` folder should contain:
 
-```         
+```
 tree_project/
 ├── data/
-│   ├── 2026_09_03_data_sci_leaf_area.csv          <- never touch this
-│   └── 2026_09_03_data_sci_leaf_area.xlsx         <- never touch this
+│   ├── 2026_09_03_data_sci_leaf_area.csv    <- never touch this
+│   └── 2026_09_03_data_sci_leaf_area.xlsx   <- never touch this
 ├── scripts/
-│   └── 02_tree_analysis.R                          <- your complete script
+│   └── 02_leaf_analysis.R                   <- your complete script (turn this in)
 └── figures/
-    ├── leaf_mass.png                               <- Part 8
-    └── leaf_dimensions_scatter.png                 <- Going further
+    ├── leaf_mass.png                        <- Part 8
+    └── leaf_dimensions_scatter.png          <- Going further
 ```
 
-This is the project structure we will use **for every analysis** in this course:
+This is the project structure we use **for every analysis** in this course:
 
 | Folder     | Contents        | Rule                           |
 |------------|-----------------|--------------------------------|

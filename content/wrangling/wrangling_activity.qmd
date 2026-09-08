@@ -23,9 +23,9 @@ execute:
 
 # Wrangling Our Leaf Data
 
-### Recap from Worksheet 04 (GGPlot II)
+### Recap from Activity 04 (GGPlot II)
 
-- Loaded our leaf data with `read_excel()`
+- Loaded the leaf data with `read_excel()` and `clean_names()`
 - Built faceted plots, mean ± SE plots with `stat_summary()`, and custom colors with `scale_color_manual()`
 - Adjusted axis limits with `coord_cartesian()` and picked a theme
 - Used the pipe `%>%` to chain steps
@@ -35,73 +35,75 @@ execute:
 1.  Use `filter()`, `select()`, `mutate()`, and `arrange()` to wrangle data
 2.  Chain all four verbs into a single pipeline
 
-> # **How to use this worksheet**
+> # **How this activity works**
 >
-> Work through each part at your own pace. Type the code into a new R script in Positron and run it line by line. Code blocks marked **▶ Run this** should be executed exactly as written. Blocks marked **✏️ Your turn** ask you to write or modify something.
-
-> ## 🔮 Predict before you run — and type, don't paste
+> **You are building one R script this whole class, and you turn it in.** Create it now: `scripts/05_wrangling.R`.
 >
-> Before you run any **▶ Run this** block, cover the output and *predict* what R will print — how many rows, how many columns, which value comes out on top. Then run it and compare. Two reasons it is worth the extra few seconds:
+> - **Every line you run goes in that script** — not in the Console, not typed into this page. Type it, don't paste it.
+> - **Start every code chunk in your script with a short `#` comment** that says what it does. The comments are part of the grade.
+> - **The top of your script, in this order:** a title comment, then your `library()` calls, then the line that loads the data into `leaf_df`.
+> - Code marked **▶ Run this** is typed into your script exactly as shown. Code marked **✏️ Your turn** is a change you make in that same script and run.
 >
-> -   **Predicting exposes what you don't actually know yet.** It's easy to nod along at `filter()` vs `select()` on a slide; it's much harder to fake a row count you have to commit to in writing first.
-> -   **Typing beats pasting.** You'll write `%>%`, `filter()`, and `mutate()` dozens of times today — typing them by hand is what turns the syntax into muscle memory, and it trains your eye to spot the `=` vs `==` typo before R does.
+> ## 🔮 Predict before you run
+>
+> Before you run any **▶ Run this** block, predict what R will print — how many rows, how many columns, which value comes out on top. Then run it and compare. Predicting exposes what you don't actually know yet, and typing (not pasting) is what trains your eye to catch the `=` vs `==` typo before R does.
 
 ------------------------------------------------------------------------
 
 # Part 1 · Load libraries and data
 
-### Libraries first
+::: callout-tip
+## 📂 Get the data
 
-Always load all packages at the very top of your script.
+Same leaf file you have used since Activity 02 — it should already be in your project's `data/` folder. If not: **[`2026_09_03_data_sci_leaf_area.xlsx`](data/2026_09_03_data_sci_leaf_area.xlsx)** → put it in `data/`.
+:::
 
-**▶ Run this at the top of your script:**
+**▶ Type this at the very top of `scripts/05_wrangling.R`:**
 
 ``` r
-# Load all packages — always at the top of the script --------
-library(readxl)      # reading Excel files
-library(tidyverse)   # data manipulation + ggplot2
+# ---- Activity 05: Wrangling data -------------------------
+# your name, today's date
+
+# ---- Libraries -------------------------------------------
+library(readxl)      # read Excel files
+library(tidyverse)   # dplyr for wrangling + ggplot2
+library(janitor)     # clean_names()
+```
+
+``` r
+# ---- Load data ------------------------------------------
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names()
+
+glimpse(leaf_df)     # look at the data right after loading
 ```
 
 > ⚠️ **Watch out!** If R says *"could not find function `read_excel`"* you forgot `library(readxl)`. You must reload libraries every time you restart R.
-
-### Load the leaf data
-
-**▶ Run this:**
-
-``` r
-# Read the Excel file — path is relative to your project folder
-tree_df <- read_excel("data/2026_06_25_tree_experiment_raw_data.xlsx")
-```
 
 ------------------------------------------------------------------------
 
 # Part 2 · Inspect the data
 
-**▶ Run each of these:**
+**▶ Run this:**
 
 ``` r
-head(tree_df)       # first 6 rows
-glimpse(tree_df)    # column names, types, first values — use this!
-dim(tree_df)        # rows × columns
+# glimpse() is the one to reach for: one row per column, with type + first values
+glimpse(leaf_df)
 ```
 
 ✏️ **Your turn:** Fill in the table below from the `glimpse()` output.
 
 ```
-Column name     | Data type (<chr> / <dbl>)  | Example value
-----------------|----------------------------|---------------
-index           |                            |
-side            |                            |
-weight_g        |                            |
-width_cm        |                            |
-height_cm       |                            |
+Column name    | Data type (<chr> / <dbl>)  | Example value
+---------------|----------------------------|---------------
+shade          |                            |
+mass_g         |                            |
+petiole_mm     |                            |
+thickness_mm   |                            |
+paper_mass_g   |                            |
 ```
 
-✏️ **Your turn:** How many leaves are from the sunny side and how many from the shady side? Use `table(tree_df$side)`.
-
-``` r
-# Write your code here:
-```
+✏️ **Your turn — in your script:** How many leaves are from the sunny side and how many from the shady side? Use `table(leaf_df$shade)`.
 
 ```
 Sunny leaves:
@@ -117,34 +119,30 @@ These four functions do most of the work in data wrangling. All take a data fram
 
 ### `filter()` — keeping rows you want
 
+> 🔮 **Predict first:** Before running, guess how many rows `filter(shade == "sunny")` will return. Write your number, then check.
+
 **▶ Run this:**
 
-> 🔮 **Predict first:** There are 20 leaves in total. Before running, guess how many rows `filter(side == "sunny")` will return. Write your number, then check.
-
 ``` r
-# filter() keeps rows where the condition is TRUE ------
+# filter() keeps rows where the condition is TRUE
 
-# Keep only sunny leaves
-tree_df %>% filter(side == "sunny")
+# keep only sunny leaves
+leaf_df %>% filter(shade == "sunny")
 
-# Keep only leaves heavier than 5 g
-tree_df %>% filter(weight_g > 5)
+# keep only leaves heavier than 0.5 g
+leaf_df %>% filter(mass_g > 0.5)
 
-# Combine conditions (AND = both must be true)
-tree_df %>% filter(side == "shady", weight_g > 7)
+# combine conditions (comma = AND = both must be true)
+leaf_df %>% filter(shade == "shady", mass_g > 0.5)
 ```
 
 > ⚠️ **Watch out!** `=` assigns a value. `==` tests equality. Always use `==` inside `filter()`.
 
-✏️ **Your turn:** Use `filter()` to find all leaves where `height_cm` is greater than 25. How many rows does the result have?
-
-``` r
-# Write your code here:
-```
+✏️ **Your turn — in your script:** Use `filter()` to find all leaves where `thickness_mm` is greater than `0.16`.
 
 ```
-Number of leaves with height_cm > 25:
-Are they mostly sunny or shady side?
+Number of leaves with thickness_mm > 0.16:
+Are they mostly sunny or shady?
 ```
 
 ------------------------------------------------------------------------
@@ -154,23 +152,19 @@ Are they mostly sunny or shady side?
 **▶ Run this:**
 
 ``` r
-# select() keeps the columns you name ------------------
+# select() keeps (or drops) the columns you name
 
-# Keep only side and weight
-tree_df %>% select(side, weight_g)
+# keep only shade and mass
+leaf_df %>% select(shade, mass_g)
 
-# Drop the index column (use minus sign)
-tree_df %>% select(-index)
+# drop the paper_mass_g column (minus sign = drop)
+leaf_df %>% select(-paper_mass_g)
 
-# Keep columns that end with a unit label
-tree_df %>% select(side, ends_with("_cm"))
+# keep shade plus every column whose name ends in "_mm"
+leaf_df %>% select(shade, ends_with("_mm"))
 ```
 
-✏️ **Your turn:** Create a data frame called `lean_df` that has only `side` and `height_cm`. Then run `glimpse(lean_df)` to verify.
-
-``` r
-# Write your code here:
-```
+✏️ **Your turn — in your script:** Create a data frame called `lean_df` that has only `shade` and `thickness_mm`. Then run `glimpse(lean_df)` to verify.
 
 ```
 How many columns does lean_df have?
@@ -183,31 +177,27 @@ What are they?
 
 `mutate()` adds new columns (or changes existing ones) without removing anything.
 
+> 🔮 **Predict first:** Will `mutate(mass_mg = mass_g * 1000)` **replace** `mass_g` or **add** a new column? How many columns will the result have — more, fewer, or the same?
+
 **▶ Run this:**
 
-> 🔮 **Predict first:** Will `mutate(weight_mg = weight_g * 1000)` **replace** `weight_g` or **add** a new column? How many columns will the result have — more, fewer, or the same?
-
 ``` r
-# mutate() adds a new column to the data frame ---------
+# mutate() adds a new column to the data frame
 
-# Convert grams to milligrams
-tree_df %>%
-  mutate(weight_mg = weight_g * 1000)
+# convert grams to milligrams
+leaf_df %>%
+  mutate(mass_mg = mass_g * 1000)
 
-# Add a size category based on weight
-tree_df %>%
-  mutate(size_class = if_else(weight_g > 5, "large", "small"))
+# add a size category based on mass
+leaf_df %>%
+  mutate(size_class = if_else(mass_g > 0.5, "large", "small"))
 ```
 
-✏️ **Your turn:** Use `mutate()` to add a column called `height_mm` (height converted to millimetres — multiply by 10). What is the maximum height in mm?
-
-``` r
-# Write your code here:
-```
+✏️ **Your turn — in your script:** Use `mutate()` to add a column called `petiole_cm` (petiole length in centimetres — divide `petiole_mm` by 10). What is the maximum petiole length in cm?
 
 ```
 Column name you added:
-Maximum height in mm:
+Maximum petiole length in cm:
 ```
 
 ------------------------------------------------------------------------
@@ -217,28 +207,23 @@ Maximum height in mm:
 **▶ Run this:**
 
 ``` r
-# arrange() sorts rows by a column ---------------------
+# arrange() sorts rows by a column
 
-# Lightest leaves first (ascending — default)
-tree_df %>% arrange(weight_g)
+# lightest leaves first (ascending — the default)
+leaf_df %>% arrange(mass_g)
 
-# Heaviest leaves first (descending — use desc())
-tree_df %>% arrange(desc(weight_g))
+# heaviest leaves first (descending — wrap in desc())
+leaf_df %>% arrange(desc(mass_g))
 
-# Sort by side, then by weight within each side
-tree_df %>% arrange(side, desc(weight_g))
+# sort by shade, then by mass within each shade
+leaf_df %>% arrange(shade, desc(mass_g))
 ```
 
-✏️ **Your turn:** Sort the data by `height_cm` descending. What is the `index` number and `side` of the tallest leaf?
-
-``` r
-# Write your code here:
-```
+✏️ **Your turn — in your script:** Sort the data by `thickness_mm` descending. What is the `shade` of the thickest leaf?
 
 ```
-Index of tallest leaf:
-Side (sunny or shady):
-Height (cm):
+Shade of the thickest leaf (sunny or shady):
+Its thickness (mm):
 ```
 
 ------------------------------------------------------------------------
@@ -248,17 +233,17 @@ Height (cm):
 **▶ Run this:**
 
 ``` r
-# Chain all four verbs — read it as a recipe ----------
-tree_clean_df <- tree_df %>%
-  filter(weight_g > 0) %>%              # remove any zeros
-  select(side, weight_g, height_cm) %>%  # keep three columns
+# chain all four verbs — read it as a recipe, one %>% at a time
+leaf_clean_df <- leaf_df %>%
+  filter(mass_g > 0) %>%                      # drop any zeros
+  select(shade, mass_g, thickness_mm) %>%     # keep three columns
   mutate(
-    weight_mg   = weight_g * 1000,
-    size_class  = if_else(weight_g > 5, "large", "small")
+    mass_mg    = mass_g * 1000,
+    size_class = if_else(mass_g > 0.5, "large", "small")
   ) %>%
-  arrange(side, desc(weight_g))          # sort by side, then weight
+  arrange(shade, desc(mass_g))                # sort by shade, then mass
 
-head(tree_clean_df)
+head(leaf_clean_df)
 ```
 
 ✏️ **Your turn:** Read the pipeline out loud, one `%>%` step at a time. Write in plain English what each step does:
@@ -276,14 +261,14 @@ Step 4 (arrange):
 
 At this point you should be able to:
 
-- [ ] Load an Excel file with `read_excel()` and inspect with `glimpse()`, `head()`, `dim()`
+- [ ] Load an Excel file with `read_excel()` and inspect it with `glimpse()`
 - [ ] Use `filter()` to keep rows matching a condition
 - [ ] Use `select()` to keep specific columns
 - [ ] Use `mutate()` to add a new calculated column
 - [ ] Use `arrange()` to sort rows
 - [ ] Chain all four verbs into a single `%>%` pipeline
 
-✏️ **Your turn — before you move on:** Run your entire script with **Ctrl/Cmd + Shift + Enter**. Does it complete without errors?
+✏️ **Your turn — before you move on:** Run your entire script top to bottom with **Ctrl/Cmd + Shift + Enter** (Source). Does it complete without errors?
 
 ```
 Ran cleanly?  Y / N
@@ -301,17 +286,17 @@ If not, what error appeared:
 **▶ Try this:**
 
 ``` r
-# Add size_class column, then make a bar chart
-tree_df %>%
-  mutate(size_class = if_else(weight_g > 5, "large", "small")) %>%
-  ggplot(aes(x = side, fill = size_class)) +
+# add size_class, then count large vs small leaves per shade
+leaf_df %>%
+  mutate(size_class = if_else(mass_g > 0.5, "large", "small")) %>%
+  ggplot(aes(x = shade, fill = size_class)) +
   geom_bar(position = "dodge") +
-  labs(title = "Number of large vs small leaves by side",
-       x = "Side", y = "Count", fill = "Size class") +
+  labs(title = "Large vs small leaves by shade",
+       x = "Shade", y = "Count", fill = "Size class") +
   theme_minimal()
 ```
 
-✏️ **Your turn:** What does `position = "dodge"` do to the bars? What happens if you change it to `position = "fill"`?
+✏️ **Your turn — in your script:** Change `position = "dodge"` to `position = "fill"`.
 
 ```
 dodge does:
@@ -322,41 +307,27 @@ fill does:
 
 # Extension — out of class (~30–40 min)
 
-*Turn this in with your worksheet. In class you split leaves into two groups at
-a fixed weight. Now you build **three** categories with cutoffs **you** pick.*
-
-::: callout-important
-**E2 and E3 must be handwritten** on paper, photographed, and embedded
-(`![caption](my_photo.jpg)`). Typed answers to E2/E3 get **at most half credit,
-even if correct** — I want your own prediction and reasoning about *your own*
-counts.
-:::
+*Add this to the bottom of `scripts/05_wrangling.R` and turn it in with the rest. Put your written answers in `#` comments right under the code they go with. In class you split leaves into two groups at a fixed mass. Now you build **three** categories with cutoffs **you** pick.*
 
 ## E1 · Three size categories (4 pts)
 
-Use `mutate()` with `case_when()` to sort every leaf into `"small"`, `"medium"`,
-`"large"` based on `weight_g`. **You pick the two cutoff weights** — look at the
-data first (`summary(tree_df$weight_g)`) so they are reasonable, not 0 and Inf.
+Use `mutate()` with `case_when()` to sort every leaf into `"small"`, `"medium"`, `"large"` based on `mass_g`. **You pick the two cutoff masses** — look at the data first (`summary(leaf_df$mass_g)`) so they are reasonable, not 0 and Inf.
 
-State your two cutoffs, then show `count(side, size_category)` — how many leaves
-land in each category on each side.
+State your two cutoffs in a comment, then show `count(shade, size_category)` — how many leaves land in each category on each side.
 
-## E2 · Predict, then check — ✍️ by hand (3 pts)
+## E2 · Predict, then check (3 pts)
 
-**Before running the `count()`:**
+**Before running the `count()`**, write in comments:
 
 1.  Which size category do you expect to hold the most leaves overall, and why?
 2.  Do you expect `sunny` or `shady` leaves to skew toward `"large"`? One reason.
 
-Then run it and, by hand, write whether you were right and — if not — your best
-guess for why the data came out that way.
+Then run it and write whether you were right and — if not — your best guess for why the data came out that way.
 
-## E3 · Explain it — ✍️ by hand, with YOUR counts (3 pts)
+## E3 · Explain it, with YOUR counts (3 pts)
 
-1.  In plain language, what did your cutoff choices do to the data — why would
-    different cutoffs have changed your counts? Use your actual numbers.
-2.  `case_when()` and `filter()` can both split data into groups. In your own
-    words, what is the actual difference in what each one *does* to the dataset?
+1.  In plain language, what did your cutoff choices do to the data — why would different cutoffs have changed your counts? Use your actual numbers.
+2.  `case_when()` and `filter()` can both split data into groups. In your own words, what is the actual difference in what each one *does* to the dataset?
 
 ------------------------------------------------------------------------
 
@@ -364,13 +335,13 @@ guess for why the data came out that way.
 
 1.  **Read the error message out loud.** R usually names the line and the problem.
 2.  **Check the usual suspects:** Did you load `library(readxl)` and `library(tidyverse)`?
-3.  **Spelling?** R is **case-sensitive** — `"Sunny"` ≠ `"sunny"`. Check with `names(tree_df)`.
+3.  **Spelling?** R is **case-sensitive** — `"Sunny"` ≠ `"sunny"`. Check with `names(leaf_df)`.
 4.  **File not found?** Check with `getwd()` and confirm the `data/` folder is inside your project.
 5.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
 6.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
 
-> 💡 **Key idea:** an `=` where you meant `==`, a typo'd column name — these are the errors this worksheet is built around, and reading the message before you panic will solve most of them.
+> 💡 **Key idea:** an `=` where you meant `==`, a typo'd column name — these are the errors this activity is built around, and reading the message before you panic will solve most of them.
 
 ------------------------------------------------------------------------
 
-*End of the Wrangling worksheet. Next: summary statistics — mean, median, SD, SE, `group_by()` + `summarize()`, and `skimr`.*
+*End of the Wrangling activity. Next: summary statistics — mean, median, SD, SE, `group_by()` + `summarize()`, and `skimr`.*
