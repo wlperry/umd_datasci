@@ -682,11 +682,12 @@ R for Data Science (2e), Ch. 1 — *Data Visualization*, and Whitlock & Schluter
 Since `shade` is a category, a **boxplot** with the raw points on top tells the story well:
 
 ``` r
+# define the point position ONCE, at the top, so every layer can reuse it
+jitter_pos <- position_jitter(width = 0.15, seed = 42)
+
 ggplot(tree_df, aes(x = shade, y = mass_g)) +
   geom_boxplot() +
-  geom_jitter(width = 0.15, alpha = 0.6, color = "tomato") +
-  geom_point(position = position_dodge(width = 0.15, alpha = 0.6, color = "tomato")) + 
-# the two above are about the same but I prefer the lower one for a few reasons....
+  geom_point(position = jitter_pos, alpha = 0.6, color = "tomato") +
   labs(x = "Side of tree",
        y = "Leaf mass (g)",
        title = "Sunny vs. shady leaves")
@@ -701,6 +702,12 @@ Swap `mass_g` for `thickness_mm`. What changes? Try `geom_violin()` instead of `
 
 ::: {.column width="40%"}
 **Before you run it:** sketch what you expect this plot to look like — boxes, dots, axes — then compare it to what R draws.
+
+::: callout-note
+**Why `position_jitter()` in a variable?**
+
+`geom_point()` alone stacks every leaf on one vertical line. `position_jitter(width = 0.15)` nudges them sideways so you can see each one; `seed = 42` keeps that random nudge identical every time you render. Storing it in `jitter_pos` means the *next* layer (a mean, an error bar, a connecting line) can sit at the exact same spot.
+:::
 :::
 ::::::
 

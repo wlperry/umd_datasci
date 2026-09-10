@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-09-08">
+<meta name="dcterms.date" content="2026-09-10">
 <meta name="description" content="The basics of using ggplot">
 
 <title>Common Code 03 — Basic ggplot2 – UMD DAta Science Biology</title>
@@ -435,7 +435,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">September 8, 2026</p>
+      <p class="date">September 10, 2026</p>
     </div>
   </div>
   
@@ -560,19 +560,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="overlay-raw-data-points-with-jitter" class="level3">
 <h3 class="anchored" data-anchor-id="overlay-raw-data-points-with-jitter">Overlay raw data points with jitter</h3>
-<p>A boxplot alone hides sample size. Adding jittered points shows both the distribution shape and how many observations went into each box:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">color =</span> <span class="st">"darkblue"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A boxplot alone hides sample size. Adding jittered points shows both the distribution shape and how many observations went into each box. Define the point position <strong>once</strong> as a variable so every layer can reuse it:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>jitter_pos <span class="ot">&lt;-</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">seed =</span> <span class="dv">42</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> jitter_pos, <span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">color =</span> <span class="st">"darkblue"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> Layer order matters. <code>geom_boxplot()</code> first and <code>geom_jitter()</code> second draws the points <strong>on top of</strong> the boxes. Swap the order and the boxes cover the points.</p>
+<p>💡 <strong>Key idea:</strong> Layer order matters — <code>geom_boxplot()</code> first, the points second, so the points sit <strong>on top of</strong> the boxes. <code>position_jitter(width = 0.15)</code> spreads overlapping points sideways; <code>seed = 42</code> freezes that random spread so the figure is identical on every render.</p>
 </blockquote>
 </section>
 <section id="side-by-side-box-plots-two-grouping-variables" class="level3">
 <h3 class="anchored" data-anchor-id="side-by-side-box-plots-two-grouping-variables">Side-by-side box plots (two grouping variables)</h3>
-<p>Map a second grouping variable to <code>fill</code> to split each x-group:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> sex)) <span class="sc">+</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Map a second grouping variable to <code>fill</code> to split each x-group. Now the horizontal offsets matter: dodge the boxes, and use <strong><code>position_jitterdodge()</code></strong> so the raw points land under their own box. Match <code>dodge.width</code> to the box <code>position_dodge()</code> width:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>dodge_pos      <span class="ot">&lt;-</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.75</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>jitterdodge_pos <span class="ot">&lt;-</span> <span class="fu">position_jitterdodge</span>(<span class="at">jitter.width =</span> <span class="fl">0.15</span>, <span class="at">dodge.width =</span> <span class="fl">0.75</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> sex)) <span class="sc">+</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>, <span class="at">position =</span> dodge_pos) <span class="sc">+</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> jitterdodge_pos, <span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<blockquote class="blockquote">
+<p>💡 <strong>Key idea:</strong> <code>position_dodge()</code> shifts <em>whole groups</em> apart but does not scatter points within a group; <code>position_jitterdodge()</code> does both. <code>position_dodge()</code> alone is the right choice for connected summaries (mean points, error bars, and <code>geom_line()</code> between them) — see the advanced plotting reference.</p>
+</blockquote>
 <hr>
 </section>
 </section>
@@ -866,7 +875,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td>Jittered raw data</td>
-<td><code>geom_jitter(width = 0.15, alpha = 0.5)</code></td>
+<td><code>geom_point(position = position_jitter(width = 0.15, seed = 42), alpha = 0.5)</code></td>
 </tr>
 <tr class="even">
 <td>Map colour (data)</td>

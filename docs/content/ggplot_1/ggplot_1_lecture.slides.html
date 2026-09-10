@@ -11,7 +11,7 @@
   <meta name="generator" content="quarto-1.10.18">
 
   <meta name="author" content="Bill Perry">
-  <meta name="dcterms.date" content="2026-09-08">
+  <meta name="dcterms.date" content="2026-09-10">
   <title>UMD DAta Science Biology – Lecture 03 — GGPlot I</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -217,7 +217,7 @@ Bill Perry
 </div>
 </div>
 
-  <p class="date">2026-09-08</p>
+  <p class="date">2026-09-10</p>
 </section>
 <section id="where-we-left-off-lecture-02-meeting-r" class="title-slide slide level1 center">
 <h1>Where we left off (Lecture 02 — Meeting R)</h1>
@@ -345,6 +345,29 @@ $ paper_mass_g &lt;dbl&gt; 0.2100, 0.2100, 0.2100, 0.2400, 0.1500, 0.3400, 0.290
 </div>
 </section>
 
+<section id="positions-define-once-reuse-on-every-layer" class="title-slide slide level1 center">
+<h1>Positions — Define Once, Reuse on Every Layer</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a aria-label="1"></a><span class="co"># a "position" is HOW a layer nudges its shapes sideways</span></span>
+<span id="cb4-2"><a aria-label="2"></a><span class="co"># define each one once, up top, then reuse it on every layer</span></span>
+<span id="cb4-3"><a aria-label="3"></a></span>
+<span id="cb4-4"><a aria-label="4"></a><span class="co"># raw points: scatter them so they don't stack on one line</span></span>
+<span id="cb4-5"><a aria-label="5"></a>jitter_pos <span class="ot">&lt;-</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">seed =</span> <span class="dv">42</span>)</span>
+<span id="cb4-6"><a aria-label="6"></a></span>
+<span id="cb4-7"><a aria-label="7"></a><span class="co"># grouped summaries / lines: shift the groups side by side</span></span>
+<span id="cb4-8"><a aria-label="8"></a>dodge_pos <span class="ot">&lt;-</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div><div class="column" style="width:40%;">
+<ul>
+<li><code>position_jitter(width = 0.15)</code> — random sideways nudge so overlapping points become visible; <code>seed = 42</code> freezes that nudge so the figure looks the same every render</li>
+<li><code>position_dodge(width = 0.2)</code> — shifts groups apart; does nothing with one group per x, but the moment you add a second grouping variable (<code>color = sex</code>) it fans the groups out</li>
+<li>Reusing <strong>one</strong> <code>dodge_pos</code> on <code>geom_point()</code>, <code>geom_errorbar()</code>, <strong>and</strong> <code>geom_line()</code> is what keeps a grouped mean, its error bar, and its connecting line perfectly aligned</li>
+</ul>
+</div></div>
+</section>
+
 <section id="chunk-1-of-3-piping-into-ggplot-on-purpose" class="title-slide slide level1 center">
 <h1>🧩 Chunk 1 of 3 · Piping into ggplot, on Purpose</h1>
 <p><strong>We will cover:</strong> starting a plot with the pipe, and choosing colors with <code>scale_color_manual()</code>.</p>
@@ -358,18 +381,18 @@ $ paper_mass_g &lt;dbl&gt; 0.2100, 0.2100, 0.2100, 0.2400, 0.1500, 0.3400, 0.290
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a aria-label="1"></a><span class="co"># Pipe the data frame straight into ggplot() -----------</span></span>
-<span id="cb4-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb4-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
-<span id="cb4-4"><a aria-label="4"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb4-5"><a aria-label="5"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb4-6"><a aria-label="6"></a>  <span class="fu">labs</span>(</span>
-<span id="cb4-7"><a aria-label="7"></a>    <span class="at">title =</span> <span class="st">"Leaf Mass by Shade"</span>,</span>
-<span id="cb4-8"><a aria-label="8"></a>    <span class="at">x =</span> <span class="st">"Shade"</span>,</span>
-<span id="cb4-9"><a aria-label="9"></a>    <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>,</span>
-<span id="cb4-10"><a aria-label="10"></a>    <span class="at">fill =</span> <span class="st">"Shade"</span></span>
-<span id="cb4-11"><a aria-label="11"></a>  ) <span class="sc">+</span></span>
-<span id="cb4-12"><a aria-label="12"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="co"># Pipe the data frame straight into ggplot() -----------</span></span>
+<span id="cb5-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
+<span id="cb5-4"><a aria-label="4"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb5-5"><a aria-label="5"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> jitter_pos, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb5-6"><a aria-label="6"></a>  <span class="fu">labs</span>(</span>
+<span id="cb5-7"><a aria-label="7"></a>    <span class="at">title =</span> <span class="st">"Leaf Mass by Shade"</span>,</span>
+<span id="cb5-8"><a aria-label="8"></a>    <span class="at">x =</span> <span class="st">"Shade"</span>,</span>
+<span id="cb5-9"><a aria-label="9"></a>    <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>,</span>
+<span id="cb5-10"><a aria-label="10"></a>    <span class="at">fill =</span> <span class="st">"Shade"</span></span>
+<span id="cb5-11"><a aria-label="11"></a>  ) <span class="sc">+</span></span>
+<span id="cb5-12"><a aria-label="12"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
@@ -419,23 +442,23 @@ $ paper_mass_g &lt;dbl&gt; 0.2100, 0.2100, 0.2100, 0.2400, 0.1500, 0.3400, 0.290
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="co"># scale_fill_manual() assigns exact colors to exact groups</span></span>
-<span id="cb5-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb5-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
-<span id="cb5-4"><a aria-label="4"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb5-5"><a aria-label="5"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb5-6"><a aria-label="6"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(</span>
-<span id="cb5-7"><a aria-label="7"></a>    <span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>,</span>
-<span id="cb5-8"><a aria-label="8"></a>    <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span></span>
-<span id="cb5-9"><a aria-label="9"></a>  )) <span class="sc">+</span></span>
-<span id="cb5-10"><a aria-label="10"></a>  <span class="fu">labs</span>(</span>
-<span id="cb5-11"><a aria-label="11"></a>    <span class="at">title =</span> <span class="st">"Leaf Mass by Shade"</span>,</span>
-<span id="cb5-12"><a aria-label="12"></a>    <span class="at">x =</span> <span class="st">"Shade"</span>,</span>
-<span id="cb5-13"><a aria-label="13"></a>    <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>,</span>
-<span id="cb5-14"><a aria-label="14"></a>    <span class="at">fill =</span> <span class="st">"Shade"</span></span>
-<span id="cb5-15"><a aria-label="15"></a>  ) <span class="sc">+</span></span>
-<span id="cb5-16"><a aria-label="16"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb5-17"><a aria-label="17"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a aria-label="1"></a><span class="co"># scale_fill_manual() assigns exact colors to exact groups</span></span>
+<span id="cb6-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
+<span id="cb6-4"><a aria-label="4"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb6-5"><a aria-label="5"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> jitter_pos, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb6-6"><a aria-label="6"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb6-7"><a aria-label="7"></a>    <span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>,</span>
+<span id="cb6-8"><a aria-label="8"></a>    <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span></span>
+<span id="cb6-9"><a aria-label="9"></a>  )) <span class="sc">+</span></span>
+<span id="cb6-10"><a aria-label="10"></a>  <span class="fu">labs</span>(</span>
+<span id="cb6-11"><a aria-label="11"></a>    <span class="at">title =</span> <span class="st">"Leaf Mass by Shade"</span>,</span>
+<span id="cb6-12"><a aria-label="12"></a>    <span class="at">x =</span> <span class="st">"Shade"</span>,</span>
+<span id="cb6-13"><a aria-label="13"></a>    <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>,</span>
+<span id="cb6-14"><a aria-label="14"></a>    <span class="at">fill =</span> <span class="st">"Shade"</span></span>
+<span id="cb6-15"><a aria-label="15"></a>  ) <span class="sc">+</span></span>
+<span id="cb6-16"><a aria-label="16"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb6-17"><a aria-label="17"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
@@ -488,15 +511,15 @@ $ paper_mass_g &lt;dbl&gt; 0.2100, 0.2100, 0.2100, 0.2400, 0.1500, 0.3400, 0.290
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a aria-label="1"></a><span class="co"># facet_wrap() splits into one panel per level ---------</span></span>
-<span id="cb6-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb6-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
-<span id="cb6-4"><a aria-label="4"></a>  <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="fl">0.05</span>, <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
-<span id="cb6-5"><a aria-label="5"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>shade) <span class="sc">+</span></span>
-<span id="cb6-6"><a aria-label="6"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
-<span id="cb6-7"><a aria-label="7"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Leaf Mass (g)"</span>, <span class="at">y =</span> <span class="st">"Count"</span>, <span class="at">title =</span> <span class="st">"Mass Distribution by Shade"</span>) <span class="sc">+</span></span>
-<span id="cb6-8"><a aria-label="8"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb6-9"><a aria-label="9"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a><span class="co"># facet_wrap() splits into one panel per level ---------</span></span>
+<span id="cb7-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
+<span id="cb7-4"><a aria-label="4"></a>  <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="fl">0.05</span>, <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb7-5"><a aria-label="5"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>shade) <span class="sc">+</span></span>
+<span id="cb7-6"><a aria-label="6"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
+<span id="cb7-7"><a aria-label="7"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Leaf Mass (g)"</span>, <span class="at">y =</span> <span class="st">"Count"</span>, <span class="at">title =</span> <span class="st">"Mass Distribution by Shade"</span>) <span class="sc">+</span></span>
+<span id="cb7-8"><a aria-label="8"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb7-9"><a aria-label="9"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
@@ -520,15 +543,15 @@ $ paper_mass_g &lt;dbl&gt; 0.2100, 0.2100, 0.2100, 0.2400, 0.1500, 0.3400, 0.290
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a><span class="co"># facet_grid(rows ~ cols) — use "." for "no grouping" --</span></span>
-<span id="cb7-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb7-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
-<span id="cb7-4"><a aria-label="4"></a>  <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="fl">0.05</span>, <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
-<span id="cb7-5"><a aria-label="5"></a>  <span class="fu">facet_grid</span>(shade <span class="sc">~</span> .) <span class="sc">+</span></span>
-<span id="cb7-6"><a aria-label="6"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
-<span id="cb7-7"><a aria-label="7"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Leaf Mass (g)"</span>, <span class="at">y =</span> <span class="st">"Count"</span>) <span class="sc">+</span></span>
-<span id="cb7-8"><a aria-label="8"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb7-9"><a aria-label="9"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a aria-label="1"></a><span class="co"># facet_grid(rows ~ cols) — use "." for "no grouping" --</span></span>
+<span id="cb8-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb8-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
+<span id="cb8-4"><a aria-label="4"></a>  <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="fl">0.05</span>, <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb8-5"><a aria-label="5"></a>  <span class="fu">facet_grid</span>(shade <span class="sc">~</span> .) <span class="sc">+</span></span>
+<span id="cb8-6"><a aria-label="6"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
+<span id="cb8-7"><a aria-label="7"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Leaf Mass (g)"</span>, <span class="at">y =</span> <span class="st">"Count"</span>) <span class="sc">+</span></span>
+<span id="cb8-8"><a aria-label="8"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb8-9"><a aria-label="9"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
@@ -581,18 +604,19 @@ $ paper_mass_g &lt;dbl&gt; 0.2100, 0.2100, 0.2100, 0.2400, 0.1500, 0.3400, 0.290
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a aria-label="1"></a><span class="co"># stat_summary() computes the mean straight from the data</span></span>
-<span id="cb8-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb8-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">color =</span> shade)) <span class="sc">+</span></span>
-<span id="cb8-4"><a aria-label="4"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
-<span id="cb8-5"><a aria-label="5"></a>  <span class="fu">stat_summary</span>(<span class="at">fun =</span> mean, <span class="at">geom =</span> <span class="st">"point"</span>, <span class="at">size =</span> <span class="dv">4</span>, <span class="at">color =</span> <span class="st">"black"</span>) <span class="sc">+</span></span>
-<span id="cb8-6"><a aria-label="6"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
-<span id="cb8-7"><a aria-label="7"></a>  <span class="fu">labs</span>(</span>
-<span id="cb8-8"><a aria-label="8"></a>    <span class="at">title =</span> <span class="st">"Leaf Mass with Group Means"</span>,</span>
-<span id="cb8-9"><a aria-label="9"></a>    <span class="at">x =</span> <span class="st">"Shade"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span></span>
-<span id="cb8-10"><a aria-label="10"></a>  ) <span class="sc">+</span></span>
-<span id="cb8-11"><a aria-label="11"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb8-12"><a aria-label="12"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># stat_summary() computes the mean straight from the data</span></span>
+<span id="cb9-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">color =</span> shade)) <span class="sc">+</span></span>
+<span id="cb9-4"><a aria-label="4"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> jitter_pos, <span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb9-5"><a aria-label="5"></a>  <span class="fu">stat_summary</span>(<span class="at">fun =</span> mean, <span class="at">geom =</span> <span class="st">"point"</span>, <span class="at">size =</span> <span class="dv">4</span>, <span class="at">color =</span> <span class="st">"black"</span>,</span>
+<span id="cb9-6"><a aria-label="6"></a>               <span class="at">position =</span> dodge_pos) <span class="sc">+</span></span>
+<span id="cb9-7"><a aria-label="7"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
+<span id="cb9-8"><a aria-label="8"></a>  <span class="fu">labs</span>(</span>
+<span id="cb9-9"><a aria-label="9"></a>    <span class="at">title =</span> <span class="st">"Leaf Mass with Group Means"</span>,</span>
+<span id="cb9-10"><a aria-label="10"></a>    <span class="at">x =</span> <span class="st">"Shade"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span></span>
+<span id="cb9-11"><a aria-label="11"></a>  ) <span class="sc">+</span></span>
+<span id="cb9-12"><a aria-label="12"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb9-13"><a aria-label="13"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
@@ -606,7 +630,7 @@ $ paper_mass_g &lt;dbl&gt; 0.2100, 0.2100, 0.2100, 0.2400, 0.1500, 0.3400, 0.290
 <li><code>stat_summary()</code> computes a statistic <strong>from the raw data</strong> and draws it — no pre-built summary table needed</li>
 <li><code>fun = mean</code> — any function that returns one number (<code>mean</code>, <code>median</code>, <code>max</code>, …)</li>
 <li><code>geom = "point"</code> — draw that number as a point</li>
-<li>Put <code>geom_jitter()</code> <strong>before</strong> <code>stat_summary()</code> so the mean sits on top of the raw points, not buried under them</li>
+<li>Put the raw <code>geom_point()</code> layer <strong>before</strong> <code>stat_summary()</code> so the mean sits on top of the raw points, not buried under them</li>
 </ul>
 </div></div>
 </section>
@@ -629,26 +653,28 @@ $ paper_mass_g &lt;dbl&gt; 0.2100, 0.2100, 0.2100, 0.2400, 0.1500, 0.3400, 0.290
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># fun.data = returns THREE values: y, ymin, ymax -------</span></span>
-<span id="cb9-2"><a aria-label="2"></a>leaf_mean_se_plot <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb9-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">color =</span> shade)) <span class="sc">+</span></span>
-<span id="cb9-4"><a aria-label="4"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.35</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
-<span id="cb9-5"><a aria-label="5"></a>  <span class="fu">stat_summary</span>(<span class="at">fun =</span> mean, <span class="at">geom =</span> <span class="st">"point"</span>, <span class="at">size =</span> <span class="dv">4</span>) <span class="sc">+</span></span>
-<span id="cb9-6"><a aria-label="6"></a>  <span class="fu">stat_summary</span>(</span>
-<span id="cb9-7"><a aria-label="7"></a>    <span class="at">fun.data =</span> mean_se,</span>
-<span id="cb9-8"><a aria-label="8"></a>    <span class="at">geom =</span> <span class="st">"errorbar"</span>,</span>
-<span id="cb9-9"><a aria-label="9"></a>    <span class="at">width =</span> <span class="fl">0.15</span>,</span>
-<span id="cb9-10"><a aria-label="10"></a>    <span class="at">linewidth =</span> <span class="fl">0.9</span></span>
-<span id="cb9-11"><a aria-label="11"></a>  ) <span class="sc">+</span></span>
-<span id="cb9-12"><a aria-label="12"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
-<span id="cb9-13"><a aria-label="13"></a>  <span class="fu">labs</span>(</span>
-<span id="cb9-14"><a aria-label="14"></a>    <span class="at">title =</span> <span class="st">"Mean ± SE Leaf Mass by Shade"</span>,</span>
-<span id="cb9-15"><a aria-label="15"></a>    <span class="at">x =</span> <span class="st">"Shade"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span></span>
-<span id="cb9-16"><a aria-label="16"></a>  ) <span class="sc">+</span></span>
-<span id="cb9-17"><a aria-label="17"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb9-18"><a aria-label="18"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
-<span id="cb9-19"><a aria-label="19"></a></span>
-<span id="cb9-20"><a aria-label="20"></a>leaf_mean_se_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a aria-label="1"></a><span class="co"># fun.data = returns THREE values: y, ymin, ymax -------</span></span>
+<span id="cb10-2"><a aria-label="2"></a>leaf_mean_se_plot <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb10-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">color =</span> shade)) <span class="sc">+</span></span>
+<span id="cb10-4"><a aria-label="4"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> jitter_pos, <span class="at">alpha =</span> <span class="fl">0.35</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb10-5"><a aria-label="5"></a>  <span class="fu">stat_summary</span>(<span class="at">fun =</span> mean, <span class="at">geom =</span> <span class="st">"point"</span>, <span class="at">size =</span> <span class="dv">4</span>,</span>
+<span id="cb10-6"><a aria-label="6"></a>               <span class="at">position =</span> dodge_pos) <span class="sc">+</span></span>
+<span id="cb10-7"><a aria-label="7"></a>  <span class="fu">stat_summary</span>(</span>
+<span id="cb10-8"><a aria-label="8"></a>    <span class="at">fun.data =</span> mean_se,</span>
+<span id="cb10-9"><a aria-label="9"></a>    <span class="at">geom =</span> <span class="st">"errorbar"</span>,</span>
+<span id="cb10-10"><a aria-label="10"></a>    <span class="at">width =</span> <span class="fl">0.15</span>,</span>
+<span id="cb10-11"><a aria-label="11"></a>    <span class="at">linewidth =</span> <span class="fl">0.9</span>,</span>
+<span id="cb10-12"><a aria-label="12"></a>    <span class="at">position =</span> dodge_pos</span>
+<span id="cb10-13"><a aria-label="13"></a>  ) <span class="sc">+</span></span>
+<span id="cb10-14"><a aria-label="14"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
+<span id="cb10-15"><a aria-label="15"></a>  <span class="fu">labs</span>(</span>
+<span id="cb10-16"><a aria-label="16"></a>    <span class="at">title =</span> <span class="st">"Mean ± SE Leaf Mass by Shade"</span>,</span>
+<span id="cb10-17"><a aria-label="17"></a>    <span class="at">x =</span> <span class="st">"Shade"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span></span>
+<span id="cb10-18"><a aria-label="18"></a>  ) <span class="sc">+</span></span>
+<span id="cb10-19"><a aria-label="19"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb10-20"><a aria-label="20"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb10-21"><a aria-label="21"></a></span>
+<span id="cb10-22"><a aria-label="22"></a>leaf_mean_se_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
@@ -681,6 +707,7 @@ $ paper_mass_g &lt;dbl&gt; 0.2100, 0.2100, 0.2100, 0.2400, 0.1500, 0.3400, 0.290
 <li>Raw points in the <strong>background</strong> (<code>alpha = 0.35</code>)</li>
 <li>Mean as a <strong>larger foreground point</strong></li>
 <li>Error bars = <strong>± 1 SE</strong></li>
+<li>The mean point and the error bar share <strong>one</strong> <code>position = dodge_pos</code>, so they always line up. With one group per x it has no visible effect yet — add <code>color = sex</code> and the same <code>dodge_pos</code> fans the two groups apart, and you’d hang a <code>geom_line(position = dodge_pos)</code> off it to connect them</li>
 </ul>
 <p>📖 Whitlock &amp; Schluter, Ch. 3 — <em>Describing Data</em></p>
 </div></div>
@@ -704,6 +731,7 @@ $ paper_mass_g &lt;dbl&gt; 0.2100, 0.2100, 0.2100, 0.2400, 0.1500, 0.3400, 0.290
 <li><code>facet_wrap(~var)</code> — one panel per group, wraps automatically</li>
 <li><code>facet_grid(rows ~ cols)</code> — strict grid, best with two grouping variables</li>
 <li><code>stat_summary()</code> — mean and mean ± SE, drawn directly from raw data</li>
+<li>Positions defined once at the top (<code>jitter_pos</code>, <code>dodge_pos</code>) and reused on every layer</li>
 </ul>
 </div><div class="column" style="width:40%;">
 <p><strong>References:</strong></p>

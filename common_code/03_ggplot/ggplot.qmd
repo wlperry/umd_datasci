@@ -160,24 +160,32 @@ ggplot(penguins, aes(x = species, y = body_mass_g, fill = species)) +
 
 ### Overlay raw data points with jitter
 
-A boxplot alone hides sample size. Adding jittered points shows both the distribution shape and how many observations went into each box:
+A boxplot alone hides sample size. Adding jittered points shows both the distribution shape and how many observations went into each box. Define the point position **once** as a variable so every layer can reuse it:
 
 ``` r
+jitter_pos <- position_jitter(width = 0.15, seed = 42)
+
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
   geom_boxplot() +
-  geom_jitter(width = 0.15, alpha = 0.4, color = "darkblue")
+  geom_point(position = jitter_pos, alpha = 0.4, color = "darkblue")
 ```
 
-> 💡 **Key idea:** Layer order matters. `geom_boxplot()` first and `geom_jitter()` second draws the points **on top of** the boxes. Swap the order and the boxes cover the points.
+> 💡 **Key idea:** Layer order matters — `geom_boxplot()` first, the points second, so the points sit **on top of** the boxes. `position_jitter(width = 0.15)` spreads overlapping points sideways; `seed = 42` freezes that random spread so the figure is identical on every render.
 
 ### Side-by-side box plots (two grouping variables)
 
-Map a second grouping variable to `fill` to split each x-group:
+Map a second grouping variable to `fill` to split each x-group. Now the horizontal offsets matter: dodge the boxes, and use **`position_jitterdodge()`** so the raw points land under their own box. Match `dodge.width` to the box `position_dodge()` width:
 
 ``` r
+dodge_pos      <- position_dodge(width = 0.75)
+jitterdodge_pos <- position_jitterdodge(jitter.width = 0.15, dodge.width = 0.75)
+
 ggplot(penguins, aes(x = species, y = body_mass_g, fill = sex)) +
-  geom_boxplot(alpha = 0.6)
+  geom_boxplot(alpha = 0.6, outlier.shape = NA, position = dodge_pos) +
+  geom_point(position = jitterdodge_pos, alpha = 0.3, size = 1)
 ```
+
+> 💡 **Key idea:** `position_dodge()` shifts *whole groups* apart but does not scatter points within a group; `position_jitterdodge()` does both. `position_dodge()` alone is the right choice for connected summaries (mean points, error bars, and `geom_line()` between them) — see the advanced plotting reference.
 
 ------------------------------------------------------------------------
 
@@ -406,7 +414,7 @@ ggsave("figures/penguin_flipper_mass.tiff",
 |------------------------------------|------------------------------------|
 | Scatter plot | `geom_point()` |
 | Box plot | `geom_boxplot()` |
-| Jittered raw data | `geom_jitter(width = 0.15, alpha = 0.5)` |
+| Jittered raw data | `geom_point(position = position_jitter(width = 0.15, seed = 42), alpha = 0.5)` |
 | Map colour (data) | `aes(color = variable)` |
 | Map shape (data) | `aes(shape = variable)` |
 | Fixed colour | `geom_point(color = "darkblue")` |

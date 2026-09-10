@@ -156,7 +156,8 @@ same plot as raw points — no need to pre-compute a summary table.
 
 ```r
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
-  geom_jitter(width = 0.2, alpha = 0.3, color = "grey60") +
+  geom_point(position = position_jitter(width = 0.2, seed = 42),
+             alpha = 0.3, color = "grey60") +
   stat_summary(fun = mean, geom = "point",
                size = 4, color = "tomato") +
   labs(x = "Species", y = "Body mass (g)",
@@ -171,14 +172,15 @@ The `fun =` argument takes any function that returns a single number: `mean`,
 
 ```r
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
-  geom_jitter(width = 0.2, alpha = 0.3, color = "grey60") +
+  geom_point(position = position_jitter(width = 0.2, seed = 42),
+             alpha = 0.3, color = "grey60") +
   stat_summary(fun = mean, geom = "crossbar",
                width = 0.4, color = "tomato", linewidth = 0.8) +
   labs(x = "Species", y = "Body mass (g)") +
   theme_regular()
 ```
 
-> 💡 **Key idea:** Layer order matters. Put `geom_jitter()` before
+> 💡 **Key idea:** Layer order matters. Put the raw `geom_point()` layer before
 > `stat_summary()` so the summary sits on top of the raw points and is not
 > buried underneath them.
 
@@ -205,7 +207,8 @@ ggplot(penguins, aes(x = species, y = body_mass_g)) +
 
 ```r
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
-  geom_jitter(width = 0.2, alpha = 0.25, color = "grey60", size = 1.5) +
+  geom_point(position = position_jitter(width = 0.2, seed = 42),
+             alpha = 0.25, color = "grey60", size = 1.5) +
   stat_summary(fun.data = mean_se,
                geom     = "pointrange",
                size     = 0.9,
@@ -222,22 +225,24 @@ ggplot(penguins, aes(x = species, y = body_mass_g)) +
 
 ### Mean ± SE with two grouping variables (dodged)
 
-When you have a second grouping variable, use `position_dodge()` to separate
-the summaries and `position_jitterdodge()` to align the raw points with them:
+When you have a second grouping variable, define the offsets **once** as
+variables and reuse them. `position_dodge()` separates the summaries;
+`position_jitterdodge()` scatters the raw points *and* keeps them under the
+right group. The two dodge widths must match:
 
 ```r
+dodge_pos       <- position_dodge(width = 0.7)
+jitterdodge_pos <- position_jitterdodge(jitter.width = 0.15, dodge.width = 0.7)
+
 ggplot(penguins |> drop_na(sex),
        aes(x = species, y = body_mass_g, color = sex)) +
-  geom_jitter(
-    position = position_jitterdodge(jitter.width = 0.15, dodge.width = 0.7),
-    alpha = 0.25, size = 1.5
-  ) +
+  geom_point(position = jitterdodge_pos, alpha = 0.25, size = 1.5) +
   stat_summary(
-    fun.data = mean_se,
-    geom     = "pointrange",
-    size     = 0.8,
+    fun.data  = mean_se,
+    geom      = "pointrange",
+    size      = 0.8,
     linewidth = 1,
-    position = position_dodge(width = 0.7)
+    position  = dodge_pos
   ) +
   labs(x = "Species", y = "Body mass (g)", color = "Sex",
        title = "Mean ± 1 SE by species and sex") +
@@ -246,7 +251,42 @@ ggplot(penguins |> drop_na(sex),
 
 > ⚠️ **Watch out!** The `dodge.width` in `position_jitterdodge()` must match
 > the `width` in `position_dodge()` exactly — otherwise the raw points and the
-> summary symbols will not align.
+> summary symbols will not align. Defining both from the same number (or
+> pulling `dodge.width` from `dodge_pos`) removes the chance of a mismatch.
+
+### Interaction plot — connect the group means with `geom_line()`
+
+To connect each group's means across the x-axis (an interaction plot), reuse
+the **same** `dodge_pos` on `geom_line()`, `geom_point()`, **and**
+`geom_errorbar()`. Because they share one position object, the line, its
+points, and its error bars stay perfectly aligned:
+
+```r
+dodge_pos <- position_dodge(width = 0.3)
+
+penguins |>
+  drop_na(sex) |>
+  group_by(species, sex) |>
+  summarise(mean_mass = mean(body_mass_g),
+            se        = sd(body_mass_g) / sqrt(n()),
+            .groups   = "drop") |>
+  ggplot(aes(x = species, y = mean_mass, color = sex, group = sex)) +
+  geom_line(position = dodge_pos, linewidth = 0.8) +
+  geom_errorbar(aes(ymin = mean_mass - se, ymax = mean_mass + se),
+                width = 0.15, position = dodge_pos) +
+  geom_point(position = dodge_pos, size = 3) +
+  labs(x = "Species", y = "Mean body mass (g)", color = "Sex",
+       title = "Body mass by species and sex (mean ± 1 SE)") +
+  theme_regular()
+```
+
+> 💡 **Key idea:** `position_dodge()` — not `position_jitterdodge()` — is the
+> one for connected summaries. `geom_line()` and `geom_path()` do **not**
+> support `position_jitterdodge()` or `position_dodge2()`; a random jitter
+> would also make the connecting line zig-zag. Use `position_dodge()` on
+> plots of *summary values* (one point per group), where there is nothing to
+> scatter, and keep `position_jitter()` / `position_jitterdodge()` for layers
+> of *raw individual points*.
 
 ---
 
@@ -348,7 +388,8 @@ observation; a white-filled mean point sits on top:
 ```r
 ggplot(penguins, aes(x = species, y = body_mass_g, fill = species)) +
   geom_violin(alpha = 0.5, trim = FALSE) +
-  geom_jitter(width = 0.1, alpha = 0.3, size = 1) +
+  geom_point(position = position_jitter(width = 0.1, seed = 42),
+             alpha = 0.3, size = 1) +
   stat_summary(fun = mean, geom = "point",
                size = 3, color = "black", shape = 21, fill = "white") +
   labs(x = "Species", y = "Body mass (g)",
@@ -416,7 +457,8 @@ ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g,
 grand_mean <- mean(penguins$body_mass_g, na.rm = TRUE)
 
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
-  geom_jitter(width = 0.2, alpha = 0.4, color = "grey60") +
+  geom_point(position = position_jitter(width = 0.2, seed = 42),
+             alpha = 0.4, color = "grey60") +
   geom_hline(yintercept = grand_mean,
              linetype = "dashed", color = "tomato", linewidth = 0.8) +
   annotate("text", x = 0.55, y = grand_mean + 80,
@@ -544,8 +586,9 @@ ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g,
 | Mean ± 95% CI | `stat_summary(fun.data = mean_cl_normal, geom = "pointrange")` |
 | Bootstrap CI | `stat_summary(fun.data = mean_cl_boot, geom = "pointrange")` |
 | Median + IQR | `stat_summary(fun = median, fun.min = ~quantile(.,0.25), fun.max = ~quantile(.,0.75), ...)` |
-| Dodge groups | `position_dodge(width = 0.7)` |
-| Dodge + jitter | `position_jitterdodge(jitter.width = 0.15, dodge.width = 0.7)` |
+| Jitter raw points (reproducible) | `position_jitter(width = 0.15, seed = 42)` |
+| Dodge groups (summaries, lines) | `position_dodge(width = 0.7)` |
+| Dodge + jitter (raw points, 2 groups) | `position_jitterdodge(jitter.width = 0.15, dodge.width = 0.7)` |
 | Linear smooth | `geom_smooth(method = "lm")` |
 | LOESS smooth | `geom_smooth(method = "loess", span = 0.75)` |
 | Violin plot | `geom_violin(alpha = 0.5, trim = FALSE)` |

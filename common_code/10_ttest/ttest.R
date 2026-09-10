@@ -48,7 +48,7 @@ stats_df
 sculpin_df |>
   ggplot(aes(x = lake, y = length_mm, fill = lake)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
-  geom_jitter(width = 0.15, alpha = 0.4, size = 1.5) +
+  geom_point(position = position_jitter(width = 0.15, seed = 42), alpha = 0.4, size = 1.5) +
   labs(x = "Lake", y = "Total length (mm)",
        title = "Slimy sculpin total length by lake") +
   theme_regular() +
@@ -57,7 +57,7 @@ sculpin_df |>
 # Mean ± SE
 sculpin_df |>
   ggplot(aes(x = lake, y = length_mm, color = lake)) +
-  geom_jitter(width = 0.15, alpha = 0.3, size = 1.5) +
+  geom_point(position = position_jitter(width = 0.15, seed = 42), alpha = 0.3, size = 1.5) +
   stat_summary(fun.data = mean_se, geom = "pointrange",
                size = 0.9, linewidth = 1) +
   labs(x = "Lake", y = "Total length (mm)",
@@ -134,7 +134,7 @@ final_stats <- sculpin_df |>
 final_plot <- sculpin_df |>
   ggplot(aes(x = lake, y = length_mm, fill = lake)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA, width = 0.5) +
-  geom_jitter(width = 0.12, alpha = 0.35, size = 1.5) +
+  geom_point(position = position_jitter(width = 0.12, seed = 42), alpha = 0.35, size = 1.5) +
   geom_text(data = final_stats,
             aes(label = paste0("n = ", n), y = 20),
             size = 3.5, color = "grey30") +

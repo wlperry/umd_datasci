@@ -73,7 +73,8 @@ ggplot(penguins, aes(x = body_mass_g)) +
 
 # Plot group means as large points on top of raw data
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
-  geom_jitter(width = 0.2, alpha = 0.3, color = "grey60") +
+  geom_point(position = position_jitter(width = 0.2, seed = 42),
+             alpha = 0.3, color = "grey60") +
   stat_summary(fun = mean, geom = "point", size = 4, color = "tomato") +
   labs(
     x = "Species",
@@ -84,7 +85,8 @@ ggplot(penguins, aes(x = species, y = body_mass_g)) +
 
 # Mean as a crossbar (horizontal line at the mean)
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
-  geom_jitter(width = 0.2, alpha = 0.3, color = "grey60") +
+  geom_point(position = position_jitter(width = 0.2, seed = 42),
+             alpha = 0.3, color = "grey60") +
   stat_summary(
     fun = mean,
     geom = "crossbar",
@@ -111,7 +113,8 @@ ggplot(penguins, aes(x = species, y = body_mass_g)) +
 
 # Raw data underneath, mean ± SE on top — the publication standard
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
-  geom_jitter(width = 0.2, alpha = 0.25, color = "grey60", size = 1.5) +
+  geom_point(position = position_jitter(width = 0.2, seed = 42),
+             alpha = 0.25, color = "grey60", size = 1.5) +
   stat_summary(
     fun.data = mean_se,
     geom = "pointrange",
@@ -122,22 +125,22 @@ ggplot(penguins, aes(x = species, y = body_mass_g)) +
   labs(x = "Species", y = "Body mass (g)", title = "Raw data + mean ± 1 SE") +
   theme_regular()
 
-# Mean ± SE with colour mapped to a second grouping variable
+# Mean ± SE with colour mapped to a second grouping variable:
+# define the offsets ONCE and reuse them (dodge widths must match)
+dodge_pos       <- position_dodge(width = 0.7)
+jitterdodge_pos <- position_jitterdodge(jitter.width = 0.15, dodge.width = 0.7)
+
 ggplot(
   penguins |> drop_na(sex),
   aes(x = species, y = body_mass_g, color = sex)
 ) +
-  geom_jitter(
-    position = position_jitterdodge(jitter.width = 0.15, dodge.width = 0.7),
-    alpha = 0.25,
-    size = 1.5
-  ) +
+  geom_point(position = jitterdodge_pos, alpha = 0.25, size = 1.5) +
   stat_summary(
     fun.data = mean_se,
     geom = "pointrange",
     size = 0.8,
     linewidth = 1,
-    position = position_dodge(width = 0.7)
+    position = dodge_pos
   ) +
   labs(
     x = "Species",
@@ -145,6 +148,27 @@ ggplot(
     color = "Sex",
     title = "Mean ± 1 SE by species and sex"
   ) +
+  theme_regular()
+
+# Interaction plot — connect the group means with geom_line().
+# Reuse ONE position_dodge() on the line, the error bars and the points so
+# they stay aligned. geom_line() does NOT support position_jitterdodge()
+# or position_dodge2(), and there is nothing to jitter on summary values.
+dodge_pos <- position_dodge(width = 0.3)
+
+penguins |>
+  drop_na(sex) |>
+  group_by(species, sex) |>
+  summarise(mean_mass = mean(body_mass_g),
+            se        = sd(body_mass_g) / sqrt(n()),
+            .groups   = "drop") |>
+  ggplot(aes(x = species, y = mean_mass, color = sex, group = sex)) +
+  geom_line(position = dodge_pos, linewidth = 0.8) +
+  geom_errorbar(aes(ymin = mean_mass - se, ymax = mean_mass + se),
+                width = 0.15, position = dodge_pos) +
+  geom_point(position = dodge_pos, size = 3) +
+  labs(x = "Species", y = "Mean body mass (g)", color = "Sex",
+       title = "Body mass by species and sex (mean ± 1 SE)") +
   theme_regular()
 
 
@@ -238,7 +262,8 @@ ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
 # Violin plot — shows the full distribution shape
 ggplot(penguins, aes(x = species, y = body_mass_g, fill = species)) +
   geom_violin(alpha = 0.5, trim = FALSE) +
-  geom_jitter(width = 0.1, alpha = 0.3, size = 1) +
+  geom_point(position = position_jitter(width = 0.1, seed = 42),
+             alpha = 0.3, size = 1) +
   stat_summary(
     fun = mean,
     geom = "point",
@@ -292,7 +317,8 @@ ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
 
 # Horizontal or vertical reference line
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
-  geom_jitter(width = 0.2, alpha = 0.4, color = "grey60") +
+  geom_point(position = position_jitter(width = 0.2, seed = 42),
+             alpha = 0.4, color = "grey60") +
   geom_hline(
     yintercept = mean(penguins$body_mass_g, na.rm = TRUE),
     linetype = "dashed",

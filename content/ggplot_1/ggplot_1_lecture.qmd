@@ -139,6 +139,29 @@ leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
 glimpse(leaf_df)
 ```
 
+# Positions — Define Once, Reuse on Every Layer
+
+:::::: columns
+:::: {.column width="60%"}
+```{r positions-03}
+# a "position" is HOW a layer nudges its shapes sideways
+# define each one once, up top, then reuse it on every layer
+
+# raw points: scatter them so they don't stack on one line
+jitter_pos <- position_jitter(width = 0.15, seed = 42)
+
+# grouped summaries / lines: shift the groups side by side
+dodge_pos <- position_dodge(width = 0.2)
+```
+::::
+
+::: {.column width="40%"}
+- `position_jitter(width = 0.15)` — random sideways nudge so overlapping points become visible; `seed = 42` freezes that nudge so the figure looks the same every render
+- `position_dodge(width = 0.2)` — shifts groups apart; does nothing with one group per x, but the moment you add a second grouping variable (`color = sex`) it fans the groups out
+- Reusing **one** `dodge_pos` on `geom_point()`, `geom_errorbar()`, **and** `geom_line()` is what keeps a grouped mean, its error bar, and its connecting line perfectly aligned
+:::
+::::::
+
 # 🧩 Chunk 1 of 3 · Piping into ggplot, on Purpose
 
 **We will cover:** starting a plot with the pipe, and choosing colors with `scale_color_manual()`.
@@ -158,7 +181,7 @@ glimpse(leaf_df)
 leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
-  geom_jitter(width = 0.15, alpha = 0.6) +
+  geom_point(position = jitter_pos, alpha = 0.6) +
   labs(
     title = "Leaf Mass by Shade",
     x = "Shade",
@@ -197,7 +220,7 @@ leaf_df %>%
 leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
-  geom_jitter(width = 0.15, alpha = 0.6) +
+  geom_point(position = jitter_pos, alpha = 0.6) +
   scale_fill_manual(values = c(
     "sunny" = "goldenrod",
     "shady" = "forestgreen"
@@ -328,8 +351,9 @@ Build both a `facet_wrap()` and a `facet_grid()` version of the histogram. Predi
 # stat_summary() computes the mean straight from the data
 leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, color = shade)) +
-  geom_jitter(width = 0.15, alpha = 0.4, size = 2) +
-  stat_summary(fun = mean, geom = "point", size = 4, color = "black") +
+  geom_point(position = jitter_pos, alpha = 0.4, size = 2) +
+  stat_summary(fun = mean, geom = "point", size = 4, color = "black",
+               position = dodge_pos) +
   scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
   labs(
     title = "Leaf Mass with Group Means",
@@ -344,7 +368,7 @@ leaf_df %>%
 - `stat_summary()` computes a statistic **from the raw data** and draws it — no pre-built summary table needed
 - `fun = mean` — any function that returns one number (`mean`, `median`, `max`, …)
 - `geom = "point"` — draw that number as a point
-- Put `geom_jitter()` **before** `stat_summary()` so the mean sits on top of the raw points, not buried under them
+- Put the raw `geom_point()` layer **before** `stat_summary()` so the mean sits on top of the raw points, not buried under them
 :::
 :::::
 
@@ -362,13 +386,15 @@ leaf_df %>%
 # fun.data = returns THREE values: y, ymin, ymax -------
 leaf_mean_se_plot <- leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, color = shade)) +
-  geom_jitter(width = 0.15, alpha = 0.35, size = 2) +
-  stat_summary(fun = mean, geom = "point", size = 4) +
+  geom_point(position = jitter_pos, alpha = 0.35, size = 2) +
+  stat_summary(fun = mean, geom = "point", size = 4,
+               position = dodge_pos) +
   stat_summary(
     fun.data = mean_se,
     geom = "errorbar",
     width = 0.15,
-    linewidth = 0.9
+    linewidth = 0.9,
+    position = dodge_pos
   ) +
   scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
   labs(
@@ -393,6 +419,7 @@ leaf_mean_se_plot
 - Raw points in the **background** (`alpha = 0.35`)
 - Mean as a **larger foreground point**
 - Error bars = **± 1 SE**
+- The mean point and the error bar share **one** `position = dodge_pos`, so they always line up. With one group per x it has no visible effect yet — add `color = sex` and the same `dodge_pos` fans the two groups apart, and you'd hang a `geom_line(position = dodge_pos)` off it to connect them
 
 📖 Whitlock & Schluter, Ch. 3 — *Describing Data*
 ::::
@@ -415,6 +442,7 @@ Close the slides. Build your own mean ± SE plot, then save it to `figures/`.
 - `facet_wrap(~var)` — one panel per group, wraps automatically
 - `facet_grid(rows ~ cols)` — strict grid, best with two grouping variables
 - `stat_summary()` — mean and mean ± SE, drawn directly from raw data
+- Positions defined once at the top (`jitter_pos`, `dodge_pos`) and reused on every layer
 :::
 
 ::: {.column width="40%"}
