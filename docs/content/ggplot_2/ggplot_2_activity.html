@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-09-10">
+<meta name="dcterms.date" content="2026-09-14">
 <meta name="description" content="Hands-on companion to the GGPlot II lecture. Map shape alongside color, add a trend line, compare coord_cartesian() to xlim()/ylim(), and pick and save a themed figure.">
 
 <title>Activity 04 - GGPlot II – UMD DAta Science Biology</title>
@@ -435,7 +435,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">September 10, 2026</p>
+      <p class="date">September 14, 2026</p>
     </div>
   </div>
   
@@ -462,8 +462,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored">Today’s Objectives</h3>
 <ol type="1">
 <li>Map shape alongside color, and add a <code>geom_smooth()</code> trend line</li>
-<li>Compare <code>coord_cartesian()</code> to <code>xlim()</code>/<code>ylim()</code></li>
-<li>Pick a built-in theme and adjust it with <code>theme()</code></li>
+<li>Zoom a plot safely with <code>coord_cartesian()</code> — and recognise the <code>xlim()</code>/<code>ylim()</code> trap</li>
+<li>Pick a built-in theme and drop a redundant legend with <code>theme()</code></li>
 <li>Save a plot as both PNG and PDF</li>
 </ol>
 <blockquote class="blockquote">
@@ -493,7 +493,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Same leaf file as Activity 02–03 — it should already be in your project’s <code>data/</code> folder. If not: <strong><a href="data/2026_09_03_data_sci_leaf_area.xlsx"><code>2026_09_03_data_sci_leaf_area.xlsx</code></a></strong> → put it in <code>data/</code>.</p>
+<p>Same leaf file as Activity 02–03 — it should already be in your project’s <code>data/</code> folder. If not: <a href="data/2026_09_03_data_sci_leaf_area.xlsx"><strong><code>2026_09_03_data_sci_leaf_area.xlsx</code></strong></a> → put it in <code>data/</code>.</p>
 </div>
 </div>
 <p><strong>▶ Type this at the very top of <code>scripts/04_ggplot_2.R</code>:</strong></p>
@@ -530,68 +530,76 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Your turn — in your script:</strong> Add a <code>geom_smooth(method = "lm")</code> layer to the plot above (no color/fill needed — let it default). Run it.</p>
 <pre><code>Does the trend line slope up or down?</code></pre>
+<blockquote class="blockquote">
+<p>✅ <strong>You can already do a lot:</strong> a colored, shaped, labelled scatter with a trend line. Parts 3–5 are polish — zooming, themes, and saving.</p>
+</blockquote>
 <hr>
 </section>
-<section id="part-3-coord_cartesian-vs.-xlimylim" class="level1">
-<h1>Part 3 · <code>coord_cartesian()</code> vs.&nbsp;<code>xlim()</code>/<code>ylim()</code></h1>
-<p><strong>▶ Run this — Version A, <code>coord_cartesian()</code>:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># zoom the view WITHOUT dropping data: coord_cartesian()</span></span>
+<section id="part-3-zoom-in-safely-with-coord_cartesian" class="level1">
+<h1>Part 3 · Zoom in safely with <code>coord_cartesian()</code></h1>
+<p>Sometimes a handful of extreme points squash the rest of the data into a corner and you want a closer look. <code>coord_cartesian()</code> zooms the <strong>view</strong> and leaves the data alone — every leaf still counts toward the trend line.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># zoom the view; all 53 leaves still contribute to the trend line</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> petiole_mm, <span class="at">y =</span> mass_g)) <span class="sc">+</span></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">color =</span> <span class="st">"grey40"</span>) <span class="sc">+</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"tomato"</span>, <span class="at">fill =</span> <span class="st">"tomato"</span>, <span class="at">alpha =</span> <span class="fl">0.15</span>) <span class="sc">+</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">50</span>, <span class="dv">70</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="fl">0.4</span>, <span class="fl">0.6</span>)) <span class="sc">+</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Zoomed with coord_cartesian()"</span>, <span class="at">x =</span> <span class="st">"Petiole Length (mm)"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>) <span class="sc">+</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<blockquote class="blockquote">
-<p>🔮 <strong>Predict first:</strong> Will the trend line in Version B look the same as Version A, or different? Why?</p>
-</blockquote>
-<p><strong>▶ Run this — Version B, <code>xlim()</code>/<code>ylim()</code>:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># zoom the view by DELETING rows outside the window: xlim() / ylim()</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> petiole_mm, <span class="at">y =</span> mass_g)) <span class="sc">+</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">color =</span> <span class="st">"grey40"</span>) <span class="sc">+</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"tomato"</span>, <span class="at">fill =</span> <span class="st">"tomato"</span>, <span class="at">alpha =</span> <span class="fl">0.15</span>) <span class="sc">+</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="dv">50</span>, <span class="dv">70</span>) <span class="sc">+</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylim</span>(<span class="fl">0.4</span>, <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Zoomed with xlim()/ylim()"</span>, <span class="at">x =</span> <span class="st">"Petiole Length (mm)"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>) <span class="sc">+</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Compare the two trend lines. Are they the same? Explain why, in terms of what each function does to the data <em>before</em> the line is fit.</p>
-<pre><code>Same or different?
-Why:</code></pre>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"tomato"</span>) <span class="sc">+</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">50</span>, <span class="dv">70</span>)) <span class="sc">+</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Zoomed with coord_cartesian()"</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Petiole Length (mm)"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Change the window to <code>coord_cartesian(xlim = c(55, 65))</code> and run it. The view gets tighter — does the trend line itself move?</p>
+<pre><code>Did the line move?</code></pre>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>⚠️ The classic mistake: <code>xlim()</code> / <code>ylim()</code> delete rows</strong></p>
+<p><code>xlim()</code> and <code>ylim()</code> look like they just zoom, but they <strong>silently drop every row outside the range</strong> <em>before</em> anything is calculated. A trend line added after <code>xlim()</code> is fit only on the leaves that survived — so it can point a different direction, with no warning that data went missing.</p>
+<p><strong>Rule:</strong> zoom with <code>coord_cartesian()</code>. Only reach for <code>xlim()</code> / <code>ylim()</code> when you actually want those rows removed from the analysis.</p>
+</div>
+</div>
+<p><strong>▶ Run this once to see the trap:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># same plot, but xlim() drops the outside rows FIRST — watch the line change</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> petiole_mm, <span class="at">y =</span> mass_g)) <span class="sc">+</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">color =</span> <span class="st">"grey40"</span>) <span class="sc">+</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"tomato"</span>) <span class="sc">+</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="dv">50</span>, <span class="dv">70</span>) <span class="sc">+</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"xlim() — trend line refit on fewer leaves"</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Petiole Length (mm)"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Compared with the coord_cartesian() version, did this trend line move?</code></pre>
 <hr>
 </section>
 <section id="part-4-pick-a-theme" class="level1">
 <h1>Part 4 · Pick a theme</h1>
-<p><strong>▶ Run this, trying each theme in turn:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># build the base plot once, then add each theme on top</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>leaf_plot <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Shade"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>, <span class="at">title =</span> <span class="st">"Leaf Mass by Shade"</span>)</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>leaf_plot <span class="sc">+</span> <span class="fu">theme_grey</span>()</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>leaf_plot <span class="sc">+</span> <span class="fu">theme_bw</span>()</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>leaf_plot <span class="sc">+</span> <span class="fu">theme_minimal</span>()</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>leaf_plot <span class="sc">+</span> <span class="fu">theme_classic</span>()</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>leaf_plot <span class="sc">+</span> <span class="fu">theme_light</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>Which theme do you like best for this plot, and why?</code></pre>
-<section id="adjust-it-with-theme" class="level3">
-<h3 class="anchored" data-anchor-id="adjust-it-with-theme">Adjust it with <code>theme()</code></h3>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># start from theme_classic(), then override a few individual elements</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>leaf_plot_final <span class="ot">&lt;-</span> leaf_plot <span class="sc">+</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"none"</span>,</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text  =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">12</span>),</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">13</span>)</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>leaf_plot_final</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn — in your script:</strong> Change <code>axis.text</code> to <code>size = 16</code> and run it.</p>
-<pre><code>Too big, too small, or just right?</code></pre>
+<p><strong>▶ Run this — build the plot once, then try two themes:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># base plot, no theme yet</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>leaf_plot <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Shade"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>, <span class="at">title =</span> <span class="st">"Leaf Mass by Shade"</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>leaf_plot <span class="sc">+</span> <span class="fu">theme_minimal</span>()    <span class="co"># light, faint gridlines</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>leaf_plot <span class="sc">+</span> <span class="fu">theme_classic</span>()    <span class="co"># axis lines only — close to journal style</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Which of the two do you prefer for a figure in a report?</code></pre>
+<section id="one-small-tweak-with-theme" class="level3">
+<h3 class="anchored" data-anchor-id="one-small-tweak-with-theme">One small tweak with <code>theme()</code></h3>
+<p>Pick a base theme, then use <code>theme()</code> to override single pieces. The most common tweak is dropping a legend you don’t need (here <code>fill</code> just repeats the x-axis):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>leaf_plot_final <span class="ot">&lt;-</span> leaf_plot <span class="sc">+</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>leaf_plot_final</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Add <code>plot.title = element_text(face = "bold")</code> inside <code>theme()</code> and run it.</p>
 <hr>
 </section>
 </section>
@@ -614,9 +622,8 @@ Why:</code></pre>
 <ul class="task-list">
 <li><label><input type="checkbox">Map shape alongside color and merge the legends</label></li>
 <li><label><input type="checkbox">Add a <code>geom_smooth(method = "lm")</code> trend line</label></li>
-<li><label><input type="checkbox">Explain why <code>coord_cartesian()</code> and <code>xlim()</code>/<code>ylim()</code> can produce different trend lines</label></li>
-<li><label><input type="checkbox">Try all five built-in themes on the same plot</label></li>
-<li><label><input type="checkbox">Adjust a theme with <code>theme()</code></label></li>
+<li><label><input type="checkbox">Zoom a plot with <code>coord_cartesian()</code> and say why <code>xlim()</code> / <code>ylim()</code> is a trap</label></li>
+<li><label><input type="checkbox">Try a couple of built-in themes and drop a legend with <code>theme()</code></label></li>
 <li><label><input type="checkbox">Save a plot as both <code>.png</code> and <code>.pdf</code></label></li>
 </ul>
 <p>✏️ <strong>Your turn — before you move on:</strong> Run your entire script top to bottom with <strong>Ctrl/Cmd + Shift + Enter</strong> (Source). Does it complete without errors?</p>
@@ -626,7 +633,7 @@ If not, what error appeared:</code></pre>
 </section>
 <section id="what-your-project-folder-should-contain" class="level1">
 <h1>What your project folder should contain</h1>
-<pre><code>tree_project/
+<pre><code>leaf_project/
 ├── data/
 │   └── 2026_09_03_data_sci_leaf_area.xlsx   &lt;- never edit this
 ├── figures/
@@ -636,30 +643,22 @@ If not, what error appeared:</code></pre>
     └── 04_ggplot_2.R                        &lt;- your script (turn this in)</code></pre>
 <hr>
 </section>
-<section id="extension-out-of-class-3040-min" class="level1">
-<h1>Extension — out of class (~30–40 min)</h1>
-<p><em>Add this to the bottom of <code>scripts/04_ggplot_2.R</code> and turn it in with the rest. Put your written answers in <code>#</code> comments right under the code they go with. In class you zoomed a fixed window on <code>mass_g</code> vs <code>petiole_mm</code>. Now the variable pair <strong>and</strong> the window are yours.</em></p>
-<section id="e1-your-own-zoom-window-4-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e1-your-own-zoom-window-4-pts">E1 · Your own zoom window (4 pts)</h2>
+<section id="extension-out-of-class-20-min" class="level1">
+<h1>Extension — out of class (~20 min)</h1>
+<p><em>Add this to the bottom of <code>scripts/04_ggplot_2.R</code> and turn it in with the rest. Put written answers in <code>#</code> comments right under the code they go with.</em></p>
+<section id="e1-see-exactly-what-xlim-removes-5-pts" class="level2">
+<h2 class="anchored" data-anchor-id="e1-see-exactly-what-xlim-removes-5-pts">E1 · See exactly what <code>xlim()</code> removes (5 pts)</h2>
+<p>Stay with <code>mass_g</code> vs <code>petiole_mm</code> and the window from Part 3 (<code>50</code> to <code>70</code>).</p>
 <ol type="1">
-<li>Pick <strong>your own pair of numeric variables</strong> from <code>leaf_df</code> that class did <em>not</em> use together (not <code>mass_g</code> vs <code>petiole_mm</code>). <code>thickness_mm</code> is available.</li>
-<li>Look at the range of your x-variable (<code>range()</code> / <code>summary()</code>), then pick a <strong>zoom window that cuts the data roughly in half</strong> — a real cut, not a guess.</li>
-<li>Build the <code>coord_cartesian()</code> version and the <code>xlim()</code> version of a scatter with <code>geom_smooth(method = "lm")</code>, exactly like the in-class Part 3.</li>
-<li>Run <code>nrow(leaf_df)</code>, then <code>filter()</code> <code>leaf_df</code> to your window and check <code>nrow()</code> again — that’s the row count <code>xlim()</code> is silently using.</li>
+<li>Run <code>nrow(leaf_df)</code> — the full leaf count.</li>
+<li>Run <code>leaf_df %&gt;% filter(petiole_mm &gt;= 50, petiole_mm &lt;= 70) %&gt;% nrow()</code> — how many leaves land <em>inside</em> the window. That is the number <code>xlim(50, 70)</code> silently keeps.</li>
+<li>Build the scatter with <code>geom_smooth(method = "lm")</code> <strong>twice</strong> — once with <code>coord_cartesian(xlim = c(50, 70))</code>, once with <code>xlim(50, 70)</code>.</li>
 </ol>
-<p>Record your exact window and both row counts in comments.</p>
+<p>In comments, record both counts and whether the two trend lines pointed the same way.</p>
 </section>
-<section id="e2-predict-then-check-3-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e2-predict-then-check-3-pts">E2 · Predict, then check (3 pts)</h2>
-<p><strong>Before running E1:</strong> in a comment, write your variable pair and window, and predict — will the <code>xlim()</code> trend line be the same slope as the <code>coord_cartesian()</code> one, steeper, or shallower? Also predict, as a number, how many rows land in your window. Run the code, then write how close your row-count guess was and whether the trend lines differed as predicted.</p>
-</section>
-<section id="e3-explain-it-using-your-numbers-3-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e3-explain-it-using-your-numbers-3-pts">E3 · Explain it, using YOUR numbers (3 pts)</h2>
-<ol type="1">
-<li>Using your before/after row counts, explain why <code>xlim()</code> gave a different line than <code>coord_cartesian()</code> for <em>your</em> window. If the counts came out equal, explain how that can happen.</li>
-<li>In your own words, why is it dangerous that <code>xlim()</code>/<code>ylim()</code> delete rows <em>silently</em>? Give a realistic case where that silent deletion leads to a wrong conclusion.</li>
-<li>Name the theme you chose in Part 4 and say, in a sentence or two, why you’d pick it over <code>theme_grey()</code> for a figure in a report.</li>
-</ol>
+<section id="e2-explain-it-5-pts" class="level2">
+<h2 class="anchored" data-anchor-id="e2-explain-it-5-pts">E2 · Explain it (5 pts)</h2>
+<p>In two or three sentences, using your two row counts: why did <code>xlim()</code> produce a different trend line than <code>coord_cartesian()</code>? Then give one realistic example where silently dropping rows like this would lead a scientist to the wrong conclusion.</p>
 <hr>
 </section>
 </section>
@@ -667,8 +666,8 @@ If not, what error appeared:</code></pre>
 <h1>Getting unstuck</h1>
 <ol type="1">
 <li><strong>Read the error message out loud.</strong> R usually names the line and the problem.</li>
-<li><strong>Line looks wrong after zooming?</strong> Check whether you used <code>xlim()</code>/<code>ylim()</code> (deletes data) instead of <code>coord_cartesian()</code> (keeps it).</li>
-<li><strong>Legend didn’t merge?</strong> <code>color</code> and <code>shape</code> (or the matching <code>labs()</code> titles) must reference the exact same variable name.</li>
+<li><strong>Trend line looks wrong after zooming?</strong> Check whether you used <code>xlim()</code>/<code>ylim()</code> (deletes data) instead of <code>coord_cartesian()</code> (keeps it).</li>
+<li><strong>Legend didn’t merge?</strong> <code>color</code> and <code>shape</code> (and the matching <code>labs()</code> titles) must all reference the exact same variable name.</li>
 <li><strong>Cheat sheets</strong> — <a href="https://posit.co/resources/cheatsheets/" class="uri">https://posit.co/resources/cheatsheets/</a></li>
 <li><strong>Bring the exact error</strong> (copy-paste it) to class, Canvas, or office hours.</li>
 </ol>

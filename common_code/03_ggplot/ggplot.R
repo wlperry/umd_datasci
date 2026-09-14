@@ -68,12 +68,9 @@ ggplot(penguins, aes(x = species, y = body_mass_g, fill = species)) +
   geom_boxplot(alpha = 0.6)
 
 # Overlay the raw data points with jitter (shows sample size and spread)
-# define the position ONCE, reuse it; seed = 42 keeps the scatter reproducible
-jitter_pos <- position_jitter(width = 0.15, seed = 42)
-
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
   geom_boxplot() +
-  geom_point(position = jitter_pos, alpha = 0.4, color = "darkblue")
+  geom_jitter(width = 0.15, alpha = 0.4, color = "darkblue")
 
 # Two grouping variables: dodge the boxes, jitterdodge the points so each
 # point sits under its own box (match the dodge widths)

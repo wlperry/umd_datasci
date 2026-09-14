@@ -5,7 +5,7 @@ title: "Activity 04 - GGPlot II"
 subtitle: "More geoms, zooming safely, and picking a theme"
 author: "Bill Perry"
 date: today
-
+ 
 type: activity
 description: >
   Hands-on companion to the GGPlot II lecture. Map shape alongside color,
@@ -34,8 +34,8 @@ execute:
 ### Today's Objectives
 
 1.  Map shape alongside color, and add a `geom_smooth()` trend line
-2.  Compare `coord_cartesian()` to `xlim()`/`ylim()`
-3.  Pick a built-in theme and adjust it with `theme()`
+2.  Zoom a plot safely with `coord_cartesian()` — and recognise the `xlim()`/`ylim()` trap
+3.  Pick a built-in theme and drop a redundant legend with `theme()`
 4.  Save a plot as both PNG and PDF
 
 > # **How this activity works**
@@ -58,7 +58,7 @@ execute:
 ::: callout-tip
 ## 📂 Get the data
 
-Same leaf file as Activity 02–03 — it should already be in your project's `data/` folder. If not: **[`2026_09_03_data_sci_leaf_area.xlsx`](data/2026_09_03_data_sci_leaf_area.xlsx)** → put it in `data/`.
+Same leaf file as Activity 02–03 — it should already be in your project's `data/` folder. If not: [**`2026_09_03_data_sci_leaf_area.xlsx`**](data/2026_09_03_data_sci_leaf_area.xlsx) → put it in `data/`.
 :::
 
 **▶ Type this at the very top of `scripts/04_ggplot_2.R`:**
@@ -105,97 +105,99 @@ leaf_df %>%
 
 ✏️ **Your turn — in your script:** Add a `geom_smooth(method = "lm")` layer to the plot above (no color/fill needed — let it default). Run it.
 
-```
+```         
 Does the trend line slope up or down?
 ```
 
+> ✅ **You can already do a lot:** a colored, shaped, labelled scatter with a trend line. Parts 3–5 are polish — zooming, themes, and saving.
+
 ------------------------------------------------------------------------
 
-# Part 3 · `coord_cartesian()` vs. `xlim()`/`ylim()`
+# Part 3 · Zoom in safely with `coord_cartesian()`
 
-**▶ Run this — Version A, `coord_cartesian()`:**
+Sometimes a handful of extreme points squash the rest of the data into a corner and you want a closer look. `coord_cartesian()` zooms the **view** and leaves the data alone — every leaf still counts toward the trend line.
+
+**▶ Run this:**
 
 ``` r
-# zoom the view WITHOUT dropping data: coord_cartesian()
+# zoom the view; all 53 leaves still contribute to the trend line
 leaf_df %>%
   ggplot(aes(x = petiole_mm, y = mass_g)) +
   geom_point(alpha = 0.6, color = "grey40") +
-  geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
-  coord_cartesian(xlim = c(50, 70), ylim = c(0.4, 0.6)) +
-  labs(title = "Zoomed with coord_cartesian()", x = "Petiole Length (mm)", y = "Leaf Mass (g)") +
+  geom_smooth(method = "lm", color = "tomato") +
+  coord_cartesian(xlim = c(50, 70)) +
+  labs(title = "Zoomed with coord_cartesian()",
+       x = "Petiole Length (mm)", y = "Leaf Mass (g)") +
   theme_minimal()
 ```
 
-> 🔮 **Predict first:** Will the trend line in Version B look the same as Version A, or different? Why?
+✏️ **Your turn — in your script:** Change the window to `coord_cartesian(xlim = c(55, 65))` and run it. The view gets tighter — does the trend line itself move?
 
-**▶ Run this — Version B, `xlim()`/`ylim()`:**
+```         
+Did the line move?
+```
+
+::: callout-warning
+**⚠️ The classic mistake: `xlim()` / `ylim()` delete rows**
+
+`xlim()` and `ylim()` look like they just zoom, but they **silently drop every row outside the range** *before* anything is calculated. A trend line added after `xlim()` is fit only on the leaves that survived — so it can point a different direction, with no warning that data went missing.
+
+**Rule:** zoom with `coord_cartesian()`. Only reach for `xlim()` / `ylim()` when you actually want those rows removed from the analysis.
+:::
+
+**▶ Run this once to see the trap:**
 
 ``` r
-# zoom the view by DELETING rows outside the window: xlim() / ylim()
+# same plot, but xlim() drops the outside rows FIRST — watch the line change
 leaf_df %>%
   ggplot(aes(x = petiole_mm, y = mass_g)) +
   geom_point(alpha = 0.6, color = "grey40") +
-  geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
+  geom_smooth(method = "lm", color = "tomato") +
   xlim(50, 70) +
-  ylim(0.4, 0.6) +
-  labs(title = "Zoomed with xlim()/ylim()", x = "Petiole Length (mm)", y = "Leaf Mass (g)") +
+  labs(title = "xlim() — trend line refit on fewer leaves",
+       x = "Petiole Length (mm)", y = "Leaf Mass (g)") +
   theme_minimal()
 ```
 
-✏️ **Your turn:** Compare the two trend lines. Are they the same? Explain why, in terms of what each function does to the data *before* the line is fit.
-
-```
-Same or different?
-Why:
+```         
+Compared with the coord_cartesian() version, did this trend line move?
 ```
 
 ------------------------------------------------------------------------
 
 # Part 4 · Pick a theme
 
-**▶ Run this, trying each theme in turn:**
+**▶ Run this — build the plot once, then try two themes:**
 
 ``` r
-# build the base plot once, then add each theme on top
+# base plot, no theme yet
 leaf_plot <- leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
   labs(x = "Shade", y = "Leaf Mass (g)", title = "Leaf Mass by Shade")
 
-leaf_plot + theme_grey()
-leaf_plot + theme_bw()
-leaf_plot + theme_minimal()
-leaf_plot + theme_classic()
-leaf_plot + theme_light()
+leaf_plot + theme_minimal()    # light, faint gridlines
+leaf_plot + theme_classic()    # axis lines only — close to journal style
 ```
 
-```
-Which theme do you like best for this plot, and why?
+```         
+Which of the two do you prefer for a figure in a report?
 ```
 
-### Adjust it with `theme()`
+### One small tweak with `theme()`
 
-**▶ Run this:**
+Pick a base theme, then use `theme()` to override single pieces. The most common tweak is dropping a legend you don't need (here `fill` just repeats the x-axis):
 
 ``` r
-# start from theme_classic(), then override a few individual elements
 leaf_plot_final <- leaf_plot +
   theme_classic() +
-  theme(
-    legend.position = "none",
-    axis.text  = element_text(size = 12),
-    axis.title = element_text(size = 13)
-  )
+  theme(legend.position = "none")
 
 leaf_plot_final
 ```
 
-✏️ **Your turn — in your script:** Change `axis.text` to `size = 16` and run it.
-
-```
-Too big, too small, or just right?
-```
+✏️ **Your turn — in your script:** Add `plot.title = element_text(face = "bold")` inside `theme()` and run it.
 
 ------------------------------------------------------------------------
 
@@ -213,7 +215,7 @@ ggsave("figures/leaf_mass_theme.pdf",
        plot = leaf_plot_final, width = 5, height = 5, units = "in")
 ```
 
-```
+```         
 Open both files. When would you send a colleague the .pdf instead of the .png?
 ```
 
@@ -225,14 +227,13 @@ At this point you should be able to:
 
 - [ ] Map shape alongside color and merge the legends
 - [ ] Add a `geom_smooth(method = "lm")` trend line
-- [ ] Explain why `coord_cartesian()` and `xlim()`/`ylim()` can produce different trend lines
-- [ ] Try all five built-in themes on the same plot
-- [ ] Adjust a theme with `theme()`
+- [ ] Zoom a plot with `coord_cartesian()` and say why `xlim()` / `ylim()` is a trap
+- [ ] Try a couple of built-in themes and drop a legend with `theme()`
 - [ ] Save a plot as both `.png` and `.pdf`
 
 ✏️ **Your turn — before you move on:** Run your entire script top to bottom with **Ctrl/Cmd + Shift + Enter** (Source). Does it complete without errors?
 
-```
+```         
 Ran cleanly?  Y / N
 If not, what error appeared:
 ```
@@ -241,8 +242,8 @@ If not, what error appeared:
 
 # What your project folder should contain
 
-```
-tree_project/
+```         
+leaf_project/
 ├── data/
 │   └── 2026_09_03_data_sci_leaf_area.xlsx   <- never edit this
 ├── figures/
@@ -254,36 +255,31 @@ tree_project/
 
 ------------------------------------------------------------------------
 
-# Extension — out of class (~30–40 min)
+# Extension — out of class (\~20 min)
 
-*Add this to the bottom of `scripts/04_ggplot_2.R` and turn it in with the rest. Put your written answers in `#` comments right under the code they go with. In class you zoomed a fixed window on `mass_g` vs `petiole_mm`. Now the variable pair **and** the window are yours.*
+*Add this to the bottom of `scripts/04_ggplot_2.R` and turn it in with the rest. Put written answers in `#` comments right under the code they go with.*
 
-## E1 · Your own zoom window (4 pts)
+## E1 · See exactly what `xlim()` removes (5 pts)
 
-1.  Pick **your own pair of numeric variables** from `leaf_df` that class did *not* use together (not `mass_g` vs `petiole_mm`). `thickness_mm` is available.
-2.  Look at the range of your x-variable (`range()` / `summary()`), then pick a **zoom window that cuts the data roughly in half** — a real cut, not a guess.
-3.  Build the `coord_cartesian()` version and the `xlim()` version of a scatter with `geom_smooth(method = "lm")`, exactly like the in-class Part 3.
-4.  Run `nrow(leaf_df)`, then `filter()` `leaf_df` to your window and check `nrow()` again — that's the row count `xlim()` is silently using.
+Stay with `mass_g` vs `petiole_mm` and the window from Part 3 (`50` to `70`).
 
-Record your exact window and both row counts in comments.
+1.  Run `nrow(leaf_df)` — the full leaf count.
+2.  Run `leaf_df %>% filter(petiole_mm >= 50, petiole_mm <= 70) %>% nrow()` — how many leaves land *inside* the window. That is the number `xlim(50, 70)` silently keeps.
+3.  Build the scatter with `geom_smooth(method = "lm")` **twice** — once with `coord_cartesian(xlim = c(50, 70))`, once with `xlim(50, 70)`.
 
-## E2 · Predict, then check (3 pts)
+In comments, record both counts and whether the two trend lines pointed the same way.
 
-**Before running E1:** in a comment, write your variable pair and window, and predict — will the `xlim()` trend line be the same slope as the `coord_cartesian()` one, steeper, or shallower? Also predict, as a number, how many rows land in your window. Run the code, then write how close your row-count guess was and whether the trend lines differed as predicted.
+## E2 · Explain it (5 pts)
 
-## E3 · Explain it, using YOUR numbers (3 pts)
-
-1.  Using your before/after row counts, explain why `xlim()` gave a different line than `coord_cartesian()` for *your* window. If the counts came out equal, explain how that can happen.
-2.  In your own words, why is it dangerous that `xlim()`/`ylim()` delete rows *silently*? Give a realistic case where that silent deletion leads to a wrong conclusion.
-3.  Name the theme you chose in Part 4 and say, in a sentence or two, why you'd pick it over `theme_grey()` for a figure in a report.
+In two or three sentences, using your two row counts: why did `xlim()` produce a different trend line than `coord_cartesian()`? Then give one realistic example where silently dropping rows like this would lead a scientist to the wrong conclusion.
 
 ------------------------------------------------------------------------
 
 # Getting unstuck
 
 1.  **Read the error message out loud.** R usually names the line and the problem.
-2.  **Line looks wrong after zooming?** Check whether you used `xlim()`/`ylim()` (deletes data) instead of `coord_cartesian()` (keeps it).
-3.  **Legend didn't merge?** `color` and `shape` (or the matching `labs()` titles) must reference the exact same variable name.
+2.  **Trend line looks wrong after zooming?** Check whether you used `xlim()`/`ylim()` (deletes data) instead of `coord_cartesian()` (keeps it).
+3.  **Legend didn't merge?** `color` and `shape` (and the matching `labs()` titles) must all reference the exact same variable name.
 4.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
 5.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
 

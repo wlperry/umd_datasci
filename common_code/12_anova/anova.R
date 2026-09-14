@@ -53,7 +53,7 @@ stats_df
 penguins_anova |>
   ggplot(aes(x = species, y = body_mass_g, fill = species)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA, width = 0.5) +
-  geom_point(position = position_jitter(width = 0.15, seed = 42), alpha = 0.35, size = 1.5) +
+  geom_jitter(width = 0.15, alpha = 0.35, size = 1.5) +
   labs(x = "Species", y = "Body mass (g)",
        title = "Penguin body mass by species") +
   theme_regular() +
@@ -62,7 +62,7 @@ penguins_anova |>
 # Mean ± SE
 penguins_anova |>
   ggplot(aes(x = species, y = body_mass_g, color = species)) +
-  geom_point(position = position_jitter(width = 0.15, seed = 42), alpha = 0.3, size = 1.5) +
+  geom_jitter(width = 0.15, alpha = 0.3, size = 1.5) +
   stat_summary(fun.data = mean_se, geom = "pointrange",
                size = 0.9, linewidth = 1) +
   labs(x = "Species", y = "Body mass (g)",
@@ -153,7 +153,7 @@ cld_df <- as_tibble(penguin_cld) |>
 pub_plot <- penguins_anova |>
   ggplot(aes(x = species, y = body_mass_g, fill = species)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA, width = 0.5) +
-  geom_point(position = position_jitter(width = 0.12, seed = 42), alpha = 0.3, size = 1.5) +
+  geom_jitter(width = 0.12, alpha = 0.3, size = 1.5) +
   geom_text(data = cld_df,
             aes(x = species, y = 6400, label = .group),
             size = 5, fontface = "bold", inherit.aes = FALSE) +

@@ -57,7 +57,7 @@ plot_by_group <- function(df, x_var, y_var,
   ggplot(df, aes(x = .data[[x_var]], y = .data[[y_var]],
                  fill = .data[[x_var]])) +
     geom_boxplot(alpha = 0.6, outlier.shape = NA) +
-    geom_point(position = position_jitter(width = 0.15, seed = 42), alpha = 0.3, size = 1.5) +
+    geom_jitter(width = 0.15, alpha = 0.3, size = 1.5) +
     stat_summary(fun.data = mean_se, geom = "pointrange",
                  color = "tomato", size = 0.7) +
     labs(x = x_lab, y = y_lab, title = title) +

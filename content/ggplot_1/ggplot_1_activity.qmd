@@ -83,15 +83,7 @@ leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
 glimpse(leaf_df)     # always look at a data frame right after loading
 ```
 
-``` r
-# ---- Positions: define once, reuse on every layer -------
-jitter_pos <- position_jitter(width = 0.15, seed = 42)  # raw points: spread them out
-dodge_pos  <- position_dodge(width = 0.2)                # grouped means / lines: shift side by side
-```
-
 > 📌 We call the data frame `leaf_df` in every activity from here on. The `shade` column is `"sunny"` or `"shady"`; the leaf measurements are `mass_g`, `petiole_mm`, and `thickness_mm`.
->
-> 📌 `jitter_pos` keeps overlapping points from stacking (the `seed` makes the scatter reproducible). `dodge_pos` does nothing while there is only one group per x, but you reuse the *same* object on `geom_point()`, `stat_summary()`, and `geom_line()` so grouped summaries stay aligned.
 
 ------------------------------------------------------------------------
 
@@ -106,7 +98,7 @@ dodge_pos  <- position_dodge(width = 0.2)                # grouped means / lines
 leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
-  geom_point(position = jitter_pos, alpha = 0.6) +
+  geom_jitter(width = 0.15, alpha = 0.6) +
   labs(
     title = "Leaf Mass by Shade",
     x = "Shade",
@@ -131,7 +123,7 @@ leaf_df %>%
 leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
-  geom_point(position = jitter_pos, alpha = 0.6) +
+  geom_jitter(width = 0.15, alpha = 0.6) +
   scale_fill_manual(values = c(
     "sunny" = "goldenrod",
     "shady" = "forestgreen"
@@ -214,9 +206,8 @@ Your answer:
 # raw points, with the group mean drawn on top as a black dot
 leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, color = shade)) +
-  geom_point(position = jitter_pos, alpha = 0.4, size = 2) +
-  stat_summary(fun = mean, geom = "point", size = 4, color = "black",
-               position = dodge_pos) +
+  geom_jitter(width = 0.15, alpha = 0.4, size = 2) +
+  stat_summary(fun = mean, geom = "point", size = 4, color = "black") +
   scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
   labs(
     title = "Leaf Mass with Group Means",
@@ -236,15 +227,13 @@ leaf_df %>%
 # store the plot in an object so we can save it later
 leaf_mean_se_plot <- leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, color = shade)) +
-  geom_point(position = jitter_pos, alpha = 0.35, size = 2) +
-  stat_summary(fun = mean, geom = "point", size = 4,
-               position = dodge_pos) +
+  geom_jitter(width = 0.15, alpha = 0.35, size = 2) +
+  stat_summary(fun = mean, geom = "point", size = 4) +
   stat_summary(
     fun.data = mean_se,
     geom = "errorbar",
     width = 0.15,
-    linewidth = 0.9,
-    position = dodge_pos
+    linewidth = 0.9
   ) +
   scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
   labs(
@@ -312,7 +301,7 @@ If not, what error appeared:
 # What your project folder should contain
 
 ```
-tree_project/
+leaf_project/
 ├── data/
 │   └── 2026_09_03_data_sci_leaf_area.xlsx   <- never edit this
 ├── figures/

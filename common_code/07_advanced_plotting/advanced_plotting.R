@@ -73,8 +73,7 @@ ggplot(penguins, aes(x = body_mass_g)) +
 
 # Plot group means as large points on top of raw data
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
-  geom_point(position = position_jitter(width = 0.2, seed = 42),
-             alpha = 0.3, color = "grey60") +
+  geom_jitter(width = 0.2, alpha = 0.3, color = "grey60") +
   stat_summary(fun = mean, geom = "point", size = 4, color = "tomato") +
   labs(
     x = "Species",
@@ -85,8 +84,7 @@ ggplot(penguins, aes(x = species, y = body_mass_g)) +
 
 # Mean as a crossbar (horizontal line at the mean)
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
-  geom_point(position = position_jitter(width = 0.2, seed = 42),
-             alpha = 0.3, color = "grey60") +
+  geom_jitter(width = 0.2, alpha = 0.3, color = "grey60") +
   stat_summary(
     fun = mean,
     geom = "crossbar",
@@ -113,8 +111,7 @@ ggplot(penguins, aes(x = species, y = body_mass_g)) +
 
 # Raw data underneath, mean ± SE on top — the publication standard
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
-  geom_point(position = position_jitter(width = 0.2, seed = 42),
-             alpha = 0.25, color = "grey60", size = 1.5) +
+  geom_jitter(width = 0.2, alpha = 0.25, color = "grey60", size = 1.5) +
   stat_summary(
     fun.data = mean_se,
     geom = "pointrange",
@@ -262,8 +259,7 @@ ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
 # Violin plot — shows the full distribution shape
 ggplot(penguins, aes(x = species, y = body_mass_g, fill = species)) +
   geom_violin(alpha = 0.5, trim = FALSE) +
-  geom_point(position = position_jitter(width = 0.1, seed = 42),
-             alpha = 0.3, size = 1) +
+  geom_jitter(width = 0.1, alpha = 0.3, size = 1) +
   stat_summary(
     fun = mean,
     geom = "point",
@@ -317,8 +313,7 @@ ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
 
 # Horizontal or vertical reference line
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
-  geom_point(position = position_jitter(width = 0.2, seed = 42),
-             alpha = 0.4, color = "grey60") +
+  geom_jitter(width = 0.2, alpha = 0.4, color = "grey60") +
   geom_hline(
     yintercept = mean(penguins$body_mass_g, na.rm = TRUE),
     linetype = "dashed",

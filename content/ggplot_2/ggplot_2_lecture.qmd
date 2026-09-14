@@ -3,7 +3,7 @@ title: "Lecture 04 — GGPlot II"
 subtitle: "More geoms, zooming safely, and picking a theme"
 author: "Bill Perry"
 date: today
-
+ 
 order: 4
 week: 2
 type: lecture             # lecture | activity | homework | assignment | common_code
@@ -45,8 +45,6 @@ execute:
   message: false
 ---
 
-
-
 ```{r setup}
 #| echo: false
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
@@ -71,7 +69,7 @@ You can already build a grouped, colored, faceted figure. Today: one more geom, 
 :::: {.column width="60%"}
 - Map **shape** alongside color, and add a trend line with `geom_smooth()`
 - Zoom into a plot **without silently dropping data** — `coord_cartesian()`
-- Pick a built-in **theme** and adjust it with `theme()`
+- Pick a built-in **theme** and drop a redundant legend with `theme()`
 - Save a figure in the right **format** for the job
 
 ::: callout-tip
@@ -126,7 +124,7 @@ leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
 
 **We will cover:** mapping shape alongside color, and `geom_smooth()`.
 
-::: {.activitybanner}
+::: activitybanner
 **🛑 After this chunk you will do Activity Parts 1–2.**
 :::
 
@@ -136,7 +134,7 @@ leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
 **🔮 Predict first:** We map both `color = shade` and `shape = shade` to the *same* variable. Will ggplot draw one legend or two?
 :::
 
-:::::: columns
+::::: columns
 ::: {.column width="60%"}
 ```{r shape-color-demo}
 #| fig-format: png
@@ -145,28 +143,32 @@ leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
 leaf_df %>%
   ggplot(aes(x = petiole_mm, y = mass_g, color = shade, shape = shade)) +
   geom_point(size = 2.5, alpha = 0.8) +
-  scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  scale_color_manual(
+    values = c("sunny" = "goldenrod", "shady" = "forestgreen")
+  ) +
   labs(
     title = "Leaf Mass vs. Petiole Length",
-    x = "Petiole Length (mm)", y = "Leaf Mass (g)",
-    color = "Shade", shape = "Shade"
+    x = "Petiole Length (mm)",
+    y = "Leaf Mass (g)",
+    color = "Shade",
+    shape = "Shade"
   ) +
   theme_minimal()
 ```
 :::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 - Mapping the **same variable** to both `color` and `shape` merges them into **one legend**
 - This makes the plot easier to read in black-and-white or for colorblind readers
 - If `color` and `shape` legend titles differ in `labs()`, you get **two** legends instead — usually not what you want
 
 📖 [R4DS §9 — Layers](https://r4ds.hadley.nz/layers)
-::::
-::::::
+:::
+:::::
 
 # Adding a Trend Line — `geom_smooth()`
 
-::::: columns
+:::::: columns
 ::: {.column width="60%"}
 ```{r geom-smooth-demo}
 #| fig-format: png
@@ -178,13 +180,14 @@ leaf_df %>%
   geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
   labs(
     title = "Leaf Mass vs. Petiole Length, with Trend Line",
-    x = "Petiole Length (mm)", y = "Leaf Mass (g)"
+    x = "Petiole Length (mm)",
+    y = "Leaf Mass (g)"
   ) +
   theme_minimal()
 ```
 :::
 
-::: {.column width="40%"}
+:::: {.column width="40%"}
 - `method = "lm"` fits a straight line (linear model)
 - The shaded ribbon is the **95% confidence band** around the line
 - We'll fit this same relationship formally with `lm()` in the Regression unit later this semester
@@ -197,21 +200,21 @@ leaf_df %>%
 
 # → ACTIVITY 4 Parts 1–2 now
 
-::: {.activitybanner}
+::: activitybanner
 **🛑 Do Activity Parts 1–2 now**
 
 Load the data, map shape and color to `shade`, then add a `geom_smooth()` trend line. Predict, type, run.
 :::
 
-# 🧩 Chunk 2 of 3 · Zooming Without Losing Data
+# 🧩 Chunk 2 of 3 · Zooming In Safely
 
-**We will cover:** `coord_cartesian()` vs. `xlim()`/`ylim()` — they look the same until they don't.
+**We will cover:** `coord_cartesian()` to zoom — and the `xlim()`/`ylim()` trap to avoid.
 
-::: {.activitybanner}
+::: activitybanner
 **🛑 After this chunk you will do Activity Part 3.**
 :::
 
-# `coord_cartesian()` — Zoom Without Removing Data
+# `coord_cartesian()` — Zoom the View, Keep the Data
 
 ::::: columns
 ::: {.column width="60%"}
@@ -222,44 +225,45 @@ Load the data, map shape and color to `shade`, then add a `geom_smooth()` trend 
 leaf_df %>%
   ggplot(aes(x = petiole_mm, y = mass_g)) +
   geom_point(alpha = 0.6, color = "grey40") +
-  geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
-  coord_cartesian(xlim = c(50, 70), ylim = c(0.4, 0.6)) +
+  geom_smooth(method = "lm", color = "tomato") +
+  coord_cartesian(xlim = c(50, 70)) +
   labs(
     title = "Zoomed with coord_cartesian()",
-    x = "Petiole Length (mm)", y = "Leaf Mass (g)"
+    x = "Petiole Length (mm)",
+    y = "Leaf Mass (g)"
   ) +
   theme_minimal()
 ```
 :::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 - Zooms the **view** — every point still contributes to the trend line
-- The trend line is fit on **all 53 leaves**, then the plot window is cropped afterward
-- Safe to use anytime you just want a closer look
-::::
-::::::
+- The line is fit on **all 53 leaves**, then the window is cropped afterward
+- This is the one to reach for whenever you just want a closer look
+:::
+:::::
 
-# `xlim()` / `ylim()` — Removes Data First
+# The Trap — `xlim()` / `ylim()` Delete Rows First
 
 ::: callout-note
-**🔮 Predict first:** If we drop the leaves outside our zoom window *before* fitting the trend line, will the line look the same as before, or different?
+**🔮 Predict first:** If we drop the leaves outside the window *before* fitting the trend line, will the line look the same, or different?
 :::
 
 :::::: columns
 ::: {.column width="60%"}
 ```{r xlim-demo}
 #| fig-format: png
-#| fig-alt: "Scatter plot of leaf mass against petiole length using xlim and ylim, showing a trend line refit only on the remaining visible points after out-of-range leaves were silently dropped."
-# xlim()/ylim() DELETE rows outside the range first ----
+#| fig-alt: "Scatter plot of leaf mass against petiole length using xlim, showing a trend line refit only on the remaining visible points after out-of-range leaves were silently dropped."
+# xlim() DELETES rows outside the range first ----------
 leaf_df %>%
   ggplot(aes(x = petiole_mm, y = mass_g)) +
   geom_point(alpha = 0.6, color = "grey40") +
-  geom_smooth(method = "lm", color = "tomato", fill = "tomato", alpha = 0.15) +
+  geom_smooth(method = "lm", color = "tomato") +
   xlim(50, 70) +
-  ylim(0.4, 0.6) +
   labs(
-    title = "Zoomed with xlim() / ylim() — different line!",
-    x = "Petiole Length (mm)", y = "Leaf Mass (g)"
+    title = "xlim() — trend line refit on fewer leaves",
+    x = "Petiole Length (mm)",
+    y = "Leaf Mass (g)"
   ) +
   theme_minimal()
 ```
@@ -269,32 +273,32 @@ leaf_df %>%
 ::: callout-warning
 **⚠️ Watch out!**
 
-`xlim()`/`ylim()` **silently delete rows** outside the range *before* anything is computed. The trend line above is fit only on the leaves that remain — a different line than `coord_cartesian()` produced, with no warning that data went missing.
+`xlim()` / `ylim()` **silently delete every row** outside the range *before* anything is computed. The line above is fit only on the leaves that remain — a different line than `coord_cartesian()` gave, with no warning.
 :::
 
-**Rule of thumb:** use `coord_cartesian()` to zoom. Only use `xlim()`/`ylim()` when you actually want those rows excluded from the analysis, not just out of view.
+**Rule:** zoom with `coord_cartesian()`. Only use `xlim()` / `ylim()` when you actually want those rows gone from the analysis.
 ::::
 ::::::
 
 # → ACTIVITY 4 Part 3 now
 
-::: {.activitybanner}
+::: activitybanner
 **🛑 Do Activity Part 3 now**
 
-Zoom the same plot two ways and compare the trend lines. Predict, type, run.
+Zoom with `coord_cartesian()`, then run the `xlim()` version once and watch the line move. Predict, type, run.
 :::
 
 # 🧩 Chunk 3 of 3 · Themes and Saving
 
 **We will cover:** picking a built-in theme, `theme()` tweaks, and choosing a file format with `ggsave()`.
 
-::: {.activitybanner}
+::: activitybanner
 **🛑 After this chunk you will do Activity Parts 4–5.**
 :::
 
 # Picking a Theme
 
-::::: columns
+:::::: columns
 ::: {.column width="60%"}
 ```{r themes-demo}
 #| fig-format: png
@@ -303,7 +307,9 @@ Zoom the same plot two ways and compare the trend lines. Predict, type, run.
 leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
-  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  scale_fill_manual(
+    values = c("sunny" = "goldenrod", "shady" = "forestgreen")
+  ) +
   labs(x = "Shade", y = "Leaf Mass (g)", title = "Leaf Mass by Shade") +
   theme_classic() +
   theme(legend.position = "none")
@@ -311,48 +317,44 @@ leaf_df %>%
 :::
 
 :::: {.column width="40%"}
-**Five built-in themes to try on the same plot:**
+**A few built-in themes worth knowing:**
 
-| Theme | Look |
-|---|---|
-| `theme_grey()` | default — grey background |
-| `theme_bw()` | white background, grey gridlines |
-| `theme_minimal()` | no background, subtle gridlines |
+| Theme             | Look                              |
+|-------------------|-----------------------------------|
+| `theme_grey()`    | the default — grey background     |
+| `theme_minimal()` | no background, faint gridlines    |
 | `theme_classic()` | white background, axis lines only |
-| `theme_light()` | light grey lines and border |
 
 ::: callout-tip
-`theme_classic()` is a safe default for scientific figures — clean, uncluttered, close to what most journals expect.
+`theme_classic()` is a safe default for scientific figures — clean, uncluttered, close to what most journals expect. Pick one you like and use it everywhere.
 :::
 ::::
 ::::::
 
 # Adjusting a Theme with `theme()`
 
-::::: columns
+:::::: columns
 ::: {.column width="60%"}
 ```{r theme-tweak-demo}
 #| fig-format: png
-#| fig-alt: "The same boxplot of leaf mass by shade, with legend removed and larger axis text via theme adjustments."
+#| fig-alt: "The same boxplot of leaf mass by shade, with the redundant fill legend removed via a theme adjustment."
 # theme() overrides individual elements afterward -----
 leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
-  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  scale_fill_manual(
+    values = c("sunny" = "goldenrod", "shady" = "forestgreen")
+  ) +
   labs(x = "Shade", y = "Leaf Mass (g)", title = "Leaf Mass by Shade") +
   theme_classic() +
-  theme(
-    legend.position = "none",
-    axis.text = element_text(size = 12),
-    axis.title = element_text(size = 13)
-  )
+  theme(legend.position = "none")
 ```
 :::
 
 :::: {.column width="40%"}
 - Pick a **built-in theme first** (`theme_classic()`), then add `theme()` afterward to tweak individual pieces
-- `legend.position = "none"` — drop a redundant legend
-- `axis.text` / `axis.title` — control tick labels and axis titles separately
+- `legend.position = "none"` — drop a legend that just repeats the x-axis, as `fill = shade` does here
+- Other common tweaks: `plot.title = element_text(face = "bold")`, `axis.text = element_text(size = 12)`
 
 ::: callout-note
 **✅ Key idea**
@@ -364,35 +366,47 @@ You rarely need to build a theme from scratch. Start from a built-in theme and o
 
 # Saving in the Right Format
 
-::::: columns
+:::::: columns
 ::: {.column width="60%"}
 ```{r ggsave-formats}
 #| eval: false
 leaf_plot <- leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
-  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  scale_fill_manual(
+    values = c("sunny" = "goldenrod", "shady" = "forestgreen")
+  ) +
   labs(x = "Shade", y = "Leaf Mass (g)") +
   theme_classic() +
   theme(legend.position = "none")
 
 # PNG — good for Word docs, slides, web
-ggsave("figures/leaf_mass_theme.png",
-       plot = leaf_plot, width = 5, height = 5,
-       units = "in", dpi = 300)
+ggsave(
+  "figures/leaf_mass_theme.png",
+  plot = leaf_plot,
+  width = 5,
+  height = 5,
+  units = "in",
+  dpi = 300
+)
 
 # PDF — vector, scales to any size, good for print
-ggsave("figures/leaf_mass_theme.pdf",
-       plot = leaf_plot, width = 5, height = 5, units = "in")
+ggsave(
+  "figures/leaf_mass_theme.pdf",
+  plot = leaf_plot,
+  width = 5,
+  height = 5,
+  units = "in"
+)
 ```
 :::
 
 :::: {.column width="40%"}
-| Format | Best for | Scales? |
-|---|---|---|
-| `.png` | Word docs, slides, web | ❌ fixed pixels |
-| `.pdf` | Print, journals | ✅ infinite |
-| `.tiff` | Journal submission | ❌ fixed pixels |
+| Format  | Best for               | Scales?         |
+|---------|------------------------|-----------------|
+| `.png`  | Word docs, slides, web | ❌ fixed pixels |
+| `.pdf`  | Print, journals        | ✅ infinite     |
+| `.tiff` | Journal submission     | ❌ fixed pixels |
 
 ::: callout-warning
 **⚠️ Watch out!** `ggsave()` takes the **filename first**, then `plot =`. Always name the plot object explicitly — do not rely on ggsave grabbing "the last plot shown."
@@ -402,7 +416,7 @@ ggsave("figures/leaf_mass_theme.pdf",
 
 # → ACTIVITY 4 Parts 4–5 now
 
-::: {.activitybanner}
+::: activitybanner
 **🛑 Go to Activity 4 — Parts 4–5**
 
 Close the slides. Pick a theme, tweak it, and save your plot as both PNG and PDF.
@@ -415,7 +429,7 @@ Close the slides. Pick a theme, tweak it, and save your plot as both PNG and PDF
 - Map `shape` alongside `color` to merge legends
 - `geom_smooth(method = "lm")` — a quick trend line, not a hypothesis test
 - `coord_cartesian()` zooms safely; `xlim()`/`ylim()` silently deletes rows first
-- Built-in themes (`theme_classic()`, etc.) + `theme()` for small overrides
+- Pick one built-in theme (`theme_classic()`) and use `theme(legend.position = "none")` to drop a redundant legend
 - `.png` for documents/slides, `.pdf` for print/journals
 :::
 

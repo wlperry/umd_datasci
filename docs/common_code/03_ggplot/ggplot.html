@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-09-10">
+<meta name="dcterms.date" content="2026-09-14">
 <meta name="description" content="The basics of using ggplot">
 
 <title>Common Code 03 — Basic ggplot2 – UMD DAta Science Biology</title>
@@ -435,7 +435,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">September 10, 2026</p>
+      <p class="date">September 14, 2026</p>
     </div>
   </div>
   
@@ -560,14 +560,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="overlay-raw-data-points-with-jitter" class="level3">
 <h3 class="anchored" data-anchor-id="overlay-raw-data-points-with-jitter">Overlay raw data points with jitter</h3>
-<p>A boxplot alone hides sample size. Adding jittered points shows both the distribution shape and how many observations went into each box. Define the point position <strong>once</strong> as a variable so every layer can reuse it:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>jitter_pos <span class="ot">&lt;-</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">seed =</span> <span class="dv">42</span>)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> jitter_pos, <span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">color =</span> <span class="st">"darkblue"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A boxplot alone hides sample size. Adding jittered points shows both the distribution shape and how many observations went into each box:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">color =</span> <span class="st">"darkblue"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> Layer order matters — <code>geom_boxplot()</code> first, the points second, so the points sit <strong>on top of</strong> the boxes. <code>position_jitter(width = 0.15)</code> spreads overlapping points sideways; <code>seed = 42</code> freezes that random spread so the figure is identical on every render.</p>
+<p>💡 <strong>Key idea:</strong> Layer order matters. <code>geom_boxplot()</code> first and <code>geom_jitter()</code> second draws the points <strong>on top of</strong> the boxes. <code>geom_jitter()</code> is <code>geom_point()</code> with a small sideways nudge (<code>width = 0.15</code>) so overlapping points don’t hide each other.</p>
 </blockquote>
 </section>
 <section id="side-by-side-box-plots-two-grouping-variables" class="level3">
@@ -875,49 +873,53 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td>Jittered raw data</td>
-<td><code>geom_point(position = position_jitter(width = 0.15, seed = 42), alpha = 0.5)</code></td>
+<td><code>geom_jitter(width = 0.15, alpha = 0.5)</code></td>
 </tr>
 <tr class="even">
+<td>Raw points, 2 groups</td>
+<td><code>geom_point(position = position_jitterdodge(jitter.width = 0.15, dodge.width = 0.75))</code></td>
+</tr>
+<tr class="odd">
 <td>Map colour (data)</td>
 <td><code>aes(color = variable)</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Map shape (data)</td>
 <td><code>aes(shape = variable)</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Fixed colour</td>
 <td><code>geom_point(color = "darkblue")</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Fixed size</td>
 <td><code>geom_point(size = 2)</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Transparency</td>
 <td><code>geom_point(alpha = 0.6)</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>All labels</td>
 <td><code>labs(title=, subtitle=, x=, y=, color=, caption=)</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Zoom (safe)</td>
 <td><code>coord_cartesian(xlim = c(a,b), ylim = c(c,d))</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Classic theme</td>
 <td><code>theme_classic()</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Remove legend</td>
 <td><code>theme(legend.position = "none")</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Save as PDF</td>
 <td><code>ggsave("figures/plot.pdf", plot = p, width=6, height=5, units="in")</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Save as PNG</td>
 <td><code>ggsave("figures/plot.png", plot = p, width=6, height=5, dpi=300, units="in")</code></td>
 </tr>
