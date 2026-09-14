@@ -2,15 +2,16 @@
 order: 4
 week: 2
 title: "Activity 04 - GGPlot II"
-subtitle: "More geoms, zooming safely, and picking a theme"
+subtitle: "New data, safe zooming, distributions, themes, and patchwork"
 author: "Bill Perry"
 date: today
- 
+
 type: activity
 description: >
-  Hands-on companion to the GGPlot II lecture. Map shape alongside color,
-  add a trend line, compare coord_cartesian() to xlim()/ylim(), and pick
-  and save a themed figure.
+  Hands-on companion to the GGPlot II lecture. Rebuild your plotting
+  recipe on a new dataset, compare coord_cartesian() to the ylim() trap,
+  build a histogram and density plot, apply a custom theme file, and
+  combine panels with patchwork.
 categories: [ggplot, tidyverse]
 
 format:
@@ -22,7 +23,7 @@ execute:
   message: false
 ---
 
-# More Geoms, Coordinates, and Themes
+# New Data, Safe Zooming, Distributions, and Style
 
 ### Recap from Activity 03
 
@@ -33,10 +34,11 @@ execute:
 
 ### Today's Objectives
 
-1.  Map shape alongside color, and add a `geom_smooth()` trend line
-2.  Zoom a plot safely with `coord_cartesian()` — and recognise the `xlim()`/`ylim()` trap
-3.  Pick a built-in theme and drop a redundant legend with `theme()`
-4.  Save a plot as both PNG and PDF
+1.  Rebuild the XY-scatter and boxplot+jitter recipe on a dataset you've never seen — `palmerpenguins`
+2.  Zoom a plot safely with `coord_cartesian()` — and recognise the `ylim()` / `scale_y_continuous(limits = )` trap
+3.  Build a `geom_histogram()` and a `geom_density()` of the same variable
+4.  Source a reusable theme file and tweak a font and a color
+5.  Combine two plots into one figure with `patchwork` and `plot_annotation()`
 
 > # **How this activity works**
 >
@@ -44,7 +46,7 @@ execute:
 >
 > - **Every line you run goes in that script** — not in the Console, not typed into this page. Type it, don't paste it.
 > - **Start every code chunk in your script with a short `#` comment** that says what it does. The comments are part of the grade.
-> - **The top of your script, in this order:** a title comment, then your `library()` calls, then the line that loads the data into `leaf_df`.
+> - **The top of your script, in this order:** a title comment, then your `library()` calls, then the line that loads the data into `penguins_df`.
 > - Code marked **▶ Run this** is typed into your script exactly as shown. Code marked **✏️ Your turn** is a change you make in that same script and run.
 >
 > ## 🔮 Predict before you run
@@ -53,12 +55,12 @@ execute:
 
 ------------------------------------------------------------------------
 
-# Part 1 · Load libraries and data
+# Part 1 · Load libraries and a new dataset
 
 ::: callout-tip
-## 📂 Get the data
+## 📂 No download needed today
 
-Same leaf file as Activity 02–03 — it should already be in your project's `data/` folder. If not: [**`2026_09_03_data_sci_leaf_area.xlsx`**](data/2026_09_03_data_sci_leaf_area.xlsx) → put it in `data/`.
+`palmerpenguins` ships its data **inside the package** — once it's installed (it's in `install_packages.R` from Week 1), `library(palmerpenguins)` is all you need. No file to put in `data/`.
 :::
 
 **▶ Type this at the very top of `scripts/04_ggplot_2.R`:**
@@ -68,172 +70,273 @@ Same leaf file as Activity 02–03 — it should already be in your project's `d
 # your name, today's date
 
 # ---- Libraries -------------------------------------------
-library(readxl)      # read Excel files
-library(tidyverse)   # dplyr + ggplot2
-library(janitor)     # clean_names()
+library(tidyverse)      # dplyr + ggplot2
+library(palmerpenguins) # penguins data, Palmer Station LTER
 ```
 
 ``` r
-# ---- Load data ------------------------------------------
-leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
-  clean_names()
+# ---- Load data --------------------------------------------
+penguins_df <- penguins %>%
+  drop_na(species, bill_length_mm, bill_depth_mm,
+          flipper_length_mm, body_mass_g)
 
-glimpse(leaf_df)     # look at the data right after loading
+glimpse(penguins_df)     # look at the data right after loading
 ```
 
 ------------------------------------------------------------------------
 
-# Part 2 · Shape, color, and a trend line
+# Part 2 · The same two plot types, on new data
 
-> 🔮 **Predict first:** We map `color = shade` and `shape = shade` to the same variable. One legend or two?
+> 🔮 **Predict first:** flipper length and body mass should move together. Will the three species separate into three clouds, or overlap into one?
 
-**▶ Run this:**
+**▶ Run this — the exact scatter recipe you used on `leaf_df`:**
 
 ``` r
-# scatter of mass vs petiole length, one color + shape per shade
-leaf_df %>%
-  ggplot(aes(x = petiole_mm, y = mass_g, color = shade, shape = shade)) +
-  geom_point(size = 2.5, alpha = 0.8) +
-  scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+# scatter of body mass vs flipper length, colored by species
+penguins_df %>%
+  ggplot(aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point(alpha = 0.7, size = 2) +
   labs(
-    title = "Leaf Mass vs. Petiole Length",
-    x = "Petiole Length (mm)", y = "Leaf Mass (g)",
-    color = "Shade", shape = "Shade"
+    title = "Body Mass vs. Flipper Length",
+    x = "Flipper Length (mm)", y = "Body Mass (g)", color = "Species"
   ) +
   theme_minimal()
 ```
 
-✏️ **Your turn — in your script:** Add a `geom_smooth(method = "lm")` layer to the plot above (no color/fill needed — let it default). Run it.
+**▶ Run this — the exact boxplot+jitter recipe you used on `leaf_df`:**
 
-```         
-Does the trend line slope up or down?
+``` r
+# boxplot + jitter of body mass by species
+penguins_df %>%
+  ggplot(aes(x = species, y = body_mass_g, fill = species)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.4) +
+  labs(x = "Species", y = "Body Mass (g)", title = "Body Mass by Species") +
+  theme_minimal() +
+  theme(legend.position = "none")
 ```
 
-> ✅ **You can already do a lot:** a colored, shaped, labelled scatter with a trend line. Parts 3–5 are polish — zooming, themes, and saving.
+✏️ **Your turn — in your script:** Swap `body_mass_g` for `bill_length_mm` in the boxplot above (x stays `species`). Run it.
+
+```
+Which species has the longest bills?
+```
+
+::: callout-tip
+**💡 Finding a dataset like this on your own**
+
+- `library(palmerpenguins)` or `library(FSA)` (fish data, Derek Ogle) — real data bundled inside an R package, no download
+- [Kaggle — search "UFO sightings"](https://www.kaggle.com/datasets?search=ufo+sightings) or [Kaggle — search "Bigfoot sightings"](https://www.kaggle.com/datasets?search=bigfoot+sightings) — download a `.csv`, then `read_csv()` it like any other file
+
+You'll pick one of these for the Extension at the end of this activity.
+:::
+
+> ✅ **You can already do a lot:** the same two plot recipes work on any tidy dataset. Parts 3–6 add new skills — zooming, distributions, themes, and combining panels.
 
 ------------------------------------------------------------------------
 
 # Part 3 · Zoom in safely with `coord_cartesian()`
 
-Sometimes a handful of extreme points squash the rest of the data into a corner and you want a closer look. `coord_cartesian()` zooms the **view** and leaves the data alone — every leaf still counts toward the trend line.
+Gentoo penguins run heavier than the other two species. `coord_cartesian()` zooms the **view** and leaves the data alone — every penguin still counts toward each box's median and quartiles.
 
 **▶ Run this:**
 
 ``` r
-# zoom the view; all 53 leaves still contribute to the trend line
-leaf_df %>%
-  ggplot(aes(x = petiole_mm, y = mass_g)) +
-  geom_point(alpha = 0.6, color = "grey40") +
-  geom_smooth(method = "lm", color = "tomato") +
-  coord_cartesian(xlim = c(50, 70)) +
+# zoom the view; all 342 penguins still contribute to each box
+penguins_df %>%
+  ggplot(aes(x = species, y = body_mass_g, fill = species)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  coord_cartesian(ylim = c(3000, 5000)) +
   labs(title = "Zoomed with coord_cartesian()",
-       x = "Petiole Length (mm)", y = "Leaf Mass (g)") +
-  theme_minimal()
+       x = "Species", y = "Body Mass (g)") +
+  theme_minimal() +
+  theme(legend.position = "none")
 ```
 
-✏️ **Your turn — in your script:** Change the window to `coord_cartesian(xlim = c(55, 65))` and run it. The view gets tighter — does the trend line itself move?
+✏️ **Your turn — in your script:** Change the window to `coord_cartesian(ylim = c(3500, 4500))` and run it. The view gets tighter — do the box shapes themselves change?
 
-```         
-Did the line move?
+```
+Did the boxes change shape?
 ```
 
 ::: callout-warning
-**⚠️ The classic mistake: `xlim()` / `ylim()` delete rows**
+**⚠️ The classic mistake: `ylim()` / `scale_y_continuous(limits = )` delete rows**
 
-`xlim()` and `ylim()` look like they just zoom, but they **silently drop every row outside the range** *before* anything is calculated. A trend line added after `xlim()` is fit only on the leaves that survived — so it can point a different direction, with no warning that data went missing.
+`ylim()` looks like it just zooms, but it **silently drops every row outside the range** *before* anything is calculated. A box built after `ylim()` is fit only on the penguins that survived — so the median and quartiles can shift, with no warning that data went missing. `scale_y_continuous(limits = c(3000, 5000))` is the exact same trap written out in full.
 
-**Rule:** zoom with `coord_cartesian()`. Only reach for `xlim()` / `ylim()` when you actually want those rows removed from the analysis.
+**Rule:** zoom with `coord_cartesian()`. Only reach for `ylim()` / `scale_y_continuous(limits = )` when you actually want those rows removed from the analysis.
 :::
 
 **▶ Run this once to see the trap:**
 
 ``` r
-# same plot, but xlim() drops the outside rows FIRST — watch the line change
-leaf_df %>%
-  ggplot(aes(x = petiole_mm, y = mass_g)) +
-  geom_point(alpha = 0.6, color = "grey40") +
-  geom_smooth(method = "lm", color = "tomato") +
-  xlim(50, 70) +
-  labs(title = "xlim() — trend line refit on fewer leaves",
-       x = "Petiole Length (mm)", y = "Leaf Mass (g)") +
-  theme_minimal()
-```
-
-```         
-Compared with the coord_cartesian() version, did this trend line move?
-```
-
-------------------------------------------------------------------------
-
-# Part 4 · Pick a theme
-
-**▶ Run this — build the plot once, then try two themes:**
-
-``` r
-# base plot, no theme yet
-leaf_plot <- leaf_df %>%
-  ggplot(aes(x = shade, y = mass_g, fill = shade)) +
+# same plot, but ylim() drops the outside rows FIRST — watch the Gentoo box
+penguins_df %>%
+  ggplot(aes(x = species, y = body_mass_g, fill = species)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
-  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
-  labs(x = "Shade", y = "Leaf Mass (g)", title = "Leaf Mass by Shade")
-
-leaf_plot + theme_minimal()    # light, faint gridlines
-leaf_plot + theme_classic()    # axis lines only — close to journal style
+  ylim(3000, 5000) +
+  labs(title = "ylim() — boxes recomputed on fewer penguins",
+       x = "Species", y = "Body Mass (g)") +
+  theme_minimal() +
+  theme(legend.position = "none")
 ```
 
-```         
-Which of the two do you prefer for a figure in a report?
-```
-
-### One small tweak with `theme()`
-
-Pick a base theme, then use `theme()` to override single pieces. The most common tweak is dropping a legend you don't need (here `fill` just repeats the x-axis):
+**▶ Run this to see exactly how many rows `ylim()` silently drops:**
 
 ``` r
-leaf_plot_final <- leaf_plot +
-  theme_classic() +
-  theme(legend.position = "none")
+# count penguins inside vs outside the 3000-5000 g window
+nrow(penguins_df)
 
-leaf_plot_final
+penguins_df %>%
+  filter(body_mass_g >= 3000, body_mass_g <= 5000) %>%
+  nrow()
+
+penguins_df %>%
+  filter(body_mass_g >= 3000, body_mass_g <= 5000) %>%
+  count(species)
 ```
 
-✏️ **Your turn — in your script:** Add `plot.title = element_text(face = "bold")` inside `theme()` and run it.
+```
+How many penguins did ylim(3000, 5000) drop, and which species lost the most?
+```
 
 ------------------------------------------------------------------------
 
-# Part 5 · Save in two formats
+# Part 4 · Two views of one distribution
 
 **▶ Run this:**
 
 ``` r
-# PNG for slides and web, PDF for print / vector editing
-ggsave("figures/leaf_mass_theme.png",
-       plot = leaf_plot_final, width = 5, height = 5,
-       units = "in", dpi = 300)
-
-ggsave("figures/leaf_mass_theme.pdf",
-       plot = leaf_plot_final, width = 5, height = 5, units = "in")
+# histogram — bars of counts per bin
+penguins_df %>%
+  ggplot(aes(x = body_mass_g)) +
+  geom_histogram(binwidth = 200, fill = "steelblue", color = "white") +
+  labs(x = "Body Mass (g)", y = "Count", title = "Distribution of Body Mass") +
+  theme_minimal()
 ```
 
-```         
-Open both files. When would you send a colleague the .pdf instead of the .png?
+``` r
+# density — a smoothed curve of the same shape
+penguins_df %>%
+  ggplot(aes(x = body_mass_g)) +
+  geom_density(fill = "steelblue", alpha = 0.5) +
+  labs(x = "Body Mass (g)", y = "Density", title = "Density of Body Mass") +
+  theme_minimal()
+```
+
+✏️ **Your turn — in your script:** Rebuild both plots for `flipper_length_mm` instead of `body_mass_g` (pick a sensible new `binwidth`). Run them.
+
+```
+Does flipper length look more or less "bumpy" (multiple humps) than body mass?
+```
+
+::: callout-tip
+**Coming soon:** in the Summary Statistics lecture we'll come back to this exact density curve and shade in the **95% range** underneath it. Today, just get comfortable building both plot types.
+:::
+
+------------------------------------------------------------------------
+
+# Part 5 · A reusable theme file
+
+::: callout-tip
+## 📂 Get the theme file
+
+[**`r_themes_for_3_sizes.R`**](themes/r_themes_for_3_sizes.R) → put it in a new `themes/` folder in your project.
+:::
+
+**▶ Run this:**
+
+``` r
+# source() loads theme_small(), theme_regular(), theme_large()
+source("themes/r_themes_for_3_sizes.R")
+
+body_mass_plot <- penguins_df %>%
+  ggplot(aes(x = species, y = body_mass_g, fill = species)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  labs(x = "Species", y = "Body Mass (g)", title = "Body Mass by Species") +
+  theme_regular() +
+  theme(legend.position = "none")
+
+body_mass_plot
+```
+
+### Tweak a font and a color
+
+``` r
+body_mass_plot_styled <- penguins_df %>%
+  ggplot(aes(x = species, y = body_mass_g, fill = species)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  scale_fill_manual(values = c(
+    "Adelie" = "darkorange", "Chinstrap" = "purple", "Gentoo" = "cyan4"
+  )) +
+  labs(x = "Species", y = "Body Mass (g)", title = "Body Mass by Species") +
+  theme_regular() +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(size = rel(1.4), face = "bold")
+  )
+
+body_mass_plot_styled
+```
+
+✏️ **Your turn — in your script:** Swap in `theme_small()` instead of `theme_regular()` and run it. What changes besides the text size?
+
+```
+What else changed?
 ```
 
 ------------------------------------------------------------------------
 
-# Part 6 · Review and checkpoint
+# Part 6 · Combine panels with `patchwork`
+
+**▶ Run this:**
+
+``` r
+library(patchwork)   # combine ggplot objects with + and /
+
+xy_plot <- penguins_df %>%
+  ggplot(aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point(alpha = 0.7) +
+  labs(x = "Flipper Length (mm)", y = "Body Mass (g)", color = "Species") +
+  theme_regular()
+
+combined_plot <- xy_plot + body_mass_plot_styled +
+  plot_annotation(
+    title = "Penguin Body Mass, Two Ways",
+    tag_levels = "A"
+  )
+
+combined_plot
+```
+
+``` r
+# save the combined figure
+ggsave("figures/penguin_combined.png",
+       plot = combined_plot, width = 9, height = 4.5,
+       units = "in", dpi = 300)
+```
+
+✏️ **Your turn — in your script:** Change `xy_plot + body_mass_plot_styled` to `xy_plot / body_mass_plot_styled` (stack instead of side-by-side) and run it.
+
+```
+Which layout — side by side or stacked — reads better for these two panels?
+```
+
+------------------------------------------------------------------------
+
+# Part 7 · Review and checkpoint
 
 At this point you should be able to:
 
-- [ ] Map shape alongside color and merge the legends
-- [ ] Add a `geom_smooth(method = "lm")` trend line
-- [ ] Zoom a plot with `coord_cartesian()` and say why `xlim()` / `ylim()` is a trap
-- [ ] Try a couple of built-in themes and drop a legend with `theme()`
-- [ ] Save a plot as both `.png` and `.pdf`
+- [ ] Rebuild an XY scatter and a boxplot+jitter on a dataset you've never seen
+- [ ] Zoom a plot with `coord_cartesian()` and say why `ylim()` / `scale_y_continuous(limits = )` is a trap
+- [ ] Build a histogram and a density plot of the same variable
+- [ ] Source a theme file and tweak a font size and a color on top of it
+- [ ] Combine two plots with `patchwork` and add `plot_annotation()`
 
 ✏️ **Your turn — before you move on:** Run your entire script top to bottom with **Ctrl/Cmd + Shift + Enter** (Source). Does it complete without errors?
 
-```         
+```
 Ran cleanly?  Y / N
 If not, what error appeared:
 ```
@@ -242,13 +345,12 @@ If not, what error appeared:
 
 # What your project folder should contain
 
-```         
+```
 leaf_project/
-├── data/
-│   └── 2026_09_03_data_sci_leaf_area.xlsx   <- never edit this
 ├── figures/
-│   ├── leaf_mass_theme.png                  <- Part 5
-│   └── leaf_mass_theme.pdf                  <- Part 5
+│   └── penguin_combined.png                 <- Part 6
+├── themes/
+│   └── r_themes_for_3_sizes.R               <- Part 5
 └── scripts/
     └── 04_ggplot_2.R                        <- your script (turn this in)
 ```
@@ -259,29 +361,29 @@ leaf_project/
 
 *Add this to the bottom of `scripts/04_ggplot_2.R` and turn it in with the rest. Put written answers in `#` comments right under the code they go with.*
 
-## E1 · See exactly what `xlim()` removes (5 pts)
+## E1 · Find your own dataset (5 pts)
 
-Stay with `mass_g` vs `petiole_mm` and the window from Part 3 (`50` to `70`).
+Pick **one** option:
 
-1.  Run `nrow(leaf_df)` — the full leaf count.
-2.  Run `leaf_df %>% filter(petiole_mm >= 50, petiole_mm <= 70) %>% nrow()` — how many leaves land *inside* the window. That is the number `xlim(50, 70)` silently keeps.
-3.  Build the scatter with `geom_smooth(method = "lm")` **twice** — once with `coord_cartesian(xlim = c(50, 70))`, once with `xlim(50, 70)`.
+- A Kaggle dataset (UFO sightings, Bigfoot sightings, or any other you find) — download the `.csv` into your project's `data/` folder and load it with `read_csv()`
+- `library(FSA)` — pick one of its built-in fish datasets (e.g. `?FSA::Mirex`) the same way you loaded `penguins`
 
-In comments, record both counts and whether the two trend lines pointed the same way.
+Build **one** simple plot from it — either an XY scatter (`geom_point()`) if you have two numeric columns, or a categorical plot (`geom_boxplot()` + `geom_jitter()`, or a bar chart) if you have a grouping column. Label your axes.
 
-## E2 · Explain it (5 pts)
+## E2 · Explain your choice (5 pts)
 
-In two or three sentences, using your two row counts: why did `xlim()` produce a different trend line than `coord_cartesian()`? Then give one realistic example where silently dropping rows like this would lead a scientist to the wrong conclusion.
+In two or three sentences: why did you pick an XY plot or a categorical plot for this dataset — what did the columns look like that made that the right choice? Then note one thing about this new dataset that surprised you or that you'd want to check before trusting it (missing values? a weird outlier? too few rows in a group?).
 
 ------------------------------------------------------------------------
 
 # Getting unstuck
 
 1.  **Read the error message out loud.** R usually names the line and the problem.
-2.  **Trend line looks wrong after zooming?** Check whether you used `xlim()`/`ylim()` (deletes data) instead of `coord_cartesian()` (keeps it).
-3.  **Legend didn't merge?** `color` and `shape` (and the matching `labs()` titles) must all reference the exact same variable name.
-4.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
-5.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
+2.  **Box shape looks wrong after zooming?** Check whether you used `ylim()` / `scale_y_continuous(limits = )` (deletes data) instead of `coord_cartesian()` (keeps it).
+3.  **`source()` can't find the theme file?** Check that `themes/r_themes_for_3_sizes.R` is spelled exactly right and sits in a `themes/` folder at your project root.
+4.  **`patchwork` plots look squished?** Save at a wider `width` in `ggsave()` — combined figures usually need more horizontal room than a single panel.
+5.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
+6.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
 
 ------------------------------------------------------------------------
 

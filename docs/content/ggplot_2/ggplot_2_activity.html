@@ -8,7 +8,7 @@
 
 <meta name="author" content="Bill Perry">
 <meta name="dcterms.date" content="2026-09-14">
-<meta name="description" content="Hands-on companion to the GGPlot II lecture. Map shape alongside color, add a trend line, compare coord_cartesian() to xlim()/ylim(), and pick and save a themed figure.">
+<meta name="description" content="Hands-on companion to the GGPlot II lecture. Rebuild your plotting recipe on a new dataset, compare coord_cartesian() to the ylim() trap, build a histogram and density plot, apply a custom theme file, and combine panels with patchwork.">
 
 <title>Activity 04 - GGPlot II – UMD DAta Science Biology</title>
 <style>
@@ -120,7 +120,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <link rel="stylesheet" href="../../css/main.css">
 <meta property="og:title" content="Activity 04 - GGPlot II – UMD DAta Science Biology">
-<meta property="og:description" content="Hands-on companion to the GGPlot II lecture. Map shape alongside color, add a trend line, compare coord_cartesian() to xlim()/ylim(), and pick and save a themed figure.">
+<meta property="og:description" content="Hands-on companion to the GGPlot II lecture. Rebuild your plotting recipe on a new dataset, compare coord_cartesian() to the ylim() trap, build a histogram and density plot, apply a custom theme file, and combine panels with patchwork.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 
@@ -409,7 +409,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Activity 04 - GGPlot II</h1>
-<p class="subtitle lead">More geoms, zooming safely, and picking a theme</p>
+<p class="subtitle lead">New data, safe zooming, distributions, themes, and patchwork</p>
   <div class="quarto-categories">
     <div class="quarto-category">ggplot</div>
     <div class="quarto-category">tidyverse</div>
@@ -418,7 +418,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    <p>Hands-on companion to the GGPlot II lecture. Map shape alongside color, add a trend line, compare coord_cartesian() to xlim()/ylim(), and pick and save a themed figure.</p>
+    <p>Hands-on companion to the GGPlot II lecture. Rebuild your plotting recipe on a new dataset, compare coord_cartesian() to the ylim() trap, build a histogram and density plot, apply a custom theme file, and combine panels with patchwork.</p>
   </div>
 </div>
 
@@ -447,8 +447,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="more-geoms-coordinates-and-themes" class="level1">
-<h1>More Geoms, Coordinates, and Themes</h1>
+<section id="new-data-safe-zooming-distributions-and-style" class="level1">
+<h1>New Data, Safe Zooming, Distributions, and Style</h1>
 <section id="recap-from-activity-03" class="level3">
 <h3 class="anchored" data-anchor-id="recap-from-activity-03">Recap from Activity 03</h3>
 <ul>
@@ -461,10 +461,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="todays-objectives" class="level3">
 <h3 class="anchored">Today’s Objectives</h3>
 <ol type="1">
-<li>Map shape alongside color, and add a <code>geom_smooth()</code> trend line</li>
-<li>Zoom a plot safely with <code>coord_cartesian()</code> — and recognise the <code>xlim()</code>/<code>ylim()</code> trap</li>
-<li>Pick a built-in theme and drop a redundant legend with <code>theme()</code></li>
-<li>Save a plot as both PNG and PDF</li>
+<li>Rebuild the XY-scatter and boxplot+jitter recipe on a dataset you’ve never seen — <code>palmerpenguins</code></li>
+<li>Zoom a plot safely with <code>coord_cartesian()</code> — and recognise the <code>ylim()</code> / <code>scale_y_continuous(limits = )</code> trap</li>
+<li>Build a <code>geom_histogram()</code> and a <code>geom_density()</code> of the same variable</li>
+<li>Source a reusable theme file and tweak a font and a color</li>
+<li>Combine two plots into one figure with <code>patchwork</code> and <code>plot_annotation()</code></li>
 </ol>
 <blockquote class="blockquote">
 <h1 id="how-this-activity-works"><strong>How this activity works</strong></h1>
@@ -472,7 +473,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li><strong>Every line you run goes in that script</strong> — not in the Console, not typed into this page. Type it, don’t paste it.</li>
 <li><strong>Start every code chunk in your script with a short <code>#</code> comment</strong> that says what it does. The comments are part of the grade.</li>
-<li><strong>The top of your script, in this order:</strong> a title comment, then your <code>library()</code> calls, then the line that loads the data into <code>leaf_df</code>.</li>
+<li><strong>The top of your script, in this order:</strong> a title comment, then your <code>library()</code> calls, then the line that loads the data into <code>penguins_df</code>.</li>
 <li>Code marked <strong>▶ Run this</strong> is typed into your script exactly as shown. Code marked <strong>✏️ Your turn</strong> is a change you make in that same script and run.</li>
 </ul>
 <h2 id="predict-before-you-run" class="anchored" data-anchor-id="todays-objectives">🔮 Predict before you run</h2>
@@ -481,19 +482,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <hr>
 </section>
 </section>
-<section id="part-1-load-libraries-and-data" class="level1">
-<h1>Part 1 · Load libraries and data</h1>
+<section id="part-1-load-libraries-and-a-new-dataset" class="level1">
+<h1>Part 1 · Load libraries and a new dataset</h1>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>📂 Get the data
+<span class="screen-reader-only">Tip</span>📂 No download needed today
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Same leaf file as Activity 02–03 — it should already be in your project’s <code>data/</code> folder. If not: <a href="data/2026_09_03_data_sci_leaf_area.xlsx"><strong><code>2026_09_03_data_sci_leaf_area.xlsx</code></strong></a> → put it in <code>data/</code>.</p>
+<p><code>palmerpenguins</code> ships its data <strong>inside the package</strong> — once it’s installed (it’s in <code>install_packages.R</code> from Week 1), <code>library(palmerpenguins)</code> is all you need. No file to put in <code>data/</code>.</p>
 </div>
 </div>
 <p><strong>▶ Type this at the very top of <code>scripts/04_ggplot_2.R</code>:</strong></p>
@@ -501,55 +502,80 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># your name, today's date</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Libraries -------------------------------------------</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)      <span class="co"># read Excel files</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># dplyr + ggplot2</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)     <span class="co"># clean_names()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Load data ------------------------------------------</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/2026_09_03_data_sci_leaf_area.xlsx"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(leaf_df)     <span class="co"># look at the data right after loading</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)      <span class="co"># dplyr + ggplot2</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(palmerpenguins) <span class="co"># penguins data, Palmer Station LTER</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Load data --------------------------------------------</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>penguins_df <span class="ot">&lt;-</span> penguins <span class="sc">%&gt;%</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(species, bill_length_mm, bill_depth_mm,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>          flipper_length_mm, body_mass_g)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(penguins_df)     <span class="co"># look at the data right after loading</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
-<section id="part-2-shape-color-and-a-trend-line" class="level1">
-<h1>Part 2 · Shape, color, and a trend line</h1>
+<section id="part-2-the-same-two-plot-types-on-new-data" class="level1">
+<h1>Part 2 · The same two plot types, on new data</h1>
 <blockquote class="blockquote">
-<p>🔮 <strong>Predict first:</strong> We map <code>color = shade</code> and <code>shape = shade</code> to the same variable. One legend or two?</p>
+<p>🔮 <strong>Predict first:</strong> flipper length and body mass should move together. Will the three species separate into three clouds, or overlap into one?</p>
 </blockquote>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># scatter of mass vs petiole length, one color + shape per shade</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> petiole_mm, <span class="at">y =</span> mass_g, <span class="at">color =</span> shade, <span class="at">shape =</span> shade)) <span class="sc">+</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="fl">2.5</span>, <span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Leaf Mass vs. Petiole Length"</span>,</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Petiole Length (mm)"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>,</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Shade"</span>, <span class="at">shape =</span> <span class="st">"Shade"</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn — in your script:</strong> Add a <code>geom_smooth(method = "lm")</code> layer to the plot above (no color/fill needed — let it default). Run it.</p>
-<pre><code>Does the trend line slope up or down?</code></pre>
+<p><strong>▶ Run this — the exact scatter recipe you used on <code>leaf_df</code>:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># scatter of body mass vs flipper length, colored by species</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> flipper_length_mm, <span class="at">y =</span> body_mass_g, <span class="at">color =</span> species)) <span class="sc">+</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.7</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Body Mass vs. Flipper Length"</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Flipper Length (mm)"</span>, <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>, <span class="at">color =</span> <span class="st">"Species"</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Run this — the exact boxplot+jitter recipe you used on <code>leaf_df</code>:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># boxplot + jitter of body mass by species</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species"</span>, <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>, <span class="at">title =</span> <span class="st">"Body Mass by Species"</span>) <span class="sc">+</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Swap <code>body_mass_g</code> for <code>bill_length_mm</code> in the boxplot above (x stays <code>species</code>). Run it.</p>
+<pre><code>Which species has the longest bills?</code></pre>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>💡 Finding a dataset like this on your own</strong></p>
+<ul>
+<li><code>library(palmerpenguins)</code> or <code>library(FSA)</code> (fish data, Derek Ogle) — real data bundled inside an R package, no download</li>
+<li><a href="https://www.kaggle.com/datasets?search=ufo+sightings">Kaggle — search “UFO sightings”</a> or <a href="https://www.kaggle.com/datasets?search=bigfoot+sightings">Kaggle — search “Bigfoot sightings”</a> — download a <code>.csv</code>, then <code>read_csv()</code> it like any other file</li>
+</ul>
+<p>You’ll pick one of these for the Extension at the end of this activity.</p>
+</div>
+</div>
 <blockquote class="blockquote">
-<p>✅ <strong>You can already do a lot:</strong> a colored, shaped, labelled scatter with a trend line. Parts 3–5 are polish — zooming, themes, and saving.</p>
+<p>✅ <strong>You can already do a lot:</strong> the same two plot recipes work on any tidy dataset. Parts 3–6 add new skills — zooming, distributions, themes, and combining panels.</p>
 </blockquote>
 <hr>
 </section>
 <section id="part-3-zoom-in-safely-with-coord_cartesian" class="level1">
 <h1>Part 3 · Zoom in safely with <code>coord_cartesian()</code></h1>
-<p>Sometimes a handful of extreme points squash the rest of the data into a corner and you want a closer look. <code>coord_cartesian()</code> zooms the <strong>view</strong> and leaves the data alone — every leaf still counts toward the trend line.</p>
+<p>Gentoo penguins run heavier than the other two species. <code>coord_cartesian()</code> zooms the <strong>view</strong> and leaves the data alone — every penguin still counts toward each box’s median and quartiles.</p>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># zoom the view; all 53 leaves still contribute to the trend line</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> petiole_mm, <span class="at">y =</span> mass_g)) <span class="sc">+</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">color =</span> <span class="st">"grey40"</span>) <span class="sc">+</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"tomato"</span>) <span class="sc">+</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">50</span>, <span class="dv">70</span>)) <span class="sc">+</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Zoomed with coord_cartesian()"</span>,</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Petiole Length (mm)"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>) <span class="sc">+</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn — in your script:</strong> Change the window to <code>coord_cartesian(xlim = c(55, 65))</code> and run it. The view gets tighter — does the trend line itself move?</p>
-<pre><code>Did the line move?</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># zoom the view; all 342 penguins still contribute to each box</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">3000</span>, <span class="dv">5000</span>)) <span class="sc">+</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Zoomed with coord_cartesian()"</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Species"</span>, <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Change the window to <code>coord_cartesian(ylim = c(3500, 4500))</code> and run it. The view gets tighter — do the box shapes themselves change?</p>
+<pre><code>Did the boxes change shape?</code></pre>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -560,71 +586,150 @@ Warning
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>⚠️ The classic mistake: <code>xlim()</code> / <code>ylim()</code> delete rows</strong></p>
-<p><code>xlim()</code> and <code>ylim()</code> look like they just zoom, but they <strong>silently drop every row outside the range</strong> <em>before</em> anything is calculated. A trend line added after <code>xlim()</code> is fit only on the leaves that survived — so it can point a different direction, with no warning that data went missing.</p>
-<p><strong>Rule:</strong> zoom with <code>coord_cartesian()</code>. Only reach for <code>xlim()</code> / <code>ylim()</code> when you actually want those rows removed from the analysis.</p>
+<p><strong>⚠️ The classic mistake: <code>ylim()</code> / <code>scale_y_continuous(limits = )</code> delete rows</strong></p>
+<p><code>ylim()</code> looks like it just zooms, but it <strong>silently drops every row outside the range</strong> <em>before</em> anything is calculated. A box built after <code>ylim()</code> is fit only on the penguins that survived — so the median and quartiles can shift, with no warning that data went missing. <code>scale_y_continuous(limits = c(3000, 5000))</code> is the exact same trap written out in full.</p>
+<p><strong>Rule:</strong> zoom with <code>coord_cartesian()</code>. Only reach for <code>ylim()</code> / <code>scale_y_continuous(limits = )</code> when you actually want those rows removed from the analysis.</p>
 </div>
 </div>
 <p><strong>▶ Run this once to see the trap:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># same plot, but xlim() drops the outside rows FIRST — watch the line change</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> petiole_mm, <span class="at">y =</span> mass_g)) <span class="sc">+</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">color =</span> <span class="st">"grey40"</span>) <span class="sc">+</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"tomato"</span>) <span class="sc">+</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="dv">50</span>, <span class="dv">70</span>) <span class="sc">+</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"xlim() — trend line refit on fewer leaves"</span>,</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Petiole Length (mm)"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>) <span class="sc">+</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>Compared with the coord_cartesian() version, did this trend line move?</code></pre>
-<hr>
-</section>
-<section id="part-4-pick-a-theme" class="level1">
-<h1>Part 4 · Pick a theme</h1>
-<p><strong>▶ Run this — build the plot once, then try two themes:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># base plot, no theme yet</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>leaf_plot <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Shade"</span>, <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span>, <span class="at">title =</span> <span class="st">"Leaf Mass by Shade"</span>)</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># same plot, but ylim() drops the outside rows FIRST — watch the Gentoo box</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylim</span>(<span class="dv">3000</span>, <span class="dv">5000</span>) <span class="sc">+</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"ylim() — boxes recomputed on fewer penguins"</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Species"</span>, <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Run this to see exactly how many rows <code>ylim()</code> silently drops:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># count penguins inside vs outside the 3000-5000 g window</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(penguins_df)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(body_mass_g <span class="sc">&gt;=</span> <span class="dv">3000</span>, body_mass_g <span class="sc">&lt;=</span> <span class="dv">5000</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nrow</span>()</span>
 <span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>leaf_plot <span class="sc">+</span> <span class="fu">theme_minimal</span>()    <span class="co"># light, faint gridlines</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>leaf_plot <span class="sc">+</span> <span class="fu">theme_classic</span>()    <span class="co"># axis lines only — close to journal style</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>Which of the two do you prefer for a figure in a report?</code></pre>
-<section id="one-small-tweak-with-theme" class="level3">
-<h3 class="anchored" data-anchor-id="one-small-tweak-with-theme">One small tweak with <code>theme()</code></h3>
-<p>Pick a base theme, then use <code>theme()</code> to override single pieces. The most common tweak is dropping a legend you don’t need (here <code>fill</code> just repeats the x-axis):</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>leaf_plot_final <span class="ot">&lt;-</span> leaf_plot <span class="sc">+</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>leaf_plot_final</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn — in your script:</strong> Add <code>plot.title = element_text(face = "bold")</code> inside <code>theme()</code> and run it.</p>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(body_mass_g <span class="sc">&gt;=</span> <span class="dv">3000</span>, body_mass_g <span class="sc">&lt;=</span> <span class="dv">5000</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>How many penguins did ylim(3000, 5000) drop, and which species lost the most?</code></pre>
 <hr>
 </section>
-</section>
-<section id="part-5-save-in-two-formats" class="level1">
-<h1>Part 5 · Save in two formats</h1>
+<section id="part-4-two-views-of-one-distribution" class="level1">
+<h1>Part 4 · Two views of one distribution</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># PNG for slides and web, PDF for print / vector editing</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figures/leaf_mass_theme.png"</span>,</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot =</span> leaf_plot_final, <span class="at">width =</span> <span class="dv">5</span>, <span class="at">height =</span> <span class="dv">5</span>,</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figures/leaf_mass_theme.pdf"</span>,</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot =</span> leaf_plot_final, <span class="at">width =</span> <span class="dv">5</span>, <span class="at">height =</span> <span class="dv">5</span>, <span class="at">units =</span> <span class="st">"in"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre><code>Open both files. When would you send a colleague the .pdf instead of the .png?</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># histogram — bars of counts per bin</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> body_mass_g)) <span class="sc">+</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">200</span>, <span class="at">fill =</span> <span class="st">"steelblue"</span>, <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Body Mass (g)"</span>, <span class="at">y =</span> <span class="st">"Count"</span>, <span class="at">title =</span> <span class="st">"Distribution of Body Mass"</span>) <span class="sc">+</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># density — a smoothed curve of the same shape</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> body_mass_g)) <span class="sc">+</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">fill =</span> <span class="st">"steelblue"</span>, <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Body Mass (g)"</span>, <span class="at">y =</span> <span class="st">"Density"</span>, <span class="at">title =</span> <span class="st">"Density of Body Mass"</span>) <span class="sc">+</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Rebuild both plots for <code>flipper_length_mm</code> instead of <code>body_mass_g</code> (pick a sensible new <code>binwidth</code>). Run them.</p>
+<pre><code>Does flipper length look more or less "bumpy" (multiple humps) than body mass?</code></pre>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Coming soon:</strong> in the Summary Statistics lecture we’ll come back to this exact density curve and shade in the <strong>95% range</strong> underneath it. Today, just get comfortable building both plot types.</p>
+</div>
+</div>
 <hr>
 </section>
-<section id="part-6-review-and-checkpoint" class="level1">
-<h1>Part 6 · Review and checkpoint</h1>
+<section id="part-5-a-reusable-theme-file" class="level1">
+<h1>Part 5 · A reusable theme file</h1>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>📂 Get the theme file
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><a href="themes/r_themes_for_3_sizes.R"><strong><code>r_themes_for_3_sizes.R</code></strong></a> → put it in a new <code>themes/</code> folder in your project.</p>
+</div>
+</div>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># source() loads theme_small(), theme_regular(), theme_large()</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"themes/r_themes_for_3_sizes.R"</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>body_mass_plot <span class="ot">&lt;-</span> penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species"</span>, <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>, <span class="at">title =</span> <span class="st">"Body Mass by Species"</span>) <span class="sc">+</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_regular</span>() <span class="sc">+</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>body_mass_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="tweak-a-font-and-a-color" class="level3">
+<h3 class="anchored" data-anchor-id="tweak-a-font-and-a-color">Tweak a font and a color</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>body_mass_plot_styled <span class="ot">&lt;-</span> penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Adelie"</span> <span class="ot">=</span> <span class="st">"darkorange"</span>, <span class="st">"Chinstrap"</span> <span class="ot">=</span> <span class="st">"purple"</span>, <span class="st">"Gentoo"</span> <span class="ot">=</span> <span class="st">"cyan4"</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species"</span>, <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>, <span class="at">title =</span> <span class="st">"Body Mass by Species"</span>) <span class="sc">+</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_regular</span>() <span class="sc">+</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"none"</span>,</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="fu">rel</span>(<span class="fl">1.4</span>), <span class="at">face =</span> <span class="st">"bold"</span>)</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>body_mass_plot_styled</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Swap in <code>theme_small()</code> instead of <code>theme_regular()</code> and run it. What changes besides the text size?</p>
+<pre><code>What else changed?</code></pre>
+<hr>
+</section>
+</section>
+<section id="part-6-combine-panels-with-patchwork" class="level1">
+<h1>Part 6 · Combine panels with <code>patchwork</code></h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)   <span class="co"># combine ggplot objects with + and /</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>xy_plot <span class="ot">&lt;-</span> penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> flipper_length_mm, <span class="at">y =</span> body_mass_g, <span class="at">color =</span> species)) <span class="sc">+</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Flipper Length (mm)"</span>, <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>, <span class="at">color =</span> <span class="st">"Species"</span>) <span class="sc">+</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_regular</span>()</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>combined_plot <span class="ot">&lt;-</span> xy_plot <span class="sc">+</span> body_mass_plot_styled <span class="sc">+</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_annotation</span>(</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Penguin Body Mass, Two Ways"</span>,</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">tag_levels =</span> <span class="st">"A"</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>combined_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># save the combined figure</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figures/penguin_combined.png"</span>,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot =</span> combined_plot, <span class="at">width =</span> <span class="dv">9</span>, <span class="at">height =</span> <span class="fl">4.5</span>,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Your turn — in your script:</strong> Change <code>xy_plot + body_mass_plot_styled</code> to <code>xy_plot / body_mass_plot_styled</code> (stack instead of side-by-side) and run it.</p>
+<pre><code>Which layout — side by side or stacked — reads better for these two panels?</code></pre>
+<hr>
+</section>
+<section id="part-7-review-and-checkpoint" class="level1">
+<h1>Part 7 · Review and checkpoint</h1>
 <p>At this point you should be able to:</p>
 <ul class="task-list">
-<li><label><input type="checkbox">Map shape alongside color and merge the legends</label></li>
-<li><label><input type="checkbox">Add a <code>geom_smooth(method = "lm")</code> trend line</label></li>
-<li><label><input type="checkbox">Zoom a plot with <code>coord_cartesian()</code> and say why <code>xlim()</code> / <code>ylim()</code> is a trap</label></li>
-<li><label><input type="checkbox">Try a couple of built-in themes and drop a legend with <code>theme()</code></label></li>
-<li><label><input type="checkbox">Save a plot as both <code>.png</code> and <code>.pdf</code></label></li>
+<li><label><input type="checkbox">Rebuild an XY scatter and a boxplot+jitter on a dataset you’ve never seen</label></li>
+<li><label><input type="checkbox">Zoom a plot with <code>coord_cartesian()</code> and say why <code>ylim()</code> / <code>scale_y_continuous(limits = )</code> is a trap</label></li>
+<li><label><input type="checkbox">Build a histogram and a density plot of the same variable</label></li>
+<li><label><input type="checkbox">Source a theme file and tweak a font size and a color on top of it</label></li>
+<li><label><input type="checkbox">Combine two plots with <code>patchwork</code> and add <code>plot_annotation()</code></label></li>
 </ul>
 <p>✏️ <strong>Your turn — before you move on:</strong> Run your entire script top to bottom with <strong>Ctrl/Cmd + Shift + Enter</strong> (Source). Does it complete without errors?</p>
 <pre><code>Ran cleanly?  Y / N
@@ -634,11 +739,10 @@ If not, what error appeared:</code></pre>
 <section id="what-your-project-folder-should-contain" class="level1">
 <h1>What your project folder should contain</h1>
 <pre><code>leaf_project/
-├── data/
-│   └── 2026_09_03_data_sci_leaf_area.xlsx   &lt;- never edit this
 ├── figures/
-│   ├── leaf_mass_theme.png                  &lt;- Part 5
-│   └── leaf_mass_theme.pdf                  &lt;- Part 5
+│   └── penguin_combined.png                 &lt;- Part 6
+├── themes/
+│   └── r_themes_for_3_sizes.R               &lt;- Part 5
 └── scripts/
     └── 04_ggplot_2.R                        &lt;- your script (turn this in)</code></pre>
 <hr>
@@ -646,19 +750,18 @@ If not, what error appeared:</code></pre>
 <section id="extension-out-of-class-20-min" class="level1">
 <h1>Extension — out of class (~20 min)</h1>
 <p><em>Add this to the bottom of <code>scripts/04_ggplot_2.R</code> and turn it in with the rest. Put written answers in <code>#</code> comments right under the code they go with.</em></p>
-<section id="e1-see-exactly-what-xlim-removes-5-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e1-see-exactly-what-xlim-removes-5-pts">E1 · See exactly what <code>xlim()</code> removes (5 pts)</h2>
-<p>Stay with <code>mass_g</code> vs <code>petiole_mm</code> and the window from Part 3 (<code>50</code> to <code>70</code>).</p>
-<ol type="1">
-<li>Run <code>nrow(leaf_df)</code> — the full leaf count.</li>
-<li>Run <code>leaf_df %&gt;% filter(petiole_mm &gt;= 50, petiole_mm &lt;= 70) %&gt;% nrow()</code> — how many leaves land <em>inside</em> the window. That is the number <code>xlim(50, 70)</code> silently keeps.</li>
-<li>Build the scatter with <code>geom_smooth(method = "lm")</code> <strong>twice</strong> — once with <code>coord_cartesian(xlim = c(50, 70))</code>, once with <code>xlim(50, 70)</code>.</li>
-</ol>
-<p>In comments, record both counts and whether the two trend lines pointed the same way.</p>
+<section id="e1-find-your-own-dataset-5-pts" class="level2">
+<h2 class="anchored" data-anchor-id="e1-find-your-own-dataset-5-pts">E1 · Find your own dataset (5 pts)</h2>
+<p>Pick <strong>one</strong> option:</p>
+<ul>
+<li>A Kaggle dataset (UFO sightings, Bigfoot sightings, or any other you find) — download the <code>.csv</code> into your project’s <code>data/</code> folder and load it with <code>read_csv()</code></li>
+<li><code>library(FSA)</code> — pick one of its built-in fish datasets (e.g.&nbsp;<code>?FSA::Mirex</code>) the same way you loaded <code>penguins</code></li>
+</ul>
+<p>Build <strong>one</strong> simple plot from it — either an XY scatter (<code>geom_point()</code>) if you have two numeric columns, or a categorical plot (<code>geom_boxplot()</code> + <code>geom_jitter()</code>, or a bar chart) if you have a grouping column. Label your axes.</p>
 </section>
-<section id="e2-explain-it-5-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e2-explain-it-5-pts">E2 · Explain it (5 pts)</h2>
-<p>In two or three sentences, using your two row counts: why did <code>xlim()</code> produce a different trend line than <code>coord_cartesian()</code>? Then give one realistic example where silently dropping rows like this would lead a scientist to the wrong conclusion.</p>
+<section id="e2-explain-your-choice-5-pts" class="level2">
+<h2 class="anchored" data-anchor-id="e2-explain-your-choice-5-pts">E2 · Explain your choice (5 pts)</h2>
+<p>In two or three sentences: why did you pick an XY plot or a categorical plot for this dataset — what did the columns look like that made that the right choice? Then note one thing about this new dataset that surprised you or that you’d want to check before trusting it (missing values? a weird outlier? too few rows in a group?).</p>
 <hr>
 </section>
 </section>
@@ -666,8 +769,9 @@ If not, what error appeared:</code></pre>
 <h1>Getting unstuck</h1>
 <ol type="1">
 <li><strong>Read the error message out loud.</strong> R usually names the line and the problem.</li>
-<li><strong>Trend line looks wrong after zooming?</strong> Check whether you used <code>xlim()</code>/<code>ylim()</code> (deletes data) instead of <code>coord_cartesian()</code> (keeps it).</li>
-<li><strong>Legend didn’t merge?</strong> <code>color</code> and <code>shape</code> (and the matching <code>labs()</code> titles) must all reference the exact same variable name.</li>
+<li><strong>Box shape looks wrong after zooming?</strong> Check whether you used <code>ylim()</code> / <code>scale_y_continuous(limits = )</code> (deletes data) instead of <code>coord_cartesian()</code> (keeps it).</li>
+<li><strong><code>source()</code> can’t find the theme file?</strong> Check that <code>themes/r_themes_for_3_sizes.R</code> is spelled exactly right and sits in a <code>themes/</code> folder at your project root.</li>
+<li><strong><code>patchwork</code> plots look squished?</strong> Save at a wider <code>width</code> in <code>ggsave()</code> — combined figures usually need more horizontal room than a single panel.</li>
 <li><strong>Cheat sheets</strong> — <a href="https://posit.co/resources/cheatsheets/" class="uri">https://posit.co/resources/cheatsheets/</a></li>
 <li><strong>Bring the exact error</strong> (copy-paste it) to class, Canvas, or office hours.</li>
 </ol>
