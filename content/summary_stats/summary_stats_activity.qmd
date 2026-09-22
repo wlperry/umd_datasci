@@ -9,8 +9,9 @@ date: today
 type: activity
 description: >
   Hands-on companion to the summary statistics lecture. Handle NAs
-  correctly with sum(!is.na()), compute mean, median, SD, and SE by
-  group, then summarize many columns at once with across() and skimr.
+  correctly with sum(!is.na()), source a reusable summary_stats() helper,
+  use it by group with group_by(), explore with skimr, then summarize
+  many columns at once with across().
 categories: [tidyverse, descriptive-stats]
 
 format:
@@ -33,10 +34,10 @@ execute:
 ### Today's Objectives
 
 1.  Understand why `NA` values require special handling with `sum(!is.na())`
-2.  Calculate mean, median, SD, and SE using `filter()` and `pull()`
-3.  Use `group_by()` + `summarize()` to compute stats the tidy way
-4.  Summarize many columns at once with `across()`
-5.  Explore data quickly with `skimr`
+2.  Source a reusable `summary_stats()` function and use it on one group
+3.  Use `group_by()` + `summary_stats()` to compute stats the tidy way
+4.  Explore data quickly with `skimr`
+5.  Summarize many columns at once with `across()`
 
 > # **How this activity works**
 >
@@ -61,7 +62,15 @@ execute:
 Same leaf file you have used since Activity 02 — it should already be in your project's `data/` folder. If not: **[`2026_09_03_data_sci_leaf_area.xlsx`](data/2026_09_03_data_sci_leaf_area.xlsx)** → put it in `data/`.
 :::
 
-**▶ Type this at the very top of `scripts/06_summary_stats.R`:**
+::: callout-tip
+## 📂 Get the skeleton script
+
+**[`06_summary_stats_skeleton.R`](scripts/06_summary_stats_skeleton.R)** → save it as `scripts/06_summary_stats.R`. It already has the library calls, the line that loads `leaf_df`, and the two `source()` lines below — so you don't retype the plumbing, just the analysis.
+
+Also grab **[`r_themes_for_3_sizes.R`](themes/r_themes_for_3_sizes.R)** and **[`summary_stats_function.R`](themes/summary_stats_function.R)** if they aren't already in your project's `themes/` folder (you made that folder back in Activity 04).
+:::
+
+**Open the skeleton and read the top of it — this part is done for you:**
 
 ``` r
 # ---- Activity 06: Summary statistics ---------------------
@@ -72,15 +81,19 @@ library(readxl)      # read Excel files
 library(tidyverse)   # dplyr + ggplot2
 library(janitor)     # clean_names()
 library(skimr)       # fast descriptive summaries
-```
 
-``` r
 # ---- Load data ------------------------------------------
 leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
   clean_names()
 
 glimpse(leaf_df)     # look at the data right after loading
+
+# ---- Load our theme file and summary_stats() helper ------
+source("themes/r_themes_for_3_sizes.R")
+source("themes/summary_stats_function.R")
 ```
+
+✏️ **Your turn:** Run this whole top section once, top to bottom, so `leaf_df`, `theme_regular()`, and `summary_stats()` are all ready before Part 2.
 
 ------------------------------------------------------------------------
 
@@ -100,21 +113,14 @@ x <- c(0.4, 0.3, NA, 0.7, NA)
 
 # length() counts ALL positions — including the NAs
 length(x)
+
+# sum(!is.na()) counts only the REAL values
+sum(!is.na(x))
 ```
 
 ```
 length(x) returned:
-Number of real (non-NA) values:
-```
-
-### Breaking down `is.na()` step by step
-
-**▶ Run each line one at a time:**
-
-``` r
-is.na(x)          # TRUE where a value is missing
-!is.na(x)         # ! flips it: TRUE where a value is REAL
-sum(!is.na(x))    # sum() counts the TRUEs = the real values
+sum(!is.na(x)) returned:
 ```
 
 ✏️ **Your turn — in your script:** Now do the same on the real data. Compare `nrow(leaf_df)` to `sum(!is.na(leaf_df$paper_mass_g))`.
@@ -129,128 +135,71 @@ How many paper_mass_g values are missing?
 
 ------------------------------------------------------------------------
 
-# Part 3 · Descriptive statistics in base R
+# Part 3 · A reusable `summary_stats()` function
 
-### Extract one group with `filter()` and `pull()`
+Instead of writing `mean()`, `var()`, `sd()`, and `se` by hand every time, we'll use one function that returns all of them at once — the same idea as the theme file you sourced in Activity 04.
 
-**▶ Run this:**
-
-``` r
-# pull the sunny leaf masses out as a plain vector
-sunny_mass <- leaf_df %>%
-  filter(shade == "sunny") %>%
-  pull(mass_g)
-
-sunny_mass    # print the raw values
-```
-
-✏️ **Your turn — in your script:** Write the code to extract the shady leaf masses as a vector called `shady_mass`.
-
-### Mean
-
-**▶ Run this:**
+Here is what's inside it, so you can see how it works:
 
 ``` r
-# mean mass for the sunny side
-mean_sunny <- mean(sunny_mass, na.rm = TRUE)
-cat("Mean sunny mass:", round(mean_sunny, 3), "g\n")
+summary_stats <- function(data, variable) {
+  data %>%
+    summarize(
+      n        = sum(!is.na({{ variable }})),
+      mean     = mean({{ variable }}, na.rm = TRUE),
+      variance = var({{ variable }}, na.rm = TRUE),
+      sd       = sd({{ variable }}, na.rm = TRUE),
+      se       = sd / sqrt(n),
+      ci_lower = mean - qt(0.975, df = n - 1) * se,
+      ci_upper = mean + qt(0.975, df = n - 1) * se,
+      .groups  = "drop"
+    ) %>%
+    mutate(across(c(mean, variance, sd, se, ci_lower, ci_upper),
+                  ~ round_half_up(.x, 2)))
+}
 ```
 
-✏️ **Your turn — in your script:** Calculate the mean for the shady side. Store it as `mean_shady` and print it.
+- `n = sum(!is.na({{ variable }}))` — the correct count, not `length()`
+- `{{ variable }}` lets you call `summary_stats(leaf_df, mass_g)` with a bare column name
+- `se` and the confidence interval both reuse `mean` and `sd` computed earlier in the same `summarize()`
+
+::: callout-tip
+## 📂 Get the file
+
+**[`summary_stats_function.R`](themes/summary_stats_function.R)** — already sourced for you at the top of the skeleton script from Part 1, in the same `themes/` folder you made in Activity 04.
+:::
+
+✏️ **Your turn — in your script:** Use it on one group. Filter `leaf_df` to `shade == "sunny"` and pipe the result straight into `summary_stats(mass_g)`.
 
 ```
-Mean shady leaf mass (g):
-Is the shady mean larger than sunny?  Y / N
+n, mean, variance, sd, se for sunny mass_g:
 ```
 
-### Median
-
-**▶ Run this:**
-
-``` r
-# median mass for each side
-med_sunny <- median(sunny_mass, na.rm = TRUE)
-med_shady <- median(shady_mass, na.rm = TRUE)
-
-cat("Median sunny:", round(med_sunny, 3), "\n")
-cat("Median shady:", round(med_shady, 3), "\n")
-```
-
-✏️ **Your turn:** Compare the mean and median for the sunny side. If they are about equal, what does that tell you about the shape of the distribution?
+✏️ **Your turn:** Now do the shady side the same way.
 
 ```
-Mean sunny:
-Median sunny:
-What it suggests about distribution shape:
-```
-
-### Standard Deviation
-
-**▶ Run this:**
-
-``` r
-# SD for each side
-sd_sunny <- sd(sunny_mass, na.rm = TRUE)
-sd_shady <- sd(shady_mass, na.rm = TRUE)
-
-cat("SD sunny:", round(sd_sunny, 3), "g\n")
-cat("SD shady:", round(sd_shady, 3), "g\n")
-```
-
-```
-Which side has more variable leaf mass?
-What does a larger SD tell you biologically?
-```
-
-### Standard Error
-
-> 🔮 **Predict first:** SE = SD / √n. Since n is larger than 1, will the SE be **larger or smaller** than the SD you just calculated?
-
-**▶ Run this:**
-
-``` r
-# SE = SD / sqrt(n) — n must be the count of REAL values
-n_sun <- sum(!is.na(sunny_mass))
-n_sha <- sum(!is.na(shady_mass))
-
-se_sunny <- sd_sunny / sqrt(n_sun)
-se_shady <- sd_shady / sqrt(n_sha)
-
-cat("n sunny  =", n_sun, "   SE sunny =", round(se_sunny, 3), "g\n")
-cat("n shady  =", n_sha, "   SE shady =", round(se_shady, 3), "g\n")
-```
-
-✏️ **Your turn:** In your own words, what does the SE tell you that the SD does not? And if you collected 40 leaves per side instead of ~25, would the SE get larger or smaller?
-
-```
-SE vs SD:
-40 leaves per side → SE gets:
+n, mean, variance, sd, se for shady mass_g:
+Which side has the larger mean? The larger sd?
 ```
 
 ------------------------------------------------------------------------
 
-# Part 4 · Tidy stats with `group_by()` + `summarize()`
+# Part 4 · Tidy stats with `group_by()` + `summary_stats()`
 
-> 🔮 **Predict first:** How many **rows** will `stats_df` have? (How many values does `shade` take?)
+> 🔮 **Predict first:** How many **rows** will this return? (How many values does `shade` take?)
 
 **▶ Run this:**
 
 ``` r
-# group_by() + summarize() — the core tidyverse pattern
+# group first, then call the SAME function — no rewriting it
 stats_df <- leaf_df %>%
   group_by(shade) %>%
-  summarize(
-    n         = sum(!is.na(mass_g)),
-    mean_mass = round(mean(mass_g,   na.rm = TRUE), 3),
-    med_mass  = round(median(mass_g, na.rm = TRUE), 3),
-    sd_mass   = round(sd(mass_g,     na.rm = TRUE), 3),
-    se_mass   = round(sd_mass / sqrt(n), 3)
-  )
+  summary_stats(mass_g)
 
 stats_df
 ```
 
-> 💡 **Key idea:** `group_by(shade)` splits the data by the `shade` column, and every `summarize()` calculation runs separately within each group — that's why `stats_df` comes back with one row per shade instead of one row overall.
+> 💡 **Key idea:** `group_by(shade)` splits the data by the `shade` column, and `summary_stats()` runs once per group — that's why `stats_df` comes back with one row per shade instead of one row overall.
 
 ✏️ **Your turn:** Do the numbers in `stats_df` match what you calculated by hand in Part 3?
 
@@ -259,6 +208,8 @@ Y / N — if not, explain any differences:
 ```
 
 ### Summary across multiple variables
+
+`summary_stats()` handles one variable at a time. For several measurements at once, write `summarize()` directly:
 
 **▶ Run this:**
 
@@ -288,7 +239,29 @@ thickness_mm   |            |            |
 
 ------------------------------------------------------------------------
 
-# Part 5 · The fast way — `across()`
+# Part 5 · Fast overview with `skimr`
+
+**▶ Run this:**
+
+``` r
+# skim() grouped by shade — n_missing, mean, SD, and percentiles at once
+leaf_df %>%
+  group_by(shade) %>%
+  skim()
+```
+
+✏️ **Your turn:** Look at the `n_missing` row for `paper_mass_g`, and the `mean` vs `p50` (median) for `mass_g`.
+
+```
+n_missing paper_mass_g (sunny / shady):
+Are mean and median of mass_g close for each group? What does that suggest about skew?
+```
+
+> 💡 **Key idea:** one line of `skim()` gets you `n_missing`, mean, SD, median, and percentiles for every column, grouped by `shade` — the same numbers `summary_stats()` gives you for one variable, but for the whole dataset at once.
+
+------------------------------------------------------------------------
+
+# Part 6 · The fast way — `across()`
 
 **▶ Run this:**
 
@@ -315,38 +288,15 @@ What changed:
 
 ------------------------------------------------------------------------
 
-# Part 6 · Fast overview with `skimr`
-
-**▶ Run this:**
-
-``` r
-# skim() grouped by shade — n_missing, mean, SD, and percentiles at once
-leaf_df %>%
-  group_by(shade) %>%
-  skim()
-```
-
-✏️ **Your turn:** Look at the `n_missing` row for `paper_mass_g`, and the `mean` vs `p50` (median) for `mass_g`.
-
-```
-n_missing paper_mass_g (sunny / shady):
-Are mean and median of mass_g close for each group? What does that suggest about skew?
-```
-
-> 💡 **Key idea:** one line of `skim()` gets you `n_missing`, mean, SD, and percentiles for every column, grouped by `shade` — the same numbers you computed by hand in Part 3, without writing `filter()` or `pull()` at all.
-
-------------------------------------------------------------------------
-
 # Part 7 · Review and checkpoint
 
 At this point you should be able to:
 
 - [ ] Explain why `length()` is unreliable with NAs and use `sum(!is.na())` instead
-- [ ] Use `filter()` and `pull()` to extract a group's values as a vector
-- [ ] Calculate mean, median, SD, and SE with `na.rm = TRUE`
-- [ ] Use `group_by()` + `summarize()` to compute stats for all groups at once
-- [ ] Use `across()` to apply one function to many columns at once
+- [ ] Source `summary_stats()` from `themes/` and use it on a `filter()`-ed group
+- [ ] Use `group_by()` + `summary_stats()` to compute stats for all groups at once
 - [ ] Use `skim()` for a fast full-dataset overview
+- [ ] Use `across()` to apply one function to many columns at once
 
 ✏️ **Your turn — before you move on:** Run your entire script top to bottom with **Ctrl/Cmd + Shift + Enter** (Source). Does it complete without errors?
 
@@ -359,11 +309,11 @@ If not, what error appeared:
 
 # Extension — out of class (~30–40 min)
 
-*Add this to the bottom of `scripts/06_summary_stats.R` and turn it in with the rest. Put your written answers in `#` comments right under the code they go with. In class you computed n, mean, SD, and SE. Now you add three spread statistics — one of them new — and reason about what each one tells you.*
+*Add this to the bottom of `scripts/06_summary_stats.R` and turn it in with the rest. Put your written answers in `#` comments right under the code they go with. `summary_stats()` gives you n, mean, variance, and sd. Now you add three spread statistics of your own — one of them new — and reason about what each one tells you.*
 
 ## E1 · Three more spread statistics (4 pts)
 
-Extend your grouped-by-`shade` summary of `mass_g` to also include:
+`summary_stats()` doesn't include these, so write your own `group_by()` + `summarize()` for `mass_g`, by `shade`, that includes:
 
 -   `iqr_mass` — the interquartile range (`IQR()`, mind `na.rm`)
 -   `range_mass` — `max(mass_g, na.rm = TRUE) - min(mass_g, na.rm = TRUE)`
@@ -376,7 +326,7 @@ Show the full table (n, mean, sd, iqr_mass, range_mass, cv_mass) by shade.
 **Before running E1**, write in comments:
 
 1.  Which side do you predict has the larger `sd`? The larger `cv_mass`? (They need not be the same side — think about why.)
-2.  One reason, based on the raw Part-3 numbers you already saw.
+2.  One reason, based on the `stats_df` numbers you already have from Part 4.
 
 Then run E1 and say whether both predictions held. If the bigger-SD side did *not* have the bigger CV, explain why that can happen.
 
@@ -393,8 +343,9 @@ Then run E1 and say whether both predictions held. If the bigger-SD side did *no
 2.  **Check the usual suspects:** Did you load `library(readxl)`, `library(tidyverse)`, and `library(skimr)`?
 3.  **Spelling?** R is **case-sensitive** — `"Sunny"` ≠ `"sunny"`. Check with `names(leaf_df)`.
 4.  **`na.rm = TRUE` missing?** Any stat function on a column with NAs returns `NA` without it — no error, just a silent wrong answer.
-5.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
-6.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
+5.  **`source()` can't find the file?** Check that `themes/summary_stats_function.R` is spelled exactly right and sits in a `themes/` folder at your project root.
+6.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
+7.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
 
 > 💡 **Key idea:** a missing `na.rm = TRUE`, a typo'd column name — these are the errors this activity is built around, and reading the message before you panic will solve most of them.
 
