@@ -11,7 +11,7 @@
   <meta name="generator" content="quarto-1.10.18">
 
   <meta name="author" content="Bill Perry">
-  <meta name="dcterms.date" content="2026-09-21">
+  <meta name="dcterms.date" content="2026-09-22">
   <title>UMD DAta Science Biology – Lecture 06 — Summary Statistics</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -217,7 +217,7 @@ Bill Perry
 </div>
 </div>
 
-  <p class="date">2026-09-21</p>
+  <p class="date">2026-09-22</p>
 </section>
 <section id="where-we-left-off-lecture-05-wrangling" class="title-slide slide level1 center">
 <h1>Where we left off (Lecture 05 — Wrangling)</h1>
@@ -367,7 +367,7 @@ Bill Perry
 
 <section id="chunk-1-of-2-build-and-use-summary_stats" class="title-slide slide level1 center">
 <h1>🧩 Chunk 1 of 2 · Build and Use <code>summary_stats()</code></h1>
-<p><strong>We will cover:</strong> counting correctly with <code>sum(!is.na())</code>, a reusable <code>summary_stats()</code> helper, and using it one group at a time.</p>
+<p><strong>We will cover:</strong> finding NAs in real data, counting correctly with <code>sum(!is.na())</code>, writing the summary <strong>by hand</strong> with <code>group_by()</code> + <code>summarize()</code>, and only then packaging it into a reusable <code>summary_stats()</code> helper.</p>
 </section>
 
 <section id="what-is-the-mean" class="title-slide slide level1 center">
@@ -465,10 +465,69 @@ Bill Perry
 <p><strong>Tip</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>Best practice:</strong> always use <code>sum(!is.na(x))</code> when you need <em>n</em> — even when you think there are no NAs. It is exactly what our <code>summary_stats()</code> function below uses.</p>
+<p><strong>Best practice:</strong> always use <code>sum(!is.na(x))</code> when you need <em>n</em> — even when you think there are no NAs.</p>
 </div>
 </div>
 </div>
+</section>
+
+<section id="finding-the-nas-in-real-data" class="title-slide slide level1 center">
+<h1>Finding the NAs in Real Data</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a><span class="co"># Which rows are MISSING a paper_mass_g value? ---------</span></span>
+<span id="cb7-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a aria-label="3"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(paper_mass_g))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 13 × 8
+   twig_id leaf_id teams       shade mass_g petiole_mm thickness_mm paper_mass_g
+   &lt;chr&gt;   &lt;chr&gt;   &lt;chr&gt;       &lt;chr&gt;  &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;        &lt;dbl&gt;
+ 1 twig_2  l09     fighting_m… shady  0.920      0.383        NA              NA
+ 2 &lt;NA&gt;    1       Oscar_Karl  shady  0.454     53.6           0.36           NA
+ 3 &lt;NA&gt;    2       Oscar_Karl  shady  0.371     26.3           0.43           NA
+ 4 &lt;NA&gt;    3       Oscar_Karl  shady  0.351     57.8           0.48           NA
+ 5 &lt;NA&gt;    4       Oscar_Karl  shady  0.453     51.0           0.41           NA
+ 6 &lt;NA&gt;    5       Oscar_Karl  shady  0.344     37.0           0.25           NA
+ 7 &lt;NA&gt;    6       Oscar_Karl  shady  0.426     66.3           0.5            NA
+ 8 &lt;NA&gt;    1       Oscar_Karl  sunny  0.357     48.7           0.41           NA
+ 9 &lt;NA&gt;    2       Oscar_Karl  sunny  0.348     44.8           0.39           NA
+10 &lt;NA&gt;    3       Oscar_Karl  sunny  0.511     63.4           0.53           NA
+11 &lt;NA&gt;    4       Oscar_Karl  sunny  0.230     35.7           0.36           NA
+12 &lt;NA&gt;    5       Oscar_Karl  sunny  0.304     51.3           0.43           NA
+13 &lt;NA&gt;    6       Oscar_Karl  sunny  0.282     46.9           0.4            NA</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># Flip it with ! — keep only the rows that HAVE a value</span></span>
+<span id="cb9-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a aria-label="3"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(paper_mass_g))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 40 × 8
+   twig_id leaf_id teams shade mass_g petiole_mm thickness_mm paper_mass_g
+   &lt;chr&gt;   &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;        &lt;dbl&gt;
+ 1 &lt;NA&gt;    &lt;NA&gt;    12345 sunny   0.4          79         0.15         0.21
+ 2 &lt;NA&gt;    &lt;NA&gt;    12345 sunny   0.48         63         0.14         0.21
+ 3 &lt;NA&gt;    &lt;NA&gt;    12345 sunny   0.34         68         0.14         0.21
+ 4 &lt;NA&gt;    &lt;NA&gt;    12345 sunny   0.65         35         0.15         0.24
+ 5 &lt;NA&gt;    &lt;NA&gt;    12345 sunny   0.27         34         0.11         0.15
+ 6 &lt;NA&gt;    &lt;NA&gt;    12345 sunny   0.43         40         0.16         0.34
+ 7 &lt;NA&gt;    &lt;NA&gt;    12345 shady   0.39         40         0.14         0.29
+ 8 &lt;NA&gt;    &lt;NA&gt;    12345 shady   0.45         65         0.15         0.25
+ 9 &lt;NA&gt;    &lt;NA&gt;    12345 shady   0.6          68         0.12         0.23
+10 &lt;NA&gt;    &lt;NA&gt;    12345 shady   0.57         73         0.14         0.28
+# ℹ 30 more rows</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:45%;">
+<ul>
+<li><code>filter(is.na(paper_mass_g))</code> <strong>shows you the problem</strong> — every row where the measurement is missing</li>
+<li><code>filter(!is.na(paper_mass_g))</code> keeps the rows with real values — the same <code>!</code> idea as <code>sum(!is.na())</code></li>
+<li>Look at the row counts: the two tables together add back up to <code>nrow(leaf_df)</code></li>
+<li>Do this <strong>before</strong> any statistics — you cannot trust a mean until you know what is missing</li>
+</ul>
+<p>📖 <a href="https://r4ds.hadley.nz/missing-values">R4DS §18 — Missing Values</a></p>
+</div></div>
 </section>
 
 <section id="what-is-variance" class="title-slide slide level1 center scrollable">
@@ -558,37 +617,127 @@ Bill Perry
 </div></div>
 </section>
 
-<section id="one-function-all-the-basics-summary_stats" class="title-slide slide level1 center">
-<h1>One Function, All the Basics — <code>summary_stats()</code></h1>
+<section id="do-it-by-hand-first-one-group" class="title-slide slide level1 center">
+<h1>Do It By Hand First — One Group</h1>
 <div class="columns">
 <div class="column" style="width:55%;">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a>summary_stats <span class="ot">&lt;-</span> <span class="cf">function</span>(data, variable) {</span>
-<span id="cb7-2"><a aria-label="2"></a>  data <span class="sc">%&gt;%</span></span>
-<span id="cb7-3"><a aria-label="3"></a>    <span class="fu">summarize</span>(</span>
-<span id="cb7-4"><a aria-label="4"></a>      <span class="at">n        =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>({{ variable }})),</span>
-<span id="cb7-5"><a aria-label="5"></a>      <span class="at">mean     =</span> <span class="fu">mean</span>({{ variable }}, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-6"><a aria-label="6"></a>      <span class="at">variance =</span> <span class="fu">var</span>({{ variable }}, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-7"><a aria-label="7"></a>      <span class="at">sd       =</span> <span class="fu">sd</span>({{ variable }}, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-8"><a aria-label="8"></a>      <span class="at">se       =</span> sd <span class="sc">/</span> <span class="fu">sqrt</span>(n),</span>
-<span id="cb7-9"><a aria-label="9"></a>      <span class="at">ci_lower =</span> mean <span class="sc">-</span> <span class="fu">qt</span>(<span class="fl">0.975</span>, <span class="at">df =</span> n <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> se,</span>
-<span id="cb7-10"><a aria-label="10"></a>      <span class="at">ci_upper =</span> mean <span class="sc">+</span> <span class="fu">qt</span>(<span class="fl">0.975</span>, <span class="at">df =</span> n <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> se,</span>
-<span id="cb7-11"><a aria-label="11"></a>      <span class="at">.groups  =</span> <span class="st">"drop"</span></span>
-<span id="cb7-12"><a aria-label="12"></a>    ) <span class="sc">%&gt;%</span></span>
-<span id="cb7-13"><a aria-label="13"></a>    <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(mean, variance, sd, se, ci_lower, ci_upper),</span>
-<span id="cb7-14"><a aria-label="14"></a>                  <span class="sc">~</span> <span class="fu">round_half_up</span>(.x, <span class="dv">2</span>)))</span>
-<span id="cb7-15"><a aria-label="15"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="co"># Every statistic, written out, for the sunny leaves ----</span></span>
+<span id="cb11-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a aria-label="3"></a>  <span class="fu">filter</span>(shade <span class="sc">==</span> <span class="st">"sunny"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb11-4"><a aria-label="4"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb11-5"><a aria-label="5"></a>    <span class="at">mean     =</span> <span class="fu">mean</span>(mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb11-6"><a aria-label="6"></a>    <span class="at">variance =</span> <span class="fu">var</span>(mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb11-7"><a aria-label="7"></a>    <span class="at">sd       =</span> <span class="fu">sd</span>(mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb11-8"><a aria-label="8"></a>    <span class="at">n        =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(mass_g)),</span>
+<span id="cb11-9"><a aria-label="9"></a>    <span class="at">se       =</span> sd <span class="sc">/</span> <span class="fu">sqrt</span>(n)</span>
+<span id="cb11-10"><a aria-label="10"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 5
+   mean variance    sd     n     se
+  &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt;  &lt;dbl&gt;
+1 0.505   0.0442 0.210    25 0.0421</code></pre>
+</div>
+</div>
 </div><div class="column" style="width:45%;">
 <ul>
-<li>One call gives you <code>n</code>, <code>mean</code>, <code>variance</code>, <code>sd</code>, <code>se</code>, and a 95% CI</li>
-<li><code>n = sum(!is.na())</code> — no <code>length()</code> trap</li>
+<li><code>summarize()</code> collapses many rows down to <strong>one row</strong> of statistics</li>
+<li>Every function gets <code>na.rm = TRUE</code> — otherwise one <code>NA</code> makes the whole answer <code>NA</code></li>
+<li><code>n = sum(!is.na(mass_g))</code> — the correct count, not <code>n()</code></li>
+<li><code>se = sd / sqrt(n)</code> — you can reuse <code>sd</code> and <code>n</code> <strong>later in the same <code>summarize()</code></strong>, because they are already columns by then</li>
+<li>The result is a data frame, so it pipes onward into <code>ggplot()</code> or <code>write_csv()</code></li>
+</ul>
+</div></div>
+</section>
+
+<section id="do-it-by-hand-every-group-at-once" class="title-slide slide level1 center">
+<h1>Do It By Hand — Every Group at Once</h1>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>🔮 Predict first:</strong> How many <strong>rows</strong> will this return? (Hint: how many values does <code>shade</code> take?)</p>
+</div>
+</div>
+</div>
+<div class="columns">
+<div class="column" style="width:55%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># group_by() splits the data; summarize() runs per group</span></span>
+<span id="cb13-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
+<span id="cb13-4"><a aria-label="4"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb13-5"><a aria-label="5"></a>    <span class="at">mean     =</span> <span class="fu">mean</span>(mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb13-6"><a aria-label="6"></a>    <span class="at">variance =</span> <span class="fu">var</span>(mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb13-7"><a aria-label="7"></a>    <span class="at">sd       =</span> <span class="fu">sd</span>(mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb13-8"><a aria-label="8"></a>    <span class="at">n        =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(mass_g)),</span>
+<span id="cb13-9"><a aria-label="9"></a>    <span class="at">se       =</span> sd <span class="sc">/</span> <span class="fu">sqrt</span>(n)</span>
+<span id="cb13-10"><a aria-label="10"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 6
+  shade  mean variance    sd     n     se
+  &lt;chr&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt;  &lt;dbl&gt;
+1 shady 0.523   0.0219 0.148    28 0.0280
+2 sunny 0.505   0.0442 0.210    25 0.0421</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:45%;">
+<ul>
+<li>Exactly the same <code>summarize()</code> — the only new line is <code>group_by(shade)</code></li>
+<li>One row <strong>per group</strong> instead of one row overall</li>
+<li>This is the workhorse pattern for the rest of the course</li>
+</ul>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>✅ Key idea</strong></p>
+<p>Running this once for sunny and again for shady is exactly the repetition <code>group_by()</code> exists to remove.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="now-package-it-summary_stats" class="title-slide slide level1 center">
+<h1>Now Package It — <code>summary_stats()</code></h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a aria-label="1"></a>summary_stats <span class="ot">&lt;-</span> <span class="cf">function</span>(data, variable) {</span>
+<span id="cb15-2"><a aria-label="2"></a>  data <span class="sc">%&gt;%</span></span>
+<span id="cb15-3"><a aria-label="3"></a>    <span class="fu">summarize</span>(</span>
+<span id="cb15-4"><a aria-label="4"></a>      <span class="at">n        =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>({{ variable }})),</span>
+<span id="cb15-5"><a aria-label="5"></a>      <span class="at">mean     =</span> <span class="fu">mean</span>({{ variable }}, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb15-6"><a aria-label="6"></a>      <span class="at">variance =</span> <span class="fu">var</span>({{ variable }}, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb15-7"><a aria-label="7"></a>      <span class="at">sd       =</span> <span class="fu">sd</span>({{ variable }}, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb15-8"><a aria-label="8"></a>      <span class="at">se       =</span> sd <span class="sc">/</span> <span class="fu">sqrt</span>(n),</span>
+<span id="cb15-9"><a aria-label="9"></a>      <span class="at">ci_lower =</span> mean <span class="sc">-</span> <span class="fu">qt</span>(<span class="fl">0.975</span>, <span class="at">df =</span> n <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> se,</span>
+<span id="cb15-10"><a aria-label="10"></a>      <span class="at">ci_upper =</span> mean <span class="sc">+</span> <span class="fu">qt</span>(<span class="fl">0.975</span>, <span class="at">df =</span> n <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> se,</span>
+<span id="cb15-11"><a aria-label="11"></a>      <span class="at">.groups  =</span> <span class="st">"drop"</span></span>
+<span id="cb15-12"><a aria-label="12"></a>    )</span>
+<span id="cb15-13"><a aria-label="13"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div><div class="column" style="width:45%;">
+<ul>
+<li><strong>It is the same <code>summarize()</code> you just wrote by hand</strong> — wrapped in <code>function()</code> so you type it once, not once per variable</li>
+<li>Plus a 95% confidence interval for the mean, for free</li>
 <li><code>{ variable }</code> lets you pass a bare column name in, like <code>mass_g</code></li>
 <li>Works on <strong>one group</strong> or, if the data are already <code>group_by()</code>-ed, <strong>every group at once</strong></li>
 <li>Source: <a href="themes/summary_stats_function.R"><code>themes/summary_stats_function.R</code></a> — same <code>themes/</code> folder as your ggplot <a href="themes/r_themes_for_3_sizes.R"><code>theme file</code></a></li>
 </ul>
 </div></div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a aria-label="1"></a><span class="co"># source() loads summary_stats() from another .R file --</span></span>
-<span id="cb8-2"><a aria-label="2"></a><span class="fu">source</span>(<span class="st">"themes/summary_stats_function.R"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a aria-label="1"></a><span class="co"># source() loads summary_stats() from another .R file --</span></span>
+<span id="cb16-2"><a aria-label="2"></a><span class="fu">source</span>(<span class="st">"themes/summary_stats_function.R"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 
@@ -597,15 +746,15 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># Filter to one side, then hand it straight to the function</span></span>
-<span id="cb9-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb9-3"><a aria-label="3"></a>  <span class="fu">filter</span>(shade <span class="sc">==</span> <span class="st">"sunny"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb9-4"><a aria-label="4"></a>  <span class="fu">summary_stats</span>(mass_g)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a aria-label="1"></a><span class="co"># Filter to one side, then hand it straight to the function</span></span>
+<span id="cb17-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb17-3"><a aria-label="3"></a>  <span class="fu">filter</span>(shade <span class="sc">==</span> <span class="st">"sunny"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb17-4"><a aria-label="4"></a>  <span class="fu">summary_stats</span>(mass_g)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 1 × 7
-      n  mean variance    sd    se ci_lower ci_upper
-  &lt;int&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
-1    25  0.51     0.04  0.21  0.04     0.42     0.59</code></pre>
+      n  mean variance    sd     se ci_lower ci_upper
+  &lt;int&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+1    25 0.505   0.0442 0.210 0.0421    0.418    0.592</code></pre>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
@@ -622,7 +771,7 @@ Bill Perry
 <h1>🛑 Pause — Do Activity Parts 1–3 Now</h1>
 <div class="activitybanner">
 <p><strong>🛑 Do Activity Parts 1–3 now</strong></p>
-<p>Load the data, work the NA problem, source <code>summary_stats()</code>, and use it on one group with <code>filter()</code>. Predict each output, type it, then run it.</p>
+<p>Load the data, find the NAs, write the summary by hand with <code>group_by()</code> + <code>summarize()</code>, then source <code>summary_stats()</code> and use it on one group. Predict each output, type it, then run it.</p>
 </div>
 </section>
 
@@ -652,18 +801,18 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="co"># Group first, then call the SAME function -------------</span></span>
-<span id="cb11-2"><a aria-label="2"></a>stats_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb11-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
-<span id="cb11-4"><a aria-label="4"></a>  <span class="fu">summary_stats</span>(mass_g)</span>
-<span id="cb11-5"><a aria-label="5"></a></span>
-<span id="cb11-6"><a aria-label="6"></a>stats_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a aria-label="1"></a><span class="co"># Group first, then call the SAME function -------------</span></span>
+<span id="cb19-2"><a aria-label="2"></a>stats_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb19-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
+<span id="cb19-4"><a aria-label="4"></a>  <span class="fu">summary_stats</span>(mass_g)</span>
+<span id="cb19-5"><a aria-label="5"></a></span>
+<span id="cb19-6"><a aria-label="6"></a>stats_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 8
-  shade     n  mean variance    sd    se ci_lower ci_upper
-  &lt;chr&gt; &lt;int&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
-1 shady    28  0.52     0.02  0.15  0.03     0.47     0.58
-2 sunny    25  0.51     0.04  0.21  0.04     0.42     0.59</code></pre>
+  shade     n  mean variance    sd     se ci_lower ci_upper
+  &lt;chr&gt; &lt;int&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+1 shady    28 0.523   0.0219 0.148 0.0280    0.466    0.580
+2 sunny    25 0.505   0.0442 0.210 0.0421    0.418    0.592</code></pre>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
@@ -681,24 +830,24 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># summary_stats() handles ONE variable, so for several</span></span>
-<span id="cb13-2"><a aria-label="2"></a><span class="co"># measurements at once we still write summarize() directly</span></span>
-<span id="cb13-3"><a aria-label="3"></a>size_stats_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb13-4"><a aria-label="4"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
-<span id="cb13-5"><a aria-label="5"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb13-6"><a aria-label="6"></a>    <span class="at">n         =</span> <span class="fu">n</span>(),</span>
-<span id="cb13-7"><a aria-label="7"></a>    <span class="at">mean_mass =</span> <span class="fu">round</span>(<span class="fu">mean</span>(mass_g,       <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>),</span>
-<span id="cb13-8"><a aria-label="8"></a>    <span class="at">mean_pet  =</span> <span class="fu">round</span>(<span class="fu">mean</span>(petiole_mm,   <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">1</span>),</span>
-<span id="cb13-9"><a aria-label="9"></a>    <span class="at">mean_thick =</span> <span class="fu">round</span>(<span class="fu">mean</span>(thickness_mm, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>)</span>
-<span id="cb13-10"><a aria-label="10"></a>  )</span>
-<span id="cb13-11"><a aria-label="11"></a></span>
-<span id="cb13-12"><a aria-label="12"></a>size_stats_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a aria-label="1"></a><span class="co"># summary_stats() handles ONE variable, so for several</span></span>
+<span id="cb21-2"><a aria-label="2"></a><span class="co"># measurements at once we still write summarize() directly</span></span>
+<span id="cb21-3"><a aria-label="3"></a>size_stats_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb21-4"><a aria-label="4"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
+<span id="cb21-5"><a aria-label="5"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb21-6"><a aria-label="6"></a>    <span class="at">n          =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(mass_g)),</span>
+<span id="cb21-7"><a aria-label="7"></a>    <span class="at">mean_mass  =</span> <span class="fu">mean</span>(mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb21-8"><a aria-label="8"></a>    <span class="at">mean_pet   =</span> <span class="fu">mean</span>(petiole_mm, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb21-9"><a aria-label="9"></a>    <span class="at">mean_thick =</span> <span class="fu">mean</span>(thickness_mm, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb21-10"><a aria-label="10"></a>  )</span>
+<span id="cb21-11"><a aria-label="11"></a></span>
+<span id="cb21-12"><a aria-label="12"></a>size_stats_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 5
   shade     n mean_mass mean_pet mean_thick
   &lt;chr&gt; &lt;int&gt;     &lt;dbl&gt;    &lt;dbl&gt;      &lt;dbl&gt;
 1 shady    28     0.523     56.7      0.356
-2 sunny    25     0.505     54.4      0.29 </code></pre>
+2 sunny    25     0.505     54.4      0.290</code></pre>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
@@ -715,11 +864,11 @@ Bill Perry
 <h1>Fast Summaries with <code>skimr</code></h1>
 <div style="font-size: 0.5em;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a aria-label="1"></a><span class="co"># skim() grouped by shade — mass only -------------------</span></span>
-<span id="cb15-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb15-3"><a aria-label="3"></a>  <span class="fu">select</span>(shade, mass_g) <span class="sc">%&gt;%</span></span>
-<span id="cb15-4"><a aria-label="4"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
-<span id="cb15-5"><a aria-label="5"></a>  <span class="fu">skim</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a aria-label="1"></a><span class="co"># skim() grouped by shade — mass only -------------------</span></span>
+<span id="cb23-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb23-3"><a aria-label="3"></a>  <span class="fu">select</span>(shade, mass_g) <span class="sc">%&gt;%</span></span>
+<span id="cb23-4"><a aria-label="4"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
+<span id="cb23-5"><a aria-label="5"></a>  <span class="fu">skim</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <table class="caption-top">
 <caption>Data summary</caption>
@@ -832,23 +981,23 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a aria-label="1"></a><span class="co"># Apply the SAME function to every numeric column -----</span></span>
-<span id="cb16-2"><a aria-label="2"></a>mean_all_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb16-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
-<span id="cb16-4"><a aria-label="4"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb16-5"><a aria-label="5"></a>    <span class="fu">across</span>(</span>
-<span id="cb16-6"><a aria-label="6"></a>      <span class="fu">c</span>(mass_g, petiole_mm, thickness_mm),</span>
-<span id="cb16-7"><a aria-label="7"></a>      <span class="sc">~</span> <span class="fu">round</span>(<span class="fu">mean</span>(.x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>)</span>
-<span id="cb16-8"><a aria-label="8"></a>    )</span>
-<span id="cb16-9"><a aria-label="9"></a>  )</span>
-<span id="cb16-10"><a aria-label="10"></a></span>
-<span id="cb16-11"><a aria-label="11"></a>mean_all_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a aria-label="1"></a><span class="co"># Apply the SAME function to every numeric column -----</span></span>
+<span id="cb24-2"><a aria-label="2"></a>mean_all_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb24-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
+<span id="cb24-4"><a aria-label="4"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb24-5"><a aria-label="5"></a>    <span class="fu">across</span>(</span>
+<span id="cb24-6"><a aria-label="6"></a>      <span class="fu">c</span>(mass_g, petiole_mm, thickness_mm),</span>
+<span id="cb24-7"><a aria-label="7"></a>      <span class="sc">~</span> <span class="fu">mean</span>(.x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb24-8"><a aria-label="8"></a>    )</span>
+<span id="cb24-9"><a aria-label="9"></a>  )</span>
+<span id="cb24-10"><a aria-label="10"></a></span>
+<span id="cb24-11"><a aria-label="11"></a>mean_all_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 4
   shade mass_g petiole_mm thickness_mm
   &lt;chr&gt;  &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;
 1 shady  0.523       56.7        0.356
-2 sunny  0.505       54.4        0.29 </code></pre>
+2 sunny  0.505       54.4        0.290</code></pre>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
@@ -895,8 +1044,10 @@ Bill Perry
 </ul></li>
 <li><strong>R skills:</strong>
 <ul>
+<li><code>filter(is.na())</code> / <code>filter(!is.na())</code> — see the missing data before you summarize</li>
 <li><code>sum(!is.na())</code> — the right way to count <em>n</em></li>
-<li>A reusable <code>summary_stats()</code> function, sourced from <code>themes/</code></li>
+<li><code>group_by()</code> + <code>summarize()</code> by hand — mean, variance, sd, n, se</li>
+<li>The same code packaged as a reusable <code>summary_stats()</code> function, sourced from <code>themes/</code></li>
 <li><code>group_by()</code> — run the same summary on every group at once</li>
 <li><code>skim()</code> — instant full dataset overview</li>
 <li><code>across()</code> — one function, many columns</li>

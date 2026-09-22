@@ -6,7 +6,8 @@
 # data is already grouped with group_by()) with n, mean, variance, sd, se,
 # and a 95% confidence interval for the mean.
 #
-# Needs dplyr (tidyverse) and janitor::round_half_up() already loaded.
+# It is exactly the summarize() you write by hand, packaged up once.
+# Needs dplyr (tidyverse) already loaded.
 # ==============================================================================
 
 summary_stats <- function(data, variable) {
@@ -20,6 +21,5 @@ summary_stats <- function(data, variable) {
       ci_lower = mean - qt(0.975, df = n - 1) * se,
       ci_upper = mean + qt(0.975, df = n - 1) * se,
       .groups  = "drop"
-    ) %>%
-    mutate(across(c(mean, variance, sd, se, ci_lower, ci_upper), ~ round_half_up(.x, 2)))
+    )
 }

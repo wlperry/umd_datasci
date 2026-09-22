@@ -148,7 +148,7 @@ leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
 
 # 🧩 Chunk 1 of 2 · Build and Use `summary_stats()`
 
-**We will cover:** counting correctly with `sum(!is.na())`, a reusable `summary_stats()` helper, and using it one group at a time.
+**We will cover:** finding NAs in real data, counting correctly with `sum(!is.na())`, writing the summary **by hand** with `group_by()` + `summarize()`, and only then packaging it into a reusable `summary_stats()` helper.
 
 # What Is the Mean?
 
@@ -224,8 +224,35 @@ sum(!is.na(x)) # sum() counts the TRUEs = real values
 :::::
 
 ::: callout-tip
-**Best practice:** always use `sum(!is.na(x))` when you need *n* — even when you think there are no NAs. It is exactly what our `summary_stats()` function below uses.
+**Best practice:** always use `sum(!is.na(x))` when you need *n* — even when you think there are no NAs.
 :::
+
+# Finding the NAs in Real Data
+
+::::: columns
+::: {.column width="55%"}
+```{r find-nas}
+# Which rows are MISSING a paper_mass_g value? ---------
+leaf_df %>%
+  filter(is.na(paper_mass_g))
+```
+
+```{r drop-nas}
+# Flip it with ! — keep only the rows that HAVE a value
+leaf_df %>%
+  filter(!is.na(paper_mass_g))
+```
+:::
+
+::: {.column width="45%"}
+- `filter(is.na(paper_mass_g))` **shows you the problem** — every row where the measurement is missing
+- `filter(!is.na(paper_mass_g))` keeps the rows with real values — the same `!` idea as `sum(!is.na())`
+- Look at the row counts: the two tables together add back up to `nrow(leaf_df)`
+- Do this **before** any statistics — you cannot trust a mean until you know what is missing
+
+📖 [R4DS §18 — Missing Values](https://r4ds.hadley.nz/missing-values)
+:::
+:::::
 
 # What Is Variance?
 
@@ -319,7 +346,69 @@ We report SE when making claims about group means.
 :::
 :::::
 
-# One Function, All the Basics — `summary_stats()`
+# Do It By Hand First — One Group
+
+::::: columns
+::: {.column width="55%"}
+```{r manual-one-group}
+# Every statistic, written out, for the sunny leaves ----
+leaf_df %>%
+  filter(shade == "sunny") %>%
+  summarize(
+    mean     = mean(mass_g, na.rm = TRUE),
+    variance = var(mass_g, na.rm = TRUE),
+    sd       = sd(mass_g, na.rm = TRUE),
+    n        = sum(!is.na(mass_g)),
+    se       = sd / sqrt(n)
+  )
+```
+:::
+
+::: {.column width="45%"}
+- `summarize()` collapses many rows down to **one row** of statistics
+- Every function gets `na.rm = TRUE` — otherwise one `NA` makes the whole answer `NA`
+- `n = sum(!is.na(mass_g))` — the correct count, not `n()`
+- `se = sd / sqrt(n)` — you can reuse `sd` and `n` **later in the same `summarize()`**, because they are already columns by then
+- The result is a data frame, so it pipes onward into `ggplot()` or `write_csv()`
+:::
+:::::
+
+# Do It By Hand — Every Group at Once
+
+::: callout-note
+**🔮 Predict first:** How many **rows** will this return? (Hint: how many values does `shade` take?)
+:::
+
+::::: columns
+::: {.column width="55%"}
+```{r manual-group-by}
+# group_by() splits the data; summarize() runs per group
+leaf_df %>%
+  group_by(shade) %>%
+  summarize(
+    mean     = mean(mass_g, na.rm = TRUE),
+    variance = var(mass_g, na.rm = TRUE),
+    sd       = sd(mass_g, na.rm = TRUE),
+    n        = sum(!is.na(mass_g)),
+    se       = sd / sqrt(n)
+  )
+```
+:::
+
+::: {.column width="45%"}
+- Exactly the same `summarize()` — the only new line is `group_by(shade)`
+- One row **per group** instead of one row overall
+- This is the workhorse pattern for the rest of the course
+
+::: callout-note
+**✅ Key idea**
+
+Running this once for sunny and again for shady is exactly the repetition `group_by()` exists to remove.
+:::
+:::
+:::::
+
+# Now Package It — `summary_stats()`
 
 ::::: columns
 ::: {.column width="55%"}
@@ -335,16 +424,14 @@ summary_stats <- function(data, variable) {
       ci_lower = mean - qt(0.975, df = n - 1) * se,
       ci_upper = mean + qt(0.975, df = n - 1) * se,
       .groups  = "drop"
-    ) %>%
-    mutate(across(c(mean, variance, sd, se, ci_lower, ci_upper),
-                  ~ round_half_up(.x, 2)))
+    )
 }
 ```
 :::
 
 ::: {.column width="45%"}
-- One call gives you `n`, `mean`, `variance`, `sd`, `se`, and a 95% CI
-- `n = sum(!is.na())` — no `length()` trap
+- **It is the same `summarize()` you just wrote by hand** — wrapped in `function()` so you type it once, not once per variable
+- Plus a 95% confidence interval for the mean, for free
 - `{{ variable }}` lets you pass a bare column name in, like `mass_g`
 - Works on **one group** or, if the data are already `group_by()`-ed, **every group at once**
 - Source: [`themes/summary_stats_function.R`](themes/summary_stats_function.R) — same `themes/` folder as your ggplot [`theme file`](themes/r_themes_for_3_sizes.R)
@@ -382,7 +469,7 @@ leaf_df %>%
 ::: {.activitybanner}
 **🛑 Do Activity Parts 1–3 now**
 
-Load the data, work the NA problem, source `summary_stats()`, and use it on one group with `filter()`. Predict each output, type it, then run it.
+Load the data, find the NAs, write the summary by hand with `group_by()` + `summarize()`, then source `summary_stats()` and use it on one group. Predict each output, type it, then run it.
 :::
 
 # 🧩 Chunk 2 of 2 · Every Group, Every Column, Fast
@@ -430,10 +517,10 @@ stats_df
 size_stats_df <- leaf_df %>%
   group_by(shade) %>%
   summarize(
-    n         = n(),
-    mean_mass = round(mean(mass_g,       na.rm = TRUE), 3),
-    mean_pet  = round(mean(petiole_mm,   na.rm = TRUE), 1),
-    mean_thick = round(mean(thickness_mm, na.rm = TRUE), 3)
+    n          = sum(!is.na(mass_g)),
+    mean_mass  = mean(mass_g, na.rm = TRUE),
+    mean_pet   = mean(petiole_mm, na.rm = TRUE),
+    mean_thick = mean(thickness_mm, na.rm = TRUE)
   )
 
 size_stats_df
@@ -474,7 +561,7 @@ mean_all_df <- leaf_df %>%
   summarize(
     across(
       c(mass_g, petiole_mm, thickness_mm),
-      ~ round(mean(.x, na.rm = TRUE), 3)
+      ~ mean(.x, na.rm = TRUE)
     )
   )
 
@@ -511,8 +598,10 @@ Close the slides. Finish Activity Parts 4–6, then Part 7 (review and checkpoin
   - **Variance / SD** — spread of individual data; $n-1$ makes $s^2$ unbiased
   - **SE** — precision of the sample mean
 - **R skills:**
+  - `filter(is.na())` / `filter(!is.na())` — see the missing data before you summarize
   - `sum(!is.na())` — the right way to count *n*
-  - A reusable `summary_stats()` function, sourced from `themes/`
+  - `group_by()` + `summarize()` by hand — mean, variance, sd, n, se
+  - The same code packaged as a reusable `summary_stats()` function, sourced from `themes/`
   - `group_by()` — run the same summary on every group at once
   - `skim()` — instant full dataset overview
   - `across()` — one function, many columns
