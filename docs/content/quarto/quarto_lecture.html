@@ -8,7 +8,7 @@
 
 <meta name="author" content="Bill Perry">
 <meta name="dcterms.date" content="2026-09-23">
-<meta name="description" content="Why we write analyses as Quarto documents instead of loose scripts: literate programming, code chunks, Markdown, and rendering our leaf analysis to a professional Word document.">
+<meta name="description" content="Why we write analyses as Quarto documents instead of loose scripts: YAML, Markdown, and code chunks with a chunk-option reference, then the whole leaf analysis start to finish — box plot, mean ± SE, histogram, summary statistics table, Welch’s t-test — rendered to Word, PDF, and RevealJS slides from one file.">
 
 <title>Lecture 07 — From Script to Report – UMD DAta Science Biology</title>
 <style>
@@ -120,11 +120,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <link rel="stylesheet" href="../../css/main.css">
 <meta property="og:title" content="Lecture 07 — From Script to Report – UMD DAta Science Biology">
-<meta property="og:description" content="Why we write analyses as Quarto documents instead of loose scripts: literate programming, code chunks, Markdown, and rendering our leaf analysis to a professional Word document.">
-<meta property="og:image" content="https://wlperry.github.io/umd_datasci/content/quarto/images/diagram_pipe.png">
+<meta property="og:description" content="Why we write analyses as Quarto documents instead of loose scripts: YAML, Markdown, and code chunks with a chunk-option reference, then the whole leaf analysis start to finish — box plot, mean ± SE, histogram, summary statistics table, Welch’s t-test — rendered to Word, PDF, and RevealJS slides from one file.">
+<meta property="og:image" content="https://wlperry.github.io/umd_datasci/content/quarto/quarto_lecture_files/figure-revealjs/fig-boxplot-1.png">
 <meta property="og:site_name" content="UMD DAta Science Biology">
-<meta property="og:image:height" content="148">
-<meta property="og:image:width" content="260">
+<meta property="og:image:height" content="384">
+<meta property="og:image:width" content="480">
 </head>
 
 <body class="nav-sidebar docked quarto-light"><script id="quarto-html-before-body" type="application/javascript">
@@ -412,7 +412,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Lecture 07 — From Script to Report</h1>
-<p class="subtitle lead">Why Quarto? Code chunks, Markdown, and a professional Word document</p>
+<p class="subtitle lead">One Quarto file: read the data, plot it, describe it, test it — Word, PDF, and slides</p>
   <div class="quarto-categories">
     <div class="quarto-category">quarto</div>
     <div class="quarto-category">reproducibility</div>
@@ -422,7 +422,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    <p>Why we write analyses as Quarto documents instead of loose scripts: literate programming, code chunks, Markdown, and rendering our leaf analysis to a professional Word document.</p>
+    <p>Why we write analyses as Quarto documents instead of loose scripts: YAML, Markdown, and code chunks with a chunk-option reference, then the whole leaf analysis start to finish — box plot, mean ± SE, histogram, summary statistics table, Welch’s t-test — rendered to Word, PDF, and RevealJS slides from one file.</p>
   </div>
 </div>
 
@@ -451,12 +451,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="where-we-left-off-lectures-0506" class="level1">
-<h1>Where we left off (Lectures 05–06)</h1>
+<section id="where-we-left-off-lectures-0306" class="level1">
+<h1>Where we left off (Lectures 03–06)</h1>
 <ul>
-<li><strong>Wrangling</strong> — <code>filter()</code>, <code>select()</code>, <code>mutate()</code>, <code>arrange()</code></li>
-<li><strong>Descriptive stats</strong> — mean, median, SD, SE with <code>group_by()</code> + <code>summarize()</code></li>
-<li><strong>Figures</strong> — boxplots and mean ± SE plots, saved as PNG (GGPlot I)</li>
+<li><strong>Read</strong> the leaf data with <code>read_excel()</code> + <code>clean_names()</code></li>
+<li><strong>Plotted</strong> it — box plots, mean ± SE with <code>stat_summary()</code>, histograms</li>
+<li><strong>Described</strong> it — <code>group_by()</code> + <code>summary_stats()</code>: n, mean, SD, SE, 95% CI</li>
 <li>Everything so far lives in a <strong><code>.R</code> script</strong></li>
 </ul>
 <div class="callout callout-style-default callout-note callout-titled">
@@ -469,8 +469,8 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>✅ Key idea from Lecture 06</strong></p>
-<p>You now have a complete descriptive analysis of the leaf data. Today we turn that pile of code into a <strong>report a human can read</strong> — before we even get to formal hypothesis testing.</p>
+<p><strong>✅ Key idea</strong></p>
+<p>You already know every piece of a real analysis. Today we put all of it — plus a t-test — into <strong>one document a human can read</strong>.</p>
 </div>
 </div>
 </section>
@@ -480,14 +480,15 @@ Note
 <div class="column" style="width:60%;">
 <ul>
 <li>Understand <strong>why</strong> a script alone is not enough</li>
-<li>Meet <strong>Quarto</strong> — code and writing in one file</li>
+<li>Know <strong>where</strong> a Quarto file lives in your project</li>
 <li>Learn the three ingredients:
 <ul>
-<li><strong>YAML front matter</strong> — the recipe at the top</li>
+<li><strong>YAML</strong> — the recipe at the top (one switch hides all the code)</li>
 <li><strong>Markdown</strong> — formatted text, no clicking</li>
-<li><strong>Code chunks</strong> — R that runs and shows its output</li>
+<li><strong>Code chunks</strong> — R that runs, plus the <strong>chunk options</strong> that control it</li>
 </ul></li>
-<li><strong>Render</strong> our leaf analysis to a <strong>professional Word document</strong></li>
+<li>Take the leaf data <strong>start to finish</strong>: plots → summary table → <strong>Welch’s t-test</strong></li>
+<li>Render <strong>one file</strong> to <strong>Word, PDF, and RevealJS slides</strong></li>
 </ul>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -499,20 +500,25 @@ Tip
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>🖐 Try it yourself</strong></p>
-<p>By the end you will click <strong>Render</strong> and get a finished Word report of <em>our</em> leaf study.</p>
+<p><strong>🖐 You will hand in</strong></p>
+<p><code>leaf_report.qmd</code>, <code>leaf_report.docx</code>, and <code>leaf_report.pdf</code>.</p>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
 <p><strong>Tools today:</strong></p>
 <ul>
-<li>No new packages — just Positron + Quarto (built in)</li>
+<li>Positron + Quarto (built in)</li>
+<li><code>broom</code> — turns test output into a table (installed with tidyverse)</li>
+</ul>
+<p><strong>Get the starter file:</strong></p>
+<ul>
+<li>📥 <a href="downloads/leaf_report_skeleton.qmd" download="leaf_report.qmd"><strong><code>leaf_report_skeleton.qmd</code></strong></a></li>
 </ul>
 <p><strong>References:</strong></p>
 <ul>
 <li>📖 <a href="https://r4ds.hadley.nz/quarto">R4DS Ch 28 — Quarto</a></li>
 <li>📖 <a href="https://r4ds.hadley.nz/quarto-formats">R4DS Ch 29 — Quarto formats</a></li>
-<li>🌐 <a href="https://quarto.org/docs/get-started/">quarto.org — get started</a></li>
+<li>🌐 <a href="https://quarto.org/docs/computations/execution-options.html">Quarto chunk options</a></li>
 </ul>
 </div>
 </div>
@@ -521,7 +527,7 @@ Tip
 <h1>How to Use These Slides — Predict · Type · Render</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
-<p>This lecture runs in <strong>four short chunks</strong>. After each chunk you switch to the <strong>activity</strong> and build your own report.</p>
+<p>This lecture runs in <strong>four short chunks</strong>. After each chunk you switch to the <strong>activity</strong> and fill in your own report.</p>
 <p><strong>For every snippet, do three things:</strong></p>
 <ol type="1">
 <li><strong>Predict</strong> — before you Render, say what the document will show</li>
@@ -550,9 +556,9 @@ Note
 </div>
 </div>
 </section>
-<section id="chunk-1-of-4-why-quarto" class="level1">
-<h1>🧩 Chunk 1 of 4 · Why Quarto?</h1>
-<p><strong>We will cover:</strong> the pain of script-plus-copy-paste, literate programming, and reproducibility — the real payoff.</p>
+<section id="chunk-1-of-4-why-quarto-and-where-the-file-lives" class="level1">
+<h1>🧩 Chunk 1 of 4 · Why Quarto, and Where the File Lives</h1>
+<p><strong>We will cover:</strong> the pain of script-plus-copy-paste, literate programming, reproducibility, and where to save a <code>.qmd</code> so your paths just work.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -563,7 +569,7 @@ Tip
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>🖐 After this chunk:</strong> open the finished example <strong><code>t_test_report.qmd</code></strong>, Render it, then start <strong>Activity Step 1</strong>.</p>
+<p><strong>🖐 After this chunk: Activity Part 1</strong> (save the starter file at the top of your project and Render it).</p>
 </div>
 </div>
 </section>
@@ -620,10 +626,12 @@ Note
 <p><strong>Literate programming</strong> — write the <em>story</em> and the <em>code</em> in the <strong>same file</strong>.</p>
 <ul>
 <li>Your explanation sits next to the code that made it</li>
-<li>The numbers and plots are <strong>computed</strong>, never copied</li>
+<li>Tables and plots are <strong>computed</strong>, never copied</li>
 <li>Press <strong>Render</strong> → a finished document appears</li>
 </ul>
-<pre class="text"><code>one .qmd file  →  Render  →  Word / HTML / PDF / PowerPoint</code></pre>
+<pre class="text"><code>one .qmd file  →  Render  →  Word  /  PDF  /  slides</code></pre>
+<p>Change the data, Render again, and every table and figure <strong>rebuilds itself</strong>. That is what scientists mean by <strong>reproducible</strong>.</p>
+</div><div class="column" style="width:40%;">
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -638,7 +646,6 @@ Note
 <p><strong>Quarto</strong> = the tool that turns one plain-text <code>.qmd</code> file into a polished document.</p>
 </div>
 </div>
-</div><div class="column" style="width:40%;">
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -650,45 +657,29 @@ Note
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>✅ Key idea</strong></p>
-<p>A script <em>does</em> the analysis.</p>
-<p>A <strong>Quarto document</strong> does the analysis <strong>and explains it</strong> — and rebuilds itself on demand.</p>
+<p>A script <em>does</em> the analysis. A <strong>Quarto document</strong> does the analysis <strong>and explains it</strong> — and rebuilds itself on demand.</p>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section id="reproducibility-the-real-payoff" class="level1">
-<h1>Reproducibility — the real payoff</h1>
+<section id="where-does-the-.qmd-go-the-top-of-your-project" class="level1">
+<h1>Where does the <code>.qmd</code> go? — the top of your project</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
-<p>Change your data file, press <strong>Render</strong>, and:</p>
-<ul>
-<li>Every mean, SD, and <em>p</em>-value <strong>recalculates</strong></li>
-<li>Every figure <strong>redraws</strong></li>
-<li>Every sentence with a number <strong>updates itself</strong></li>
-</ul>
-<p>This is what scientists mean by <strong>reproducible</strong> — anyone (including future-you) can regenerate your exact results.</p>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>🖐 Try it yourself</strong></p>
-<p>Imagine a reviewer finds one bad leaf measurement. With Quarto the fix is: delete the row, then press Render — every table, figure, and sentence downstream updates to match.</p>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="images/diagram_pipe.png" class="img-fluid figure-img" style="width:90.0%"></p>
-<figcaption>Diagram of the pipe operator: leaf_df flows down into filter(shade == “sunny”), then flows down into summary(), read as “take leaf_df, then filter, then summarise.”</figcaption>
-</figure>
-</div>
+<div class="column" style="width:55%;">
+<pre class="text"><code>leaf_project/
+├── data/
+│   └── 2026_09_03_data_sci_leaf_area.xlsx
+├── figures/
+├── scripts/
+├── themes/
+│   ├── r_themes_for_3_sizes.R
+│   └── summary_stats_function.R
+└── leaf_report.qmd      &lt;- HERE</code></pre>
+<p>Quarto runs the code <strong>from the folder the <code>.qmd</code> is saved in</strong>. Save it at the <strong>top</strong> of the project and these paths work exactly as they do in your scripts:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_excel</span>(<span class="st">"data/2026_09_03_data_sci_leaf_area.xlsx"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"themes/summary_stats_function.R"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div><div class="column" style="width:45%;">
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -699,22 +690,37 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Same philosophy as Lecture 02: <strong>never overwrite your raw numbers</strong> — let the document rebuild from them.</p>
+<p><strong>✅ Key idea</strong></p>
+<p><code>.qmd</code> at the top + short paths into subfolders = <strong>no <code>here</code> package, no <code>../</code></strong>. Same paths in the Console, in your scripts, and in the report.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>⚠️ Watch out!</strong></p>
+<p>Save it inside <code>documents/</code> and <code>"data/..."</code> breaks — Quarto would look for <code>documents/data/</code>. You would need <code>"../data/..."</code> everywhere. Don’t.</p>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section id="pause-see-it-then-do-activity-step-1" class="level1">
-<h1>🛑 Pause — See It, Then Do Activity Step 1</h1>
+<section id="pause-do-activity-part-1-now" class="level1">
+<h1>🛑 Pause — Do Activity Part 1 Now</h1>
 <div class="activitybanner">
-<p><strong>🛑 Do Activity Step 1 now</strong></p>
-<p>Open <strong><code>t_test_report.qmd</code></strong>, press Render, and watch a script become a finished Word report. Then make your own new <code>.qmd</code> (Step 1).</p>
+<p><strong>🛑 Do Activity Part 1 now</strong></p>
+<p>Download <a href="downloads/leaf_report_skeleton.qmd" download="leaf_report.qmd"><code>leaf_report_skeleton.qmd</code></a>, save it at the <strong>top</strong> of your project as <code>leaf_report.qmd</code>, and press <strong>Render</strong> before you change anything.</p>
 </div>
 </section>
 <section id="chunk-2-of-4-anatomy-of-a-.qmd" class="level1">
 <h1>🧩 Chunk 2 of 4 · Anatomy of a <code>.qmd</code></h1>
-<p><strong>We will cover:</strong> the three ingredients — YAML front matter, Markdown text, and named code chunks.</p>
+<p><strong>We will cover:</strong> YAML (and the one line that hides all the code), Markdown, code chunks, and the chunk options you will use all term.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -725,21 +731,20 @@ Tip
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>🖐 After this chunk: Activity Steps 2–4</strong> (write the YAML, add Markdown, add named chunks).</p>
+<p><strong>🖐 After this chunk: Activity Parts 2–4</strong> (YAML, Markdown, chunk options).</p>
 </div>
 </div>
 </section>
-<section id="part-2-anatomy-of-a-.qmd-file" class="level1">
-<h1>Part 2 · Anatomy of a <code>.qmd</code> file</h1>
-<section id="three-parts-top-to-bottom" class="level3">
-<h3 class="anchored" data-anchor-id="three-parts-top-to-bottom">Three parts, top to bottom</h3>
+<section id="three-parts-top-to-bottom" class="level1">
+<h1>Three parts, top to bottom</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
 <p>Every Quarto document has the same three ingredients:</p>
-<pre class="text"><code>1. YAML front matter  ← the recipe (title, output type)
+<pre class="text"><code>1. YAML front matter  ← the recipe (title, outputs, chunk defaults)
 2. Markdown text      ← your writing, formatted
 3. Code chunks        ← R that runs and shows results</code></pre>
 <p>You already <em>read</em> these every day — this whole lecture is a <code>.qmd</code> file.</p>
+</div><div class="column" style="width:40%;">
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -754,7 +759,11 @@ Note
 <p><strong><code>.qmd</code></strong> = a <strong>Q</strong>uarto <strong>m</strong>ark<strong>d</strong>own file. Plain text you can open anywhere.</p>
 </div>
 </div>
-</div><div class="column" style="width:40%;">
+</div>
+</div>
+</section>
+<section id="ingredient-1-yaml-the-recipe" class="level1">
+<h1>Ingredient 1 · YAML — the recipe</h1>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -765,29 +774,52 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>✅ Key idea</strong></p>
-<p>If you can write a script and write an email, you already know two of the three parts. Only the <strong>YAML</strong> is new.</p>
+<p><strong>🔮 Predict first:</strong> The <code>execute:</code> block below says <code>echo: true</code>. What changes in the whole document if you switch it to <code>false</code>?</p>
 </div>
 </div>
-</div>
-</div>
-</section>
-</section>
-<section id="ingredient-1-yaml-front-matter" class="level1">
-<h1>Ingredient 1 · YAML front matter</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
-<p>The block at the very top, fenced by three dashes <code>---</code>. It is the <strong>recipe</strong> — what to build and how:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">title</span><span class="kw">:</span><span class="at"> </span><span class="st">"Leaf Morphology Report"</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">author</span><span class="kw">:</span><span class="at"> </span><span class="st">"Your Name"</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">date</span><span class="kw">:</span><span class="at"> today</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">format</span><span class="kw">:</span><span class="at"> docx</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">title</span><span class="kw">:</span><span class="at"> </span><span class="st">"Leaf Mass on the Sunny and Shady Sides of a Tree"</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">author</span><span class="kw">:</span><span class="at"> </span><span class="st">"Your Name"</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">date</span><span class="kw">:</span><span class="at"> today</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">format</span><span class="kw">:</span><span class="co">            # one file -&gt; three documents</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">docx</span><span class="kw">:</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">toc</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">number-sections</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pdf</span><span class="kw">:</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">toc</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">number-sections</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">fig-pos</span><span class="kw">:</span><span class="at"> </span><span class="st">"H"</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">revealjs</span><span class="kw">:</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">scrollable</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">smaller</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="fu">execute</span><span class="kw">:</span><span class="co">           # defaults for EVERY chunk</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">echo</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span><span class="co">       # false = hide ALL the code at once</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">warning</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">message</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div><div class="column" style="width:40%;">
 <ul>
-<li><code>title</code>, <code>author</code>, <code>date</code> — appear at the top of the report</li>
-<li><code>format: docx</code> — <strong>make a Word document</strong></li>
+<li><code>format:</code> — <strong>which</strong> documents to build</li>
+<li><code>execute:</code> — settings for <strong>every chunk</strong>; one line turns all the code on or off</li>
 </ul>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>One switch</strong></p>
+<p>Write with <code>echo: true</code> so you can see your code. Flip to <code>echo: false</code> for the version you hand in.</p>
+</div>
+</div>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -799,25 +831,9 @@ Warning
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>⚠️ Watch out!</strong></p>
-<p>YAML is <strong>space-sensitive</strong>. Indent with spaces, never tabs. A stray space is the #1 beginner error.</p>
+<p>YAML is <strong>space-sensitive</strong>: two spaces, never tabs.</p>
 </div>
 </div>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>📖 New word</strong></p>
-<p><strong>YAML</strong> = “<strong>Y</strong>AML <strong>A</strong>in’t <strong>M</strong>arkup <strong>L</strong>anguage.” Just a tidy list of <code>key: value</code> settings.</p>
-</div>
-</div>
-<p><code>format:</code> is the only line you change to get Word vs.&nbsp;HTML vs.&nbsp;PowerPoint.</p>
 </div>
 </div>
 </section>
@@ -833,36 +849,25 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>🔮 Predict first:</strong> Look at the Markdown block below. Before it renders, sketch what it becomes — which line is a big heading, which are bullets, what turns bold?</p>
+<p><strong>🔮 Predict first:</strong> Before it renders, sketch what this becomes — which line is a big heading, which are bullets, what turns bold?</p>
 </div>
 </div>
 <div class="columns">
 <div class="column" style="width:60%;">
-<p>Markdown is <strong>formatting with symbols</strong> instead of toolbar buttons:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># A big heading</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">## A smaller heading</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>Normal text. Make it **bold** or *italic*.</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>a bullet</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>another bullet</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">a link</span><span class="co">](https://r4ds.hadley.nz)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>You write the symbols; Quarto turns them into real headings, bullets, and links.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>📖 New word</strong></p>
-<p><strong>Markdown</strong> = a simple way to format plain text using a few symbols like <code>#</code>, <code>*</code>, and <code>-</code>.</p>
-</div>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># Introduction</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>Leaves on the **shady** side of a tree may grow</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>larger to catch more of the limited light.</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Null hypothesis:** mean mass is the same on both sides</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Alternate hypothesis:** mean mass differs</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- a comment: never shows up in the output --&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>#</code> heading, <code>##</code> smaller heading</li>
+<li><code>**bold**</code>, <code>*italic*</code>, <code>-</code> bullets</li>
+<li><code>&lt;!-- --&gt;</code> a note to yourself — the skeleton is full of them</li>
+</ul>
 </div><div class="column" style="width:40%;">
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -878,35 +883,40 @@ Note
 <p><code>**bold**</code> is just the <em>keyboard</em> version of clicking the <strong>B</strong> button. Same result, no mouse.</p>
 </div>
 </div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🎞 Bonus</strong></p>
+<p>In the slide version, every <code>#</code> becomes a <strong>section slide</strong> and every <code>##</code> becomes a <strong>slide</strong>.</p>
+</div>
+</div>
 </div>
 </div>
 </section>
 <section id="ingredient-3-code-chunks" class="level1">
 <h1>Ingredient 3 · Code chunks</h1>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>🔮 Predict first:</strong> The chunk below runs <code>mean(c(4, 3, 5, 7))</code>. What number will land in the document? Predict before you look.</p>
-</div>
-</div>
 <div class="columns">
 <div class="column" style="width:60%;">
-<p>A <strong>code chunk</strong> is a fenced block of R that actually <strong>runs</strong> when you render:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">7</span>))</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A <strong>code chunk</strong> is fenced R that actually <strong>runs</strong> when you render:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: load-data</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># read the leaf data from the data/ folder ----</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/2026_09_03_data_sci_leaf_area.xlsx"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
-<li>Opening fence: <code>```{r}</code> — the <code>{r}</code> means “this is R”</li>
-<li>Closing fence: <code>```</code></li>
-<li>The <strong>code</strong> <em>and</em> its <strong>output</strong> land in your document</li>
+<li>Opening fence <code>```{r}</code> — closing fence <code>```</code></li>
+<li>Lines starting <code>#|</code> are <strong>chunk options</strong></li>
+<li>Then a <code>#</code> comment saying what it does — same rule as your scripts</li>
 </ul>
+</div><div class="column" style="width:40%;">
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -917,40 +927,9 @@ Tip
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Shortcut to insert a chunk: <strong>Ctrl/Cmd + Alt + I</strong></p>
+<p>Insert a chunk: <strong>Ctrl/Cmd + Alt + I</strong></p>
 </div>
 </div>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>✅ Key idea</strong></p>
-<p>This is why we write code chunks: the result you see in the report is <strong>computed live</strong>, so it can never disagree with your code.</p>
-</div>
-</div>
-</div>
-</div>
-</section>
-<section id="name-every-chunk-just-like-your-scripts" class="level1">
-<h1>Name every chunk (just like your scripts)</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p>Give each chunk a short <strong>label</strong> after <code>r</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r load-data}</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/2026_09_03_data_sci_leaf_area.xlsx"</span>)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<ul>
-<li>If rendering fails, Quarto tells you <strong>which named chunk</strong> broke</li>
-<li>Same habit as our small, named steps in Lectures 03–04</li>
-</ul>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -962,187 +941,121 @@ Warning
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>⚠️ Watch out!</strong></p>
-<p>Chunk labels must be <strong>unique</strong> — no two chunks named <code>plot</code>. Same rule as never overwriting a <code>_plot</code> object.</p>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>✅ Key idea</strong></p>
-<p>Small, <strong>named</strong> chunks = easy to find the one line that failed. This is the same debugging strategy from your scripts.</p>
+<p>Every <code>label</code> must be <strong>unique</strong>. Two chunks named <code>plot</code> stop the Render:</p>
+<pre class="text"><code>Duplicate chunk label 'plot'</code></pre>
+<p>The error names the label — go straight to it.</p>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section id="live-demo-watch-it-break-on-purpose" class="level1">
-<h1>Live Demo — Watch It Break (on purpose)</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p>I’ll give <strong>two chunks the same label</strong> and Render:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r plot}</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>leaf_box_plot</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>… the <em>same</em> label again …</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r plot}</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>leaf_mean_se_plot</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Quarto stops:</p>
-<pre><code>ERROR: Duplicate chunk label 'plot'</code></pre>
-<p>The fix — make every label unique: <code>plot-box</code> and <code>plot-mean-se</code>.</p>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>✅ Why show a broken render?</strong></p>
-<p>Quarto names the exact problem — <em>“Duplicate chunk label ‘plot’”</em>. Once you know to read the error for the chunk name, you’ll go straight to the repeated label instead of guessing.</p>
-</div>
-</div>
-</div>
-</div>
-</section>
-<section id="pause-do-activity-steps-24-now" class="level1">
-<h1>🛑 Pause — Do Activity Steps 2–4 Now</h1>
-<div class="activitybanner">
-<p><strong>🛑 Do Activity Steps 2–4 now</strong></p>
-<p>Type the YAML by hand (spaces, not tabs), add a heading and bullets in Markdown, and create two uniquely named chunks. Predict what each renders before you press Render.</p>
-</div>
-</section>
-<section id="chunk-3-of-4-chunk-options-computed-values" class="level1">
-<h1>🧩 Chunk 3 of 4 · Chunk Options &amp; Computed Values</h1>
-<p><strong>We will cover:</strong> <code>#|</code> options to control what shows, and printing a computed table so the report always matches the data.</p>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>🖐 After this chunk: Activity Step 5</strong> (compute a summary and print it into the report).</p>
-</div>
-</div>
-</section>
-<section id="chunk-options-control-what-shows" class="level1">
-<h1>Chunk options — control what shows</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p>Lines starting with <code>#|</code> are <strong>chunk options</strong>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r leaf-plot}</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false      # hide the code, show the plot</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 6</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># leaf_box_plot</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="chunk-options-the-reference-card" class="level1">
+<h1>Chunk options — the reference card</h1>
 <table class="caption-top table">
+<caption>The <code>execute:</code> block in the YAML sets the default for every chunk; a chunk’s own <code>#|</code> line overrides it for that one chunk.</caption>
+<colgroup>
+<col style="width: 20%">
+<col style="width: 50%">
+<col style="width: 30%">
+</colgroup>
 <thead>
 <tr class="header">
-<th>Option</th>
-<th>Effect</th>
+<th style="text-align: left;">Option</th>
+<th style="text-align: left;">What it does</th>
+<th style="text-align: left;">Example</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>echo: false</code></td>
-<td>hide the code, keep the output</td>
+<td style="text-align: left;"><code>label</code></td>
+<td style="text-align: left;">Names the chunk. <code>fig-</code> / <code>tbl-</code> at the front numbers it as a Figure / Table</td>
+<td style="text-align: left;"><code>#| label: fig-boxplot</code></td>
 </tr>
 <tr class="even">
-<td><code>warning: false</code></td>
-<td>hide warning messages</td>
+<td style="text-align: left;"><code>echo</code></td>
+<td style="text-align: left;">Show (<code>true</code>) or hide (<code>false</code>) the <strong>code</strong></td>
+<td style="text-align: left;"><code>#| echo: false</code></td>
 </tr>
 <tr class="odd">
-<td><code>message: false</code></td>
-<td>hide package startup messages</td>
+<td style="text-align: left;"><code>eval</code></td>
+<td style="text-align: left;">Run the code (<code>true</code>) or only show it (<code>false</code>)</td>
+<td style="text-align: left;"><code>#| eval: false</code></td>
 </tr>
 <tr class="even">
-<td><code>eval: false</code></td>
-<td>show code but do <strong>not</strong> run it</td>
+<td style="text-align: left;"><code>include</code></td>
+<td style="text-align: left;"><code>false</code> runs the code but hides <strong>both</strong> code and output</td>
+<td style="text-align: left;"><code>#| include: false</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>output</code></td>
+<td style="text-align: left;"><code>false</code> hides the <strong>results</strong> but keeps the code</td>
+<td style="text-align: left;"><code>#| output: false</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>warning</code> / <code>message</code></td>
+<td style="text-align: left;">Show or hide warnings / package messages</td>
+<td style="text-align: left;"><code>#| message: false</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>fig-width</code> / <code>fig-height</code></td>
+<td style="text-align: left;">Figure size in inches</td>
+<td style="text-align: left;"><code>#| fig-width: 5</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>fig-cap</code></td>
+<td style="text-align: left;">Figure caption</td>
+<td style="text-align: left;"><code>#| fig-cap: "Leaf mass by side"</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>tbl-cap</code></td>
+<td style="text-align: left;">Table caption</td>
+<td style="text-align: left;"><code>#| tbl-cap: "Summary statistics"</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>tbl-colwidths</code></td>
+<td style="text-align: left;">Column widths in percent — tidy Word tables</td>
+<td style="text-align: left;"><code>#| tbl-colwidths: [30, 70]</code></td>
 </tr>
 </tbody>
 </table>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-style-default callout-note callout-titled">
+</section>
+<section id="pause-do-activity-parts-24-now" class="level1">
+<h1>🛑 Pause — Do Activity Parts 2–4 Now</h1>
+<div class="activitybanner">
+<p><strong>🛑 Do Activity Parts 2–4 now</strong></p>
+<p>Put your name in the YAML and try the <code>echo</code> switch; write the Introduction and Methods in Markdown; then use the reference card to hide the <code>setup</code> chunk. Predict each Render before you press it.</p>
+</div>
+</section>
+<section id="chunk-3-of-4-plot-it-then-describe-it" class="level1">
+<h1>🧩 Chunk 3 of 4 · Plot It, Then Describe It</h1>
+<p><strong>We will cover:</strong> the three plots you already know — box plot, mean ± SE, histogram — as named chunks with numbered captions, then a summary statistics <strong>table</strong> that looks right in Word.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Note
+Tip
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>✅ Key idea</strong></p>
-<p>For a clean report set <code>echo: false</code> — readers see the <strong>results</strong>, not the code. For a teaching handout, keep <code>echo: true</code>.</p>
-</div>
-</div>
-<p>📖 <a href="https://r4ds.hadley.nz/quarto#code-chunks">R4DS §28.5 — Code chunks</a></p>
+<p><strong>🖐 After this chunk: Activity Parts 5–6</strong> (the three plots and the summary table).</p>
 </div>
 </div>
 </section>
-<section id="computed-values-let-the-chunk-print-them" class="level1">
-<h1>Computed values — let the chunk print them</h1>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>🔮 Predict first:</strong> The chunk below builds a one-row-per-group summary. How many rows and columns will the printed table have?</p>
-</div>
-</div>
+<section id="start-at-the-top-load-the-data" class="level1">
+<h1>Start at the top: load the data</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
-<p>Compute the numbers in a chunk and <strong>print the result</strong> — then refer to it in your prose:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r means}</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>summary_df <span class="ot">&lt;-</span> leaf_df <span class="sc">|&gt;</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(shade) <span class="sc">|&gt;</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mean_mass =</span> <span class="fu">round</span>(<span class="fu">mean</span>(mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>))</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>summary_df</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Then, in the text:</p>
-<blockquote class="blockquote">
-<p>Read the mean mass for each side from the <code>mean_mass</code> column of the table above.</p>
-</blockquote>
-<ul>
-<li>The numbers are <strong>computed</strong>, never typed</li>
-<li>Fix the data → press Render → the table fixes itself</li>
-<li>No copy-paste, no stale numbers in your writing</li>
-</ul>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: load-data</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># read the leaf data from the data/ folder ----</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/2026_09_03_data_sci_leaf_area.xlsx"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>✅ Key idea</strong></p>
-<p>Keep every number your reader sees inside a chunk’s <strong>printed output</strong> (a table or a <code>cat()</code> line). Your prose then <em>points at</em> the results instead of restating them.</p>
-</div>
-</div>
+<p>The <code>setup</code> chunk above it (already in your skeleton) loads <code>readxl</code>, <code>tidyverse</code>, <code>janitor</code>, <code>broom</code>, and <code>source()</code>s the theme file and <code>summary_stats()</code>.</p>
 </div><div class="column" style="width:40%;">
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -1155,55 +1068,14 @@ Warning
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>⚠️ Watch out!</strong></p>
-<p>The chunk that computes the value must run <strong>above</strong> the text that refers to it — Quarto renders top to bottom.</p>
+<p>Quarto runs the file <strong>top to bottom in a fresh R session</strong> — not whatever is sitting in your Console. Libraries and data must load in a chunk <strong>above</strong> anything that uses them.</p>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section id="pause-do-activity-step-5-now" class="level1">
-<h1>🛑 Pause — Do Activity Step 5 Now</h1>
-<div class="activitybanner">
-<p><strong>🛑 Do Activity Step 5 now</strong></p>
-<p>Compute a group-means summary in a chunk and print it into the report. Predict the shape of the table before you Render.</p>
-</div>
-</section>
-<section id="chunk-4-of-4-rendering-to-word-beyond" class="level1">
-<h1>🧩 Chunk 4 of 4 · Rendering to Word &amp; Beyond</h1>
-<p><strong>We will cover:</strong> YAML for a professional Word doc, one file → many outputs, and the render-often workflow.</p>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>🖐 After this chunk: Activity Steps 6–7</strong> (make it professional; one file, three outputs).</p>
-</div>
-</div>
-</section>
-<section id="part-3-rendering-to-word" class="level1">
-<h1>Part 3 · Rendering to Word</h1>
-<section id="one-yaml-block-a-professional-.docx" class="level3">
-<h3 class="anchored" data-anchor-id="one-yaml-block-a-professional-.docx">One YAML block, a professional <code>.docx</code></h3>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p>This front matter produces a clean, structured Word document:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">title</span><span class="kw">:</span><span class="at"> </span><span class="st">"Leaf Morphology Report"</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">author</span><span class="kw">:</span><span class="at"> </span><span class="st">"Your Name"</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">date</span><span class="kw">:</span><span class="at"> today</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">format</span><span class="kw">:</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">docx</span><span class="kw">:</span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">toc</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span><span class="co">            # table of contents</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">number-sections</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">fig-width</span><span class="kw">:</span><span class="at"> </span><span class="dv">6</span></span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">fig-height</span><span class="kw">:</span><span class="at"> </span><span class="dv">4</span></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Then press <strong>Render</strong> (or <strong>Ctrl/Cmd + Shift + K</strong>).</p>
+<section id="plot-1-box-plot-with-the-raw-points" class="level1">
+<h1>Plot 1 · Box plot with the raw points</h1>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1214,46 +1086,242 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>✅ Key idea</strong></p>
-<p><code>toc: true</code> and <code>number-sections: true</code> are what make it look like a <em>report</em>, not a printout.</p>
+<p><strong>🔮 Predict first:</strong> The label starts with <code>fig-</code>. What will the caption under the plot start with?</p>
 </div>
 </div>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>🖐 Try it yourself</strong></p>
-<p>The activity gives you a ready-made template with exactly this front matter. You just add your writing and render.</p>
-</div>
-</div>
-<p>📖 <a href="https://r4ds.hadley.nz/quarto-formats">R4DS Ch 29 — Quarto formats</a></p>
-</div>
-</div>
-</section>
-</section>
-<section id="same-file-many-outputs" class="level1">
-<h1>Same file, many outputs</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
-<p>The best part: <strong>one <code>.qmd</code>, many documents</strong>. Just list formats:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">format</span><span class="kw">:</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">docx</span><span class="kw">:</span><span class="at"> default</span><span class="co">     # Word report</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">html</span><span class="kw">:</span><span class="at"> default</span><span class="co">     # web page</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pptx</span><span class="kw">:</span><span class="at"> default</span><span class="co">     # PowerPoint</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="column" style="width:55%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-boxplot</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Leaf mass by side of the tree. Points are individual leaves."</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 5</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 4</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co"># box plot with raw points on top ----</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Side of tree"</span>, <span class="at">y =</span> <span class="st">"Leaf mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_regular</span>() <span class="sc">+</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-boxplot" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-boxplot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="quarto_lecture_files/figure-revealjs/fig-boxplot-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-boxplot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Leaf mass by side of the tree. Points are individual leaves.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:45%;">
 <ul>
-<li>Hand in the <strong>Word</strong> file</li>
-<li>Post the <strong>HTML</strong> to a site</li>
-<li>Present the <strong>PowerPoint</strong> in lab</li>
+<li>Same plot as Activity 03 — only the <code>#|</code> lines are new</li>
+<li><code>fig-</code> label → <strong>“Figure 1”</strong> in the caption</li>
+<li><code>fig-width</code> / <code>fig-height</code> size <strong>this</strong> plot only</li>
 </ul>
-<p>All from the <strong>same</strong> analysis — no re-doing anything.</p>
+</div>
+</div>
+</section>
+<section id="plot-2-mean-se" class="level1">
+<h1>Plot 2 · Mean ± SE</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-mean-se</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Mean leaf mass (± 1 SE) by side of the tree."</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 5</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 4</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co"># mean +/- standard error plot ----</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">color =</span> shade)) <span class="sc">+</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.35</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun =</span> mean, <span class="at">geom =</span> <span class="st">"point"</span>, <span class="at">size =</span> <span class="dv">4</span>) <span class="sc">+</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun.data =</span> mean_se, <span class="at">geom =</span> <span class="st">"errorbar"</span>, <span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">linewidth =</span> <span class="fl">0.9</span>) <span class="sc">+</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Side of tree"</span>, <span class="at">y =</span> <span class="st">"Leaf mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_regular</span>() <span class="sc">+</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-mean-se" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mean-se-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="quarto_lecture_files/figure-revealjs/fig-mean-se-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-mean-se-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Mean leaf mass (± 1 SE) by side of the tree.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:45%;">
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🔮 Predict:</strong> The error bars overlap almost completely. Keep that picture in mind — it predicts the t-test at the end.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="plot-3-histogram-the-shape-of-each-group" class="level1">
+<h1>Plot 3 · Histogram — the shape of each group</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-histogram</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Distribution of leaf mass on each side of the tree."</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 6</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 3.5</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co"># one histogram per side ----</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="fl">0.05</span>, <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>shade) <span class="sc">+</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"sunny"</span> <span class="ot">=</span> <span class="st">"goldenrod"</span>, <span class="st">"shady"</span> <span class="ot">=</span> <span class="st">"forestgreen"</span>)) <span class="sc">+</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Leaf mass (g)"</span>, <span class="at">y =</span> <span class="st">"Count"</span>) <span class="sc">+</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_regular</span>() <span class="sc">+</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-histogram" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-histogram-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="quarto_lecture_files/figure-revealjs/fig-histogram-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-histogram-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Distribution of leaf mass on each side of the tree.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
 </div><div class="column" style="width:40%;">
+<ul>
+<li>Wider and shorter (<code>6 × 3.5</code>) because it has <strong>two panels</strong></li>
+<li>The box plot hides the shape; the histogram shows it</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="describe-it-a-summary-statistics-table" class="level1">
+<h1>Describe it · a summary statistics table</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell" data-tbl-colwidths="[12,7,12,15,12,12,15,15]">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: tbl-summary</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">#| tbl-cap: "Summary statistics for leaf mass (g) on each side of the tree."</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">#| tbl-colwidths: [12, 7, 12, 15, 12, 12, 15, 15]</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co"># summary statistics by side, printed as a table ----</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>mass_stats_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary_stats</span>(mass_g)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>mass_stats_df <span class="sc">%&gt;%</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>,</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>               <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Side"</span>, <span class="st">"n"</span>, <span class="st">"Mean"</span>, <span class="st">"Variance"</span>, <span class="st">"SD"</span>, <span class="st">"SE"</span>,</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>                             <span class="st">"CI low"</span>, <span class="st">"CI high"</span>))</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="tbl-summary" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-tbl-colwidths="[12,7,12,15,12,12,15,15]">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-summary-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Summary statistics for leaf mass (g) on each side of the tree.
+</figcaption>
+<div aria-describedby="tbl-summary-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<table class="cell caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 7%">
+<col style="width: 12%">
+<col style="width: 15%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 15%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Side</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">Mean</th>
+<th style="text-align: right;">Variance</th>
+<th style="text-align: right;">SD</th>
+<th style="text-align: right;">SE</th>
+<th style="text-align: right;">CI low</th>
+<th style="text-align: right;">CI high</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">shady</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">0.523</td>
+<td style="text-align: right;">0.022</td>
+<td style="text-align: right;">0.148</td>
+<td style="text-align: right;">0.028</td>
+<td style="text-align: right;">0.466</td>
+<td style="text-align: right;">0.580</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">sunny</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">0.505</td>
+<td style="text-align: right;">0.044</td>
+<td style="text-align: right;">0.210</td>
+<td style="text-align: right;">0.042</td>
+<td style="text-align: right;">0.418</td>
+<td style="text-align: right;">0.592</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<ul>
+<li><code>summary_stats()</code> — same helper as Activity 06</li>
+<li><code>knitr::kable()</code> — data frame → <strong>real table</strong></li>
+<li><code>digits = 3</code> — rounds the whole table</li>
+<li><code>col.names =</code> — readable headers, one per column</li>
+<li><code>tbl-colwidths:</code> — <strong>eight columns, eight percents</strong></li>
+</ul>
+<p>In your text write <code>@tbl-summary</code> and Quarto prints <strong>“Table 1”</strong> for you.</p>
+</div>
+</div>
+</section>
+<section id="why-tbl-colwidths-tables-in-word" class="level1">
+<h1>Why <code>tbl-colwidths</code>? Tables in Word</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<p>Without widths, Word <strong>guesses</strong> — and it often guesses badly: a fat first column and the last column squashed until the numbers wrap.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| tbl-colwidths: [12, 7, 12, 15, 12, 12, 15, 15]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li>One number per column, in order</li>
+<li>They are <strong>percents</strong> of the page width — aim for a total of 100</li>
+<li>Give short columns (like <code>n</code>) less, headers like <code>Variance</code> more</li>
+</ul>
+</div><div class="column" style="width:45%;">
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1265,23 +1333,233 @@ Note
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>✅ Key idea</strong></p>
-<p>This is exactly how <em>these lecture slides</em> are built. One file → slides, Word, and PowerPoint.</p>
+<p><code>kable()</code> makes the table; <code>tbl-colwidths</code> makes it <strong>line up</strong> in Word and PDF. Same numbers, readable layout.</p>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section id="the-render-workflow" class="level1">
-<h1>The render workflow</h1>
+<section id="pause-do-activity-parts-56-now" class="level1">
+<h1>🛑 Pause — Do Activity Parts 5–6 Now</h1>
+<div class="activitybanner">
+<p><strong>🛑 Do Activity Parts 5–6 now</strong></p>
+<p>Fill in the three plot chunks and the summary-table chunk. Render after <strong>each</strong> one — check that every figure and table gets a number.</p>
+</div>
+</section>
+<section id="chunk-4-of-4-test-it-then-render-everything" class="level1">
+<h1>🧩 Chunk 4 of 4 · Test It, Then Render Everything</h1>
+<p><strong>We will cover:</strong> a Welch’s two-sample t-test (you met the t-test in intro bio), a clean results table, then hiding the code and rendering Word, PDF, and slides.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🖐 After this chunk: Activity Parts 7–8</strong> (t-test, then render all three and hand in).</p>
+</div>
+</div>
+</section>
+<section id="the-welchs-two-sample-t-test" class="level1">
+<h1>The Welch’s two-sample t-test</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
-<p>Every time, it is the same three moves:</p>
-<ol type="1">
-<li><strong>Write</strong> — add Markdown text and named code chunks</li>
-<li><strong>Render</strong> — Ctrl/Cmd + Shift + K</li>
-<li><strong>Read</strong> the output; fix the named chunk if it errors</li>
-</ol>
-<p>Quarto runs your code <strong>top to bottom in a fresh session</strong> — so the order of your chunks matters.</p>
+<p><strong>Question:</strong> is the difference between the two means bigger than we’d expect by chance?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: ttest</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Welch's two-sample t-test (does NOT assume equal variances) ----</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>leaf_ttest <span class="ot">&lt;-</span> <span class="fu">t.test</span>(mass_g <span class="sc">~</span> shade, <span class="at">data =</span> leaf_df, <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>leaf_ttest</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Welch Two Sample t-test
+
+data:  mass_g by shade
+t = 0.35579, df = 42.527, p-value = 0.7238
+alternative hypothesis: true difference in means between group shady and group sunny is not equal to 0
+95 percent confidence interval:
+ -0.08392774  0.11987117
+sample estimates:
+mean in group shady mean in group sunny 
+          0.5230357           0.5050640 </code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<ul>
+<li><code>mass_g ~ shade</code> — “mass <strong>by</strong> shade”: number on the left, two groups on the right</li>
+<li><code>var.equal = FALSE</code> — <strong>Welch’s</strong> version: does <strong>not</strong> assume the two sides have the same variance</li>
+<li>Look for <strong>t</strong>, <strong>df</strong>, and <strong>p-value</strong> in the printout</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>📖 Why Welch’s?</strong></p>
+<p>It is safe whether or not the variances match, so it is R’s default and a sensible first choice. Next lecture takes it apart properly.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="the-same-result-as-a-table" class="level1">
+<h1>The same result as a table</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell" data-tbl-colwidths="[20,20,15,15,15,15]">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: tbl-ttest</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co">#| tbl-cap: "Welch's two-sample t-test of leaf mass by side of the tree."</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co">#| tbl-colwidths: [20, 20, 15, 15, 15, 15]</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co"># the same result as a clean table ----</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>leaf_ttest <span class="sc">%&gt;%</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(estimate1, estimate2, statistic, parameter, p.value, conf.low) <span class="sc">%&gt;%</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>,</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>               <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Mean shady"</span>, <span class="st">"Mean sunny"</span>, <span class="st">"t"</span>, <span class="st">"df"</span>,</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>                             <span class="st">"p-value"</span>, <span class="st">"CI low"</span>))</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="tbl-ttest" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-tbl-colwidths="[20,20,15,15,15,15]">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-ttest-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Welch’s two-sample t-test of leaf mass by side of the tree.
+</figcaption>
+<div aria-describedby="tbl-ttest-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<table class="cell caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Mean shady</th>
+<th style="text-align: right;">Mean sunny</th>
+<th style="text-align: right;">t</th>
+<th style="text-align: right;">df</th>
+<th style="text-align: right;">p-value</th>
+<th style="text-align: right;">CI low</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.523</td>
+<td style="text-align: right;">0.505</td>
+<td style="text-align: right;">0.356</td>
+<td style="text-align: right;">42.527</td>
+<td style="text-align: right;">0.724</td>
+<td style="text-align: right;">-0.084</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<ul>
+<li><code>tidy()</code> (from <code>broom</code>) turns the printout into a <strong>data frame</strong></li>
+<li>then it is just <code>select()</code> + <code>kable()</code> — tools you already have</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>✅ Reading it</strong></p>
+<p><em>p</em> is well above 0.05, so we <strong>fail to reject</strong> the null: these data show no difference in mean leaf mass between sides — just what the overlapping error bars predicted. That is a real result; report it honestly.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="hide-the-code-one-line" class="level1">
+<h1>Hide the code — one line</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<p>For the version you hand in, flip the switch in the YAML:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">execute</span><span class="kw">:</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">echo</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span><span class="co">      # hide ALL the code</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">warning</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">message</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>…and hide the raw t-test printout — the table already has those numbers. The chunk still <strong>runs</strong>, so <code>leaf_ttest</code> still exists:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: ttest</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">#| output: false</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>leaf_ttest <span class="ot">&lt;-</span> <span class="fu">t.test</span>(mass_g <span class="sc">~</span> shade, <span class="at">data =</span> leaf_df, <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>leaf_ttest</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div><div class="column" style="width:45%;">
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>✅ Key idea</strong></p>
+<p><code>execute:</code> in the YAML = the <strong>default for every chunk</strong>. A chunk’s own <code>#|</code> line = the <strong>exception</strong> for that one chunk.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="one-file-word-pdf-and-slides" class="level1">
+<h1>One file → Word, PDF, and slides</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<p>The <strong>Render</strong> button previews <strong>one</strong> format. To build <strong>everything</strong> listed under <code>format:</code>, use the <strong>Terminal</strong> tab (not the Console):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render leaf_report.qmd</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 35%">
+<col style="width: 65%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">File</th>
+<th style="text-align: left;">What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>leaf_report.docx</code></td>
+<td style="text-align: left;">Word report — hand in</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>leaf_report.pdf</code></td>
+<td style="text-align: left;">PDF report — hand in</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>leaf_report.html</code></td>
+<td style="text-align: left;">RevealJS slide show — press <strong>F</strong> for full screen</td>
+</tr>
+</tbody>
+</table>
+</div><div class="column" style="width:45%;">
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1292,32 +1570,32 @@ Warning
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>⚠️ Watch out!</strong></p>
-<p>If it renders differently than the console, it is almost always <strong>chunk order</strong>: load libraries and data <strong>first</strong>.</p>
+<p><strong>⚠️ PDF needs LaTeX — once per computer</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> install tinytex</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Tip
+Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Render <strong>often</strong> — after every few chunks — so a break is easy to trace. Same as running your script line by line.</p>
+<p><strong>🎞 RevealJS</strong></p>
+<p>The same report becomes a web-based slide show: each <code>#</code> is a section slide, each <code>##</code> a slide. These lecture slides are made exactly this way.</p>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section id="pause-do-activity-steps-67-now" class="level1">
-<h1>🛑 Pause — Do Activity Steps 6–7 Now</h1>
+<section id="pause-do-activity-parts-78-now" class="level1">
+<h1>🛑 Pause — Do Activity Parts 7–8 Now</h1>
 <div class="activitybanner">
-<p><strong>🛑 Do Activity Steps 6–7 now</strong></p>
-<p>Upgrade the YAML for a TOC and numbered sections, copy in the template’s table and figure, then render to Word, HTML, and PowerPoint.</p>
+<p><strong>🛑 Do Activity Parts 7–8 now</strong></p>
+<p>Run the Welch’s t-test, add the results table and a short Discussion, set <code>echo: false</code>, then <code>quarto render leaf_report.qmd</code> in the Terminal. Hand in the <code>.qmd</code>, <code>.docx</code>, and <code>.pdf</code>.</p>
 </div>
 </section>
 <section id="wrap-up-what-you-can-now-do" class="level1">
@@ -1325,27 +1603,13 @@ Tip
 <div class="columns">
 <div class="column" style="width:60%;">
 <ul>
-<li>Explain <strong>why</strong> a Quarto report beats a bare script</li>
-<li>Recognize the three parts: <strong>YAML</strong>, <strong>Markdown</strong>, <strong>code chunks</strong></li>
-<li>Write and <strong>name</strong> a code chunk, set <code>echo</code>/<code>warning</code> options</li>
-<li><strong>Compute values in a chunk and print them</strong> so the report always matches the data</li>
-<li>Set up YAML to render a <strong>professional Word document</strong></li>
-<li>Render one file to <strong>Word, HTML, and PowerPoint</strong></li>
+<li>Explain <strong>why</strong> a Quarto report beats a script plus copy-paste</li>
+<li>Save a <code>.qmd</code> at the <strong>top of the project</strong> so <code>data/...</code> paths just work</li>
+<li>Use the <strong>YAML</strong> to pick outputs and switch all code on/off with <code>echo</code></li>
+<li>Write <strong>Markdown</strong> and <strong>named chunks</strong> with the options you need</li>
+<li>Take data <strong>start to finish</strong>: plots → summary table → Welch’s t-test</li>
+<li>Render <strong>one file</strong> to <strong>Word, PDF, and RevealJS slides</strong></li>
 </ul>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>🖐 Before next class</strong></p>
-<p>Open the activity template, drop in your Lecture 06 summary statistics, and render it to Word.</p>
-</div>
-</div>
 </div><div class="column" style="width:40%;">
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -1358,58 +1622,15 @@ Note
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>✅ Key idea</strong></p>
-<p>You turned a script into a <strong>reproducible report</strong>. From here on, every analysis can be a document that rebuilds itself — including the t-test you’ll run in Lecture 09.</p>
+<p>From here on, every analysis can be a document that rebuilds itself from the raw data.</p>
 </div>
 </div>
-<p><strong>Up next — Lecture 08 (Flex/Catch-up), then Lecture 09:</strong></p>
+<p><strong>Up next — T-Tests I:</strong></p>
 <ul>
-<li>The two-sample t-test — formally testing our leaf hypothesis</li>
-<li>…written up in your new Quarto report!</li>
+<li>Where the <em>t</em>-statistic comes from, and why Welch’s is the safe default</li>
+<li>Checking the assumptions first — normality (Shapiro–Wilk) and equal variances (Levene’s)</li>
+<li>…written up in your Quarto report</li>
 </ul>
-</div>
-</div>
-</section>
-<section id="getting-unstuck" class="level1">
-<h1>Getting unstuck</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p>When Render breaks (it will — that is normal):</p>
-<ul>
-<li>Read which <strong>named chunk</strong> failed — it is in the message</li>
-<li>Did you load <code>library(...)</code> and the <strong>data</strong> in a chunk <em>above</em>?</li>
-<li>Check the <strong>YAML</strong>: spaces not tabs, <code>---</code> on its own line</li>
-<li>Is every chunk label <strong>unique</strong>?</li>
-<li>Render often so the break is easy to find</li>
-</ul>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>✅ Key idea</strong></p>
-<p>A Quarto error names the chunk. That is a gift — go straight to that block.</p>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>📊 Reference</strong></p>
-<p>The Quarto guide is excellent and searchable: <a href="https://quarto.org/docs/guide/">quarto.org/docs/guide</a></p>
-</div>
-</div>
 </div>
 </div>
 

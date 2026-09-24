@@ -1,6 +1,6 @@
 ---
-title: "Activity 07 — Build Your First Quarto Report"
-subtitle: "Turn your leaf analysis into a professional Word document"
+title: "Activity 07 — Your First Quarto Report"
+subtitle: "Read the data, plot it, describe it, test it — then render to Word, PDF, and slides"
 author: "Bill Perry"
 date: today
 
@@ -9,10 +9,17 @@ order: 7
 week: 4
 type: activity            # lecture | activity | homework | assignment | common_code
 description: >
-  Follow-along activity paralleling the Quarto lecture. Students create a
-  .qmd file, add YAML, Markdown, and named code chunks, and render the leaf
-  analysis to a Word document using the provided template.
+  Follow-along activity paralleling the Quarto lecture. Students fill in a
+  starter .qmd that takes the leaf data from start to finish — read it in,
+  box plot, mean ± SE plot, histogram, summary statistics table, and a
+  Welch's t-test — and render it to Word, PDF, and RevealJS slides.
 categories: [quarto, reproducibility, markdown]
+
+# the starter file is NOT rendered by the site — it is copied as a download
+resources:
+  - downloads/leaf_report_skeleton.qmd
+  - themes/*.R
+  - data/2026_09_03_data_sci_leaf_area.xlsx
 
 format:
   html:
@@ -27,231 +34,423 @@ execute:
   message: false
 ---
 
-## Before you start
+# How this activity works
 
-This activity parallels the lecture. Go slowly — you do **not** need to type fast. Each step is small, and there is a finished template you can lean on.
+> **You are building one Quarto file this whole class, and you turn it in:** `leaf_report.qmd`.
+>
+> - Everything you have done so far — reading data, plotting, summary statistics — goes into **one document** that also holds your writing.
+> - **Start every code chunk with a short `#` comment** that says what it does. Same rule as your scripts; it is part of the grade.
+> - **Render often** — after every chunk. A break is easy to find when you only changed one thing.
+>
+> ## 🔮 Predict before you Render
+>
+> Before each Render, say what the document will show — a heading, a plot, a table, a number. Then check.
 
 ::: callout-tip
-## 📥 Download the template and the data
+## 📥 Get the files
 
-- [**Template report → `leaf_report_template.qmd`**](leaf_report_template.qmd) — save it into your project's `documents/` folder. It already has the YAML, the library chunk, a summary table, and a figure. You study it in Step 6 and lean on it if you fall behind.
-- [**Leaf data → `2026_09_03_data_sci_leaf_area.xlsx`**](data/2026_09_03_data_sci_leaf_area.xlsx) — the same file you have used since Activity 02; it should already be in your `data/` folder.
+- [**Starter file → `leaf_report_skeleton.qmd`**](downloads/leaf_report_skeleton.qmd){download="leaf_report.qmd"} — save it at the **top of your project folder** as `leaf_report.qmd`. It already has the YAML, the library chunk, the data chunk, every section heading, and an empty, named chunk for each step.
+- [**Leaf data → `2026_09_03_data_sci_leaf_area.xlsx`**](data/2026_09_03_data_sci_leaf_area.xlsx) — should already be in your `data/` folder.
+- [**`r_themes_for_3_sizes.R`**](themes/r_themes_for_3_sizes.R) and [**`summary_stats_function.R`**](themes/summary_stats_function.R) — should already be in your `themes/` folder (Activities 04 and 06).
 :::
 
-::: callout-note
-## 👀 See a finished report first — why we bother
-
-Before you build your own, open this worked example and render it:
-
-[**`t_test_report.qmd`**](t_test_report.qmd) — a **preview of the t-test you'll run in Activities 09–10**, already written up as a Quarto report. The t-statistic, *p*-value, and group means are computed into the tables directly from the data, and it renders to a clean Word document. That is the payoff of everything in this activity: an analysis becomes a report that writes its own numbers — and reports them honestly, whether or not the test is significant. Notice you would never copy a single value by hand — and in a few weeks, this will be *your* analysis.
-:::
-
-**What you need open:** Positron, your class project folder (`data/`, `documents/`, `figures/`, `scripts/`), and your leaf data in `data/`.
+**What you turn in (Part 8):** `leaf_report.qmd`, `leaf_report.docx`, and `leaf_report.pdf`.
 
 ------------------------------------------------------------------------
 
-## Step 1 · Make a new Quarto document
+# Part 1 · Put the file in the right place, then Render it
 
-In Positron: **File → New File → Quarto Document**. Save it right away into your `documents/` folder as `my_leaf_report.qmd`.
+Save the starter file at the **top level of your project** — the same folder that holds `data/` and `themes/`:
+
+``` text
+leaf_project/
+├── data/
+│   └── 2026_09_03_data_sci_leaf_area.xlsx
+├── figures/
+├── scripts/
+├── themes/
+│   ├── r_themes_for_3_sizes.R
+│   └── summary_stats_function.R
+└── leaf_report.qmd          <- HERE, at the top
+```
 
 ::: callout-note
-A `.qmd` file is just plain text. You can open it anywhere, and it lives happily inside your project like your scripts do.
+## Why the top of the project?
+
+Quarto runs your code **from the folder the `.qmd` is saved in**. Saved at the top of the project, `"data/2026_09_03_data_sci_leaf_area.xlsx"` and `"themes/..."` work exactly as they do in your scripts — no `here` package, no `../`.
+
+If you saved it inside `documents/` instead, every path would need `../data/...` to climb back up a folder. Keep it simple: top of the project.
 :::
+
+Open `leaf_report.qmd` in Positron and press **Render** (Ctrl/Cmd + Shift + K) **before you change anything**. You should get a document with a title, headings, and the library code.
+
+```
+Did it render?  Y / N
+If not, what did the error message name?
+```
 
 ------------------------------------------------------------------------
 
-## Step 2 · Write the YAML front matter
+# Part 2 · The YAML — one switch for all the code
 
-At the very top of the file, type this between two lines of three dashes. Use **spaces, never tabs**, for the indenting.
+Look at the block between the two `---` lines at the top. Change `author:` to your name.
 
 ``` yaml
----
-title: "Leaf Morphology Report"
+title: "Leaf Mass on the Sunny and Shady Sides of a Tree"
 author: "Your Name"
 date: today
-format: docx
----
-```
 
-Press **Render** (Ctrl/Cmd + Shift + K). A blank-ish Word document should open with your title on it. 🎉 You just made a Word file from plain text.
-
-::: callout-warning
-If Render fails, check that both `---` lines are alone on their own line and that your indenting is spaces.
-:::
-
-------------------------------------------------------------------------
-
-## Step 3 · Add some Markdown text
-
-Below the YAML, write a few lines using Markdown symbols:
-
-``` markdown
-# Introduction
-
-We measured leaf mass on the **sunny** and **shady** sides of a tree.
-
-- Null hypothesis: no difference between sides
-- Alternate hypothesis: sides differ
-```
-
-Render again. Notice the `#` became a real heading and the `-` became bullets.
-
-------------------------------------------------------------------------
-
-## Step 4 · Add a code chunk (and name it)
-
-Insert a chunk with **Ctrl/Cmd + Alt + I**, then make it load your packages and data. Give it a short **name** after `r`:
-
-``` r
-#| label: libraries
-library(readxl)
-library(tidyverse)
-library(janitor)
-```
-
-Add a second, **uniquely named** chunk to read your data:
-
-``` r
-#| label: load-data
-leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") |>
-  clean_names()
-```
-
-Render. If it breaks, the message names the chunk — go straight to it.
-
-::: callout-tip
-Same habit as your scripts: **small, uniquely named chunks** make errors easy to find. No two chunks can share a name.
-:::
-
-------------------------------------------------------------------------
-
-## Step 5 · Compute a summary and print it into the report
-
-Add a chunk that calculates the group means and **prints the result**:
-
-``` r
-#| label: means
-summary_df <- leaf_df %>%
-  group_by(shade) %>%
-  summarize(mean_mass = round(mean(mass_g, na.rm = TRUE), 3))
-
-summary_df
-```
-
-Then, in your text, refer to the value straight from the printed table:
-
-``` markdown
-Read the mean mass for each side from the `mean_mass` column of the table above.
-Because the table is built from the data every render, it updates itself when the
-data changes — you never retype a number.
-```
-
-Render. The number in your report always matches the data — because you never typed it.
-
-------------------------------------------------------------------------
-
-## Step 6 · Make it look professional
-
-Now upgrade your YAML to match the downloaded template so the report gets a table of contents and numbered sections:
-
-``` yaml
 format:
   docx:
     toc: true
     number-sections: true
-    fig-width: 6
-    fig-height: 4
-    fig-format: png
+  pdf:
+    toc: true
+    number-sections: true
+    fig-pos: "H"     # keep each figure right under its heading
+  revealjs:
+    scrollable: true
+    smaller: true
+
+execute:
+  echo: true       # change to false to hide ALL the code with one edit
+  warning: false
+  message: false
 ```
 
-Open **`leaf_report_template.qmd`** side by side. Copy in its `summary-table` and `leaf-plot` chunks so your report has a real table and figure. Render.
+- `format:` lists **three** outputs — Word, PDF, and RevealJS slides — from the same file.
+- `execute:` sets the default for **every chunk**. `echo: true` shows the code; `echo: false` hides all of it at once.
+
+🔮 **Predict:** If you change `echo: true` to `echo: false` and Render, what disappears from the document, and what stays?
+
+✏️ **Your turn:** Make the change, Render, look — then **set it back to `true`** for now. You will turn it off for good in Part 8.
+
+```
+What disappeared:
+What stayed:
+```
+
+::: callout-warning
+YAML is **space-sensitive**. Indent with two spaces, never tabs. If Render fails right away, the YAML is the first place to look.
+:::
+
+------------------------------------------------------------------------
+
+# Part 3 · Markdown — write the Introduction and Methods
+
+Replace the `<!-- comment -->` under **Introduction** with two or three sentences, and fill in the hypotheses:
+
+``` markdown
+# Introduction
+
+Leaves on the **shady** side of a tree may grow larger and heavier to catch
+more of the limited light. We collected leaves from the sunny and shady sides
+of a tree and weighed each one.
+
+- **Null hypothesis:** mean leaf mass is the same on both sides
+- **Alternate hypothesis:** mean leaf mass differs between sides
+```
+
+✏️ **Your turn:** Write two or three sentences under **Methods** in your own words: how the leaves were weighed, which plots and summary statistics you made, and that you compared the sides with a **Welch's two-sample t-test**. Render.
 
 ::: callout-note
-Set `echo: false` in the `execute:` block (top of the file) to **hide the code** so your report shows only results — the way a reader wants it.
+`<!-- ... -->` is a Markdown **comment** — it never shows up in the rendered document. The skeleton uses them as notes to you. Delete them as you fill each section in.
 :::
 
 ------------------------------------------------------------------------
 
-## Step 7 · One file, three outputs (optional)
+# Part 4 · Chunk options — your reference card
 
-Change your `format:` block to build a Word file, a web page, and slides — all from the same analysis:
+Every chunk in the skeleton starts with lines that begin `#|`. Those are **chunk options**. Keep this table handy — these are the ones you will use all term:
 
-``` yaml
-format:
-  docx: default
-  html: default
-  pptx: default
+| Option | What it does | Example |
+|:-------------------|:-----------------------------------------------|:---------------------------|
+| `label` | Names the chunk. `fig-` or `tbl-` at the front numbers it as a Figure or Table | `#| label: fig-boxplot` |
+| `echo` | Show (`true`) or hide (`false`) the **code** | `#| echo: false` |
+| `eval` | Run the code (`true`) or only show it (`false`) | `#| eval: false` |
+| `include` | `false` runs the code but hides **both** code and output | `#| include: false` |
+| `output` | `false` hides the **results** but keeps the code | `#| output: false` |
+| `warning` | Show or hide warnings | `#| warning: false` |
+| `message` | Show or hide package start-up messages | `#| message: false` |
+| `fig-width` | Figure width in inches | `#| fig-width: 5` |
+| `fig-height` | Figure height in inches | `#| fig-height: 4` |
+| `fig-cap` | Figure caption | `#| fig-cap: "Leaf mass by side"` |
+| `tbl-cap` | Table caption | `#| tbl-cap: "Summary statistics"` |
+| `tbl-colwidths` | Column widths (percent) so Word tables line up | `#| tbl-colwidths: [30, 70]` |
+
+: Common code-chunk options. The `execute:` block in the YAML sets the default; a chunk's own `#|` line overrides it for that chunk only. {tbl-colwidths="[18,52,30]"}
+
+Look at the first two chunks in the skeleton — they are already filled in:
+
+```{{r}}
+#| label: setup
+# load packages ----
+library(readxl)      # read Excel files
+library(tidyverse)   # dplyr + ggplot2
+library(janitor)     # clean_names()
+library(broom)       # tidy() turns test output into a table
+
+# load our theme file and summary_stats() helper ----
+source("themes/r_themes_for_3_sizes.R")
+source("themes/summary_stats_function.R")
 ```
 
-Render. Three documents, zero extra work.
+```{{r}}
+#| label: load-data
+# read the leaf data from the data/ folder ----
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names()
+```
 
-------------------------------------------------------------------------
+🔮 **Predict:** The `setup` chunk prints nothing useful to a reader. Which **one** option from the table would make it run but leave no trace in the document?
 
-## Check yourself
+✏️ **Your turn:** Add that option to the `setup` chunk and Render. Did the library code disappear?
 
-You are done when you can:
-
-- Render your `.qmd` to a **Word document** with a title, TOC, and numbered sections
-- Show a **summary table** and a **figure** computed from your data
-- Point to **one number in a sentence** that came from inline code
-- Explain why you would **never** copy those numbers by hand again
+```
+Option I added:
+Did the packages still load (do later chunks still work)?  Y / N
+```
 
 ::: callout-tip
-## 🖐 Stuck or behind?
-
-Open [**`leaf_report_template.qmd`**](leaf_report_template.qmd), render it as-is to confirm your setup works, then compare it to your file chunk by chunk. For a fuller example with a real statistical test, study [**`t_test_report.qmd`**](t_test_report.qmd).
+**Labels must be unique.** Two chunks named `plot` stop the Render with *"Duplicate chunk label"*. The error names the label — go straight to it.
 :::
 
 ------------------------------------------------------------------------
 
-# Extension — out of class (~30–40 min)
+# Part 5 · Plot the data
 
-*Turn this in in the same `.qmd` you built in class. This adds Quarto features you
-have **not** seen yet — cross-references and callouts. Put your written answers in
-the report prose (or in `<!-- comments -->`) right where they belong.*
+These are the same plots you built in Activities 03–04. Type each one **into the empty chunk that already has its label and options** — only the code under the `#` comment is new.
 
-## E1 · Cross-reference your table and figure (4 pts)
+### Box plot
 
-Quarto can number your table and figure and let your prose refer to them by
-number automatically, so it stays correct even if you reorder things.
+```{{r}}
+#| label: fig-boxplot
+#| fig-cap: "Leaf mass by side of the tree. Points are individual leaves."
+#| fig-width: 5
+#| fig-height: 4
+# box plot with raw points on top ----
+leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, fill = shade)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6) +
+  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(x = "Side of tree", y = "Leaf mass (g)") +
+  theme_regular() +
+  theme(legend.position = "none")
+```
 
-1.  Give your table chunk `#| label: tbl-summary` and `#| tbl-cap: "..."`.
-2.  Give your figure chunk `#| label: fig-leaf` and `#| fig-cap: "..."`.
-3.  In your Results prose, write `@tbl-summary` and `@fig-leaf` instead of "the
-    table above" / "the figure below". Render and check the numbers appear.
-4.  Add **one callout of your own** (`::: callout-note/-warning/-tip`) flagging a
-    *real* limitation of your analysis (small n, an outlier you kept, an
-    assumption you're unsure of) — not a generic one.
+Render. Notice the caption starts **"Figure 1:"** — that number came from the `fig-` at the front of the label.
 
-Record the `label:` lines you added and the exact sentence where you used
-`@tbl-summary` or `@fig-leaf`.
+### Mean ± SE
 
-## E2 · Predict, then check (3 pts)
+```{{r}}
+#| label: fig-mean-se
+#| fig-cap: "Mean leaf mass (± 1 SE) by side of the tree."
+#| fig-width: 5
+#| fig-height: 4
+# mean +/- standard error plot ----
+leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, color = shade)) +
+  geom_jitter(width = 0.15, alpha = 0.35, size = 2) +
+  stat_summary(fun = mean, geom = "point", size = 4) +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.15, linewidth = 0.9) +
+  scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(x = "Side of tree", y = "Leaf mass (g)") +
+  theme_regular() +
+  theme(legend.position = "none")
+```
 
-**Before touching any chunk options:** if you added `#| echo: false` to *only*
-the chunk that computes your summary table (not the whole document), what
-exactly changes in the rendered Word doc, and what stays identical? Be specific
-about which chunks are affected. Then make the change, render, and write whether
-you were right.
+### Histogram
 
-## E3 · Explain it (3 pts)
+```{{r}}
+#| label: fig-histogram
+#| fig-cap: "Distribution of leaf mass on each side of the tree."
+#| fig-width: 6
+#| fig-height: 3.5
+# one histogram per side ----
+leaf_df %>%
+  ggplot(aes(x = mass_g, fill = shade)) +
+  geom_histogram(binwidth = 0.05, color = "white") +
+  facet_wrap(~shade) +
+  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  labs(x = "Leaf mass (g)", y = "Count") +
+  theme_regular() +
+  theme(legend.position = "none")
+```
 
-As if explaining to a classmate who missed this unit:
+✏️ **Your turn:** Change `fig-width` on the histogram from `6` to `3` and Render. Then put it back.
 
-1.  Point to **one chunk in your own report** and say why you set `echo` the way
-    you did for *that* chunk.
-2.  If someone changed one number in your raw data file, walk through exactly
-    what happens the next time you press Render — which chunks rerun, which
-    outputs change, which don't.
-3.  Why is referring to `@tbl-summary` safer than typing "Table 1" by hand?
+```
+What happened to the histogram at fig-width: 3?
+Looking at all three plots: which side looks heavier, if either?
+```
 
 ------------------------------------------------------------------------
 
-## Turn it in
+# Part 6 · Describe the data — a summary statistics table
 
-Render to Word and submit both:
+Same `summary_stats()` helper from Activity 06. The new part is `knitr::kable()`, which turns a data frame into a real table in Word, PDF, and slides.
 
-1.  `my_leaf_report.qmd` (your source file)
-2.  `my_leaf_report.docx` (the rendered report)
+```{{r}}
+#| label: tbl-summary
+#| tbl-cap: "Summary statistics for leaf mass (g) on each side of the tree."
+#| tbl-colwidths: [12, 7, 12, 15, 12, 12, 15, 15]
+# summary statistics by side, printed as a table ----
+mass_stats_df <- leaf_df %>%
+  group_by(shade) %>%
+  summary_stats(mass_g)
 
-**References:** 📖 [R4DS Ch 28 — Quarto](https://r4ds.hadley.nz/quarto) · 📖 [R4DS Ch 29 — Formats](https://r4ds.hadley.nz/quarto-formats) · 🌐 [quarto.org guide](https://quarto.org/docs/guide/)
+mass_stats_df %>%
+  knitr::kable(digits = 3,
+               col.names = c("Side", "n", "Mean", "Variance", "SD", "SE",
+                             "CI low", "CI high"))
+```
+
+- `digits = 3` rounds every number in the table — no `round()` needed
+- `col.names =` gives the columns readable names (one per column, in order)
+- `tbl-colwidths:` sets each column's width in **percent** — eight columns, eight numbers. Without it, Word guesses and often squeezes the last column.
+
+Under the table, point the reader to it — let Quarto fill in the number:
+
+``` markdown
+@tbl-summary gives the sample size, mean, variance, standard deviation,
+standard error, and 95% confidence interval for leaf mass on each side.
+```
+
+Render. `@tbl-summary` turns into **"Table 1"** — and stays correct if you ever add a table above it.
+
+```
+Mean mass, shady:          sunny:
+Which side has the larger SD?
+```
+
+------------------------------------------------------------------------
+
+# Part 7 · Test it — Welch's two-sample t-test
+
+You met the t-test in introductory biology: does the difference between two means look bigger than chance? We use **Welch's** version, which does **not** assume the two sides have equal variances — that is what `var.equal = FALSE` says. (Next lecture takes the t-test apart properly.)
+
+```{{r}}
+#| label: ttest
+# Welch's two-sample t-test (does NOT assume equal variances) ----
+leaf_ttest <- t.test(mass_g ~ shade, data = leaf_df, var.equal = FALSE)
+leaf_ttest
+```
+
+- `mass_g ~ shade` reads "mass **by** shade" — the number on the left, the two groups on the right
+- The printout says **Welch Two Sample t-test** at the top — check that it does
+
+The printout is fine for you, but ugly in a report. `tidy()` from `broom` turns it into a data frame, so `kable()` can make it a table:
+
+```{{r}}
+#| label: tbl-ttest
+#| tbl-cap: "Welch's two-sample t-test of leaf mass by side of the tree."
+#| tbl-colwidths: [20, 20, 15, 15, 15, 15]
+# the same result as a clean table ----
+leaf_ttest %>%
+  tidy() %>%
+  select(estimate1, estimate2, statistic, parameter, p.value, conf.low) %>%
+  knitr::kable(digits = 3,
+               col.names = c("Mean shady", "Mean sunny", "t", "df",
+                             "p-value", "CI low"))
+```
+
+🔮 **Predict before you Render:** Look back at your mean ± SE plot. Do the error bars overlap a lot or a little? Will the *p*-value be below 0.05?
+
+```
+My prediction:
+t =        df =        p-value =
+Is p below 0.05?  Y / N
+```
+
+✏️ **Your turn — Discussion:** Under **Discussion**, write two or three sentences. Point to `@fig-mean-se` and `@tbl-ttest`, say which side had heavier leaves and by how much, and whether the *p*-value is below 0.05. Do the data support the alternate hypothesis? Refer to the tables — **don't type the numbers in by hand**.
+
+::: callout-note
+Our leaves give a *p*-value well above 0.05, so we **fail to reject** the null hypothesis. That is a real result, not a failed analysis — report it honestly.
+:::
+
+------------------------------------------------------------------------
+
+# Part 8 · Hide the code and render all three formats
+
+A report is for a reader who wants results, not R. Go back to the YAML and make the **one-line change**:
+
+``` yaml
+execute:
+  echo: false      # hide ALL the code
+```
+
+One more tidy-up: the raw `t.test()` printout was for *you*. Now that `@tbl-ttest` holds the same numbers, hide the printout but keep the chunk running (it still has to make `leaf_ttest`). From your reference card:
+
+```{{r}}
+#| label: ttest
+#| output: false
+# Welch's two-sample t-test (does NOT assume equal variances) ----
+leaf_ttest <- t.test(mass_g ~ shade, data = leaf_df, var.equal = FALSE)
+leaf_ttest
+```
+
+The **Render** button in Positron previews **one** format. To build **all three** outputs listed under `format:`, open the **Terminal** tab (not the Console) and run:
+
+``` bash
+quarto render leaf_report.qmd
+```
+
+You should now have three new files next to your `.qmd`:
+
+| File | What it is |
+|:-----------------------|:-----------------------------------------------|
+| `leaf_report.docx` | Word report — hand this in |
+| `leaf_report.pdf` | PDF report — hand this in |
+| `leaf_report.html` | RevealJS slide show — open it in a browser, press **F** for full screen and the arrow keys to move |
+
+: The three outputs from one `.qmd`. {tbl-colwidths="[30,70]"}
+
+::: callout-note
+When Word opens `leaf_report.docx` it may ask to **update fields** — say **Yes**. That fills in the table of contents.
+:::
+
+::: callout-warning
+## PDF says it needs LaTeX?
+
+PDF output needs a small LaTeX install, once per computer. In the **Terminal**:
+
+``` bash
+quarto install tinytex
+```
+
+Then run `quarto render leaf_report.qmd` again.
+:::
+
+✏️ **Your turn:** Open the slides. Each `#` heading became a section slide and each `##` heading became its own slide — the same file is now a presentation.
+
+```
+How many slides did you get?
+Which slide would you show first in lab meeting?
+```
+
+------------------------------------------------------------------------
+
+# Check yourself
+
+You are done when your report has:
+
+- [ ] Your name in the YAML, and `echo: false` so no code shows
+- [ ] An Introduction with both hypotheses, and a Methods paragraph
+- [ ] A box plot, a mean ± SE plot, and a histogram — each with a numbered caption
+- [ ] A summary statistics table with readable column names and even column widths
+- [ ] The Welch's t-test as a table (raw printout hidden with `output: false`)
+- [ ] A Discussion that points to the figures and tables with `@fig-...` / `@tbl-...`
+- [ ] A `#` comment at the top of every chunk you wrote
+
+------------------------------------------------------------------------
+
+# Turn it in
+
+Submit all three:
+
+1.  `leaf_report.qmd` — your source file
+2.  `leaf_report.docx` — the Word report
+3.  `leaf_report.pdf` — the PDF report
+
+**References:** 📖 [R4DS Ch 28 — Quarto](https://r4ds.hadley.nz/quarto) · 📖 [R4DS Ch 29 — Formats](https://r4ds.hadley.nz/quarto-formats) · 🌐 [Quarto code-chunk options](https://quarto.org/docs/computations/execution-options.html) · 🌐 [Quarto RevealJS](https://quarto.org/docs/presentations/revealjs/)
