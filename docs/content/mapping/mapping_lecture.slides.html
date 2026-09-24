@@ -379,17 +379,19 @@ Bill Perry
 <span id="cb1-6"><a aria-label="6"></a><span class="co"># Swap this path for your download -------------------</span></span>
 <span id="cb1-7"><a aria-label="7"></a>bigfoot_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_reports_geocoded.csv"</span>)</span>
 <span id="cb1-8"><a aria-label="8"></a></span>
-<span id="cb1-9"><a aria-label="9"></a>bigfoot_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(title, state, latitude, longitude, classification) <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-9"><a aria-label="9"></a>bigfoot_df <span class="sc">%&gt;%</span></span>
+<span id="cb1-10"><a aria-label="10"></a>  <span class="fu">select</span>(title, state, latitude, longitude, classification) <span class="sc">%&gt;%</span></span>
+<span id="cb1-11"><a aria-label="11"></a>  <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 5
-  title                                  state latitude longitude classification
-  &lt;chr&gt;                                  &lt;chr&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;         
-1 &lt;NA&gt;                                   Alab…     NA        NA   Class B       
-2 &lt;NA&gt;                                   Alas…     NA        NA   Class A       
-3 Report 6496: Bicycling student has ni… Rhod…     41.4     -71.5 Class A       
-4 &lt;NA&gt;                                   Penn…     NA        NA   Class B       
-5 &lt;NA&gt;                                   Oreg…     NA        NA   Class B       
-6 Report 9765: Motorist and children ha… Okla…     35.3     -99.2 Class A       </code></pre>
+  title                   state latitude longitude classification
+  &lt;chr&gt;                   &lt;chr&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;         
+1 &lt;NA&gt;                    Alab…     NA        NA   Class B       
+2 &lt;NA&gt;                    Alas…     NA        NA   Class A       
+3 Report 6496: Bicycling… Rhod…     41.4     -71.5 Class A       
+4 &lt;NA&gt;                    Penn…     NA        NA   Class B       
+5 &lt;NA&gt;                    Oreg…     NA        NA   Class B       
+6 Report 9765: Motorist … Okla…     35.3     -99.2 Class A       </code></pre>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
@@ -687,7 +689,8 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <p>If I <strong>skip</strong> the lowercase step, the join keys don’t match — <code>"Washington"</code> ≠ <code>"washington"</code>:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a>states_sf <span class="sc">%&gt;%</span></span>
 <span id="cb11-2"><a aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> ID) <span class="sc">%&gt;%</span></span>
-<span id="cb11-3"><a aria-label="3"></a>  <span class="fu">left_join</span>(<span class="fu">count</span>(bigfoot_df, state), <span class="at">by =</span> <span class="st">"state"</span>)  <span class="co"># "Washington" vs "washington"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb11-3"><a aria-label="3"></a>  <span class="co"># "Washington" vs "washington"</span></span>
+<span id="cb11-4"><a aria-label="4"></a>  <span class="fu">left_join</span>(<span class="fu">count</span>(bigfoot_df, state), <span class="at">by =</span> <span class="st">"state"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Every state gets <code>NA</code> sightings → the whole map renders <strong>grey</strong>. No error, just a blank choropleth.</p>
 <p>The fix — make both keys the <strong>same case</strong> before joining (<code>str_to_lower()</code>).</p>
 </div><div class="column" style="width:40%;">
@@ -715,14 +718,16 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="co"># Join sightings to the state polygons ---------------</span></span>
 <span id="cb12-2"><a aria-label="2"></a>states_map <span class="ot">&lt;-</span> states_sf <span class="sc">%&gt;%</span></span>
-<span id="cb12-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">str_remove</span>(ID, <span class="st">":.*"</span>)) <span class="sc">%&gt;%</span>   <span class="co"># drop ":north" etc.</span></span>
-<span id="cb12-4"><a aria-label="4"></a>  <span class="fu">left_join</span>(sightings_by_state, <span class="at">by =</span> <span class="st">"state"</span>)</span>
-<span id="cb12-5"><a aria-label="5"></a></span>
-<span id="cb12-6"><a aria-label="6"></a><span class="fu">ggplot</span>(states_map) <span class="sc">+</span></span>
-<span id="cb12-7"><a aria-label="7"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> sightings), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
-<span id="cb12-8"><a aria-label="8"></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="at">option =</span> <span class="st">"magma"</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb12-9"><a aria-label="9"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings by State"</span>, <span class="at">fill =</span> <span class="st">"Sightings"</span>) <span class="sc">+</span></span>
-<span id="cb12-10"><a aria-label="10"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb12-3"><a aria-label="3"></a>  <span class="co"># drop ":north" etc.</span></span>
+<span id="cb12-4"><a aria-label="4"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">str_remove</span>(ID, <span class="st">":.*"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb12-5"><a aria-label="5"></a>  <span class="fu">left_join</span>(sightings_by_state, <span class="at">by =</span> <span class="st">"state"</span>)</span>
+<span id="cb12-6"><a aria-label="6"></a></span>
+<span id="cb12-7"><a aria-label="7"></a><span class="fu">ggplot</span>(states_map) <span class="sc">+</span></span>
+<span id="cb12-8"><a aria-label="8"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> sightings), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb12-9"><a aria-label="9"></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="at">option =</span> <span class="st">"magma"</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb12-10"><a aria-label="10"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings by State"</span>,</span>
+<span id="cb12-11"><a aria-label="11"></a>       <span class="at">fill =</span> <span class="st">"Sightings"</span>) <span class="sc">+</span></span>
+<span id="cb12-12"><a aria-label="12"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>

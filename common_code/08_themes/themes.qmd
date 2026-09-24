@@ -90,12 +90,15 @@ my_theme <- function(base_size = 14, base_family = "sans") {
 
 ``` r
 my_theme <- function(base_size = 14, base_family = "sans") {
-  theme_classic(base_size = base_size, base_family = base_family) %+replace%
+  theme_classic(base_size = base_size,
+                base_family = base_family) %+replace%
     theme(
-      plot.title  = element_text(face = "bold", size = rel(1.15), hjust = 0),
+      plot.title  = element_text(face = "bold", size = rel(1.15),
+                                 hjust = 0),
       axis.title  = element_text(face = "bold"),
       axis.text   = element_text(colour = "grey20"),
-      panel.border = element_rect(fill = NA, colour = "black", linewidth = 0.55)
+      panel.border = element_rect(fill = NA, colour = "black",
+                                  linewidth = 0.55)
     )
 }
 ```
@@ -109,7 +112,8 @@ Hard-coding `size = 14` inside a theme means the title is always 14 pt even if s
 ``` r
 plot.title = element_text(face = "bold", size = rel(1.15))
 # At base_size = 14:  title is 14 × 1.15 = 16.1 pt
-# At base_size = 9:   title is  9 × 1.15 = 10.4 pt  ← scales correctly
+# At base_size = 9:   title is  9 ×
+# 1.15 = 10.4 pt  ← scales correctly
 ```
 
 ### Step 4 — use `unit()` for lengths that don't scale automatically
@@ -117,7 +121,8 @@ plot.title = element_text(face = "bold", size = rel(1.15))
 Tick length and plot margins are in physical units, not multiples of `base_size`. Pass them as arguments so each theme variant can set its own:
 
 ``` r
-axis.ticks.length = unit(5, "pt")   # 5-point ticks for regular output
+axis.ticks.length = unit(5, "pt")   # 5-point ticks for
+                                    # regular output
 plot.margin       = margin(8, 8, 8, 8)  # 8 pt on all sides
 ```
 
@@ -142,39 +147,53 @@ The rule: **base_size and line widths must scale with the output dimensions.**
 DRY = **D**on't **R**epeat **Y**ourself. Instead of copying the entire `theme()` block three times (which means three places to update when you change your mind about a font), write the shared logic once in a private helper function and have the three public functions call it with different size arguments:
 
 ``` r
-# ── Private helper — not called directly ──────────────────────────────────────
+# ── Private helper — not called directly ───────────────────────
 .theme_bp_base <- function(base_size, base_family,
                             line_width, tick_length_pt,
                             title_margin, axis_margin,
                             strip_v_margin, legend_key_size) {
 
-  theme_classic(base_size = base_size, base_family = base_family) %+replace%
+  theme_classic(base_size = base_size,
+                base_family = base_family) %+replace%
     theme(
-      plot.title       = element_text(face = "bold", size = rel(1.15), hjust = 0),
-      panel.border     = element_rect(fill = NA, colour = "black",
+      plot.title       = element_text(face = "bold",
+                                      size = rel(1.15),
+                                      hjust = 0),
+      panel.border     = element_rect(fill = NA,
+                                      colour = "black",
                                       linewidth = line_width),
-      axis.line        = element_blank(),   # panel.border handles all 4 sides
-      axis.ticks       = element_line(colour = "black", linewidth = line_width),
+      axis.line        = element_blank(),   # panel.border
+                                            # handles all 4 sides
+      axis.ticks       = element_line(colour = "black",
+                                      linewidth = line_width),
       axis.ticks.length = unit(tick_length_pt, "pt"),
       axis.title       = element_text(face = "bold"),
-      axis.title.x     = element_text(margin = margin(t = axis_margin)),
-      axis.title.y     = element_text(margin = margin(r = axis_margin), angle = 90),
-      axis.text        = element_text(colour = "grey20", size = rel(0.90)),
+      axis.title.x     = element_text(
+        margin = margin(t = axis_margin)),
+      axis.title.y     = element_text(
+        margin = margin(r = axis_margin), angle = 90),
+      axis.text        = element_text(colour = "grey20",
+                                      size = rel(0.90)),
       legend.key       = element_rect(fill = NA, colour = NA),
-      legend.title     = element_text(face = "bold",  size = rel(0.95)),
-      legend.text      = element_text(face = "plain", size = rel(0.85)),
+      legend.title     = element_text(face = "bold",
+                                      size = rel(0.95)),
+      legend.text      = element_text(face = "plain",
+                                      size = rel(0.85)),
       legend.key.size  = unit(legend_key_size, "pt"),
-      strip.background = element_rect(fill = "grey92", colour = "black",
+      strip.background = element_rect(fill = "grey92",
+                                      colour = "black",
                                       linewidth = line_width),
-      strip.text       = element_text(face = "bold", size = rel(0.95)),
-      strip.text.x     = element_text(margin = margin(t = strip_v_margin,
-                                                       b = strip_v_margin)),
+      strip.text       = element_text(face = "bold",
+                                      size = rel(0.95)),
+      strip.text.x     = element_text(
+        margin = margin(t = strip_v_margin,
+                        b = strip_v_margin)),
       plot.margin      = margin(title_margin, title_margin,
                                 title_margin, title_margin)
     )
 }
 
-# ── Public theme functions ─────────────────────────────────────────────────────
+# ── Public theme functions ─────────────────────────────────────
 theme_small <- function(base_size = 9, base_family = "sans") {
   .theme_bp_base(base_size, base_family,
                  line_width = 0.35, tick_length_pt = 3,
@@ -284,7 +303,8 @@ After applying a theme function you can still add individual `theme()` tweaks fo
 p + theme_regular() +
   theme(legend.position = "none")
 
-# Rotate x-axis labels 45 degrees for a plot with long group names
+# Rotate x-axis labels 45 degrees
+# for a plot with long group names
 p + theme_regular() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
@@ -300,18 +320,21 @@ p + theme_regular() +
 # 9 · Complete pipeline
 
 ``` r
-# ── At the top of every analysis script ───────────────────────────────────────
+# ── At the top of every analysis script ────────────────────────
 source("themes/r_themes_for_3_sizes.R")
 library(tidyverse)
 library(readxl)
 library(janitor)
 
-# ── Load and prepare data ──────────────────────────────────────────────────────
-tree_df <- read_excel("data_raw/2026_06_25_tree_experiment_raw_data.xlsx") |>
+# ── Load and prepare data ──────────────────────────────────────
+tree_df <-
+  read_excel(
+    "data_raw/2026_06_25_tree_experiment_raw_data.xlsx") |>
   clean_names()
 
-# ── Build the plot ─────────────────────────────────────────────────────────────
-weight_plot <- ggplot(tree_df, aes(x = side, y = weight_g, fill = side)) +
+# ── Build the plot ─────────────────────────────────────────────
+weight_plot <- ggplot(tree_df,
+                      aes(x = side, y = weight_g, fill = side)) +
   geom_boxplot(alpha = 0.6) +
   geom_jitter(width = 0.15, alpha = 0.4) +
   labs(
@@ -324,7 +347,7 @@ weight_plot <- ggplot(tree_df, aes(x = side, y = weight_g, fill = side)) +
 
 weight_plot
 
-# ── Save ───────────────────────────────────────────────────────────────────────
+# ── Save ───────────────────────────────────────────────────────
 ggsave("figures/leaf_weight.pdf",
        plot   = weight_plot,
        width  = 6,

@@ -62,7 +62,8 @@ penguins |>
 Without the pipe the same code nests inside-out, which is harder to read:
 
 ```r
-select(filter(penguins, species == "Adelie"), species, bill_length_mm, body_mass_g)
+select(filter(penguins, species == "Adelie"), species,
+       bill_length_mm, body_mass_g)
 ```
 
 > 💡 **Key idea:** The pipe is not just style — it is the tidyverse's way of
@@ -131,7 +132,8 @@ Use `&` or a comma (they are identical inside `filter()`):
 ```r
 # Adelie penguins heavier than 4000 g
 penguins |> filter(species == "Adelie" & body_mass_g > 4000)
-penguins |> filter(species == "Adelie", body_mass_g > 4000)   # same result
+# same result
+penguins |> filter(species == "Adelie", body_mass_g > 4000)
 ```
 
 ### OR — at least one condition must be true
@@ -150,7 +152,8 @@ penguins |> filter(species == "Adelie" | species == "Chinstrap")
 # Two species
 penguins |> filter(species %in% c("Adelie", "Chinstrap"))
 
-# Same result as the | version above, but scales to any number of values
+# Same result as the | version above,
+# but scales to any number of values
 penguins |> filter(island %in% c("Dream", "Biscoe"))
 ```
 
@@ -169,7 +172,8 @@ penguins |> filter(!species %in% c("Adelie", "Chinstrap"))
 ### Range — between two values
 
 ```r
-# Both of these keep rows where body mass is between 3500 and 4500 g
+# Both of these keep rows where body
+# mass is between 3500 and 4500 g
 penguins |> filter(body_mass_g >= 3500 & body_mass_g <= 4500)
 penguins |> filter(between(body_mass_g, 3500, 4500))   # cleaner
 ```
@@ -181,7 +185,8 @@ operator-precedence surprises:
 
 ```r
 penguins |> filter(
-  (species == "Gentoo" | species == "Chinstrap") & body_mass_g > 4000
+  (species == "Gentoo" | species == "Chinstrap") &
+  body_mass_g > 4000
 )
 ```
 
@@ -197,12 +202,14 @@ Missing values (`NA`) need their own function. You **cannot** test for them
 with `==`.
 
 ```r
-# ❌  This does NOT work — always returns FALSE, not TRUE for NA rows
+# ❌  This does NOT work — always
+# returns FALSE, not TRUE for NA rows
 penguins |> filter(sex == NA)
 
 # ✅  Use is.na() instead
 penguins |> filter(is.na(sex))       # rows where sex IS missing
-penguins |> filter(!is.na(sex))      # rows where sex is NOT missing
+penguins |> filter(!is.na(sex))      # rows where sex
+                                     # is NOT missing
 ```
 
 > ⚠️ **Watch out!** In R, `NA == NA` returns `NA`, not `TRUE`. This is
@@ -273,21 +280,26 @@ typing each one — essential when a data frame has dozens of columns:
 ### `starts_with()` and `ends_with()`
 
 ```r
-penguins |> select(starts_with("bill"))     # bill_length_mm, bill_depth_mm
-penguins |> select(ends_with("mm"))         # all columns ending in "mm"
+penguins |> select(starts_with("bill"))     # bill_length_mm,
+                                            # bill_depth_mm
+penguins |> select(ends_with("mm"))         # all columns
+                                            # ending in "mm"
 ```
 
 ### `contains()`
 
 ```r
-penguins |> select(contains("length"))      # any column with "length" in the name
+penguins |> select(contains("length"))      # any column
+                                            # with "length"
+                                            # in the name
 ```
 
 ### `where()` — select by data type
 
 ```r
 penguins |> select(where(is.numeric))       # all numeric columns
-penguins |> select(where(is.character))     # all character columns
+penguins |> select(where(is.character))     # all character
+                                            # columns
 ```
 
 **Select helpers at a glance:**
@@ -362,7 +374,8 @@ Then pipe straight into ggplot:
 penguins |>
   filter(species == "Gentoo", !is.na(sex)) |>
   select(species, body_mass_g, flipper_length_mm, sex) |>
-  ggplot(aes(x = flipper_length_mm, y = body_mass_g, color = sex)) +
+  ggplot(aes(x = flipper_length_mm, y = body_mass_g,
+             color = sex)) +
   geom_point(size = 2.5, alpha = 0.7) +
   labs(
     title = "Gentoo penguins: flipper length vs body mass",
@@ -400,8 +413,10 @@ and no unexpected extras:
 
 ```r
 penguins |> count(species)            # rows per species
-penguins |> count(species, island)    # cross-tabulate two variables
-penguins |> count(species, is.na(sex))  # how many NAs per species?
+penguins |> count(species, island)    # cross-tabulate
+                                      # two variables
+penguins |> count(species, is.na(sex))  # how many NAs
+                                        # per species?
 ```
 
 > ⚠️ **Watch out!** Always check `nrow()` after filtering. If you get 0 rows,
@@ -420,7 +435,9 @@ library(readxl)
 library(janitor)
 
 # 1. Read and clean
-tree_df <- read_excel("data_raw/2026_06_25_tree_experiment_raw_data.xlsx") |>
+tree_df <-
+  read_excel(
+    "data_raw/2026_06_25_tree_experiment_raw_data.xlsx") |>
   clean_names()
 
 # 2. Filter and select

@@ -102,8 +102,10 @@ Which table has more rows? Why might that be?
 **▶ Run this:**
 
 ``` r
-individuals_df %>% select(fisher_id, sex, site, release_date) %>% head(3)
-captures_df    %>% select(animal_id, capture_date, site, mass_kg) %>% head(3)
+individuals_df %>% select(fisher_id, sex, site, release_date) %>%
+  head(3)
+captures_df    %>%
+  select(animal_id, capture_date, site, mass_kg) %>% head(3)
 ```
 
 ✏️ **Your turn:** What column links the two tables, and what is it called in each?
@@ -112,7 +114,8 @@ captures_df    %>% select(animal_id, capture_date, site, mass_kg) %>% head(3)
 Key in individuals_df:
 Key in captures_df:
 Are the names the same?  Y / N
-Both tables ALSO have a `site` column — do those mean the same thing? (look again)
+Both tables ALSO have a `site` column — do
+those mean the same thing? (look again)
 ```
 
 ------------------------------------------------------------------------
@@ -122,7 +125,8 @@ Both tables ALSO have a `site` column — do those mean the same thing? (look ag
 **▶ Run this:**
 
 ``` r
-# The capture key is lowercase ("f07"); the individual key is "F07" ----
+# The capture key is lowercase ("f07");
+# the individual key is "F07" ----
 captures_df %>% count(animal_id) %>% head()
 
 captures_df <- captures_df %>%
@@ -157,7 +161,8 @@ captures_joined <- captures_df %>%
   left_join(individuals_df, by = c("animal_id" = "fisher_id"))
 
 nrow(captures_joined)                # rows kept
-sum(is.na(captures_joined$sex))      # capture events we can't attribute
+sum(is.na(captures_joined$sex))      # capture events we
+                                     # can't attribute
 ```
 
 ✏️ **Your turn:**
@@ -203,7 +208,8 @@ captures_joined <- captures_df %>%
   left_join(individuals_df, by = c("animal_id" = "fisher_id"))
 
 captures_joined %>%
-  select(capture_event, animal_id, capture_date, sex, age_class) %>%
+  select(capture_event, animal_id, capture_date, sex,
+         age_class) %>%
   head()
 ```
 
@@ -242,7 +248,8 @@ c(inner = nrow(inner), left = nrow(left), full = nrow(full))
 ```
 inner rows =        left rows =        full rows =
 Was your ranking right?  Y / N
-Why does full have MORE rows than left? (which fishers does it add back?)
+Why does full have MORE rows than left?
+(which fishers does it add back?)
 ```
 
 ------------------------------------------------------------------------
@@ -256,7 +263,8 @@ inner_join keeps:
 left_join keeps:
 full_join keeps:
 Which capture events does inner_join DROP that left_join keeps?
-Which fishers does full_join ADD that neither inner nor left includes?
+Which fishers does full_join ADD that
+neither inner nor left includes?
 ```
 
 ------------------------------------------------------------------------
@@ -296,7 +304,8 @@ unmarked <- captures_df %>%
   anti_join(individuals_df, by = c("animal_id" = "fisher_id"))
 nrow(unmarked)
 
-# (b) released fishers with no capture record — anti_join the OTHER direction
+# (b) released fishers with no capture
+# record — anti_join the OTHER direction
 never_seen <- individuals_df %>%
   anti_join(captures_df, by = c("fisher_id" = "animal_id"))
 never_seen %>% select(fisher_id, sex, site, release_date)
@@ -328,7 +337,8 @@ nrow(recaptured)
 
 ```
 Your answer:
-recaptured rows + never_seen rows should equal nrow(individuals_df) — does it?
+recaptured rows + never_seen rows should
+equal nrow(individuals_df) — does it?
 ```
 
 ------------------------------------------------------------------------
@@ -338,11 +348,16 @@ recaptured rows + never_seen rows should equal nrow(individuals_df) — does it?
 **▶ Run this:**
 
 ``` r
-# Every KNOWN-individual capture, with the fisher's attributes attached ---
+# Every KNOWN-individual capture, with
+# the fisher's attributes attached ---
 fisher_analysis <- captures_df %>%
-  inner_join(individuals_df, by = c("animal_id" = "fisher_id")) %>%
-  mutate(days_since_release = as.numeric(capture_date - release_date)) %>%
-  select(animal_id, sex, age_class, capture_date, days_since_release,
+  inner_join(individuals_df,
+             by = c("animal_id" = "fisher_id")) %>%
+  mutate(
+    days_since_release = as.numeric(
+      capture_date - release_date)) %>%
+  select(animal_id, sex, age_class, capture_date,
+         days_since_release,
          capture_site = site.x, release_site = site.y, mass_kg)
 
 fisher_analysis %>% head()
@@ -393,7 +408,8 @@ If not, what error appeared:
 
 ``` r
 captures_df %>%
-  inner_join(individuals_df, by = c("animal_id" = "fisher_id")) %>%
+  inner_join(individuals_df,
+             by = c("animal_id" = "fisher_id")) %>%
   count(site.y, sex) %>%        # site.y = release site
   arrange(desc(n))
 ```
@@ -410,7 +426,8 @@ Your answer:
 
 ``` r
 captures_df %>%
-  semi_join(individuals_df, by = c("animal_id" = "fisher_id")) %>%
+  semi_join(individuals_df,
+            by = c("animal_id" = "fisher_id")) %>%
   count(animal_id, sort = TRUE)
 ```
 
@@ -439,13 +456,16 @@ gets you there — do them, but the grade is on the write-up. E3 must be
 # Capture events with NO matching individual (unmarked animals)
 no_id <- anti_join(captures_df, individuals_df,
                    by = c("animal_id" = "fisher_id"))
-100 * (1 - nrow(no_id) / nrow(captures_df))   # % of events we can attribute
+# % of events we can attribute
+100 * (1 - nrow(no_id) / nrow(captures_df))
 
 # Released fishers never recaptured
-anti_join(individuals_df, captures_df, by = c("fisher_id" = "animal_id"))
+anti_join(individuals_df, captures_df,
+          by = c("fisher_id" = "animal_id"))
 
 # The wrong join: no `by =` at all
-left_join(captures_df, individuals_df)        # what does dplyr say it joined on?
+# what does dplyr say it joined on?
+left_join(captures_df, individuals_df)
 ```
 
 Note the attributable percentage, how many fishers were never seen again, and

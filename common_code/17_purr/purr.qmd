@@ -52,10 +52,12 @@ library(broom)
 The `~` shorthand: `~ some_function(.x)` means "apply this function to each element, where `.x` is the current element."
 
 ``` r
-numbers <- list(a = c(1,2,3,4), b = c(10,20,NA), c = c(5,6,7,8,9))
+numbers <- list(a = c(1,2,3,4), b = c(10,20,NA),
+                c = c(5,6,7,8,9))
 
 map(numbers, mean)                          # list of three means
-map_dbl(numbers, mean)                      # named numeric vector
+map_dbl(numbers, mean)                      # named numeric
+                                            # vector
 map_dbl(numbers, ~ mean(.x, na.rm = TRUE))  # with na.rm
 ```
 
@@ -68,9 +70,11 @@ The most common ecological use: separate regression (or ANOVA) per species, lake
 ``` r
 models <- penguins |>
   drop_na() |>
-  nest_by(species) |>                     # one list-row per species
+  nest_by(species) |>                     # one list-row
+                                          # per species
   mutate(
-    fit       = list(lm(body_mass_g ~ flipper_length_mm, data = data)),
+    fit       = list(lm(body_mass_g ~ flipper_length_mm,
+                        data = data)),
     coef      = list(tidy(fit, conf.int = TRUE)),
     fit_stats = list(glance(fit))
   )
@@ -131,8 +135,9 @@ When you have annual survey files `survey_2022.csv`, `survey_2023.csv`, ... you 
 
 ``` r
 # List all matching files
-file_paths <- list.files("data_raw/", pattern = "survey_.*\\.csv",
-                          full.names = TRUE)
+file_paths <- list.files("data_raw/",
+                         pattern = "survey_.*\\.csv",
+                         full.names = TRUE)
 
 # Read all, bind into one data frame
 all_surveys <- map(file_paths, read_csv) |>
@@ -159,7 +164,8 @@ plots <- penguins |>
   split(~ species) |>
   map(~ ggplot(.x, aes(x = flipper_length_mm, y = body_mass_g)) +
         geom_point(color = "darkblue", alpha = 0.6) +
-        geom_smooth(method = "lm", color = "tomato", se = FALSE) +
+        geom_smooth(method = "lm", color = "tomato",
+                    se = FALSE) +
         labs(title = unique(.x$species),
              x = "Flipper length (mm)", y = "Body mass (g)") +
         theme_classic())
@@ -170,7 +176,8 @@ walk(plots, print)
 # Save each — map2() iterates two lists at once
 filenames <- paste0("figures/regression_", names(plots), ".pdf")
 map2(filenames, plots,
-     ~ ggsave(.x, plot = .y, width = 5, height = 4, units = "in"))
+     ~ ggsave(.x, plot = .y, width = 5, height = 4,
+              units = "in"))
 ```
 
 ::: callout-note
@@ -219,7 +226,8 @@ When reading 50 field survey files, one corrupted file would crash the whole pip
 # 8 · Ecological application — eBird pipeline sketch
 
 ``` r
-# Read abundance rasters for multiple species → extract breeding centroid
+# Read abundance rasters for multiple
+# species → extract breeding centroid
 species_codes <- c("ovenbird", "blackthroated_warbler", "veery")
 
 # Each file is a raster CSV exported from the ebirdst pipeline

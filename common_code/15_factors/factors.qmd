@@ -62,8 +62,10 @@ penguins |>
 factor levels and failed joins.
 
 ```r
-str_trim("  sunny  ")         # "sunny"  — removes leading and trailing spaces
-str_squish("sunny   shady")   # "sunny shady" — also collapses internal spaces
+str_trim("  sunny  ")         # "sunny"  — removes leading
+                              # and trailing spaces
+str_squish("sunny   shady")   # "sunny shady" — also
+                              # collapses internal spaces
 
 # Apply after every import
 penguins |>
@@ -85,11 +87,13 @@ str_detect("brook trout", "trout")   # TRUE
 str_detect("sculpin",     "trout")   # FALSE
 
 # Filter rows where species name contains "trout"
-tibble(species = c("brook trout","lake trout","sculpin","walleye")) |>
+tibble(species = c("brook trout","lake trout","sculpin",
+                   "walleye")) |>
   filter(str_detect(species, "trout"))
 
 # Case-insensitive search
-str_detect("Brook Trout", regex("trout", ignore_case = TRUE))  # TRUE
+# TRUE
+str_detect("Brook Trout", regex("trout", ignore_case = TRUE))
 ```
 
 ---
@@ -97,12 +101,15 @@ str_detect("Brook Trout", regex("trout", ignore_case = TRUE))  # TRUE
 # 4 · Replacing patterns
 
 ```r
-str_replace("bill_length_mm",    "_mm", "")    # "bill_length" — first match
-str_replace_all("length_mm_mm",  "_mm", "")    # "length"      — all matches
+# "bill_length" — first match
+str_replace("bill_length_mm",    "_mm", "")
+# "length"      — all matches
+str_replace_all("length_mm_mm",  "_mm", "")
 
 # Clean column names that have units embedded like "Length (mm)"
 tibble(`Length (mm)` = 1:3, `Mass (g)` = 4:6) |>
-  rename_with(~ str_replace_all(.x, "\\s*\\(.*\\)", "")) |>  # remove (units)
+  # remove (units)
+  rename_with(~ str_replace_all(.x, "\\s*\\(.*\\)", "")) |>
   rename_with(str_to_lower) |>
   rename_with(~ str_replace_all(.x, " ", "_"))
 ```
@@ -113,11 +120,13 @@ tibble(`Length (mm)` = 1:3, `Mass (g)` = 4:6) |>
 
 ```r
 # Extract a pattern from a field label like "trout_S01_2026"
-tibble(label = c("trout_S01_2026","sculpin_S02_2026","bass_S01_2025")) |>
+tibble(label = c("trout_S01_2026","sculpin_S02_2026",
+                 "bass_S01_2025")) |>
   mutate(
     species = str_extract(label, "^[a-z]+"),     # first word
     site    = str_extract(label, "S\\d+"),        # "S" + digits
-    year    = str_extract(label, "\\d{4}$")       # 4-digit year at end
+    # 4-digit year at end
+    year    = str_extract(label, "\\d{4}$")
   )
 ```
 
@@ -157,7 +166,8 @@ By default, R puts categorical variables in alphabetical order on plot axes.
 That is almost never the order you want. Factors let you set the order explicitly.
 
 ```r
-# Default: Adelie, Chinstrap, Gentoo (alphabetical — fine here by accident)
+# Default: Adelie, Chinstrap, Gentoo
+# (alphabetical — fine here by accident)
 penguins |> count(species) |>
   ggplot(aes(x = species, y = n)) + geom_col()
 ```
@@ -189,7 +199,8 @@ penguins |>
   drop_na(body_mass_g) |>
   group_by(species) |>
   summarise(mean_mass = mean(body_mass_g), .groups = "drop") |>
-  mutate(species = fct_reorder(species, mean_mass)) |>   # sort ascending
+  # sort ascending
+  mutate(species = fct_reorder(species, mean_mass)) |>
   ggplot(aes(x = species, y = mean_mass, fill = species)) +
   geom_col(alpha = 0.7) +
   labs(x = NULL, y = "Mean body mass (g)",
@@ -219,7 +230,8 @@ flights |>
   count(carrier) |>
   ggplot(aes(x = carrier, y = n)) +
   geom_col(fill = "darkblue", alpha = 0.7) +
-  labs(title = "Airlines sorted by flight count (most to least)") +
+  labs(
+    title = "Airlines sorted by flight count (most to least)") +
   theme_minimal()
 ```
 
@@ -246,7 +258,8 @@ on a horizontal axis. We reuse `penguins` from earlier in this file.
 ```r
 penguins |>
   drop_na(body_mass_g) |>
-  mutate(species = fct_reorder(species, body_mass_g, .fun = mean)) |>
+  mutate(species = fct_reorder(species, body_mass_g,
+                               .fun = mean)) |>
   ggplot(aes(x = species, y = body_mass_g, fill = species)) +
   geom_boxplot(alpha = 0.6) +
   coord_flip() +

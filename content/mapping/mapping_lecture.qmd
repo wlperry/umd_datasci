@@ -51,6 +51,7 @@ execute:
 ```{r setup}
 #| echo: false
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(width = 65)   # printed R output wraps at 65 too
 ```
 
 # Where we left off — Factors & Joins
@@ -165,7 +166,9 @@ library(maps)     # ready-made state/country outlines
 # Swap this path for your download -------------------
 bigfoot_df <- read_csv("data/bfro_reports_geocoded.csv")
 
-bigfoot_df %>% select(title, state, latitude, longitude, classification) %>% head()
+bigfoot_df %>%
+  select(title, state, latitude, longitude, classification) %>%
+  head()
 ```
 ::::
 
@@ -366,7 +369,8 @@ If I **skip** the lowercase step, the join keys don't match — `"Washington"` �
 ``` r
 states_sf %>%
   mutate(state = ID) %>%
-  left_join(count(bigfoot_df, state), by = "state")  # "Washington" vs "washington"
+  # "Washington" vs "washington"
+  left_join(count(bigfoot_df, state), by = "state")
 ```
 
 Every state gets `NA` sightings → the whole map renders **grey**. No error, just a blank choropleth.
@@ -392,13 +396,15 @@ The fix — make both keys the **same case** before joining (`str_to_lower()`).
 #| fig-alt: "Choropleth map of US states shaded by number of Bigfoot sightings using a magma color scale, with darker states indicating more reports."
 # Join sightings to the state polygons ---------------
 states_map <- states_sf %>%
-  mutate(state = str_remove(ID, ":.*")) %>%   # drop ":north" etc.
+  # drop ":north" etc.
+  mutate(state = str_remove(ID, ":.*")) %>%
   left_join(sightings_by_state, by = "state")
 
 ggplot(states_map) +
   geom_sf(aes(fill = sightings), color = "white") +
   scale_fill_viridis_c(option = "magma", direction = -1) +
-  labs(title = "Bigfoot Sightings by State", fill = "Sightings") +
+  labs(title = "Bigfoot Sightings by State",
+       fill = "Sightings") +
   theme_void()
 ```
 ::::

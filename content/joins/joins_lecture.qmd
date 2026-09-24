@@ -52,6 +52,7 @@ execute:
 ```{r setup}
 #| echo: false
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(width = 65)   # printed R output wraps at 65 too
 ```
 
 # Where we left off
@@ -159,9 +160,11 @@ dim(individuals_df)    # released animals: sex/age/source/site
 :::: {.column width="60%"}
 ```{r peek-12}
 # The columns that identify an animal ---------------
-captures_df    %>% select(animal_id, capture_date, site, mass_kg) %>% head(3)
+captures_df    %>%
+  select(animal_id, capture_date, site, mass_kg) %>% head(3)
 
-individuals_df %>% select(fisher_id, sex, site, release_date) %>% head(3)
+individuals_df %>% select(fisher_id, sex, site, release_date) %>%
+  head(3)
 ```
 ::::
 
@@ -192,7 +195,8 @@ captures_df <- captures_df %>%
   mutate(animal_id = str_to_upper(animal_id))   # "f07" -> "F07"
 
 n_distinct(individuals_df$fisher_id)
-n_distinct(captures_df$animal_id)   # includes "UNK" — unmarked animals
+n_distinct(captures_df$animal_id)   # includes "UNK" —
+                                    # unmarked animals
 ```
 ::::
 
@@ -231,8 +235,10 @@ Load both tables, find the key in each, and fix its case. Predict how many captu
 captures_joined <- captures_df %>%
   left_join(individuals_df, by = c("animal_id" = "fisher_id"))
 
-nrow(captures_joined)                  # every capture event is kept
-sum(is.na(captures_joined$sex))        # events we can't attribute
+nrow(captures_joined)                  # every capture
+                                       # event is kept
+sum(is.na(captures_joined$sex))        # events we can't
+                                       # attribute
 ```
 ::::
 
@@ -261,7 +267,8 @@ But `site` means different things: the **capture** site vs the **release** site.
 The fix — always name the real key:
 
 ``` r
-captures_df %>% left_join(individuals_df, by = c("animal_id" = "fisher_id"))
+captures_df %>%
+  left_join(individuals_df, by = c("animal_id" = "fisher_id"))
 ```
 ::::
 
@@ -375,7 +382,8 @@ Run all three joins, compare the row counts, and decide which one you'd use to b
 ```{r anti-12}
 # (a) capture events of unmarked animals
 captures_df %>%
-  anti_join(individuals_df, by = c("animal_id" = "fisher_id")) %>%
+  anti_join(individuals_df,
+            by = c("animal_id" = "fisher_id")) %>%
   nrow()
 
 # (b) released fishers with no capture — anti_join the OTHER way
@@ -420,11 +428,14 @@ individuals_df %>%
 ```{r payoff-12}
 # Every KNOWN-individual capture, with the animal's attributes
 fisher_analysis <- captures_df %>%
-  inner_join(individuals_df, by = c("animal_id" = "fisher_id")) %>%
-  mutate(days_since_release = as.numeric(capture_date - release_date))
+  inner_join(individuals_df,
+             by = c("animal_id" = "fisher_id")) %>%
+  mutate(
+    days_since_release = as.numeric(capture_date - release_date))
 
 fisher_analysis %>%
-  select(animal_id, sex, age_class, capture_date, days_since_release, mass_kg) %>%
+  select(animal_id, sex, age_class, capture_date,
+         days_since_release, mass_kg) %>%
   head()
 ```
 ::::

@@ -176,7 +176,8 @@ An ice season runs Nov → May, but NOAA labels the whole season by the year it 
 ice_clean <- ice_long %>%
   mutate(
     year          = as.numeric(year),
-    calendar_year = if_else(str_starts(date, "Nov|Dec"), year - 1, year),
+    calendar_year = if_else(str_starts(date, "Nov|Dec"),
+                            year - 1, year),
     full_date     = ymd(paste(calendar_year, date, sep = "-")),
     month         = month(full_date, label = TRUE)
   ) %>%
@@ -207,7 +208,8 @@ Why we subtract 1 from year:
 # Mean ice cover per year-month --------------------------
 monthly_avg <- ice_clean %>%
   group_by(year, month) %>%
-  summarize(mean_ice = mean(ice_cover, na.rm = TRUE), .groups = "drop")
+  summarize(mean_ice = mean(ice_cover, na.rm = TRUE),
+            .groups = "drop")
 
 head(monthly_avg)
 ```
@@ -291,7 +293,8 @@ ice_spaghetti_plot <- ggplot() +
             color = "black", linewidth = 1.2) +
   scale_x_date(date_labels = "%b", date_breaks = "1 month") +
   labs(title = "Lake Superior Average Ice Cover",
-       subtitle = paste("Comparing", current_yr, "to Historical Data"),
+       subtitle = paste("Comparing", current_yr,
+                        "to Historical Data"),
        x = NULL, y = "Ice Cover (%)") +
   theme_bw()
 
@@ -327,7 +330,8 @@ head(max_ice_per_year %>% arrange(ice_cover))
 ```         
 Lowest maximum ice cover:  year = _____   value = _____ %
 Highest maximum ice cover: year = _____   value = _____ %
-What does the DATE of each year's peak tell you (early vs. late season)?
+What does the DATE of each year's peak
+tell you (early vs. late season)?
 ```
 
 ------------------------------------------------------------------------
@@ -364,7 +368,8 @@ Slope (per year) =
 p-value for the slope =
 R-squared =
 Is the trend significant at α = 0.05?  Y / N
-In one sentence — is Lake Superior's peak ice cover changing? How confident are you, given the scatter?
+In one sentence — is Lake Superior's peak ice cover
+changing? How confident are you, given the scatter?
 ```
 
 > 💡 **Key idea:** Real environmental data is *messy and honest*. A non-significant or weak trend, with lots of scatter driven by ENSO and the polar vortex, is a perfectly valid — and realistic — finding.
@@ -410,7 +415,8 @@ Pick one: `mic.txt` (Michigan), `hur.txt` (Huron), `eri.txt` (Erie), `ont.txt`
 (Ontario). Change only the file name in the URL and re-run the whole workflow:
 
 ``` r
-url <- "https://www.glerl.noaa.gov/data/ice/glicd/daily/eri.txt"   # <- your lake
+# <- your lake
+url <- "https://www.glerl.noaa.gov/data/ice/glicd/daily/eri.txt"
 # read + rownames_to_column -> pivot_longer (names_prefix = "X")
 #   -> year to numeric, drop NA ice -> slice_max() per year
 #   -> lm(ice_cover ~ year), report the slope (% per year)

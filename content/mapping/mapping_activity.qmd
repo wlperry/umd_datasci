@@ -69,7 +69,8 @@ library(maps)   # ready-made state outlines
 bigfoot_df <- read_csv("data/bfro_reports_geocoded.csv")
 
 bigfoot_df %>%
-  select(title, state, latitude, longitude, classification, season) %>%
+  select(title, state, latitude, longitude, classification,
+         season) %>%
   head()
 ```
 
@@ -236,7 +237,8 @@ Why str_to_lower():
 ``` r
 # Join sightings onto the state polygons -----------------
 states_map <- states_sf %>%
-  mutate(state = str_remove(ID, ":.*")) %>%   # drop ":north" etc.
+  # drop ":north" etc.
+  mutate(state = str_remove(ID, ":.*")) %>%
   left_join(sightings_by_state, by = "state")
 
 # Peek — every state should now have a sightings number
@@ -260,7 +262,8 @@ Your prediction / what happened:
 ggplot(states_map) +
   geom_sf(aes(fill = sightings), color = "white") +
   scale_fill_viridis_c(option = "magma", direction = -1) +
-  labs(title = "Bigfoot Sightings by State", fill = "Sightings") +
+  labs(title = "Bigfoot Sightings by State",
+       fill = "Sightings") +
   theme_void()
 ```
 
@@ -287,7 +290,8 @@ ggplot(states_map) +
   geom_sf(aes(fill = sightings), color = "white") +
   scale_fill_viridis_c(option = "magma", direction = -1) +
   coord_sf(crs = 5070) +
-  labs(title = "Bigfoot Sightings by State (Albers)", fill = "Sightings") +
+  labs(title = "Bigfoot Sightings by State (Albers)",
+       fill = "Sightings") +
   theme_void()
 ```
 
@@ -335,7 +339,8 @@ choropleth_plot <- ggplot(states_map) +
   geom_sf(aes(fill = sightings), color = "white") +
   scale_fill_viridis_c(option = "magma", direction = -1) +
   coord_sf(crs = 5070) +
-  labs(title = "Bigfoot Sightings by State", fill = "Sightings") +
+  labs(title = "Bigfoot Sightings by State",
+       fill = "Sightings") +
   theme_void()
 
 ggsave("figures/bigfoot_choropleth.png",
@@ -422,17 +427,21 @@ library(tidyverse)
 
 # 1. up to ~1500 US records that have coordinates
 occ <- occ_data(scientificName = "Genus species",
-                country = "US", hasCoordinate = TRUE, limit = 1500)$data
+                country = "US", hasCoordinate = TRUE,
+                limit = 1500)$data
 
-# 2. keep real coordinates, build the sf object (x = longitude first!)
+# 2. keep real coordinates, build the
+# sf object (x = longitude first!)
 sp_sf <- occ %>%
   filter(!is.na(decimalLongitude), !is.na(decimalLatitude)) %>%
-  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = 4326)
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"),
+           crs = 4326)
 
 # 3. points on the same states basemap you used in class
 ggplot() +
   geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
-  geom_sf(data = sp_sf, alpha = 0.3, size = 0.6, color = "darkgreen") +
+  geom_sf(data = sp_sf, alpha = 0.3, size = 0.6,
+          color = "darkgreen") +
   coord_sf(crs = 5070) +
   theme_void()
 ```

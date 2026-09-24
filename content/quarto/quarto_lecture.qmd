@@ -482,15 +482,10 @@ Quarto runs the file **top to bottom in a fresh R session** — not whatever is 
 
 # Plot 1 · Box plot with the raw points
 
-::: callout-note
-**🔮 Predict first:** The label starts with `fig-`. What will the caption under the plot start with?
-:::
-
-::::::: columns
-:::: {.column width="55%"}
 ```{r}
 #| label: fig-boxplot
 #| echo: fenced
+#| output-location: column
 #| fig-cap: "Leaf mass by side; each point is one leaf."
 #| fig-width: 5
 #| fig-height: 4
@@ -498,30 +493,19 @@ Quarto runs the file **top to bottom in a fresh R session** — not whatever is 
 leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
-  geom_jitter(width = 0.15, alpha = 0.6) +
-  scale_fill_manual(values = c("sunny" = "goldenrod",
-                               "shady" = "forestgreen")) +
-  labs(x = "Side of tree", y = "Leaf mass (g)") +
-  theme_regular() +
-  theme(legend.position = "none")
+  geom_jitter(width = 0.15, alpha = 0.6)
 ```
-::::
 
-:::: {.column width="45%"}
-- Same plot as Activity 03 — only the `#|` lines are new
-- `fig-` label → **"Figure 1"** in the caption
-- `fig-width` / `fig-height` size **this** plot only
-::::
-:::::::
+- 🔮 **Predict:** the label starts with `fig-` — what does the caption start with?
+- ✏️ **You add:** your two colors, `labs()`, `theme_regular()`, no legend
 
 # Plot 2 · Mean ± SE
 
-::::::: columns
-:::: {.column width="55%"}
 ```{r}
 #| label: fig-mean-se
 #| echo: fenced
-#| fig-cap: "Mean leaf mass (± 1 SE) by side of the tree."
+#| output-location: column
+#| fig-cap: "Mean leaf mass (± 1 SE) by side."
 #| fig-width: 5
 #| fig-height: 4
 # mean +/- standard error plot ----
@@ -530,50 +514,31 @@ leaf_df %>%
   geom_jitter(width = 0.15, alpha = 0.35, size = 2) +
   stat_summary(fun = mean, geom = "point", size = 4) +
   stat_summary(fun.data = mean_se, geom = "errorbar",
-               width = 0.15, linewidth = 0.9) +
-  scale_color_manual(values = c("sunny" = "goldenrod",
-                                "shady" = "forestgreen")) +
-  labs(x = "Side of tree", y = "Leaf mass (g)") +
-  theme_regular() +
-  theme(legend.position = "none")
+               width = 0.15, linewidth = 0.9)
 ```
-::::
 
-:::: {.column width="45%"}
-::: callout-note
-**🔮 Predict:** The error bars overlap almost completely. Keep that picture in mind — it predicts the t-test at the end.
-:::
-::::
-:::::::
+- 🔮 **Predict:** the error bars overlap almost completely — what will the t-test say?
+- ✏️ **You add:** the same four finishing lines — but this plot maps `color`, not `fill`
 
 # Plot 3 · Histogram — the shape of each group
 
-::::::: columns
-:::: {.column width="60%"}
 ```{r}
 #| label: fig-histogram
 #| echo: fenced
-#| fig-cap: "Distribution of leaf mass on each side of the tree."
+#| output-location: column
+#| fig-cap: "Distribution of leaf mass on each side."
 #| fig-width: 6
 #| fig-height: 3.5
 # one histogram per side ----
 leaf_df %>%
   ggplot(aes(x = mass_g, fill = shade)) +
   geom_histogram(binwidth = 0.05, color = "white") +
-  facet_wrap(~shade) +
-  scale_fill_manual(values = c("sunny" = "goldenrod",
-                               "shady" = "forestgreen")) +
-  labs(x = "Leaf mass (g)", y = "Count") +
-  theme_regular() +
-  theme(legend.position = "none")
+  facet_wrap(~shade)
 ```
-::::
 
-:::: {.column width="40%"}
 - Wider and shorter (`6 × 3.5`) because it has **two panels**
 - The box plot hides the shape; the histogram shows it
-::::
-:::::::
+- ✏️ **You add:** colors, `labs()`, `theme_regular()`, no legend
 
 # Describe it · a summary statistics table
 
@@ -797,6 +762,28 @@ The same report becomes a web-based slide show: each `#` is a section slide, eac
 :::
 ::::
 :::::::
+
+# Making things fit on a slide (RevealJS)
+
+These work in **any** Quarto presentation — they only change the slides, never the Word or PDF.
+
+| Control | Where it goes | What it does |
+|:--------------------------|:------------------|:----------------------------------------|
+| `output-location: column` | chunk `#|` line | code on the left, result on the right |
+| `output-location: slide` | chunk `#|` line | result gets its own slide after the code |
+| `output-location: fragment` | chunk `#|` line | result appears on the next click |
+| `fig-width` / `fig-height` | chunk `#|` line | a shorter figure fits under more text |
+| `echo: false` | chunk or `execute:` | hide the code — just show the result |
+| `smaller: true` | under `revealjs:` | smaller text on every slide |
+| `scrollable: true` | under `revealjs:` | a long slide scrolls instead of being cut off |
+| `## Title {.smaller}` | on one heading | smaller text on **that** slide only |
+| `:::: columns` | in the Markdown | put any two things side by side |
+
+: {tbl-colwidths="[30,22,48]"}
+
+::: callout-tip
+Put `output-location: column` under `revealjs:` in the YAML and **every** chunk in your slides gets code-left, plot-right.
+:::
 
 # 🛑 Pause — Do Activity Parts 7–8 Now
 

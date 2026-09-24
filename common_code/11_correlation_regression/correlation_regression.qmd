@@ -48,7 +48,8 @@ library(broom)      # tidy(), glance() — clean model output
 source("themes/r_themes_for_3_sizes.R")
 
 # Complete cases only
-pg <- penguins |> drop_na(flipper_length_mm, body_mass_g, species)
+pg <- penguins |>
+  drop_na(flipper_length_mm, body_mass_g, species)
 ```
 
 ::: {.callout-note}
@@ -101,7 +102,8 @@ whether a straight line is a reasonable description.
 ggplot(pg, aes(x = flipper_length_mm, y = body_mass_g)) +
   geom_point(alpha = 0.5, color = "darkblue", size = 2) +
   geom_smooth(method = "loess", se = FALSE,
-              color = "tomato", linetype = "dashed", linewidth = 0.8) +
+              color = "tomato", linetype = "dashed",
+              linewidth = 0.8) +
   labs(x = "Flipper length (mm)", y = "Body mass (g)",
        title = "Does the relationship look linear?") +
   theme_regular()
@@ -155,7 +157,8 @@ tests whether the *ranks* of the two variables are associated — suitable for
 non-normal data or when outliers are present.
 
 ```r
-cor.test(pg$flipper_length_mm, pg$body_mass_g, method = "spearman")
+cor.test(pg$flipper_length_mm, pg$body_mass_g,
+         method = "spearman")
 ```
 
 Report as ρ (rho) rather than r.
@@ -210,7 +213,8 @@ pg |>
   group_by(species) |>
   summarise(
     n = sum(!is.na(flipper_length_mm) & !is.na(body_mass_g)),
-    r = round(cor(flipper_length_mm, body_mass_g, use = "complete.obs"), 3),
+    r = round(cor(flipper_length_mm, body_mass_g,
+                  use = "complete.obs"), 3),
     .groups = "drop"
   )
 ```
@@ -231,12 +235,14 @@ groups as well as overall, especially in ecological data.
 ```r
 eq_label <- paste0("r = ", r_val, "\np = ", p_val)
 
-cor_plot <- ggplot(pg, aes(x = flipper_length_mm, y = body_mass_g,
-                            color = species)) +
+cor_plot <- ggplot(pg,
+                   aes(x = flipper_length_mm, y = body_mass_g,
+                       color = species)) +
   geom_point(alpha = 0.6, size = 2) +
   stat_ellipse(linewidth = 0.8, alpha = 0.7) +
   annotate("text", x = 175, y = 6000,
-           label = eq_label, hjust = 0, size = 3.5, color = "grey30") +
+           label = eq_label, hjust = 0, size = 3.5,
+           color = "grey30") +
   labs(x = "Flipper length (mm)", y = "Body mass (g)",
        color = "Species",
        title = "Flipper length vs body mass — Palmer penguins") +
@@ -376,7 +382,8 @@ diag_df <- tibble(
 ```r
 ggplot(diag_df, aes(x = fitted, y = residuals)) +
   geom_point(alpha = 0.5, color = "darkblue") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "tomato") +
+  geom_hline(yintercept = 0, linetype = "dashed",
+             color = "tomato") +
   geom_smooth(method = "loess", se = FALSE,
               color = "grey40", linewidth = 0.8) +
   labs(title = "Residuals vs Fitted",
@@ -391,7 +398,8 @@ ggplot(diag_df, aes(sample = std_resid)) +
   stat_qq(alpha = 0.5, color = "darkblue") +
   stat_qq_line(color = "tomato") +
   labs(title = "Normal Q-Q of residuals",
-       x = "Theoretical quantiles", y = "Standardised residuals") +
+       x = "Theoretical quantiles",
+       y = "Standardised residuals") +
   theme_regular()
 ```
 
@@ -429,7 +437,8 @@ shapiro.test(residuals(reg_model))
 ```r
 new_data <- tibble(flipper_length_mm = c(180, 200, 210, 220))
 
-# Confidence interval — uncertainty in the MEAN response at that X
+# Confidence interval — uncertainty
+# in the MEAN response at that X
 predict(reg_model, new_data, interval = "confidence") |> round(1)
 
 # Prediction interval — uncertainty for a SINGLE new observation
@@ -467,12 +476,14 @@ those values.
 eq_label <- paste0("y = ", intercept, " + ", slope, "x\n",
                    "R² = ", r2)
 
-reg_plot <- ggplot(pg, aes(x = flipper_length_mm, y = body_mass_g)) +
+reg_plot <- ggplot(pg,
+                   aes(x = flipper_length_mm, y = body_mass_g)) +
   geom_point(aes(color = species), alpha = 0.5, size = 2) +
   geom_smooth(method = "lm", color = "grey20",
               fill = "grey70", alpha = 0.2, linewidth = 1) +
   annotate("text", x = 172, y = 6000,
-           label = eq_label, hjust = 0, size = 3.5, color = "grey20") +
+           label = eq_label, hjust = 0, size = 3.5,
+           color = "grey20") +
   labs(x = "Flipper length (mm)", y = "Body mass (g)",
        color = "Species",
        title = "Body mass predicted by flipper length") +
