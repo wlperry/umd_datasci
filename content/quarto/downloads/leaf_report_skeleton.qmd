@@ -5,7 +5,12 @@
 #  1. Save this file at the TOP of your project folder (next to data/,
 #     themes/, figures/, scripts/) and name it  leaf_report.qmd
 #  2. Press Render right away — it should build before you add anything.
-#  3. Fill in each chunk and each section, rendering as you go.
+#  3. The analysis code is already here and runs. Your job: add the
+#     finishing touches marked  # TODO:  (colors, labels, theme, table
+#     formatting), write the text sections, and render as you go.
+#
+#  KEEP THIS FILE. For any future analysis, copy it, change the data file
+#  in the load-data chunk and the column names, and rewrite the text.
 #
 #  Paths like "data/..." work because Quarto runs the code from the
 #  folder this file is saved in — the top of your project.
@@ -30,7 +35,7 @@ format:
 
 # ---- Settings for EVERY chunk (a chunk's own #| line overrides these) ---
 execute:
-  echo: true       # change to false to hide ALL the code with one edit
+  echo: true       # false = hide ALL the code
   warning: false
   message: false
 ---
@@ -51,7 +56,8 @@ source("themes/summary_stats_function.R")
 ```{r}
 #| label: load-data
 # read the leaf data from the data/ folder ----
-leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+leaf_df <-
+  read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
   clean_names()
 ```
 
@@ -74,11 +80,15 @@ statistics, and which test did you use? -->
 
 ```{r}
 #| label: fig-boxplot
-#| fig-cap: "Leaf mass by side of the tree. Points are individual leaves."
+#| fig-cap: "Leaf mass by side; each point is one leaf."
 #| fig-width: 5
 #| fig-height: 4
 # box plot with raw points on top ----
-
+leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, fill = shade)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6)
+  # TODO: add colors, axis labels, theme_regular(), no legend
 ```
 
 ## Mean ± SE
@@ -89,7 +99,13 @@ statistics, and which test did you use? -->
 #| fig-width: 5
 #| fig-height: 4
 # mean +/- standard error plot ----
-
+leaf_df %>%
+  ggplot(aes(x = shade, y = mass_g, color = shade)) +
+  geom_jitter(width = 0.15, alpha = 0.35, size = 2) +
+  stat_summary(fun = mean, geom = "point", size = 4) +
+  stat_summary(fun.data = mean_se, geom = "errorbar",
+               width = 0.15, linewidth = 0.9)
+  # TODO: add colors, axis labels, theme_regular(), no legend
 ```
 
 ## Histogram
@@ -100,17 +116,27 @@ statistics, and which test did you use? -->
 #| fig-width: 6
 #| fig-height: 3.5
 # one histogram per side ----
-
+leaf_df %>%
+  ggplot(aes(x = mass_g, fill = shade)) +
+  geom_histogram(binwidth = 0.05, color = "white") +
+  facet_wrap(~shade)
+  # TODO: add colors, axis labels, theme_regular(), no legend
 ```
 
 ## Summary statistics
 
 ```{r}
 #| label: tbl-summary
-#| tbl-cap: "Summary statistics for leaf mass (g) on each side of the tree."
+#| tbl-cap: "Summary statistics for leaf mass (g) by side."
 #| tbl-colwidths: [12, 7, 12, 15, 12, 12, 15, 15]
 # summary statistics by side, printed as a table ----
+mass_stats_df <- leaf_df %>%
+  group_by(shade) %>%
+  summary_stats(mass_g)
 
+mass_stats_df %>%
+  knitr::kable()
+  # TODO: in kable() add digits = 3 and readable col.names
 ```
 
 <!-- One sentence that points the reader to the table, e.g.
@@ -120,16 +146,23 @@ statistics, and which test did you use? -->
 
 ```{r}
 #| label: ttest
-# Welch's two-sample t-test (does NOT assume equal variances) ----
-
+# Welch's t-test (does NOT assume equal variances) ----
+leaf_ttest <- t.test(mass_g ~ shade, data = leaf_df,
+                     var.equal = FALSE)
+leaf_ttest
 ```
 
 ```{r}
 #| label: tbl-ttest
-#| tbl-cap: "Welch's two-sample t-test of leaf mass by side of the tree."
+#| tbl-cap: "Welch's t-test of leaf mass by side of the tree."
 #| tbl-colwidths: [20, 20, 15, 15, 15, 15]
 # the same result as a clean table ----
-
+leaf_ttest %>%
+  tidy() %>%
+  select(estimate1, estimate2, statistic, parameter,
+         p.value, conf.low) %>%
+  knitr::kable()
+  # TODO: in kable() add digits = 3 and readable col.names
 ```
 
 # Discussion

@@ -39,6 +39,7 @@ execute:
 > **You are building one Quarto file this whole class, and you turn it in:** `leaf_report.qmd`.
 >
 > - Everything you have done so far — reading data, plotting, summary statistics — goes into **one document** that also holds your writing.
+> - **The analysis code is already in the starter file, and it runs.** You add the finishing touches (colors, labels, theme, table formatting), write the text, and render. Whatever time is left is for Part 9 — play.
 > - **Start every code chunk with a short `#` comment** that says what it does. Same rule as your scripts; it is part of the grade.
 > - **Render often** — after every chunk. A break is easy to find when you only changed one thing.
 >
@@ -49,7 +50,7 @@ execute:
 ::: callout-tip
 ## 📥 Get the files
 
-- [**Starter file → `leaf_report_skeleton.qmd`**](downloads/leaf_report_skeleton.qmd){download="leaf_report.qmd"} — save it at the **top of your project folder** as `leaf_report.qmd`. It already has the YAML, the library chunk, the data chunk, every section heading, and an empty, named chunk for each step.
+- [**Starter file → `leaf_report_skeleton.qmd`**](downloads/leaf_report_skeleton.qmd){download="leaf_report.qmd"} — save it at the **top of your project folder** as `leaf_report.qmd`. It already has the YAML, every section heading, and working code for every step — plots, summary table, and t-test — ready for you to finish.
 - [**Leaf data → `2026_09_03_data_sci_leaf_area.xlsx`**](data/2026_09_03_data_sci_leaf_area.xlsx) — should already be in your `data/` folder.
 - [**`r_themes_for_3_sizes.R`**](themes/r_themes_for_3_sizes.R) and [**`summary_stats_function.R`**](themes/summary_stats_function.R) — should already be in your `themes/` folder (Activities 04 and 06).
 :::
@@ -82,7 +83,7 @@ Quarto runs your code **from the folder the `.qmd` is saved in**. Saved at the t
 If you saved it inside `documents/` instead, every path would need `../data/...` to climb back up a folder. Keep it simple: top of the project.
 :::
 
-Open `leaf_report.qmd` in Positron and press **Render** (Ctrl/Cmd + Shift + K) **before you change anything**. You should get a document with a title, headings, and the library code.
+Open `leaf_report.qmd` in Positron and press **Render** (Ctrl/Cmd + Shift + K) **before you change anything**. You should get a document with a title, headings, three plain plots, two plain tables, and a t-test printout. It all works — it just isn't finished.
 
 ```
 Did it render?  Y / N
@@ -113,7 +114,7 @@ format:
     smaller: true
 
 execute:
-  echo: true       # change to false to hide ALL the code with one edit
+  echo: true       # false = hide ALL the code
   warning: false
   message: false
 ```
@@ -143,9 +144,9 @@ Replace the `<!-- comment -->` under **Introduction** with two or three sentence
 ``` markdown
 # Introduction
 
-Leaves on the **shady** side of a tree may grow larger and heavier to catch
-more of the limited light. We collected leaves from the sunny and shady sides
-of a tree and weighed each one.
+Leaves on the **shady** side of a tree may grow larger and
+heavier to catch more of the limited light. We collected leaves
+from the sunny and shady sides of a tree and weighed each one.
 
 - **Null hypothesis:** mean leaf mass is the same on both sides
 - **Alternate hypothesis:** mean leaf mass differs between sides
@@ -198,7 +199,8 @@ source("themes/summary_stats_function.R")
 ```{{r}}
 #| label: load-data
 # read the leaf data from the data/ folder ----
-leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+leaf_df <-
+  read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
   clean_names()
 ```
 
@@ -217,15 +219,27 @@ Did the packages still load (do later chunks still work)?  Y / N
 
 ------------------------------------------------------------------------
 
-# Part 5 · Plot the data
+# Part 5 · Finish the plots
 
-These are the same plots you built in Activities 03–04. Type each one **into the empty chunk that already has its label and options** — only the code under the `#` comment is new.
+The three plots are **already in your skeleton, and they run**. Render and look at them. They are correct, but they are not ready for a report: default colors, axis labels that read `mass_g` and `shade`, and a legend that repeats what the x-axis already says.
+
+Your job is the **finishing touches** — the same layers you learned in Activities 03–04. Each chunk ends with a `# TODO:` comment showing where they go.
+
+🔮 **Predict:** Before you change anything, list three things about the plain box plot a reader would find confusing.
+
+```
+1.
+2.
+3.
+```
 
 ### Box plot
 
+Here is the finished chunk. The **last four lines** are yours to add in place of the `# TODO:` comment:
+
 ```{{r}}
 #| label: fig-boxplot
-#| fig-cap: "Leaf mass by side of the tree. Points are individual leaves."
+#| fig-cap: "Leaf mass by side; each point is one leaf."
 #| fig-width: 5
 #| fig-height: 4
 # box plot with raw points on top ----
@@ -233,15 +247,25 @@ leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   geom_jitter(width = 0.15, alpha = 0.6) +
-  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  scale_fill_manual(values = c("sunny" = "goldenrod",
+                               "shady" = "forestgreen")) +
   labs(x = "Side of tree", y = "Leaf mass (g)") +
   theme_regular() +
   theme(legend.position = "none")
 ```
 
+::: callout-warning
+Adding a layer means adding a **`+`** to the end of the line **above** it. Forget it and R runs the plot without your new lines — or stops with an error.
+:::
+
 Render. Notice the caption starts **"Figure 1:"** — that number came from the `fig-` at the front of the label.
 
-### Mean ± SE
+### Mean ± SE — your turn
+
+✏️ Add the same four finishing lines to the `fig-mean-se` chunk. **Careful:** this plot maps `color = shade`, not `fill = shade`. Which `scale_..._manual()` do you need?
+
+::: {.callout-tip collapse="true"}
+## Check your answer
 
 ```{{r}}
 #| label: fig-mean-se
@@ -253,14 +277,22 @@ leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, color = shade)) +
   geom_jitter(width = 0.15, alpha = 0.35, size = 2) +
   stat_summary(fun = mean, geom = "point", size = 4) +
-  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.15, linewidth = 0.9) +
-  scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  stat_summary(fun.data = mean_se, geom = "errorbar",
+               width = 0.15, linewidth = 0.9) +
+  scale_color_manual(values = c("sunny" = "goldenrod",
+                                "shady" = "forestgreen")) +
   labs(x = "Side of tree", y = "Leaf mass (g)") +
   theme_regular() +
   theme(legend.position = "none")
 ```
+:::
 
-### Histogram
+### Histogram — your turn
+
+✏️ Finish the `fig-histogram` chunk on your own. This time the **x-axis** is leaf mass and the **y-axis** is a count.
+
+::: {.callout-tip collapse="true"}
+## Check your answer
 
 ```{{r}}
 #| label: fig-histogram
@@ -272,11 +304,13 @@ leaf_df %>%
   ggplot(aes(x = mass_g, fill = shade)) +
   geom_histogram(binwidth = 0.05, color = "white") +
   facet_wrap(~shade) +
-  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  scale_fill_manual(values = c("sunny" = "goldenrod",
+                               "shady" = "forestgreen")) +
   labs(x = "Leaf mass (g)", y = "Count") +
   theme_regular() +
   theme(legend.position = "none")
 ```
+:::
 
 ✏️ **Your turn:** Change `fig-width` on the histogram from `6` to `3` and Render. Then put it back.
 
@@ -287,13 +321,15 @@ Looking at all three plots: which side looks heavier, if either?
 
 ------------------------------------------------------------------------
 
-# Part 6 · Describe the data — a summary statistics table
+# Part 6 · Finish the summary statistics table
 
-Same `summary_stats()` helper from Activity 06. The new part is `knitr::kable()`, which turns a data frame into a real table in Word, PDF, and slides.
+The table chunk is **already in your skeleton** — the same `summary_stats()` helper from Activity 06, printed with `knitr::kable()`, which turns a data frame into a real table in Word, PDF, and slides. Render and look: seven decimal places and headers like `ci_lower`.
+
+✏️ Finish it by filling in `kable()`:
 
 ```{{r}}
 #| label: tbl-summary
-#| tbl-cap: "Summary statistics for leaf mass (g) on each side of the tree."
+#| tbl-cap: "Summary statistics for leaf mass (g) by side."
 #| tbl-colwidths: [12, 7, 12, 15, 12, 12, 15, 15]
 # summary statistics by side, printed as a table ----
 mass_stats_df <- leaf_df %>%
@@ -301,20 +337,22 @@ mass_stats_df <- leaf_df %>%
   summary_stats(mass_g)
 
 mass_stats_df %>%
-  knitr::kable(digits = 3,
-               col.names = c("Side", "n", "Mean", "Variance", "SD", "SE",
-                             "CI low", "CI high"))
+  knitr::kable(
+    digits = 3,
+    col.names = c("Side", "n", "Mean", "Variance",
+                  "SD", "SE", "CI low", "CI high"))
 ```
 
 - `digits = 3` rounds every number in the table — no `round()` needed
 - `col.names =` gives the columns readable names (one per column, in order)
-- `tbl-colwidths:` sets each column's width in **percent** — eight columns, eight numbers. Without it, Word guesses and often squeezes the last column.
+- `tbl-colwidths:` (already in the skeleton) sets each column's width in **percent** — eight columns, eight numbers. Without it, Word guesses and often squeezes the last column.
 
 Under the table, point the reader to it — let Quarto fill in the number:
 
 ``` markdown
-@tbl-summary gives the sample size, mean, variance, standard deviation,
-standard error, and 95% confidence interval for leaf mass on each side.
+@tbl-summary gives the sample size, mean, variance, standard
+deviation, standard error, and 95% confidence interval for leaf
+mass on each side.
 ```
 
 Render. `@tbl-summary` turns into **"Table 1"** — and stays correct if you ever add a table above it.
@@ -330,30 +368,41 @@ Which side has the larger SD?
 
 You met the t-test in introductory biology: does the difference between two means look bigger than chance? We use **Welch's** version, which does **not** assume the two sides have equal variances — that is what `var.equal = FALSE` says. (Next lecture takes the t-test apart properly.)
 
+The test is **already in your skeleton**:
+
 ```{{r}}
 #| label: ttest
-# Welch's two-sample t-test (does NOT assume equal variances) ----
-leaf_ttest <- t.test(mass_g ~ shade, data = leaf_df, var.equal = FALSE)
+# Welch's t-test (does NOT assume equal variances) ----
+leaf_ttest <- t.test(mass_g ~ shade, data = leaf_df,
+                     var.equal = FALSE)
 leaf_ttest
 ```
 
 - `mass_g ~ shade` reads "mass **by** shade" — the number on the left, the two groups on the right
 - The printout says **Welch Two Sample t-test** at the top — check that it does
 
-The printout is fine for you, but ugly in a report. `tidy()` from `broom` turns it into a data frame, so `kable()` can make it a table:
+The printout is fine for you, but ugly in a report. The next chunk uses `tidy()` from `broom` to turn it into a data frame, so `kable()` can make it a table.
+
+✏️ **Your turn:** Finish the `tbl-ttest` chunk the same way you finished Part 6 — `digits = 3` and six readable `col.names`.
+
+::: {.callout-tip collapse="true"}
+## Check your answer
 
 ```{{r}}
 #| label: tbl-ttest
-#| tbl-cap: "Welch's two-sample t-test of leaf mass by side of the tree."
+#| tbl-cap: "Welch's t-test of leaf mass by side of the tree."
 #| tbl-colwidths: [20, 20, 15, 15, 15, 15]
 # the same result as a clean table ----
 leaf_ttest %>%
   tidy() %>%
-  select(estimate1, estimate2, statistic, parameter, p.value, conf.low) %>%
-  knitr::kable(digits = 3,
-               col.names = c("Mean shady", "Mean sunny", "t", "df",
-                             "p-value", "CI low"))
+  select(estimate1, estimate2, statistic, parameter,
+         p.value, conf.low) %>%
+  knitr::kable(
+    digits = 3,
+    col.names = c("Mean shady", "Mean sunny", "t",
+                  "df", "p-value", "CI low"))
 ```
+:::
 
 🔮 **Predict before you Render:** Look back at your mean ± SE plot. Do the error bars overlap a lot or a little? Will the *p*-value be below 0.05?
 
@@ -385,8 +434,9 @@ One more tidy-up: the raw `t.test()` printout was for *you*. Now that `@tbl-ttes
 ```{{r}}
 #| label: ttest
 #| output: false
-# Welch's two-sample t-test (does NOT assume equal variances) ----
-leaf_ttest <- t.test(mass_g ~ shade, data = leaf_df, var.equal = FALSE)
+# Welch's t-test (does NOT assume equal variances) ----
+leaf_ttest <- t.test(mass_g ~ shade, data = leaf_df,
+                     var.equal = FALSE)
 leaf_ttest
 ```
 
@@ -431,17 +481,35 @@ Which slide would you show first in lab meeting?
 
 ------------------------------------------------------------------------
 
+# Part 9 · Play — if you finish early
+
+Render and hand in first. Then **File → Save As** `leaf_report_play.qmd` so your hand-in stays safe, and try any of these in the copy:
+
+- **A different variable.** Change `mass_g` to `petiole_mm` in every chunk (Ctrl/Cmd + F to find them all), fix the axis labels and captions, and Render. The whole report — plots, tables, test — rebuilds for the new variable.
+- **A new figure.** Add a chunk with `#| label: fig-scatter` and a `fig-cap`, plot `mass_g` against `petiole_mm` with `geom_point()`, and refer to it in the text with `@fig-scatter`.
+- **Theme sizes.** Swap `theme_regular()` for `theme_small()` or `theme_large()`. Which one fits a 5-inch-wide figure best?
+- **Slide style.** Under `revealjs:` in the YAML add `theme: dark` (or `sky`, `serif`, `solarized`) and render the slides again.
+- **Chunk options.** Put `#| echo: true` on just **one** chunk while the YAML says `echo: false`. What shows up?
+
+::: callout-tip
+## 🧰 Keep this file
+
+`leaf_report.qmd` is now your **template for every analysis this term** — the t-test activities next week, and your final project. Copy it, change the data file in `load-data` and the column names in the chunks, rewrite the text, and Render.
+:::
+
+------------------------------------------------------------------------
+
 # Check yourself
 
 You are done when your report has:
 
 - [ ] Your name in the YAML, and `echo: false` so no code shows
 - [ ] An Introduction with both hypotheses, and a Methods paragraph
-- [ ] A box plot, a mean ± SE plot, and a histogram — each with a numbered caption
+- [ ] A box plot, a mean ± SE plot, and a histogram — each with your colors, real axis labels, `theme_regular()`, no legend, and a numbered caption
 - [ ] A summary statistics table with readable column names and even column widths
 - [ ] The Welch's t-test as a table (raw printout hidden with `output: false`)
 - [ ] A Discussion that points to the figures and tables with `@fig-...` / `@tbl-...`
-- [ ] A `#` comment at the top of every chunk you wrote
+- [ ] Every `# TODO:` comment replaced by your code
 
 ------------------------------------------------------------------------
 

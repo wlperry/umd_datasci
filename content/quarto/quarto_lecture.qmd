@@ -58,7 +58,9 @@ execute:
 
 ```{r setup}
 #| echo: false
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE,
+                      message = FALSE)
+options(width = 65)   # printed R output wraps at 65 too
 library(readxl)
 library(tidyverse)
 library(janitor)
@@ -273,7 +275,7 @@ Download [`leaf_report_skeleton.qmd`](downloads/leaf_report_skeleton.qmd){downlo
 Every Quarto document has the same three ingredients:
 
 ``` text
-1. YAML front matter  ← the recipe (title, outputs, chunk defaults)
+1. YAML front matter  ← the recipe (title, outputs, defaults)
 2. Markdown text      ← your writing, formatted
 3. Code chunks        ← R that runs and shows results
 ```
@@ -391,7 +393,8 @@ A **code chunk** is fenced R that actually **runs** when you render:
 ```{{r}}
 #| label: load-data
 # read the leaf data from the data/ folder ----
-leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+leaf_df <-
+  read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
   clean_names()
 ```
 
@@ -449,7 +452,7 @@ Put your name in the YAML and try the `echo` switch; write the Introduction and 
 **We will cover:** the three plots you already know — box plot, mean ± SE, histogram — as named chunks with numbered captions, then a summary statistics **table** that looks right in Word.
 
 ::: callout-tip
-**🖐 After this chunk: Activity Parts 5–6** (the three plots and the summary table).
+**🖐 Your skeleton already has a plain, working version of every chunk below.** You add the finishing touches — colors, labels, `theme_regular()`, table formatting — in **Activity Parts 5–6**.
 :::
 
 # Start at the top: load the data
@@ -460,7 +463,8 @@ Put your name in the YAML and try the `echo` switch; write the Introduction and 
 #| label: load-data
 #| echo: fenced
 # read the leaf data from the data/ folder ----
-leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+leaf_df <-
+  read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
   clean_names()
 ```
 
@@ -487,7 +491,7 @@ Quarto runs the file **top to bottom in a fresh R session** — not whatever is 
 ```{r}
 #| label: fig-boxplot
 #| echo: fenced
-#| fig-cap: "Leaf mass by side of the tree. Points are individual leaves."
+#| fig-cap: "Leaf mass by side; each point is one leaf."
 #| fig-width: 5
 #| fig-height: 4
 # box plot with raw points on top ----
@@ -495,7 +499,8 @@ leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   geom_jitter(width = 0.15, alpha = 0.6) +
-  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  scale_fill_manual(values = c("sunny" = "goldenrod",
+                               "shady" = "forestgreen")) +
   labs(x = "Side of tree", y = "Leaf mass (g)") +
   theme_regular() +
   theme(legend.position = "none")
@@ -524,8 +529,10 @@ leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, color = shade)) +
   geom_jitter(width = 0.15, alpha = 0.35, size = 2) +
   stat_summary(fun = mean, geom = "point", size = 4) +
-  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.15, linewidth = 0.9) +
-  scale_color_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  stat_summary(fun.data = mean_se, geom = "errorbar",
+               width = 0.15, linewidth = 0.9) +
+  scale_color_manual(values = c("sunny" = "goldenrod",
+                                "shady" = "forestgreen")) +
   labs(x = "Side of tree", y = "Leaf mass (g)") +
   theme_regular() +
   theme(legend.position = "none")
@@ -554,7 +561,8 @@ leaf_df %>%
   ggplot(aes(x = mass_g, fill = shade)) +
   geom_histogram(binwidth = 0.05, color = "white") +
   facet_wrap(~shade) +
-  scale_fill_manual(values = c("sunny" = "goldenrod", "shady" = "forestgreen")) +
+  scale_fill_manual(values = c("sunny" = "goldenrod",
+                               "shady" = "forestgreen")) +
   labs(x = "Leaf mass (g)", y = "Count") +
   theme_regular() +
   theme(legend.position = "none")
@@ -574,7 +582,7 @@ leaf_df %>%
 ```{r}
 #| label: tbl-summary
 #| echo: fenced
-#| tbl-cap: "Summary statistics for leaf mass (g) on each side of the tree."
+#| tbl-cap: "Summary statistics for leaf mass (g) by side."
 #| tbl-colwidths: [12, 7, 12, 15, 12, 12, 15, 15]
 # summary statistics by side, printed as a table ----
 mass_stats_df <- leaf_df %>%
@@ -582,9 +590,10 @@ mass_stats_df <- leaf_df %>%
   summary_stats(mass_g)
 
 mass_stats_df %>%
-  knitr::kable(digits = 3,
-               col.names = c("Side", "n", "Mean", "Variance", "SD", "SE",
-                             "CI low", "CI high"))
+  knitr::kable(
+    digits = 3,
+    col.names = c("Side", "n", "Mean", "Variance",
+                  "SD", "SE", "CI low", "CI high"))
 ```
 
 ::: {.content-visible when-format="pptx"}
@@ -636,7 +645,7 @@ Without widths, Word **guesses** — and it often guesses badly: a fat first col
 ::: {.activitybanner}
 **🛑 Do Activity Parts 5–6 now**
 
-Fill in the three plot chunks and the summary-table chunk. Render after **each** one — check that every figure and table gets a number.
+Render the plain plots and table first, then finish them: colors, axis labels, `theme_regular()`, no legend, and `digits` + `col.names` in `kable()`. Render after **each** one.
 :::
 
 # 🧩 Chunk 4 of 4 · Test It, Then Render Everything
@@ -644,7 +653,7 @@ Fill in the three plot chunks and the summary-table chunk. Render after **each**
 **We will cover:** a Welch's two-sample t-test (you met the t-test in intro bio), a clean results table, then hiding the code and rendering Word, PDF, and slides.
 
 ::: callout-tip
-**🖐 After this chunk: Activity Parts 7–8** (t-test, then render all three and hand in).
+**🖐 After this chunk: Activity Parts 7–9** (t-test, render all three and hand in, then play).
 :::
 
 # The Welch's two-sample t-test
@@ -656,8 +665,9 @@ Fill in the three plot chunks and the summary-table chunk. Render after **each**
 ```{r}
 #| label: ttest
 #| echo: fenced
-# Welch's two-sample t-test (does NOT assume equal variances) ----
-leaf_ttest <- t.test(mass_g ~ shade, data = leaf_df, var.equal = FALSE)
+# Welch's t-test (does NOT assume equal variances) ----
+leaf_ttest <- t.test(mass_g ~ shade, data = leaf_df,
+                     var.equal = FALSE)
 leaf_ttest
 ```
 ::::
@@ -682,15 +692,17 @@ It is safe whether or not the variances match, so it is R's default and a sensib
 ```{r}
 #| label: tbl-ttest
 #| echo: fenced
-#| tbl-cap: "Welch's two-sample t-test of leaf mass by side of the tree."
+#| tbl-cap: "Welch's t-test of leaf mass by side of the tree."
 #| tbl-colwidths: [20, 20, 15, 15, 15, 15]
 # the same result as a clean table ----
 leaf_ttest %>%
   tidy() %>%
-  select(estimate1, estimate2, statistic, parameter, p.value, conf.low) %>%
-  knitr::kable(digits = 3,
-               col.names = c("Mean shady", "Mean sunny", "t", "df",
-                             "p-value", "CI low"))
+  select(estimate1, estimate2, statistic, parameter,
+         p.value, conf.low) %>%
+  knitr::kable(
+    digits = 3,
+    col.names = c("Mean shady", "Mean sunny", "t",
+                  "df", "p-value", "CI low"))
 ```
 
 ::: {.content-visible when-format="pptx"}
@@ -735,7 +747,8 @@ execute:
 ```{{r}}
 #| label: ttest
 #| output: false
-leaf_ttest <- t.test(mass_g ~ shade, data = leaf_df, var.equal = FALSE)
+leaf_ttest <- t.test(mass_g ~ shade, data = leaf_df,
+                     var.equal = FALSE)
 leaf_ttest
 ```
 ::::
@@ -790,7 +803,7 @@ The same report becomes a web-based slide show: each `#` is a section slide, eac
 ::: {.activitybanner}
 **🛑 Do Activity Parts 7–8 now**
 
-Run the Welch's t-test, add the results table and a short Discussion, set `echo: false`, then `quarto render leaf_report.qmd` in the Terminal. Hand in the `.qmd`, `.docx`, and `.pdf`.
+Read the Welch's t-test, finish its table, write a short Discussion, set `echo: false`, then `quarto render leaf_report.qmd` in the Terminal. Hand in the `.qmd`, `.docx`, and `.pdf` — then **play** (Activity Part 9).
 :::
 
 # Wrap-up · What you can now do
@@ -810,6 +823,12 @@ Run the Welch's t-test, add the results table and a short Discussion, set `echo:
 **✅ Key idea**
 
 From here on, every analysis can be a document that rebuilds itself from the raw data.
+:::
+
+::: callout-tip
+**🧰 Keep `leaf_report.qmd`**
+
+It is your template for every analysis this term: copy it, change the data file and column names, rewrite the text, Render.
 :::
 
 **Up next — T-Tests I:**
