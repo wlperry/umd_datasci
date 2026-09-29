@@ -7,10 +7,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-09-24">
-<meta name="description" content="Hands-on companion to T-Tests II: run a Welch’s two-sample t-test in R, decode the output, make a decision, and write up the results.">
+<meta name="dcterms.date" content="2026-09-29">
+<meta name="description" content="Hands-on companion to T-Tests II: read and report a t-test, then on the sugar maple leaves average pseudoreplicates, check assumptions, run two-sample and paired t-tests, plot the paired result, and try the rank-based backups. Students hand in the same workflow on leaf mass.">
 
-<title>Activity 10 — T-Tests II: Running, Reporting &amp; Extension – UMD DAta Science Biology</title>
+<title>Activity 10 — T-Tests II: Two-Sample vs.&nbsp;Paired – UMD DAta Science Biology</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -119,8 +119,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <link rel="stylesheet" href="../../css/main.css">
-<meta property="og:title" content="Activity 10 — T-Tests II: Running, Reporting &amp; Extension – UMD DAta Science Biology">
-<meta property="og:description" content="Hands-on companion to T-Tests II: run a Welch’s two-sample t-test in R, decode the output, make a decision, and write up the results.">
+<meta property="og:title" content="Activity 10 — T-Tests II: Two-Sample vs.&nbsp;Paired – UMD DAta Science Biology">
+<meta property="og:description" content="Hands-on companion to T-Tests II: read and report a t-test, then on the sugar maple leaves average pseudoreplicates, check assumptions, run two-sample and paired t-tests, plot the paired result, and try the rank-based backups. Students hand in the same workflow on leaf mass.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 
@@ -295,7 +295,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Activity 10 — T-Tests II: Running, Reporting &amp; Extension</li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Activity 10 — T-Tests II: Two-Sample vs.&nbsp;Paired</li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -408,17 +408,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Activity 10 — T-Tests II: Running, Reporting &amp; Extension</h1>
-<p class="subtitle lead">Running Welch’s t-test, reading the output, and writing it up</p>
+<h1 class="title">Activity 10 — T-Tests II: Two-Sample vs.&nbsp;Paired</h1>
+<p class="subtitle lead">Check the assumptions, run both tests, plot and report the result</p>
   <div class="quarto-categories">
-    <div class="quarto-category">r-basics</div>
-    <div class="quarto-category">project-setup</div>
+    <div class="quarto-category">tidyverse</div>
+    <div class="quarto-category">descriptive-stats</div>
   </div>
   </div>
 
 <div>
   <div class="description">
-    <p>Hands-on companion to T-Tests II: run a Welch’s two-sample t-test in R, decode the output, make a decision, and write up the results.</p>
+    <p>Hands-on companion to T-Tests II: read and report a t-test, then on the sugar maple leaves average pseudoreplicates, check assumptions, run two-sample and paired t-tests, plot the paired result, and try the rank-based backups. Students hand in the same workflow on leaf mass.</p>
   </div>
 </div>
 
@@ -435,7 +435,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">September 24, 2026</p>
+      <p class="date">September 29, 2026</p>
     </div>
   </div>
   
@@ -447,319 +447,297 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="in-class-activity-10-running-reporting-the-test" class="level1">
-<h1>In-class Activity 10: Running &amp; Reporting the Test</h1>
-<section id="recap-from-activity-09-t-tests-i" class="level3">
-<h3 class="anchored" data-anchor-id="recap-from-activity-09-t-tests-i">Recap from Activity 09 (T-Tests I)</h3>
-<ul>
-<li>Stated H₀ and Hₐ formally (two-tailed, α = 0.05)</li>
-<li>Checked normality with a histogram and Shapiro-Wilk</li>
-<li>Checked variance with Levene’s test</li>
-<li>Decided: proceed with Welch’s t-test (<code>var.equal = FALSE</code>)</li>
-</ul>
-</section>
+<section id="in-class-activity-10-two-sample-vs.-paired" class="level1">
+<h1>In-class Activity 10: Two-Sample vs.&nbsp;Paired</h1>
 <section id="todays-objectives" class="level3">
 <h3 class="anchored">Today’s Objectives</h3>
 <ol type="1">
-<li>Run a Welch’s two-sample t-test (<code>var.equal = FALSE</code>, two-tailed)</li>
-<li>Read and decode every line of the <code>t.test()</code> output</li>
-<li>Make a formal statistical decision and state a conclusion</li>
-<li>Write a results sentence in proper scientific format</li>
+<li>Read a <code>t.test()</code> output, make a decision, and write a results sentence</li>
+<li>Average pseudoreplicates so each tree × side is one value</li>
+<li><strong>Check the assumptions first</strong>, then run a two-sample and a paired t-test</li>
+<li>Plot and report a paired result</li>
+<li>Know the rank-based backups for when normality fails</li>
 </ol>
-<blockquote class="blockquote">
-<h1 id="how-this-activity-works"><strong>How this activity works</strong></h1>
-<p><strong>You keep building the script from Activity 09</strong> — add today’s code to the bottom of <code>scripts/09_t_tests_1.R</code>, or start <code>scripts/10_t_tests_2.R</code> and reload the libraries and data at its top. Either way, you turn the script in.</p>
-<ul>
-<li><strong>Every line you run goes in that script</strong> — not the Console, not this page. Type it, don’t paste it.</li>
-<li><strong>Start every code chunk with a short <code>#</code> comment</strong> saying what it does.</li>
-<li>Code marked <strong>▶ Run this</strong> is typed in exactly as shown. Code marked <strong>✏️ Your turn</strong> is a change you make and run.</li>
-<li>The <strong>Extension</strong> at the end is done out of class (~30–40 min) and turned in with the script.</li>
-</ul>
-<h2 id="predict-before-you-run" class="anchored" data-anchor-id="todays-objectives">🔮 Predict before you run</h2>
-<p>Before you run <code>t.test()</code>, write down a guess for the <em>p</em>-value — above or below 0.05? Then run it and see how close you were.</p>
-</blockquote>
-<hr>
-<blockquote class="blockquote">
-<h2 id="chunk-1-run-interpret-after-lecture-chunk-1" class="anchored">🧩 Chunk 1 — Run &amp; interpret <em>(after lecture Chunk 1)</em></h2>
-<p>Parts 1–3: run the test, decode the output, and decide.</p>
-</blockquote>
-</section>
-</section>
-<section id="part-1-load-libraries-and-data-and-recap-assumptions" class="level1">
-<h1>Part 1 · Load libraries and data, and recap assumptions</h1>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>📂 Get the data
+<span class="screen-reader-only">Tip</span>📂 Files for today
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Same leaf file as Activity 09 — it should already be in your project’s <code>data/</code> folder. If not: <strong><a href="data/2026_09_03_data_sci_leaf_area.xlsx"><code>2026_09_03_data_sci_leaf_area.xlsx</code></a></strong> → put it in <code>data/</code>.</p>
-</div>
-</div>
-<p><strong>▶ Run this at the top of your script:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Libraries -----------------------------------------</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)      <span class="co"># read Excel files</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># dplyr + ggplot2</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)     <span class="co"># clean_names()</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car)         <span class="co"># Levene's test for variance</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Load data and re-run last lecture's checks --------</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="ot">&lt;-</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_excel</span>(<span class="st">"data/2026_09_03_data_sci_leaf_area.xlsx"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>recap_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">n         =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(mass_g)),</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_mass =</span> <span class="fu">round</span>(<span class="fu">mean</span>(mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>),</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd_mass   =</span> <span class="fu">round</span>(<span class="fu">sd</span>(mass_g,   <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>),</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">se_mass   =</span> <span class="fu">round</span>(sd_mass <span class="sc">/</span> <span class="fu">sqrt</span>(n), <span class="dv">3</span>)</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>recap_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> From Activity 09, what was your decision about normality and variance? Were you clear to proceed with Welch’s?</p>
-<pre><code>Normality decision:
-Variance (Levene's) decision:
-Proceed with Welch's?  Y / N</code></pre>
-<hr>
-</section>
-<section id="part-2-run-the-welchs-t-test" class="level1">
-<h1>Part 2 · Run the Welch’s t-test</h1>
-<blockquote class="blockquote">
-<p>🔮 <strong>Predict first:</strong> Write down a guess for the <em>p</em>-value now — above or below 0.05? Then run <code>t.test()</code> and see how close you were.</p>
-</blockquote>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Welch's two-sample t-test --------------------------</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>leaf_ttest_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  mass_g <span class="sc">~</span> shade,          <span class="co"># response ~ grouping variable</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data        =</span> leaf_df,</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">var.equal   =</span> <span class="cn">FALSE</span>,      <span class="co"># Welch's — no pooled variance</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">alternative =</span> <span class="st">"two.sided"</span> <span class="co"># two-tailed test</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>leaf_ttest_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Copy the full output below:</p>
-<pre><code>Paste or write the t.test() output here:</code></pre>
-<hr>
-</section>
-<section id="part-3-decode-the-output-and-decide" class="level1">
-<h1>Part 3 · Decode the output and decide</h1>
-<p><strong>▶ Run this to extract individual values:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pull specific values from the model object ---------</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"t-statistic:"</span>, <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>statistic,  <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"df (Welch): "</span>, <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>parameter,  <span class="dv">2</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"p-value:    "</span>, <span class="fu">signif</span>(leaf_ttest_model<span class="sc">$</span>p.value,   <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"95% CI:     "</span>, <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>conf.int[<span class="dv">1</span>], <span class="dv">3</span>),</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"to"</span>, <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>conf.int[<span class="dv">2</span>], <span class="dv">3</span>), <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Mean shady: "</span>, <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>estimate[<span class="dv">1</span>], <span class="dv">3</span>),</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Mean sunny: "</span>, <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>estimate[<span class="dv">2</span>], <span class="dv">3</span>),</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Match each piece of output to its meaning:</p>
-<pre><code>t-statistic = _____
-
-  → This is large/small (circle one)
-    because the difference in means
-    is large/small relative to the variability (circle one).
-
-df = _____
-
-  → This is a non-integer. Why? (hint:
-    Welch-Satterthwaite equation)
-
-p-value = _____
-
-  → In plain language, this means:
-    if H₀ were true, the probability
-    of seeing a t-statistic this extreme just by chance is _____.
-
-95% CI = _____ to _____ g
-
-  → This CI is for the ________________
-    (the true difference in means).
-    It does / does not include zero (circle one).
-    What does it mean when the CI includes zero?</code></pre>
-<p>✏️ <strong>Your turn:</strong> State your decision and conclusion. Use the formal language of hypothesis testing.</p>
-<pre><code>Our p-value:
-Our α:
-
-Decision (circle one):   REJECT H₀   /   FAIL TO REJECT H₀
-
-In one sentence, what does this mean biologically?</code></pre>
-<blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> We never say “H₀ is true” or “H₀ is false.” We say “we reject H₀” (evidence was strong enough) or “we fail to reject H₀” (evidence was not strong enough). Failing to reject H₀ is <strong>not</strong> proof there is no difference — only that this sample did not show one.</p>
-</blockquote>
-<hr>
-<blockquote class="blockquote">
-<h2 id="chunk-2-visualize-report-after-lecture-chunk-2" class="anchored" data-anchor-id="part-3-decode-the-output-and-decide">🧩 Chunk 2 — Visualize &amp; report <em>(after lecture Chunk 2)</em></h2>
-<p>Parts 4–5: build the figure with the statistics embedded, then write the results sentence.</p>
-</blockquote>
-</section>
-<section id="part-4-visualize-the-result" class="level1">
-<h1>Part 4 · Visualize the result</h1>
-<section id="boxplot-with-test-statistics-in-the-subtitle" class="level3">
-<h3 class="anchored" data-anchor-id="boxplot-with-test-statistics-in-the-subtitle">Boxplot with test statistics in the subtitle</h3>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Boxplot with t and p embedded in subtitle ----------</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>leaf_box_10_plot <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> mass_g, <span class="at">fill =</span> shade)) <span class="sc">+</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">seed =</span> <span class="dv">42</span>),</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">size =</span> <span class="fl">2.5</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">title    =</span> <span class="st">"Leaf Mass by Shade"</span>,</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="fu">paste0</span>(<span class="st">"Welch's t-test: t = "</span>,</span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">round</span>(leaf_ttest_model<span class="sc">$</span>statistic, <span class="dv">2</span>),</span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>                      <span class="st">", p = "</span>,</span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">signif</span>(leaf_ttest_model<span class="sc">$</span>p.value, <span class="dv">2</span>)),</span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Shade"</span>,</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Leaf Mass (g)"</span></span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>leaf_box_10_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> The <code>subtitle</code> line uses <code>paste0()</code> to build the label from the model object. Why is this better than typing the numbers into <code>subtitle = "..."</code> yourself?</p>
-<pre><code>Your answer:</code></pre>
-</section>
-<section id="save-the-plot" class="level3">
-<h3 class="anchored" data-anchor-id="save-the-plot">Save the plot</h3>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figures/leaf_mass_boxplot_ttest.png"</span>,</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot   =</span> leaf_box_10_plot,</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">width  =</span> <span class="dv">5</span>,</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">height =</span> <span class="dv">5</span>,</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">units  =</span> <span class="st">"in"</span>,</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">dpi    =</span> <span class="dv">300</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<hr>
-</section>
-</section>
-<section id="part-5-write-a-scientific-results-sentence" class="level1">
-<h1>Part 5 · Write a scientific results sentence</h1>
-<p>✏️ <strong>Your turn:</strong> Write a complete results sentence as you would in a lab report or paper. Report what the test actually showed — whether or not it was significant. Include:</p>
 <ul>
-<li>The test name, t-statistic, df, and <em>p</em>-value in parentheses</li>
-<li>Mean ± SE for both groups with units</li>
-<li>If significant: which group was larger, with the word “significantly”</li>
-<li>If not significant: say the means “did not differ significantly”</li>
+<li><strong>Skeleton script:</strong> <a href="scripts/10_t_tests_2_skeleton.R"><code>10_t_tests_2_skeleton.R</code></a> → save it as <code>scripts/10_t_tests_2.R</code>.</li>
+<li><strong>Leaf data:</strong> <a href="data/2026_09_03_data_sci_leaf_area.xlsx"><code>2026_09_03_data_sci_leaf_area.xlsx</code></a> → <code>data/</code> (you should already have it).</li>
+<li><strong>Sugar maple data:</strong> <a href="data/2026_09_02_sugar_maple_leaf_area.xlsx"><code>2026_09_02_sugar_maple_leaf_area.xlsx</code></a> → <code>data/</code> (you have it from Activity 09).</li>
+<li>Make sure your project has a <strong><code>figures/</code></strong> folder (Files pane → New Folder) — Part 7 saves a plot there.</li>
 </ul>
-<p>Use whichever template fits your result:</p>
-<pre><code>"[Group] leaves were significantly
-[heavier / lighter] than [group] leaves
-(Welch's two-sample t-test: t(___) = ___, p = ___).
-Mean ± SE: [side 1] = ___ ± ___ g, [side 2] = ___ ± ___ g."
-
-  — or —
-
-"Mean leaf mass did not differ
-significantly between shady and sunny sides
-(Welch's two-sample t-test: t(___) = ___, p = ___).
-Mean ± SE: shady = ___ ± ___ g, sunny = ___ ± ___ g."</code></pre>
-<p>Write your sentence here:</p>
-<pre><code>Your results sentence:</code></pre>
-<blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> Never write <code>p = 0.000</code>. Write <code>p &lt; 0.001</code> instead. A <em>p</em>-value is never exactly zero — it is just too small to display.</p>
-</blockquote>
-<hr>
-</section>
-<section id="part-6-review-and-checkpoint" class="level1">
-<h1>Part 6 · Review and checkpoint</h1>
-<p>At this point you should be able to:</p>
-<ul class="task-list">
-<li><label><input type="checkbox">Run <code>t.test(y ~ group, data, var.equal = FALSE, alternative = "two.sided")</code></label></li>
-<li><label><input type="checkbox">Extract t, df, p-value, CI, and group means from the model object</label></li>
-<li><label><input type="checkbox">Make a formal reject / fail-to-reject decision at α = 0.05</label></li>
-<li><label><input type="checkbox">Build a figure with the test statistics embedded in the subtitle</label></li>
-<li><label><input type="checkbox">Write a complete results sentence in scientific format — significant or not</label></li>
+</div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>What you hand in
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Same setup as Activity 09:</p>
+<ul>
+<li><strong>Part A — in class.</strong> The code is already in your skeleton. Run it chunk by chunk as you work through Parts 1–8 below, and answer the <strong>QA</strong> boxes. In class we use sugar maple leaf <strong>area</strong>.</li>
+<li><strong>Part B — hand in.</strong> The same workflow on sugar maple leaf <strong>mass</strong> — <strong>you write the code</strong> by copying the matching Part A chunk and changing what needs changing. Answer the <strong>QB</strong> boxes. See <a href="#part-9-your-turn-leaf-mass-hand-in">Part 9</a>.</li>
 </ul>
-<p>✏️ <strong>Your turn:</strong> Run your entire script from top to bottom with <strong>Ctrl/Cmd + Shift + Enter</strong> (Source). Does it run without errors?</p>
-<pre><code>Ran cleanly?  Y / N
-If not, what error appeared:</code></pre>
+</div>
+</div>
 <hr>
-</section>
-<section id="extension-out-of-class-3040-min" class="level1">
-<h1>Extension — out of class (~30–40 min)</h1>
-<p><em>Add this to the bottom of your script and turn it in. Put your written answers in <code>#</code> comments under the code they go with. In class we ran a <strong>two-tailed</strong> test on leaf mass. The extension changes two things: a <strong>new variable you choose</strong> and a <strong>one-tailed (directional) hypothesis</strong> — which behaves differently and is easy to misuse.</em></p>
-<section id="e1-a-directional-test-on-a-new-variable-3-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e1-a-directional-test-on-a-new-variable-3-pts">E1 · A directional test on a new variable (3 pts)</h2>
-<p>Pick <strong>one</strong> variable you did <strong>not</strong> test in class: <code>petiole_mm</code> or <code>thickness_mm</code>. Write down which you picked and, <em>before running anything</em>, a <strong>directional</strong> hypothesis — e.g.&nbsp;“shady leaves are <strong>larger</strong>”, i.e.&nbsp;Hₐ: μ_shady &gt; μ_sunny.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Replace ___ with "petiole_mm" or "thickness_mm".</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co"># alternative is "greater"/"less"</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># for the FIRST group alphabetically</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co"># ("shady" comes before "sunny"), so "shady larger" = "greater".</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>one_tail_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  ___ <span class="sc">~</span> shade,</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data        =</span> leaf_df,</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">var.equal   =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">alternative =</span> <span class="st">"greater"</span>      <span class="co"># &lt;- directional; change if</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>                               <span class="co"># your Ha points the other way</span></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>one_tail_model</span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="co"># For comparison, the two-tailed version of the SAME test</span></span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="fu">t.test</span>(___ <span class="sc">~</span> shade, <span class="at">data =</span> leaf_df, <span class="at">var.equal =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>p.value</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><strong>Record (in comments):</strong></p>
-<pre><code>Variable chosen:
-Directional Ha (in symbols):
-One-tailed p-value:
-Two-tailed p-value:
-Ratio (two-tailed / one-tailed) ≈
-Decision at alpha = 0.05:</code></pre>
-</section>
-<section id="e2-predict-then-check-3-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e2-predict-then-check-3-pts">E2 · Predict, then check (3 pts)</h2>
-<p><strong>Before running E1</strong>, in comments:</p>
-<ol type="1">
-<li>Predict the relationship between the one-tailed and two-tailed <em>p</em>-values for the same data. Which is smaller, and roughly by how much?</li>
-<li>Predict whether your chosen variable will differ significantly between sides, and why.</li>
-</ol>
-<p>Then run E1 and write your actual one- and two-tailed <em>p</em>-values and whether your predictions held.</p>
-</section>
-<section id="e3-explain-it-with-your-numbers-3-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e3-explain-it-with-your-numbers-3-pts">E3 · Explain it, with YOUR numbers (3 pts)</h2>
-<p>Using your real output:</p>
-<ol type="1">
-<li>Explain <em>why</em> the one-tailed <em>p</em>-value is (about) half the two-tailed one — in terms of where the rejection region sits on the <em>t</em> distribution.</li>
-<li>A one-tailed test is only legitimate if the direction was chosen <strong>before</strong> seeing the data. Explain, in plain language, what goes wrong if a researcher runs a two-tailed test, sees <em>p</em> = 0.08, and then switches to the one-tailed test that “works”.</li>
-<li>If your one-tailed result is significant but the two-tailed result is not, which would you report in a paper, and why?</li>
-</ol>
 <blockquote class="blockquote">
-<p>Optional, no points: rerun E1 with <code>conf.level = 0.99</code> and note how the CI changes — and why a one-tailed <code>t.test()</code> reports a <strong>one-sided</strong> CI (<code>-Inf</code> or <code>Inf</code> at one end).</p>
+<h2 id="chunk-1-read-decide-report-after-lecture-chunk-1" class="anchored" data-anchor-id="todays-objectives">🧩 Chunk 1 — Read, decide, report <em>(after lecture Chunk 1)</em></h2>
 </blockquote>
+</section>
+</section>
+<section id="part-1-load-libraries-and-data" class="level1">
+<h1>Part 1 · Load libraries and data</h1>
+<p>Already at the top of your skeleton: <code>readxl</code>, <code>tidyverse</code>, <code>janitor</code>, <code>car</code>, then <code>leaf_df</code> and <code>maple_df</code>. Run those lines first.</p>
 <hr>
 </section>
-</section>
-<section id="what-your-figures-folder-should-contain" class="level1">
-<h1>What your <code>figures/</code> folder should contain</h1>
-<pre><code>leaf_project/
-├── data/
-│   └── 2026_09_03_data_sci_leaf_area.xlsx
-├── figures/
-│   ├── leaf_mass_mean_se.png        &lt;- from Activity 03
-│   └── leaf_mass_boxplot_ttest.png  &lt;- from this activity
-└── scripts/
-    └── 10_t_tests_2.R               &lt;- turn this in</code></pre>
+<section id="part-2-read-decide-report-leaf-data" class="level1">
+<h1>Part 2 · Read, decide, report (leaf data)</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Welch's two-sample t-test on the leaf data -----------</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>leaf_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(mass_g <span class="sc">~</span> shade, <span class="at">data =</span> leaf_df,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                     <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>leaf_model</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Pull out t, df, and p for the results sentence -------</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">t  =</span> leaf_model<span class="sc">$</span>statistic,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">df =</span> leaf_model<span class="sc">$</span>parameter,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">p  =</span> leaf_model<span class="sc">$</span>p.value</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 60%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Output line</th>
+<th>What it tells you</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>t =</code></td>
+<td>gap between the means ÷ noise</td>
+</tr>
+<tr class="even">
+<td><code>df =</code></td>
+<td>degrees of freedom (Welch’s gives decimals — normal)</td>
+</tr>
+<tr class="odd">
+<td><code>p-value =</code></td>
+<td>how often you’d see a gap this big if H₀ were true</td>
+</tr>
+<tr class="even">
+<td><code>95 percent confidence interval</code></td>
+<td>plausible range for the <strong>true difference</strong></td>
+</tr>
+<tr class="odd">
+<td><code>mean in group ...</code></td>
+<td>the two group means</td>
+</tr>
+</tbody>
+</table>
+<p>✏️ <strong>QA2:</strong> Reject or fail to reject H₀? Does the CI include zero? Write the results sentence using the template <em>[Finding] (Welch’s t-test: t(df) = X.XX, p = X.XX).</em></p>
 <hr>
-</section>
-<section id="getting-unstuck" class="level1">
-<h1>Getting unstuck</h1>
-<ol type="1">
-<li><strong>Read the error message out loud.</strong> R usually names the line and the problem.</li>
-<li><strong><code>t.test()</code> formula:</strong> the grouping variable goes on the <em>right</em> of <code>~</code> and must have exactly <strong>two levels</strong>. Check with <code>unique(leaf_df$shade)</code>.</li>
-<li><strong>Cheat sheets</strong> — <a href="https://posit.co/resources/cheatsheets/" class="uri">https://posit.co/resources/cheatsheets/</a></li>
-<li><strong>Bring the exact error</strong> (copy-paste it) to class, Canvas, or office hours.</li>
-</ol>
 <blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> Nothing in the five-step sequence — hypotheses → normality → variance → test → report — was specific to leaf mass or to comparing exactly two sides. Swap in three species instead of two, and it’s the same sequence you’ll run for ANOVA.</p>
+<h2 id="chunk-2-sugar-maple-check-then-test-after-lecture-chunk-2" class="anchored" data-anchor-id="part-2-read-decide-report-leaf-data">🧩 Chunk 2 — Sugar maple: check, then test <em>(after lecture Chunk 2)</em></h2>
 </blockquote>
+</section>
+<section id="part-3-average-per-tree-and-side" class="level1">
+<h1>Part 3 · Average per tree and side</h1>
+<p>Each tree gave 2 leaves per side. Those 2 leaves are <strong>not independent</strong> (same tree, same soil, same light) — treating them as separate is <strong>pseudoreplication</strong>. Average them.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Average the 2 leaves per tree and side ---------------</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>maple_tree_df <span class="ot">&lt;-</span> maple_df <span class="sc">%&gt;%</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(tree, side) <span class="sc">%&gt;%</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">area =</span> <span class="fu">mean</span>(total_area_cm2),</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>maple_tree_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>QA3:</strong> Why average? How many values per side do you have now?</p>
 <hr>
-<p><em>End of the T-Tests II activity. Next: regression.</em></p>
+</section>
+<section id="part-4-two-sample-check-then-test" class="level1">
+<h1>Part 4 · Two-sample — check, then test</h1>
+<blockquote class="blockquote">
+<p>💡 <strong>Check → decide → test.</strong> A two-sample t-test needs <strong>each side</strong> to be roughly normal.</p>
+</blockquote>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Normality of each side (tree means) ------------------</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>maple_tree_df <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(side) <span class="sc">%&gt;%</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">shapiro_p =</span> <span class="fu">shapiro.test</span>(area)<span class="sc">$</span>p.value)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Equal spread? ----------------------------------------</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(area <span class="sc">~</span> side, <span class="at">data =</span> maple_tree_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<blockquote class="blockquote">
+<p>🔮 <strong>Predict first:</strong> assumptions OK? Then: with 8 trees per side, will the two-sample test be significant?</p>
+</blockquote>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Welch's two-sample t-test on the tree means ----------</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>maple_2s_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(area <span class="sc">~</span> side,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">data =</span> maple_tree_df,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>maple_2s_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>QA4:</strong> Assumptions OK? t, df, <em>p</em>? Reject or fail to reject?</p>
+<hr>
+</section>
+<section id="part-5-the-slope-plot" class="level1">
+<h1>Part 5 · The slope plot</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># One line per tree: sunny -&gt; shady --------------------</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>maple_tree_df <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> side, <span class="at">y =</span> area, <span class="at">group =</span> tree)) <span class="sc">+</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">limits =</span> <span class="fu">c</span>(<span class="st">"sunny"</span>, <span class="st">"shady"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>group = tree</code> joins the two points from the same tree with a line.</p>
+<p>✏️ <strong>QA5:</strong> How many lines go up? Why can this pattern be so clear when the two-sample test was borderline?</p>
+<hr>
+</section>
+<section id="part-6-paired-check-then-test" class="level1">
+<h1>Part 6 · Paired — check, then test</h1>
+<p>A paired test needs <strong>one row per tree</strong> and checks that the <strong>differences</strong> are roughly normal.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># One row per tree + the shady - sunny difference ------</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>maple_wide_df <span class="ot">&lt;-</span> maple_tree_df <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> side, <span class="at">values_from =</span> area) <span class="sc">%&gt;%</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff =</span> shady <span class="sc">-</span> sunny)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>maple_wide_df</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># QQ plot of the differences ---------------------------</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>maple_wide_df <span class="sc">%&gt;%</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">sample =</span> diff)) <span class="sc">+</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq</span>() <span class="sc">+</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq_line</span>()</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Shapiro-Wilk on the differences ----------------------</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(maple_wide_df<span class="sc">$</span>diff)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>pivot_wider()</code> turns the <code>side</code> column into a <code>shady</code> and a <code>sunny</code> column — a sneak peek; you’ll learn it in the Pivoting lecture.</li>
+<li>No Levene’s test for a paired test — there is only one set of numbers, the differences.</li>
+</ul>
+<blockquote class="blockquote">
+<p>🔮 <strong>Predict first:</strong> will the paired <em>p</em> be bigger or smaller than the two-sample <em>p</em>?</p>
+</blockquote>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Paired t-test ----------------------------------------</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>maple_paired_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(maple_wide_df<span class="sc">$</span>shady,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                             maple_wide_df<span class="sc">$</span>sunny,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                             <span class="at">paired =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>maple_paired_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<blockquote class="blockquote">
+<p>⚠️ <strong>Watch out!</strong> <code>t.test(area ~ side, paired = TRUE)</code> gives an error — R doesn’t allow <code>paired</code> with a formula. That’s why we made the wide table.</p>
+</blockquote>
+<p>✏️ <strong>QA6:</strong> Differences normal enough? Paired t, df, <em>p</em>, and mean difference? Why is the paired test so much stronger than the two-sample test?</p>
+<hr>
+<blockquote class="blockquote">
+<h2 id="chunk-3-show-it-report-it-backups-after-lecture-chunk-3" class="anchored" data-anchor-id="part-6-paired-check-then-test">🧩 Chunk 3 — Show it, report it, backups <em>(after lecture Chunk 3)</em></h2>
+</blockquote>
+</section>
+<section id="part-7-plot-and-report-the-paired-result" class="level1">
+<h1>Part 7 · Plot and report the paired result</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Label with the paired test result ---------------------</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>paired_label <span class="ot">&lt;-</span> <span class="fu">paste0</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Paired t-test: t = "</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(maple_paired_model<span class="sc">$</span>statistic, <span class="dv">2</span>),</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">", df = "</span>, maple_paired_model<span class="sc">$</span>parameter, <span class="st">", "</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  scales<span class="sc">::</span><span class="fu">pvalue</span>(maple_paired_model<span class="sc">$</span>p.value,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                 <span class="at">add_p =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Each tree in grey + mean ± SE in color ---------------</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>maple_results_plot <span class="ot">&lt;-</span> maple_tree_df <span class="sc">%&gt;%</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> side, <span class="at">y =</span> area)) <span class="sc">+</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">group =</span> tree), <span class="at">color =</span> <span class="st">"grey70"</span>) <span class="sc">+</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> <span class="st">"grey70"</span>) <span class="sc">+</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun.data =</span> mean_se, <span class="at">geom =</span> <span class="st">"errorbar"</span>,</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>               <span class="at">width =</span> <span class="fl">0.1</span>, <span class="at">color =</span> <span class="st">"darkgreen"</span>) <span class="sc">+</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun =</span> mean, <span class="at">geom =</span> <span class="st">"point"</span>,</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>               <span class="at">size =</span> <span class="dv">4</span>, <span class="at">color =</span> <span class="st">"darkgreen"</span>) <span class="sc">+</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">limits =</span> <span class="fu">c</span>(<span class="st">"sunny"</span>, <span class="st">"shady"</span>)) <span class="sc">+</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Side of tree"</span>,</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Mean leaf area (cm²)"</span>,</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> paired_label) <span class="sc">+</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>maple_results_plot</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Save it -----------------------------------------------</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figures/maple_area_paired_plot.png"</span>,</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot =</span> maple_results_plot,</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>       <span class="at">width =</span> <span class="dv">5</span>, <span class="at">height =</span> <span class="dv">4</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>QA7:</strong> Write the results sentence: <em>[Finding] (paired t-test: t(df) = X.XX, p = X.XXX; mean difference = X.X cm²).</em> If <em>p</em> is tiny, write “p &lt; 0.001”.</p>
+<hr>
+</section>
+<section id="part-8-rank-based-backups" class="level1">
+<h1>Part 8 · Rank-based backups</h1>
+<p>Use these when the QQ plot and Shapiro-Wilk say the data are <strong>clearly not normal</strong>.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mann-Whitney U: two-sample partner -------------------</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">wilcox.test</span>(area <span class="sc">~</span> side, <span class="at">data =</span> maple_tree_df)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Wilcoxon signed-rank: paired partner -----------------</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">wilcox.test</span>(maple_wide_df<span class="sc">$</span>shady, maple_wide_df<span class="sc">$</span>sunny,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">paired =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 34%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Roughly normal</th>
+<th>Clearly not normal</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Two independent groups</td>
+<td>Welch’s two-sample t-test</td>
+<td>Mann-Whitney U</td>
+</tr>
+<tr class="even">
+<td>Paired</td>
+<td>Paired t-test</td>
+<td>Wilcoxon signed-rank</td>
+</tr>
+</tbody>
+</table>
+<p>✏️ <strong>QA8:</strong> <em>p</em> for each? Which one “misses” the effect the t-test caught? Would you report these here — why or why not?</p>
+<hr>
+</section>
+<section id="part-9-your-turn-leaf-mass-hand-in" class="level1">
+<h1>Part 9 · Your turn: leaf mass (hand in)</h1>
+<p>Start in class, finish before next class. This is <strong>Part B</strong> of your skeleton and it is what gets graded.</p>
+<p>Every step in Part B matches a Part A step. For each <code># TODO:</code>, <strong>copy the matching Part A chunk, paste it under the TODO, and change what needs changing</strong>:</p>
+<ul>
+<li>the variable is <strong><code>mass_g</code></strong>, not <code>total_area_cm2</code></li>
+<li>call the averaged column <strong><code>mass</code></strong> (not <code>area</code>) — then every later <code>area</code> becomes <code>mass</code></li>
+<li>use <strong>new names</strong> so you don’t overwrite Part A: <code>mass_tree_df</code>, <code>mass_wide_df</code>, <code>mass_2s_model</code>, <code>mass_paired_model</code>, <code>mass_results_plot</code></li>
+<li>fix the plot’s <strong>y-axis label</strong> and the <strong>file name</strong> in <code>ggsave()</code></li>
+</ul>
+<blockquote class="blockquote">
+<p>⚠️ <strong>Watch out!</strong> If you get <code>object 'area' not found</code>, you renamed the column to <code>mass</code> but missed an <code>area</code> further down.</p>
+</blockquote>
+<p>Leaf mass tells a <strong>different story</strong> from leaf area. Pay attention to the assumption checks and to what each test says — QB6 asks which test you trust and why.</p>
+<p>When you’re done, run the whole script top to bottom (<strong>Ctrl/Cmd + Shift + Enter</strong>) — it must run with no errors — and hand in <code>scripts/10_t_tests_2.R</code>.</p>
+<hr>
+<p><em>End of Activity 10. Next: Lecture 11 — linear regression.</em></p>
 
 
 </section>

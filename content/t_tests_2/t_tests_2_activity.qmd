@@ -1,16 +1,18 @@
 ---
 order: 10
 week: 5
-title: "Activity 10 — T-Tests II: Running, Reporting & Extension"
-subtitle: "Running Welch's t-test, reading the output, and writing it up"
+title: "Activity 10 — T-Tests II: Two-Sample vs. Paired"
+subtitle: "Check the assumptions, run both tests, plot and report the result"
 author: "Bill Perry"
 date: today
 
 type: activity
 description: >
-  Hands-on companion to T-Tests II: run a Welch's two-sample t-test in R,
-  decode the output, make a decision, and write up the results.
-categories: [r-basics, project-setup]
+  Hands-on companion to T-Tests II: read and report a t-test, then on the
+  sugar maple leaves average pseudoreplicates, check assumptions, run
+  two-sample and paired t-tests, plot the paired result, and try the
+  rank-based backups. Students hand in the same workflow on leaf mass.
+categories: [tidyverse, descriptive-stats]
 
 format:
   html: default
@@ -21,364 +23,273 @@ execute:
   message: false
 ---
 
-# In-class Activity 10: Running & Reporting the Test
-
-### Recap from Activity 09 (T-Tests I)
-
-- Stated H₀ and Hₐ formally (two-tailed, α = 0.05)
-- Checked normality with a histogram and Shapiro-Wilk
-- Checked variance with Levene's test
-- Decided: proceed with Welch's t-test (`var.equal = FALSE`)
+# In-class Activity 10: Two-Sample vs. Paired
 
 ### Today's Objectives
 
-1.  Run a Welch's two-sample t-test (`var.equal = FALSE`, two-tailed)
-2.  Read and decode every line of the `t.test()` output
-3.  Make a formal statistical decision and state a conclusion
-4.  Write a results sentence in proper scientific format
-
-> # **How this activity works**
->
-> **You keep building the script from Activity 09** — add today's code to the bottom of `scripts/09_t_tests_1.R`, or start `scripts/10_t_tests_2.R` and reload the libraries and data at its top. Either way, you turn the script in.
->
-> - **Every line you run goes in that script** — not the Console, not this page. Type it, don't paste it.
-> - **Start every code chunk with a short `#` comment** saying what it does.
-> - Code marked **▶ Run this** is typed in exactly as shown. Code marked **✏️ Your turn** is a change you make and run.
-> - The **Extension** at the end is done out of class (~30–40 min) and turned in with the script.
->
-> ## 🔮 Predict before you run
->
-> Before you run `t.test()`, write down a guess for the *p*-value — above or below 0.05? Then run it and see how close you were.
-
-------------------------------------------------------------------------
-
-> ## 🧩 Chunk 1 — Run & interpret *(after lecture Chunk 1)*
->
-> Parts 1–3: run the test, decode the output, and decide.
-
-# Part 1 · Load libraries and data, and recap assumptions
+1.  Read a `t.test()` output, make a decision, and write a results sentence
+2.  Average pseudoreplicates so each tree × side is one value
+3.  **Check the assumptions first**, then run a two-sample and a paired t-test
+4.  Plot and report a paired result
+5.  Know the rank-based backups for when normality fails
 
 ::: callout-tip
-## 📂 Get the data
+## 📂 Files for today
 
-Same leaf file as Activity 09 — it should already be in your project's `data/` folder. If not: **[`2026_09_03_data_sci_leaf_area.xlsx`](data/2026_09_03_data_sci_leaf_area.xlsx)** → put it in `data/`.
+- **Skeleton script:** [`10_t_tests_2_skeleton.R`](scripts/10_t_tests_2_skeleton.R) → save it as `scripts/10_t_tests_2.R`.
+- **Leaf data:** [`2026_09_03_data_sci_leaf_area.xlsx`](data/2026_09_03_data_sci_leaf_area.xlsx) → `data/` (you should already have it).
+- **Sugar maple data:** [`2026_09_02_sugar_maple_leaf_area.xlsx`](data/2026_09_02_sugar_maple_leaf_area.xlsx) → `data/` (you have it from Activity 09).
+- Make sure your project has a **`figures/`** folder (Files pane → New Folder) — Part 7 saves a plot there.
 :::
 
-**▶ Run this at the top of your script:**
+::: callout-important
+## What you hand in
 
-``` r
-# ---- Libraries -----------------------------------------
-library(readxl)      # read Excel files
-library(tidyverse)   # dplyr + ggplot2
-library(janitor)     # clean_names()
-library(car)         # Levene's test for variance
-```
+Same setup as Activity 09:
 
-``` r
-# ---- Load data and re-run last lecture's checks --------
-leaf_df <-
-  read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
-  clean_names()
-
-recap_df <- leaf_df %>%
-  group_by(shade) %>%
-  summarize(
-    n         = sum(!is.na(mass_g)),
-    mean_mass = round(mean(mass_g, na.rm = TRUE), 3),
-    sd_mass   = round(sd(mass_g,   na.rm = TRUE), 3),
-    se_mass   = round(sd_mass / sqrt(n), 3)
-  )
-
-recap_df
-```
-
-✏️ **Your turn:** From Activity 09, what was your decision about normality and variance? Were you clear to proceed with Welch's?
-
-```
-Normality decision:
-Variance (Levene's) decision:
-Proceed with Welch's?  Y / N
-```
+- **Part A — in class.** The code is already in your skeleton. Run it chunk by chunk as you work through Parts 1–8 below, and answer the **QA** boxes. In class we use sugar maple leaf **area**.
+- **Part B — hand in.** The same workflow on sugar maple leaf **mass** — **you write the code** by copying the matching Part A chunk and changing what needs changing. Answer the **QB** boxes. See [Part 9](#part-9-your-turn-leaf-mass-hand-in).
+:::
 
 ------------------------------------------------------------------------
 
-# Part 2 · Run the Welch's t-test
+> ## 🧩 Chunk 1 — Read, decide, report *(after lecture Chunk 1)*
 
-> 🔮 **Predict first:** Write down a guess for the *p*-value now — above or below 0.05? Then run `t.test()` and see how close you were.
+# Part 1 · Load libraries and data
+
+Already at the top of your skeleton: `readxl`, `tidyverse`, `janitor`, `car`, then `leaf_df` and `maple_df`. Run those lines first.
+
+------------------------------------------------------------------------
+
+# Part 2 · Read, decide, report (leaf data)
 
 **▶ Run this:**
 
 ``` r
-# Welch's two-sample t-test --------------------------
-leaf_ttest_model <- t.test(
-  mass_g ~ shade,          # response ~ grouping variable
-  data        = leaf_df,
-  var.equal   = FALSE,      # Welch's — no pooled variance
-  alternative = "two.sided" # two-tailed test
+# Welch's two-sample t-test on the leaf data -----------
+leaf_model <- t.test(mass_g ~ shade, data = leaf_df,
+                     var.equal = FALSE)
+leaf_model
+
+# Pull out t, df, and p for the results sentence -------
+tibble(
+  t  = leaf_model$statistic,
+  df = leaf_model$parameter,
+  p  = leaf_model$p.value
+)
+```
+
+| Output line | What it tells you |
+|-----------------------------|-------------------------------------------|
+| `t =` | gap between the means ÷ noise |
+| `df =` | degrees of freedom (Welch's gives decimals — normal) |
+| `p-value =` | how often you'd see a gap this big if H₀ were true |
+| `95 percent confidence interval` | plausible range for the **true difference** |
+| `mean in group ...` | the two group means |
+
+: {tbl-colwidths="[40,60]"}
+
+✏️ **QA2:** Reject or fail to reject H₀? Does the CI include zero? Write the results sentence using the template *[Finding] (Welch's t-test: t(df) = X.XX, p = X.XX).*
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 2 — Sugar maple: check, then test *(after lecture Chunk 2)*
+
+# Part 3 · Average per tree and side
+
+Each tree gave 2 leaves per side. Those 2 leaves are **not independent** (same tree, same soil, same light) — treating them as separate is **pseudoreplication**. Average them.
+
+**▶ Run this:**
+
+``` r
+# Average the 2 leaves per tree and side ---------------
+maple_tree_df <- maple_df %>%
+  group_by(tree, side) %>%
+  summarize(area = mean(total_area_cm2),
+            .groups = "drop")
+maple_tree_df
+```
+
+✏️ **QA3:** Why average? How many values per side do you have now?
+
+------------------------------------------------------------------------
+
+# Part 4 · Two-sample — check, then test
+
+> 💡 **Check → decide → test.** A two-sample t-test needs **each side** to be roughly normal.
+
+**▶ Run this:**
+
+``` r
+# Normality of each side (tree means) ------------------
+maple_tree_df %>%
+  group_by(side) %>%
+  summarize(shapiro_p = shapiro.test(area)$p.value)
+
+# Equal spread? ----------------------------------------
+leveneTest(area ~ side, data = maple_tree_df)
+```
+
+> 🔮 **Predict first:** assumptions OK? Then: with 8 trees per side, will the two-sample test be significant?
+
+``` r
+# Welch's two-sample t-test on the tree means ----------
+maple_2s_model <- t.test(area ~ side,
+                         data = maple_tree_df,
+                         var.equal = FALSE)
+maple_2s_model
+```
+
+✏️ **QA4:** Assumptions OK? t, df, *p*? Reject or fail to reject?
+
+------------------------------------------------------------------------
+
+# Part 5 · The slope plot
+
+**▶ Run this:**
+
+``` r
+# One line per tree: sunny -> shady --------------------
+maple_tree_df %>%
+  ggplot(aes(x = side, y = area, group = tree)) +
+  geom_line() +
+  geom_point() +
+  scale_x_discrete(limits = c("sunny", "shady"))
+```
+
+`group = tree` joins the two points from the same tree with a line.
+
+✏️ **QA5:** How many lines go up? Why can this pattern be so clear when the two-sample test was borderline?
+
+------------------------------------------------------------------------
+
+# Part 6 · Paired — check, then test
+
+A paired test needs **one row per tree** and checks that the **differences** are roughly normal.
+
+**▶ Run this:**
+
+``` r
+# One row per tree + the shady - sunny difference ------
+maple_wide_df <- maple_tree_df %>%
+  pivot_wider(names_from = side, values_from = area) %>%
+  mutate(diff = shady - sunny)
+maple_wide_df
+
+# QQ plot of the differences ---------------------------
+maple_wide_df %>%
+  ggplot(aes(sample = diff)) +
+  stat_qq() +
+  stat_qq_line()
+
+# Shapiro-Wilk on the differences ----------------------
+shapiro.test(maple_wide_df$diff)
+```
+
+- `pivot_wider()` turns the `side` column into a `shady` and a `sunny` column — a sneak peek; you'll learn it in the Pivoting lecture.
+- No Levene's test for a paired test — there is only one set of numbers, the differences.
+
+> 🔮 **Predict first:** will the paired *p* be bigger or smaller than the two-sample *p*?
+
+``` r
+# Paired t-test ----------------------------------------
+maple_paired_model <- t.test(maple_wide_df$shady,
+                             maple_wide_df$sunny,
+                             paired = TRUE)
+maple_paired_model
+```
+
+> ⚠️ **Watch out!** `t.test(area ~ side, paired = TRUE)` gives an error — R doesn't allow `paired` with a formula. That's why we made the wide table.
+
+✏️ **QA6:** Differences normal enough? Paired t, df, *p*, and mean difference? Why is the paired test so much stronger than the two-sample test?
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 3 — Show it, report it, backups *(after lecture Chunk 3)*
+
+# Part 7 · Plot and report the paired result
+
+**▶ Run this:**
+
+``` r
+# Label with the paired test result ---------------------
+paired_label <- paste0(
+  "Paired t-test: t = ",
+  round(maple_paired_model$statistic, 2),
+  ", df = ", maple_paired_model$parameter, ", ",
+  scales::pvalue(maple_paired_model$p.value,
+                 add_p = TRUE)
 )
 
-leaf_ttest_model
+# Each tree in grey + mean ± SE in color ---------------
+maple_results_plot <- maple_tree_df %>%
+  ggplot(aes(x = side, y = area)) +
+  geom_line(aes(group = tree), color = "grey70") +
+  geom_point(color = "grey70") +
+  stat_summary(fun.data = mean_se, geom = "errorbar",
+               width = 0.1, color = "darkgreen") +
+  stat_summary(fun = mean, geom = "point",
+               size = 4, color = "darkgreen") +
+  scale_x_discrete(limits = c("sunny", "shady")) +
+  labs(x = "Side of tree",
+       y = "Mean leaf area (cm²)",
+       subtitle = paired_label) +
+  theme_minimal()
+maple_results_plot
+
+# Save it -----------------------------------------------
+ggsave("figures/maple_area_paired_plot.png",
+       plot = maple_results_plot,
+       width = 5, height = 4, dpi = 300)
 ```
 
-✏️ **Your turn:** Copy the full output below:
-
-```
-Paste or write the t.test() output here:
-```
+✏️ **QA7:** Write the results sentence: *[Finding] (paired t-test: t(df) = X.XX, p = X.XXX; mean difference = X.X cm²).* If *p* is tiny, write "p \< 0.001".
 
 ------------------------------------------------------------------------
 
-# Part 3 · Decode the output and decide
+# Part 8 · Rank-based backups
 
-**▶ Run this to extract individual values:**
-
-``` r
-# Pull specific values from the model object ---------
-cat("t-statistic:", round(leaf_ttest_model$statistic,  3), "\n")
-cat("df (Welch): ", round(leaf_ttest_model$parameter,  2), "\n")
-cat("p-value:    ", signif(leaf_ttest_model$p.value,   3), "\n")
-cat("95% CI:     ", round(leaf_ttest_model$conf.int[1], 3),
-    "to", round(leaf_ttest_model$conf.int[2], 3), "g\n")
-cat("Mean shady: ", round(leaf_ttest_model$estimate[1], 3),
-    "g\n")
-cat("Mean sunny: ", round(leaf_ttest_model$estimate[2], 3),
-    "g\n")
-```
-
-✏️ **Your turn:** Match each piece of output to its meaning:
-
-```
-t-statistic = _____
-
-  → This is large/small (circle one)
-    because the difference in means
-    is large/small relative to the variability (circle one).
-
-df = _____
-
-  → This is a non-integer. Why? (hint:
-    Welch-Satterthwaite equation)
-
-p-value = _____
-
-  → In plain language, this means:
-    if H₀ were true, the probability
-    of seeing a t-statistic this extreme just by chance is _____.
-
-95% CI = _____ to _____ g
-
-  → This CI is for the ________________
-    (the true difference in means).
-    It does / does not include zero (circle one).
-    What does it mean when the CI includes zero?
-```
-
-✏️ **Your turn:** State your decision and conclusion. Use the formal language of hypothesis testing.
-
-```
-Our p-value:
-Our α:
-
-Decision (circle one):   REJECT H₀   /   FAIL TO REJECT H₀
-
-In one sentence, what does this mean biologically?
-```
-
-> 💡 **Key idea:** We never say "H₀ is true" or "H₀ is false." We say "we reject H₀" (evidence was strong enough) or "we fail to reject H₀" (evidence was not strong enough). Failing to reject H₀ is **not** proof there is no difference — only that this sample did not show one.
-
-------------------------------------------------------------------------
-
-> ## 🧩 Chunk 2 — Visualize & report *(after lecture Chunk 2)*
->
-> Parts 4–5: build the figure with the statistics embedded, then write the results sentence.
-
-# Part 4 · Visualize the result
-
-### Boxplot with test statistics in the subtitle
+Use these when the QQ plot and Shapiro-Wilk say the data are **clearly not normal**.
 
 **▶ Run this:**
 
 ``` r
-# Boxplot with t and p embedded in subtitle ----------
-leaf_box_10_plot <- leaf_df %>%
-  ggplot(aes(x = shade, y = mass_g, fill = shade)) +
-  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
-  geom_point(
-    position = position_jitter(width = 0.15, seed = 42),
-    alpha = 0.6, size = 2.5
-  ) +
-  labs(
-    title    = "Leaf Mass by Shade",
-    subtitle = paste0("Welch's t-test: t = ",
-                      round(leaf_ttest_model$statistic, 2),
-                      ", p = ",
-                      signif(leaf_ttest_model$p.value, 2)),
-    x = "Shade",
-    y = "Leaf Mass (g)"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "none")
+# Mann-Whitney U: two-sample partner -------------------
+wilcox.test(area ~ side, data = maple_tree_df)
 
-leaf_box_10_plot
+# Wilcoxon signed-rank: paired partner -----------------
+wilcox.test(maple_wide_df$shady, maple_wide_df$sunny,
+            paired = TRUE)
 ```
 
-✏️ **Your turn:** The `subtitle` line uses `paste0()` to build the label from the model object. Why is this better than typing the numbers into `subtitle = "..."` yourself?
+| | Roughly normal | Clearly not normal |
+|---------------------|-------------------------|-------------------------|
+| Two independent groups | Welch's two-sample t-test | Mann-Whitney U |
+| Paired | Paired t-test | Wilcoxon signed-rank |
 
-```
-Your answer:
-```
+: {tbl-colwidths="[34,33,33]"}
 
-### Save the plot
-
-**▶ Run this:**
-
-``` r
-ggsave("figures/leaf_mass_boxplot_ttest.png",
-       plot   = leaf_box_10_plot,
-       width  = 5,
-       height = 5,
-       units  = "in",
-       dpi    = 300)
-```
+✏️ **QA8:** *p* for each? Which one "misses" the effect the t-test caught? Would you report these here — why or why not?
 
 ------------------------------------------------------------------------
 
-# Part 5 · Write a scientific results sentence
+# Part 9 · Your turn: leaf mass (hand in) {#part-9-your-turn-leaf-mass-hand-in}
 
-✏️ **Your turn:** Write a complete results sentence as you would in a lab report or paper. Report what the test actually showed — whether or not it was significant. Include:
+Start in class, finish before next class. This is **Part B** of your skeleton and it is what gets graded.
 
-- The test name, t-statistic, df, and *p*-value in parentheses
-- Mean ± SE for both groups with units
-- If significant: which group was larger, with the word "significantly"
-- If not significant: say the means "did not differ significantly"
+Every step in Part B matches a Part A step. For each `# TODO:`, **copy the matching Part A chunk, paste it under the TODO, and change what needs changing**:
 
-Use whichever template fits your result:
+- the variable is **`mass_g`**, not `total_area_cm2`
+- call the averaged column **`mass`** (not `area`) — then every later `area` becomes `mass`
+- use **new names** so you don't overwrite Part A: `mass_tree_df`, `mass_wide_df`, `mass_2s_model`, `mass_paired_model`, `mass_results_plot`
+- fix the plot's **y-axis label** and the **file name** in `ggsave()`
 
-```
-"[Group] leaves were significantly
-[heavier / lighter] than [group] leaves
-(Welch's two-sample t-test: t(___) = ___, p = ___).
-Mean ± SE: [side 1] = ___ ± ___ g, [side 2] = ___ ± ___ g."
+> ⚠️ **Watch out!** If you get `object 'area' not found`, you renamed the column to `mass` but missed an `area` further down.
 
-  — or —
+Leaf mass tells a **different story** from leaf area. Pay attention to the assumption checks and to what each test says — QB6 asks which test you trust and why.
 
-"Mean leaf mass did not differ
-significantly between shady and sunny sides
-(Welch's two-sample t-test: t(___) = ___, p = ___).
-Mean ± SE: shady = ___ ± ___ g, sunny = ___ ± ___ g."
-```
-
-Write your sentence here:
-
-```
-Your results sentence:
-```
-
-> 💡 **Key idea:** Never write `p = 0.000`. Write `p < 0.001` instead. A *p*-value is never exactly zero — it is just too small to display.
+When you're done, run the whole script top to bottom (**Ctrl/Cmd + Shift + Enter**) — it must run with no errors — and hand in `scripts/10_t_tests_2.R`.
 
 ------------------------------------------------------------------------
 
-# Part 6 · Review and checkpoint
-
-At this point you should be able to:
-
-- [ ] Run `t.test(y ~ group, data, var.equal = FALSE, alternative = "two.sided")`
-- [ ] Extract t, df, p-value, CI, and group means from the model object
-- [ ] Make a formal reject / fail-to-reject decision at α = 0.05
-- [ ] Build a figure with the test statistics embedded in the subtitle
-- [ ] Write a complete results sentence in scientific format — significant or not
-
-✏️ **Your turn:** Run your entire script from top to bottom with **Ctrl/Cmd + Shift + Enter** (Source). Does it run without errors?
-
-```
-Ran cleanly?  Y / N
-If not, what error appeared:
-```
-
-------------------------------------------------------------------------
-
-# Extension — out of class (~30–40 min)
-
-*Add this to the bottom of your script and turn it in. Put your written answers in `#` comments under the code they go with. In class we ran a **two-tailed** test on leaf mass. The extension changes two things: a **new variable you choose** and a **one-tailed (directional) hypothesis** — which behaves differently and is easy to misuse.*
-
-## E1 · A directional test on a new variable (3 pts)
-
-Pick **one** variable you did **not** test in class: `petiole_mm` or `thickness_mm`. Write down which you picked and, *before running anything*, a **directional** hypothesis — e.g. "shady leaves are **larger**", i.e. Hₐ: μ_shady > μ_sunny.
-
-``` r
-# Replace ___ with "petiole_mm" or "thickness_mm".
-# alternative is "greater"/"less"
-# for the FIRST group alphabetically
-# ("shady" comes before "sunny"), so "shady larger" = "greater".
-one_tail_model <- t.test(
-  ___ ~ shade,
-  data        = leaf_df,
-  var.equal   = FALSE,
-  alternative = "greater"      # <- directional; change if
-                               # your Ha points the other way
-)
-one_tail_model
-
-# For comparison, the two-tailed version of the SAME test
-t.test(___ ~ shade, data = leaf_df, var.equal = FALSE)$p.value
-```
-
-**Record (in comments):**
-
-```
-Variable chosen:
-Directional Ha (in symbols):
-One-tailed p-value:
-Two-tailed p-value:
-Ratio (two-tailed / one-tailed) ≈
-Decision at alpha = 0.05:
-```
-
-## E2 · Predict, then check (3 pts)
-
-**Before running E1**, in comments:
-
-1.  Predict the relationship between the one-tailed and two-tailed *p*-values for the same data. Which is smaller, and roughly by how much?
-2.  Predict whether your chosen variable will differ significantly between sides, and why.
-
-Then run E1 and write your actual one- and two-tailed *p*-values and whether your predictions held.
-
-## E3 · Explain it, with YOUR numbers (3 pts)
-
-Using your real output:
-
-1.  Explain *why* the one-tailed *p*-value is (about) half the two-tailed one — in terms of where the rejection region sits on the *t* distribution.
-2.  A one-tailed test is only legitimate if the direction was chosen **before** seeing the data. Explain, in plain language, what goes wrong if a researcher runs a two-tailed test, sees *p* = 0.08, and then switches to the one-tailed test that "works".
-3.  If your one-tailed result is significant but the two-tailed result is not, which would you report in a paper, and why?
-
-> Optional, no points: rerun E1 with `conf.level = 0.99` and note how the CI changes — and why a one-tailed `t.test()` reports a **one-sided** CI (`-Inf` or `Inf` at one end).
-
-------------------------------------------------------------------------
-
-# What your `figures/` folder should contain
-
-```
-leaf_project/
-├── data/
-│   └── 2026_09_03_data_sci_leaf_area.xlsx
-├── figures/
-│   ├── leaf_mass_mean_se.png        <- from Activity 03
-│   └── leaf_mass_boxplot_ttest.png  <- from this activity
-└── scripts/
-    └── 10_t_tests_2.R               <- turn this in
-```
-
-------------------------------------------------------------------------
-
-# Getting unstuck
-
-1.  **Read the error message out loud.** R usually names the line and the problem.
-2.  **`t.test()` formula:** the grouping variable goes on the *right* of `~` and must have exactly **two levels**. Check with `unique(leaf_df$shade)`.
-3.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
-4.  **Bring the exact error** (copy-paste it) to class, Canvas, or office hours.
-
-> 💡 **Key idea:** Nothing in the five-step sequence — hypotheses → normality → variance → test → report — was specific to leaf mass or to comparing exactly two sides. Swap in three species instead of two, and it's the same sequence you'll run for ANOVA.
-
-------------------------------------------------------------------------
-
-*End of the T-Tests II activity. Next: regression.*
+*End of Activity 10. Next: Lecture 11 — linear regression.*
