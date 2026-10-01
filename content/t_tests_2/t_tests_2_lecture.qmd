@@ -61,6 +61,8 @@ options(width = 65)   # printed R output wraps at 65 too
 - **Leaf data:** assumptions OK, ran Welch's t-test — no significant difference
 - **Homework:** checked the assumptions for the **sugar maple** leaves
 
+**Today we go back and ask a harder question: did we even have 53 leaves' worth of information?**
+
 ::: callout-note
 **✅ Key idea for today**
 
@@ -73,8 +75,10 @@ The *design* of a study decides which test is right. The same numbers can give t
 :::: {.column width="60%"}
 - **Read** the `t.test()` output and make a decision (steps 4–5)
 - **Write** a results sentence
-- Spot **pseudoreplication** and fix it by averaging
-- **Check the assumptions**, then run a **two-sample** and a **paired** t-test on the same data
+- Run a **two-sample** and a **paired** t-test on our leaf data
+- Spot **pseudoreplication** — and fix it with **one `summarize()` at the top**, then **rerun the same code**
+- See how much the answer moves when you do
+- **Check the assumptions**, then test the sugar maples the same way
 - See **why pairing adds power**
 - **Plot** a paired result
 - Know the **rank-based** backups: Mann-Whitney U and Wilcoxon signed-rank
@@ -85,6 +89,7 @@ The *design* of a study decides which test is right. The same numbers can give t
 
 - `t.test(..., paired = TRUE)`
 - `pivot_wider()` — a sneak peek
+- `row_number()` — numbering rows within a group
 - `scales::pvalue()` — tidy p-values for plots
 - `wilcox.test()` — rank-based tests
 
@@ -116,12 +121,12 @@ maple_df <-
   clean_names()
 ```
 
-# 🧩 Chunk 1 of 3 · Read, Decide, Report
+# 🧩 Chunk 1 of 2 · The t-Test Code
 
-**We will cover:** every line of the `t.test()` output, the reject / fail-to-reject decision, and a results sentence — on the leaf data from last time.
+**We will cover:** the `t.test()` code on the leaf data from last time — every line of the output, the decision, and a results sentence. Then we run the **paired** test on the same leaves, discover the data are **pseudoreplicated**, fix it with **one `summarize()` at the top**, and rerun the exact same code.
 
 ::: {.activitybanner}
-**🛑 After this chunk: Activity Parts 1–2.**
+**🛑 After this chunk: Activity Parts 1–6.**
 :::
 
 # Step 4 — Run the Test (again)
@@ -175,7 +180,7 @@ The confidence interval tells the same story: it runs from **below zero to above
 
 It means *this sample* did not give enough evidence of a difference. Maybe there is none — or maybe we had too few leaves, or too much noise, to see it.
 
-Keep that second possibility in mind — it is the whole story of Chunk 2.
+Keep that second possibility in mind — it is the whole story of the next few slides.
 :::
 :::
 :::::
@@ -211,20 +216,241 @@ tibble(
 :::
 :::::
 
-# → ACTIVITY 10 Parts 1–2 now
+# Wait — Where Did These Leaves Come From?
 
-::: {.activitybanner}
-**🛑 Do Activity Parts 1–2 now**
-
-Run the leaf t-test, decode each line, state your decision, and write the results sentence.
+::::: columns
+::: {.column width="52%"}
+```{r leaf-design}
+# How many leaves did each team turn in? ----------------
+leaf_df %>%
+  count(teams, shade) %>%
+  pivot_wider(names_from = shade,
+              values_from = n)
+```
 :::
 
-# 🧩 Chunk 2 of 3 · Sugar Maple: Check, Then Test
+::: {.column width="48%"}
+- **5 teams**, not 53 independent leaves
+- Each team went to **one tree** and picked leaves off the **sunny** side and the **shady** side of that tree
+- So every team contributes a sunny *and* a shady value — the two sides are **matched within a team**
 
-**We will cover:** the sugar maple design, pseudoreplication, checking assumptions **before** each test, the two-sample t-test, and the paired t-test.
+**Two consequences.** The data are **paired**, and they are **pseudoreplicated**. Let's take them one at a time.
+:::
+:::::
+
+# The Pairing Hiding in the Leaf Data
+
+::::: columns
+::: {.column width="55%"}
+A paired test needs the two groups **side by side in one row**, so we reshape:
+
+```{r leaf-wide}
+# Number the leaves within each team and side ----------
+leaf_wide_df <- leaf_df %>%
+  group_by(teams, shade) %>%
+  mutate(leaf_n = row_number()) %>%
+  ungroup() %>%
+  select(teams, leaf_n, shade, mass_g) %>%
+  pivot_wider(names_from = shade,
+              values_from = mass_g) %>%
+  mutate(diff = shady - sunny)
+
+leaf_wide_df %>% head(4)
+```
+:::
+
+::: {.column width="45%"}
+- `row_number()` numbers the leaves **1, 2, 3…** inside each team and side
+- `pivot_wider()` then puts the shady and sunny leaf with the same number in the **same row**
+- `diff` is the shady − sunny gap for that row
+
+::: callout-important
+**Look at what we just did.** We paired shady leaf #1 with sunny leaf #1 because they happen to share a number. There is **no reason** those two leaves belong together — they're just two leaves off the same tree.
+
+Hold that thought.
+:::
+:::
+:::::
+
+# Paired t-Test on Every Leaf
+
+::::: columns
+::: {.column width="55%"}
+```{r leaf-paired-pseudo}
+# Paired t-test on all the leaves ----------------------
+leaf_paired_model <- t.test(leaf_wide_df$shady,
+                            leaf_wide_df$sunny,
+                            paired = TRUE)
+leaf_paired_model
+```
+:::
+
+::: {.column width="45%"}
+**R ran it without complaint.**
+
+- It got *p* = 0.57 — no difference
+- `df` = 24, so it thinks it has **25 pairs** of information
+
+> ⚠️ **Watch out!** Two teams turned in **uneven** numbers of leaves (4 shady / 3 sunny). Those leftover leaves had no partner to pair with, so `t.test()` **silently dropped 3 of them**. It never warns you.
+
+**R will answer any question you ask it — including a meaningless one.** Our job is to ask the right one.
+:::
+:::::
+
+# Problem: Pseudoreplication
+
+::::: columns
+::: {.column width="55%"}
+The 6 shady leaves from team `Oscar_Karl` all came off **one tree**. They share that tree's soil, water, light, age, and genetics. They are **not independent** — they are closer to **one measurement taken six times**.
+
+Treating all 53 leaves as independent is **pseudoreplication**: it pretends we have far more information than we collected.
+
+**Count the real replicates.** We did not sample 53 trees. We sampled **5**.
+
+| | What the test used | What we actually have |
+|------------------|------------------|------------------|
+| Two-sample | 28 + 25 leaves, df = 42.5 | 5 + 5 teams |
+| Paired | 25 "pairs", df = 24 | 5 pairs |
+
+: {tbl-colwidths="[28,36,36]"}
+:::
+
+::: {.column width="45%"}
+::: callout-important
+**Why this is serious.** `df` drives the *p*-value. Inflate your `df` and every *p*-value you report is too small — you will claim differences that your data cannot support.
+
+Here both tests said "no difference," so nothing went wrong *this time*. That is luck, not method.
+:::
+
+**The fix is one line**, and it is a line you already know: `group_by()` + `summarize()`.
+:::
+:::::
+
+# The Fix: One `summarize()` at the Top
+
+::::: columns
+::: {.column width="55%"}
+Go back to where you **loaded** the data and add the averaging step to the end of the chain. Keep the **same name**, `leaf_df`, and the **same column name**, `mass_g`:
+
+```{r leaf-averaged}
+# Load the leaf data and average each team's side ------
+leaf_df <-
+  read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names() %>%
+  group_by(teams, shade) %>%
+  summarize(mass_g = mean(mass_g),
+            .groups = "drop")
+
+leaf_df
+```
+:::
+
+::: {.column width="45%"}
+**One value per team per side. 10 rows — 5 teams × 2 sides.**
+
+- `group_by(teams, shade)` — two grouping columns, the pattern from Summary Statistics
+- `mass_g = mean(mass_g)` — reusing the name means **every line of code below keeps working**
+- `.groups = "drop"` tidies up afterwards
+
+::: callout-note
+**✅ This is how real analysis works.** You don't write a new script. You go back to the top, fix how the data are built, and **rerun everything** — because the code below never cared how many rows came in.
+:::
+:::
+:::::
+
+# Rerun the Same Code
+
+::::: columns
+::: {.column width="55%"}
+```{r leaf-rerun}
+# Keep a copy of the pseudoreplicated results ----------
+pseudo_2s     <- leaf_model
+pseudo_paired <- leaf_paired_model
+
+# Exactly the same two-sample code as before -----------
+leaf_model <- t.test(mass_g ~ shade, data = leaf_df,
+                     var.equal = FALSE)
+
+# Exactly the same reshape + paired code as before -----
+leaf_wide_df <- leaf_df %>%
+  group_by(teams, shade) %>%
+  mutate(leaf_n = row_number()) %>%
+  ungroup() %>%
+  select(teams, leaf_n, shade, mass_g) %>%
+  pivot_wider(names_from = shade,
+              values_from = mass_g) %>%
+  mutate(diff = shady - sunny)
+
+leaf_paired_model <- t.test(leaf_wide_df$shady,
+                            leaf_wide_df$sunny,
+                            paired = TRUE)
+
+leaf_wide_df
+```
+:::
+
+::: {.column width="45%"}
+**Not one character of the test code changed.** We only changed what `leaf_df` *is* — the two `pseudo_` lines just park the old results so we can put them side by side in a moment.
+
+- Each team now has a single row per side, so `row_number()` is just 1 everywhere and `pivot_wider()` gives **5 clean pairs** — one per team
+- Nothing gets silently dropped now
+- `diff` is finally a real quantity: **this team's shady side minus this team's sunny side**
+
+Look at `still_loading`: a difference of **−0.26 g**, far bigger than anyone else's.
+:::
+:::::
+
+# Same Leaves, Four Answers
+
+::::: columns
+::: {.column width="58%"}
+```{r leaf-compare}
+# Pull all four results out of the four models ---------
+tibble(
+  analysis = c("Two-sample, every leaf",
+               "Paired, every leaf",
+               "Two-sample, team means",
+               "Paired, team means"),
+  t  = c(pseudo_2s$statistic, pseudo_paired$statistic,
+         leaf_model$statistic, leaf_paired_model$statistic),
+  df = c(pseudo_2s$parameter, pseudo_paired$parameter,
+         leaf_model$parameter, leaf_paired_model$parameter),
+  p  = c(pseudo_2s$p.value, pseudo_paired$p.value,
+         leaf_model$p.value, leaf_paired_model$p.value)
+) %>%
+  mutate(across(t:p, \(x) round(x, 3)))
+```
+:::
+
+::: {.column width="42%"}
+**Two things to notice.**
+
+**1. The `df` collapse.** 42.5 → 6.5. We did not lose data; we stopped **double-counting** it.
+
+**2. The difference changes sign.** Shady leaves looked *heavier* (+0.018 g) with every leaf, and *lighter* (−0.016 g) once we averaged.
+
+Why? Teams turned in **uneven** numbers of leaves. A team with 6 shady leaves counted six times in the raw mean, a team with 4 counted four times. Averaging first gives **every team one equal vote**.
+
+::: callout-important
+**Pseudoreplication does not just break your *p*-value — it can point the difference the wrong way.**
+:::
+:::
+:::::
+
+# → ACTIVITY 10 Parts 1–6 now
 
 ::: {.activitybanner}
-**🛑 After this chunk: Activity Parts 3–6.**
+**🛑 Do Activity Parts 1–6 now**
+
+Run the two-sample and paired tests on every leaf, then add the `summarize()` to the top of your data-loading chain and rerun the same code. Compare the four answers.
+:::
+
+# 🧩 Chunk 2 of 2 · The Maple Test
+
+**Same workflow, better data.** We apply the same `summarize()` step to the sugar maple leaves, check the assumptions, run the **two-sample** and the **paired** t-test, see **why pairing adds power**, plot and report the paired result, and meet the rank-based backups.
+
+::: {.activitybanner}
+**🛑 After this chunk: Activity Parts 7–12, then Part B.**
 :::
 
 # The Sugar Maple Design
@@ -246,19 +472,21 @@ maple_df %>%
 
 In class we test **leaf area** (`total_area_cm2`). Your hand-in does the same for **leaf mass**.
 
-**Two things about this design matter.** One is a problem; the other is an opportunity.
+::: callout-note
+**✅ Same structure as our leaf data — but designed on purpose.**
+
+Leaves inside a tree-side, so it needs the **same `summarize()` step**. The difference: it is **perfectly balanced** — exactly 2 leaves everywhere, 8 trees, nothing uneven and nothing missing.
+
+So no team gets an unfair vote, and the pairing is **real** by design: both sides come off the **same tree**.
+:::
 :::
 :::::
 
-# Problem: Pseudoreplication
+# Step 1: The Same `summarize()`, One More Time
 
 ::::: columns
 ::: {.column width="55%"}
-The 2 leaves from the sunny side of tree 3 share the same tree, soil, water, and light. They are **not independent** — they are closer to one measurement taken twice.
-
-Treating all 32 leaves as independent is **pseudoreplication** — it pretends we have more information than we do.
-
-**Fix:** average the leaves so each **tree × side** is one value.
+Two leaves off the sunny side of tree 3 share that tree's soil, water, and light — **not independent**, exactly like our 6 leaves per team. So we start where we now always start: **average up to the real replicate.**
 
 ```{r maple-tree}
 # Average the 2 leaves per tree and side ---------------
@@ -268,16 +496,22 @@ maple_tree_df <- maple_df %>%
             .groups = "drop")
 maple_tree_df %>% head(4)
 ```
+
+**32 leaves → 16 rows.** The real replicate is the **tree**, so we get 8 shady values and 8 sunny values.
 :::
 
 ::: {.column width="45%"}
 ::: callout-note
-**✅ How many data points do we really have?**
+**✅ The habit, not the trick.**
 
-Not 32 leaves. **8 trees**, each measured on two sides → 8 sunny values and 8 shady values.
+Ask this of **every** data set before you test it:
 
-`group_by(tree, side)` + `summarize()` is the pattern you already use — now with two grouping columns. `.groups = "drop"` just tidies up the result.
+> *What is the thing I actually sampled, and is there exactly one row per one of those?*
+
+Here: 8 trees sampled, so 8 values per side. Same two-column `group_by()`, same `summarize()`, same `.groups = "drop"`.
 :::
+
+Because this design is **balanced**, averaging won't flip anything the way it did for our leaves — every tree already had an equal say. Here averaging buys us something different: an **honest `df`**, and a clean shot at the pairing.
 :::
 :::::
 
@@ -537,23 +771,7 @@ The paired test even has **fewer df** (7 vs. about 13) — and still wins easily
 
 **Ask:** does each value in group 1 have a **natural partner** in group 2? If yes → paired.
 
-**Our class leaf data** — sunny and shady leaves were not matched tree-by-tree, so a two-sample test was the right one there.
-
-# → ACTIVITY 10 Parts 3–6 now
-
-::: {.activitybanner}
-**🛑 Do Activity Parts 3–6 now**
-
-Average the sugar maple leaves per tree, check the assumptions, run the two-sample and paired t-tests, and compare.
-:::
-
-# 🧩 Chunk 3 of 3 · Show It, Report It, and the Backup Tests
-
-**We will cover:** a figure that shows a paired result, the results sentence, and the rank-based tests to use when normality fails.
-
-::: {.activitybanner}
-**🛑 After this chunk: Activity Parts 7–8, then Part B.**
-:::
+**Our class leaf data** — each team sampled both sides of **their own tree**, so those data are paired too. That is why the paired test was the honest one there as well, once we had averaged each team's side down to one value.
 
 # Plotting a Paired Result — Build the Label
 
@@ -704,12 +922,12 @@ wilcox.test(maple_wide_df$shady, maple_wide_df$sunny,
 **Normal enough? Use the t-test.** It uses the actual measurements, so it has more power. Rank tests are the backup, not the default.
 :::
 
-# → ACTIVITY 10 Parts 7–8, then Part B
+# → ACTIVITY 10 Parts 7–12, then Part B
 
 ::: {.activitybanner}
-**🛑 Do Activity Parts 7–8, then start Part B**
+**🛑 Do Activity Parts 7–12 now, then start Part B**
 
-Make the results plot, write the sentences, run the rank-based tests. Then Part B: the whole workflow on sugar maple **leaf mass** — that is what you hand in.
+Average the sugar maple leaves per tree and side, check the assumptions, run the two-sample and the paired t-test, compare them, make the results plot, write the sentences, and run the rank-based tests. Then Part B: the whole workflow on sugar maple **leaf mass** — that is what you hand in.
 :::
 
 # What We Learned Today
@@ -717,7 +935,8 @@ Make the results plot, write the sentences, run the rank-based tests. Then Part 
 ::::: columns
 ::: {.column width="60%"}
 - **Read** `t.test()` output: t, df, *p*, CI, means → decide → report
-- **Pseudoreplication:** leaves from one tree-side aren't independent — average them
+- **Pseudoreplication:** many leaves from one tree-side are **not** many data points — they inflate `df`, and with uneven sampling they can flip the difference's **sign**
+- **The fix is one `summarize()` at the top** — same `leaf_df`, same `mass_g`, rerun everything below unchanged
 - **Check → decide → test:** each group for two-sample, the **differences** for paired
 - **Paired vs. two-sample:** the design decides — pairing removes tree-to-tree noise
 - **Show it:** lines per tree + mean ± SE, with the test in the subtitle
@@ -729,6 +948,7 @@ Make the results plot, write the sentences, run the rank-based tests. Then Part 
 
 - `t.test(y ~ group, data, var.equal = FALSE)`
 - `t.test(a, b, paired = TRUE)`
+- `group_by(id, group) %>% summarize()` — kill pseudoreplication
 - `pivot_wider(names_from, values_from)`
 - `geom_line(aes(group = tree))`
 - `wilcox.test()`

@@ -6,7 +6,10 @@
 # Save this file as scripts/10_t_tests_2.R
 #
 # PART A (in class): run the code, answer the questions.
-#                    Leaf data, then sugar maple leaf AREA.
+#                    A2-A6  our leaf data: two-sample and
+#                           paired, pseudoreplication, the
+#                           summarize() fix, rerun.
+#                    A7-A12 sugar maple leaf AREA.
 # PART B (hand in):  the same workflow on sugar maple leaf
 #                    MASS — you write the code.
 #
@@ -35,7 +38,7 @@ maple_df <-
 # PART A — IN CLASS
 # ##########################################################
 
-# ---- A2: Read, decide, report (leaf data) -----------------
+# ---- A2: Two-sample t-test on every leaf ------------------
 
 # Welch's two-sample t-test on the leaf data
 leaf_model <- t.test(mass_g ~ shade, data = leaf_df,
@@ -57,7 +60,128 @@ tibble(
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- A3: Sugar maple — average per tree and side ----------
+# ---- A3: Where did these leaves come from? ----------------
+
+# How many leaves did each team turn in?
+leaf_df %>%
+  count(teams, shade) %>%
+  pivot_wider(names_from = shade, values_from = n)
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# QA3. How many teams are there? Did every team turn in
+#      the same number of leaves? Which teams did not?
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# ---- A4: Paired t-test on every leaf ----------------------
+
+# Number the leaves within each team and side, then put
+# the shady and sunny leaf with the same number in one row
+leaf_wide_df <- leaf_df %>%
+  group_by(teams, shade) %>%
+  mutate(leaf_n = row_number()) %>%
+  ungroup() %>%
+  select(teams, leaf_n, shade, mass_g) %>%
+  pivot_wider(names_from = shade, values_from = mass_g) %>%
+  mutate(diff = shady - sunny)
+leaf_wide_df
+
+# Paired t-test on all the leaves
+leaf_paired_model <- t.test(leaf_wide_df$shady,
+                            leaf_wide_df$sunny,
+                            paired = TRUE)
+leaf_paired_model
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# QA4. Record t, df, and p. How many pairs does df say
+#      you have? Look at your table: WHY does shady leaf
+#      #1 get paired with sunny leaf #1? Is there any
+#      real reason those two leaves belong together?
+#      (Note the NA rows - t.test() dropped those.)
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# ---- A5: Pseudoreplication — the one-line fix -------------
+
+# Those 6 shady leaves all came off ONE tree. They are not
+# 6 independent data points. We sampled 5 trees, not 53.
+#
+# THE FIX: add the averaging step to the END of the chain
+# that LOADS the data, keeping the same name (leaf_df) and
+# the same column name (mass_g). In your own work you would
+# scroll up and edit the load chunk at the top of the file,
+# then rerun from there. Here it is again with the two new
+# lines, so this script still runs top to bottom:
+
+leaf_df <-
+  read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names() %>%
+  group_by(teams, shade) %>%
+  summarize(mass_g = mean(mass_g),
+            .groups = "drop")
+leaf_df
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# QA5. How many rows does leaf_df have now? What is ONE
+#      row - a leaf, a side, a team, or a tree?
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# ---- A6: Rerun the same code and compare ------------------
+
+# Park the pseudoreplicated results so we can compare
+pseudo_2s     <- leaf_model
+pseudo_paired <- leaf_paired_model
+
+# ---- The same two-sample code as A2, not one character
+#      changed. Only leaf_df changed.
+leaf_model <- t.test(mass_g ~ shade, data = leaf_df,
+                     var.equal = FALSE)
+leaf_model
+
+# ---- The same reshape + paired code as A4
+leaf_wide_df <- leaf_df %>%
+  group_by(teams, shade) %>%
+  mutate(leaf_n = row_number()) %>%
+  ungroup() %>%
+  select(teams, leaf_n, shade, mass_g) %>%
+  pivot_wider(names_from = shade, values_from = mass_g) %>%
+  mutate(diff = shady - sunny)
+leaf_wide_df
+
+leaf_paired_model <- t.test(leaf_wide_df$shady,
+                            leaf_wide_df$sunny,
+                            paired = TRUE)
+leaf_paired_model
+
+# All four results side by side
+tibble(
+  analysis = c("Two-sample, every leaf",
+               "Paired, every leaf",
+               "Two-sample, team means",
+               "Paired, team means"),
+  t  = c(pseudo_2s$statistic, pseudo_paired$statistic,
+         leaf_model$statistic, leaf_paired_model$statistic),
+  df = c(pseudo_2s$parameter, pseudo_paired$parameter,
+         leaf_model$parameter, leaf_paired_model$parameter),
+  p  = c(pseudo_2s$p.value, pseudo_paired$p.value,
+         leaf_model$p.value, leaf_paired_model$p.value)
+)
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# QA6. What happened to df? Did you lose data, or stop
+#      double-counting it? The sign of t flips - shady
+#      looked heavier before averaging and lighter after.
+#      Given the uneven leaf counts from QA3, why would
+#      averaging change the DIRECTION of the difference?
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# ---- A7: Sugar maple — average per tree and side ----------
 
 # How many leaves from each tree and side?
 maple_df %>%
@@ -71,13 +195,13 @@ maple_tree_df <- maple_df %>%
 maple_tree_df
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA3. Why do we average the 2 leaves from one side of
+# QA7. Why do we average the 2 leaves from one side of
 #      one tree? How many values per side do we have now?
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- A4: Two-sample — check, then test --------------------
+# ---- A8: Two-sample — check, then test --------------------
 
 # Normality of each side (tree means)
 maple_tree_df %>%
@@ -94,13 +218,13 @@ maple_2s_model <- t.test(area ~ side,
 maple_2s_model
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA4. Were the assumptions OK? Two-sample t, df, p?
+# QA8. Were the assumptions OK? Two-sample t, df, p?
 #      Reject or fail to reject?
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- A5: The slope plot -----------------------------------
+# ---- A9: The slope plot -----------------------------------
 
 # One line per tree: sunny -> shady
 maple_tree_df %>%
@@ -110,13 +234,13 @@ maple_tree_df %>%
   scale_x_discrete(limits = c("sunny", "shady"))
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA5. How many lines go up? Why can this pattern be
+# QA9. How many lines go up? Why can this pattern be
 #      clear even when the two-sample test is borderline?
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- A6: Paired — check, then test ------------------------
+# ---- A10: Paired — check, then test ------------------------
 
 # One row per tree + the shady - sunny difference
 maple_wide_df <- maple_tree_df %>%
@@ -140,14 +264,14 @@ maple_paired_model <- t.test(maple_wide_df$shady,
 maple_paired_model
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA6. Are the differences normal enough? Paired t, df,
+# QA10. Are the differences normal enough? Paired t, df,
 #      p, and mean difference? Compare with the two-sample
 #      p — why is the paired test so much stronger?
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- A7: Plot and report the paired result ----------------
+# ---- A11: Plot and report the paired result ----------------
 
 # Label with the paired test result
 paired_label <- paste0(
@@ -180,14 +304,14 @@ ggsave("figures/maple_area_paired_plot.png",
        width = 5, height = 4, dpi = 300)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA7. Write the results sentence:
+# QA11. Write the results sentence:
 #      [Finding] (paired t-test: t(df) = X.XX, p = X.XXX;
 #      mean difference = X.X cm²).
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- A8: Rank-based backups -------------------------------
+# ---- A12: Rank-based backups -------------------------------
 
 # Mann-Whitney U: two-sample partner
 wilcox.test(area ~ side, data = maple_tree_df)
@@ -197,7 +321,7 @@ wilcox.test(maple_wide_df$shady, maple_wide_df$sunny,
             paired = TRUE)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA8. p for each? Which one "misses" that the t-test
+# QA12. p for each? Which one "misses" that the t-test
 #      caught? Would you use these here — why or why not?
 # ANSWER:
 #
@@ -206,6 +330,7 @@ wilcox.test(maple_wide_df$shady, maple_wide_df$sunny,
 
 # ##########################################################
 # PART B — HAND IN: sugar maple leaf MASS (mass_g)
+#                   (matches A7-A12)
 #
 # Write the code yourself. Copy the matching Part A code
 # and change what needs changing:
@@ -217,11 +342,11 @@ wilcox.test(maple_wide_df$shady, maple_wide_df$sunny,
 # Every chunk needs a # comment saying what it does.
 # ##########################################################
 
-# ---- B3: Average per tree and side ------------------------
+# ---- B7: Average per tree and side ------------------------
 # TODO: mass_tree_df — mean mass_g per tree and side
 
 
-# ---- B4: Two-sample — check, then test --------------------
+# ---- B8: Two-sample — check, then test --------------------
 # TODO: Shapiro-Wilk p for each side (tree means)
 
 
@@ -232,24 +357,24 @@ wilcox.test(maple_wide_df$shady, maple_wide_df$sunny,
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QB4. Assumptions OK? t, df, p? Reject or fail to reject?
+# QB8. Assumptions OK? t, df, p? Reject or fail to reject?
 #      Is this the same answer you got for leaf area?
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- B5: The slope plot -----------------------------------
+# ---- B9: The slope plot -----------------------------------
 # TODO: one line per tree, sunny -> shady
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QB5. How many lines go up? What does that suggest,
+# QB9. How many lines go up? What does that suggest,
 #      whatever the two-sample test said?
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- B6: Paired — check, then test ------------------------
+# ---- B10: Paired — check, then test ------------------------
 # TODO: mass_wide_df — pivot_wider + diff column
 
 
@@ -263,7 +388,7 @@ wilcox.test(maple_wide_df$shady, maple_wide_df$sunny,
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QB6. Differences normal enough? Paired t, df, p, and
+# QB10. Differences normal enough? Paired t, df, p, and
 #      mean difference? The two-sample and paired tests
 #      disagree for mass — which one do you trust, and
 #      WHY? (Think about the design.)
@@ -271,7 +396,7 @@ wilcox.test(maple_wide_df$shady, maple_wide_df$sunny,
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- B7: Plot and report the paired result ----------------
+# ---- B11: Plot and report the paired result ----------------
 # TODO: label from mass_paired_model
 
 
@@ -283,14 +408,14 @@ wilcox.test(maple_wide_df$shady, maple_wide_df$sunny,
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QB7. Results sentence for the paired test on mass:
+# QB11. Results sentence for the paired test on mass:
 #      [Finding] (paired t-test: t(df) = X.XX, p = X.XXX;
 #      mean difference = X.XX g).
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- B8: Rank-based backups -------------------------------
+# ---- B12: Rank-based backups -------------------------------
 # TODO: Mann-Whitney U on the tree means
 
 
@@ -298,7 +423,7 @@ wilcox.test(maple_wide_df$shady, maple_wide_df$sunny,
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QB8. Do the rank-based tests tell the same story as the
+# QB12. Do the rank-based tests tell the same story as the
 #      t-tests? Based on your assumption checks, which
 #      test should go in a report — and why?
 # ANSWER:

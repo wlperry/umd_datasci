@@ -28,10 +28,12 @@ execute:
 ### Today's Objectives
 
 1.  Read a `t.test()` output, make a decision, and write a results sentence
-2.  Average pseudoreplicates so each tree × side is one value
-3.  **Check the assumptions first**, then run a two-sample and a paired t-test
-4.  Plot and report a paired result
-5.  Know the rank-based backups for when normality fails
+2.  Run a two-sample **and** a paired t-test on our own leaf data
+3.  Spot **pseudoreplication** — and fix it with one `summarize()` at the top of the script
+4.  Rerun the same code on the fixed data and see how far the answer moves
+5.  **Check the assumptions first**, then test the sugar maples the same way
+6.  Plot and report a paired result
+7.  Know the rank-based backups for when normality fails
 
 ::: callout-tip
 ## 📂 Files for today
@@ -39,7 +41,7 @@ execute:
 - **Skeleton script:** [`10_t_tests_2_skeleton.R`](scripts/10_t_tests_2_skeleton.R) → save it as `scripts/10_t_tests_2.R`.
 - **Leaf data:** [`2026_09_03_data_sci_leaf_area.xlsx`](data/2026_09_03_data_sci_leaf_area.xlsx) → `data/` (you should already have it).
 - **Sugar maple data:** [`2026_09_02_sugar_maple_leaf_area.xlsx`](data/2026_09_02_sugar_maple_leaf_area.xlsx) → `data/` (you have it from Activity 09).
-- Make sure your project has a **`figures/`** folder (Files pane → New Folder) — Part 7 saves a plot there.
+- Make sure your project has a **`figures/`** folder (Files pane → New Folder) — Part 11 saves a plot there.
 :::
 
 ::: callout-important
@@ -47,13 +49,16 @@ execute:
 
 Same setup as Activity 09:
 
-- **Part A — in class.** The code is already in your skeleton. Run it chunk by chunk as you work through Parts 1–8 below, and answer the **QA** boxes. In class we use sugar maple leaf **area**.
-- **Part B — hand in.** The same workflow on sugar maple leaf **mass** — **you write the code** by copying the matching Part A chunk and changing what needs changing. Answer the **QB** boxes. See [Part 9](#part-9-your-turn-leaf-mass-hand-in).
+- **Part A — in class.** The code is already in your skeleton. Run it chunk by chunk as you work through Parts 1–12 below, and answer the **QA** boxes. Parts 1–6 use **our own leaf data**; Parts 7–12 use sugar maple leaf **area**.
+- **Part B — hand in.** The same maple workflow on leaf **mass** — **you write the code** by copying the matching Part A chunk and changing what needs changing. Answer the **QB** boxes. See [Part 13](#part-13-your-turn-leaf-mass-hand-in).
 :::
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 1 — Read, decide, report *(after lecture Chunk 1)*
+> ## 🧩 Chunk 1 — The t-test code *(after lecture Chunk 1)*
+>
+> Parts 1–6: run the two-sample and paired tests on **every leaf**, find the
+> pseudoreplication, fix it with one `summarize()` at the top, and rerun the same code.
 
 # Part 1 · Load libraries and data
 
@@ -61,7 +66,7 @@ Already at the top of your skeleton: `readxl`, `tidyverse`, `janitor`, `car`, th
 
 ------------------------------------------------------------------------
 
-# Part 2 · Read, decide, report (leaf data)
+# Part 2 · Two-sample t-test on every leaf
 
 **▶ Run this:**
 
@@ -93,11 +98,130 @@ tibble(
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 2 — Sugar maple: check, then test *(after lecture Chunk 2)*
+# Part 3 · Where did these leaves come from?
 
-# Part 3 · Average per tree and side
+Before the paired test, look at the **design** of your own data.
 
-Each tree gave 2 leaves per side. Those 2 leaves are **not independent** (same tree, same soil, same light) — treating them as separate is **pseudoreplication**. Average them.
+**▶ Run this:**
+
+``` r
+# How many leaves did each team turn in? ---------------
+leaf_df %>%
+  count(teams, shade) %>%
+  pivot_wider(names_from = shade, values_from = n)
+```
+
+Each team went to **one tree** and picked leaves off the sunny side and the shady side of **that** tree.
+
+✏️ **QA3:** How many teams are there? Did every team turn in the same number of leaves? Which teams did not?
+
+------------------------------------------------------------------------
+
+# Part 4 · Paired t-test on every leaf
+
+The two sides are matched within a team, so let's run the paired test. A paired test needs the two groups **side by side in one row**, so we reshape first.
+
+**▶ Run this:**
+
+``` r
+# Number the leaves within each team and side ----------
+leaf_wide_df <- leaf_df %>%
+  group_by(teams, shade) %>%
+  mutate(leaf_n = row_number()) %>%
+  ungroup() %>%
+  select(teams, leaf_n, shade, mass_g) %>%
+  pivot_wider(names_from = shade, values_from = mass_g) %>%
+  mutate(diff = shady - sunny)
+leaf_wide_df
+
+# Paired t-test on all the leaves ----------------------
+leaf_paired_model <- t.test(leaf_wide_df$shady,
+                            leaf_wide_df$sunny,
+                            paired = TRUE)
+leaf_paired_model
+```
+
+- `row_number()` numbers the leaves **1, 2, 3…** inside each team and side
+- `pivot_wider()` puts the shady and sunny leaf with the **same number** in the same row
+
+> ⚠️ **Watch out!** Look at the `shady` and `sunny` columns for the teams with uneven counts — some rows have `NA`. Those leaves had no partner, and `t.test()` **dropped them without telling you**.
+
+✏️ **QA4:** Record t, df, and *p*. How many pairs does `df` say you have? Now look at your table — **why** does shady leaf #1 get paired with sunny leaf #1? Is there any real reason those two leaves belong together?
+
+------------------------------------------------------------------------
+
+# Part 5 · Pseudoreplication — and the one-line fix
+
+The 6 shady leaves one team turned in all came off **one tree**. They share that tree's soil, water, light, and age — they are **not independent**. Treating all 53 leaves as independent is **pseudoreplication**: it pretends you have far more information than you collected.
+
+You did not sample 53 trees. You sampled **5**.
+
+**The fix:** go back to the top of your script — to where you **loaded** the data — and add the averaging step to the end of that chain. Keep the **same name** (`leaf_df`) and the **same column name** (`mass_g`).
+
+**▶ Edit the chunk at the top of your script so it looks like this, then run it:**
+
+``` r
+# Load the leaf data and average each team's side ------
+leaf_df <-
+  read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names() %>%
+  group_by(teams, shade) %>%
+  summarize(mass_g = mean(mass_g),
+            .groups = "drop")
+leaf_df
+```
+
+Because you reused the names `leaf_df` and `mass_g`, **every line of code below keeps working** — this is how real analysis goes. You don't write a new script; you fix how the data are built and rerun.
+
+✏️ **QA5:** How many rows does `leaf_df` have now? What is one row — a leaf, a side, a team, or a tree?
+
+------------------------------------------------------------------------
+
+# Part 6 · Rerun the same code and compare
+
+**▶ Rerun your Part 2 and Part 4 chunks, unchanged.** Scroll up and run them again — nothing to retype.
+
+``` r
+# Keep a copy of the pseudoreplicated results ----------
+pseudo_2s     <- leaf_model
+pseudo_paired <- leaf_paired_model
+```
+
+> ⚠️ Run those two lines **before** you rerun Parts 2 and 4, or the old results are gone.
+
+Then put all four side by side:
+
+``` r
+# All four results from the leaf data ------------------
+tibble(
+  analysis = c("Two-sample, every leaf",
+               "Paired, every leaf",
+               "Two-sample, team means",
+               "Paired, team means"),
+  t  = c(pseudo_2s$statistic, pseudo_paired$statistic,
+         leaf_model$statistic, leaf_paired_model$statistic),
+  df = c(pseudo_2s$parameter, pseudo_paired$parameter,
+         leaf_model$parameter, leaf_paired_model$parameter),
+  p  = c(pseudo_2s$p.value, pseudo_paired$p.value,
+         leaf_model$p.value, leaf_paired_model$p.value)
+)
+```
+
+✏️ **QA6:** What happened to `df`? Did you lose data, or stop double-counting it? Now look at the **sign** of t: shady leaves looked *heavier* before averaging and *lighter* after. Given your answer to QA3 about uneven leaf counts, why would averaging change the direction of the difference?
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 2 — The maple test *(after lecture Chunk 2)*
+>
+> Parts 7–12, all in one go: average the leaves on each side of each tree, check the
+> assumptions, run the two-sample and the paired t-test, plot and report the paired
+> result, then the rank-based backups. Then start Part B.
+
+# Part 7 · Average per tree and side
+
+**Same problem, same fix.** Each tree gave 2 leaves per side, and those 2 leaves are **not independent** (same tree, same soil, same light) — exactly like the 6 leaves one team pulled off one tree. So we start the same way: average up to the real replicate, the **tree**.
+
+One difference worth noting: this design is **balanced** — exactly 2 leaves on every tree-side, nothing uneven, nothing missing. So averaging won't flip the difference the way it did for our leaf data. Every tree already had an equal say.
 
 **▶ Run this:**
 
@@ -110,11 +234,11 @@ maple_tree_df <- maple_df %>%
 maple_tree_df
 ```
 
-✏️ **QA3:** Why average? How many values per side do you have now?
+✏️ **QA7:** Why average? How many values per side do you have now? How many leaves went in?
 
 ------------------------------------------------------------------------
 
-# Part 4 · Two-sample — check, then test
+# Part 8 · Two-sample — check, then test
 
 > 💡 **Check → decide → test.** A two-sample t-test needs **each side** to be roughly normal.
 
@@ -140,11 +264,11 @@ maple_2s_model <- t.test(area ~ side,
 maple_2s_model
 ```
 
-✏️ **QA4:** Assumptions OK? t, df, *p*? Reject or fail to reject?
+✏️ **QA8:** Assumptions OK? t, df, *p*? Reject or fail to reject?
 
 ------------------------------------------------------------------------
 
-# Part 5 · The slope plot
+# Part 9 · The slope plot
 
 **▶ Run this:**
 
@@ -159,11 +283,11 @@ maple_tree_df %>%
 
 `group = tree` joins the two points from the same tree with a line.
 
-✏️ **QA5:** How many lines go up? Why can this pattern be so clear when the two-sample test was borderline?
+✏️ **QA9:** How many lines go up? Why can this pattern be so clear when the two-sample test was borderline?
 
 ------------------------------------------------------------------------
 
-# Part 6 · Paired — check, then test
+# Part 10 · Paired — check, then test
 
 A paired test needs **one row per tree** and checks that the **differences** are roughly normal.
 
@@ -201,13 +325,11 @@ maple_paired_model
 
 > ⚠️ **Watch out!** `t.test(area ~ side, paired = TRUE)` gives an error — R doesn't allow `paired` with a formula. That's why we made the wide table.
 
-✏️ **QA6:** Differences normal enough? Paired t, df, *p*, and mean difference? Why is the paired test so much stronger than the two-sample test?
+✏️ **QA10:** Differences normal enough? Paired t, df, *p*, and mean difference? Why is the paired test so much stronger than the two-sample test?
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 3 — Show it, report it, backups *(after lecture Chunk 3)*
-
-# Part 7 · Plot and report the paired result
+# Part 11 · Plot and report the paired result
 
 **▶ Run this:**
 
@@ -243,11 +365,11 @@ ggsave("figures/maple_area_paired_plot.png",
        width = 5, height = 4, dpi = 300)
 ```
 
-✏️ **QA7:** Write the results sentence: *[Finding] (paired t-test: t(df) = X.XX, p = X.XXX; mean difference = X.X cm²).* If *p* is tiny, write "p \< 0.001".
+✏️ **QA11:** Write the results sentence: *[Finding] (paired t-test: t(df) = X.XX, p = X.XXX; mean difference = X.X cm²).* If *p* is tiny, write "p \< 0.001".
 
 ------------------------------------------------------------------------
 
-# Part 8 · Rank-based backups
+# Part 12 · Rank-based backups
 
 Use these when the QQ plot and Shapiro-Wilk say the data are **clearly not normal**.
 
@@ -269,11 +391,11 @@ wilcox.test(maple_wide_df$shady, maple_wide_df$sunny,
 
 : {tbl-colwidths="[34,33,33]"}
 
-✏️ **QA8:** *p* for each? Which one "misses" the effect the t-test caught? Would you report these here — why or why not?
+✏️ **QA12:** *p* for each? Which one "misses" the effect the t-test caught? Would you report these here — why or why not?
 
 ------------------------------------------------------------------------
 
-# Part 9 · Your turn: leaf mass (hand in) {#part-9-your-turn-leaf-mass-hand-in}
+# Part 13 · Your turn: leaf mass (hand in) {#part-13-your-turn-leaf-mass-hand-in}
 
 Start in class, finish before next class. This is **Part B** of your skeleton and it is what gets graded.
 
@@ -286,7 +408,7 @@ Every step in Part B matches a Part A step. For each `# TODO:`, **copy the match
 
 > ⚠️ **Watch out!** If you get `object 'area' not found`, you renamed the column to `mass` but missed an `area` further down.
 
-Leaf mass tells a **different story** from leaf area. Pay attention to the assumption checks and to what each test says — QB6 asks which test you trust and why.
+Leaf mass tells a **different story** from leaf area. Pay attention to the assumption checks and to what each test says — QB10 asks which test you trust and why.
 
 When you're done, run the whole script top to bottom (**Ctrl/Cmd + Shift + Enter**) — it must run with no errors — and hand in `scripts/10_t_tests_2.R`.
 

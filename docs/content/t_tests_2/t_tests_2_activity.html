@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-09-29">
+<meta name="dcterms.date" content="2026-10-01">
 <meta name="description" content="Hands-on companion to T-Tests II: read and report a t-test, then on the sugar maple leaves average pseudoreplicates, check assumptions, run two-sample and paired t-tests, plot the paired result, and try the rank-based backups. Students hand in the same workflow on leaf mass.">
 
 <title>Activity 10 — T-Tests II: Two-Sample vs.&nbsp;Paired – UMD DAta Science Biology</title>
@@ -435,7 +435,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">September 29, 2026</p>
+      <p class="date">October 1, 2026</p>
     </div>
   </div>
   
@@ -453,8 +453,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored">Today’s Objectives</h3>
 <ol type="1">
 <li>Read a <code>t.test()</code> output, make a decision, and write a results sentence</li>
-<li>Average pseudoreplicates so each tree × side is one value</li>
-<li><strong>Check the assumptions first</strong>, then run a two-sample and a paired t-test</li>
+<li>Run a two-sample <strong>and</strong> a paired t-test on our own leaf data</li>
+<li>Spot <strong>pseudoreplication</strong> — and fix it with one <code>summarize()</code> at the top of the script</li>
+<li>Rerun the same code on the fixed data and see how far the answer moves</li>
+<li><strong>Check the assumptions first</strong>, then test the sugar maples the same way</li>
 <li>Plot and report a paired result</li>
 <li>Know the rank-based backups for when normality fails</li>
 </ol>
@@ -472,7 +474,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Skeleton script:</strong> <a href="scripts/10_t_tests_2_skeleton.R"><code>10_t_tests_2_skeleton.R</code></a> → save it as <code>scripts/10_t_tests_2.R</code>.</li>
 <li><strong>Leaf data:</strong> <a href="data/2026_09_03_data_sci_leaf_area.xlsx"><code>2026_09_03_data_sci_leaf_area.xlsx</code></a> → <code>data/</code> (you should already have it).</li>
 <li><strong>Sugar maple data:</strong> <a href="data/2026_09_02_sugar_maple_leaf_area.xlsx"><code>2026_09_02_sugar_maple_leaf_area.xlsx</code></a> → <code>data/</code> (you have it from Activity 09).</li>
-<li>Make sure your project has a <strong><code>figures/</code></strong> folder (Files pane → New Folder) — Part 7 saves a plot there.</li>
+<li>Make sure your project has a <strong><code>figures/</code></strong> folder (Files pane → New Folder) — Part 11 saves a plot there.</li>
 </ul>
 </div>
 </div>
@@ -488,14 +490,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="callout-body-container callout-body">
 <p>Same setup as Activity 09:</p>
 <ul>
-<li><strong>Part A — in class.</strong> The code is already in your skeleton. Run it chunk by chunk as you work through Parts 1–8 below, and answer the <strong>QA</strong> boxes. In class we use sugar maple leaf <strong>area</strong>.</li>
-<li><strong>Part B — hand in.</strong> The same workflow on sugar maple leaf <strong>mass</strong> — <strong>you write the code</strong> by copying the matching Part A chunk and changing what needs changing. Answer the <strong>QB</strong> boxes. See <a href="#part-9-your-turn-leaf-mass-hand-in">Part 9</a>.</li>
+<li><strong>Part A — in class.</strong> The code is already in your skeleton. Run it chunk by chunk as you work through Parts 1–12 below, and answer the <strong>QA</strong> boxes. Parts 1–6 use <strong>our own leaf data</strong>; Parts 7–12 use sugar maple leaf <strong>area</strong>.</li>
+<li><strong>Part B — hand in.</strong> The same maple workflow on leaf <strong>mass</strong> — <strong>you write the code</strong> by copying the matching Part A chunk and changing what needs changing. Answer the <strong>QB</strong> boxes. See <a href="#part-13-your-turn-leaf-mass-hand-in">Part 13</a>.</li>
 </ul>
 </div>
 </div>
 <hr>
 <blockquote class="blockquote">
-<h2 id="chunk-1-read-decide-report-after-lecture-chunk-1" class="anchored" data-anchor-id="todays-objectives">🧩 Chunk 1 — Read, decide, report <em>(after lecture Chunk 1)</em></h2>
+<h2 id="chunk-1-the-t-test-code-after-lecture-chunk-1" class="anchored" data-anchor-id="todays-objectives">🧩 Chunk 1 — The t-test code <em>(after lecture Chunk 1)</em></h2>
+<p>Parts 1–6: run the two-sample and paired tests on <strong>every leaf</strong>, find the pseudoreplication, fix it with one <code>summarize()</code> at the top, and rerun the same code.</p>
 </blockquote>
 </section>
 </section>
@@ -504,8 +507,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Already at the top of your skeleton: <code>readxl</code>, <code>tidyverse</code>, <code>janitor</code>, <code>car</code>, then <code>leaf_df</code> and <code>maple_df</code>. Run those lines first.</p>
 <hr>
 </section>
-<section id="part-2-read-decide-report-leaf-data" class="level1">
-<h1>Part 2 · Read, decide, report (leaf data)</h1>
+<section id="part-2-two-sample-t-test-on-every-leaf" class="level1">
+<h1>Part 2 · Two-sample t-test on every leaf</h1>
 <p><strong>▶ Run this:</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Welch's two-sample t-test on the leaf data -----------</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>leaf_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(mass_g <span class="sc">~</span> shade, <span class="at">data =</span> leaf_df,</span>
@@ -554,78 +557,165 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <p>✏️ <strong>QA2:</strong> Reject or fail to reject H₀? Does the CI include zero? Write the results sentence using the template <em>[Finding] (Welch’s t-test: t(df) = X.XX, p = X.XX).</em></p>
 <hr>
-<blockquote class="blockquote">
-<h2 id="chunk-2-sugar-maple-check-then-test-after-lecture-chunk-2" class="anchored" data-anchor-id="part-2-read-decide-report-leaf-data">🧩 Chunk 2 — Sugar maple: check, then test <em>(after lecture Chunk 2)</em></h2>
-</blockquote>
 </section>
-<section id="part-3-average-per-tree-and-side" class="level1">
-<h1>Part 3 · Average per tree and side</h1>
-<p>Each tree gave 2 leaves per side. Those 2 leaves are <strong>not independent</strong> (same tree, same soil, same light) — treating them as separate is <strong>pseudoreplication</strong>. Average them.</p>
+<section id="part-3-where-did-these-leaves-come-from" class="level1">
+<h1>Part 3 · Where did these leaves come from?</h1>
+<p>Before the paired test, look at the <strong>design</strong> of your own data.</p>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Average the 2 leaves per tree and side ---------------</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>maple_tree_df <span class="ot">&lt;-</span> maple_df <span class="sc">%&gt;%</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(tree, side) <span class="sc">%&gt;%</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">area =</span> <span class="fu">mean</span>(total_area_cm2),</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>maple_tree_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>QA3:</strong> Why average? How many values per side do you have now?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># How many leaves did each team turn in? ---------------</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(teams, shade) <span class="sc">%&gt;%</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> shade, <span class="at">values_from =</span> n)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Each team went to <strong>one tree</strong> and picked leaves off the sunny side and the shady side of <strong>that</strong> tree.</p>
+<p>✏️ <strong>QA3:</strong> How many teams are there? Did every team turn in the same number of leaves? Which teams did not?</p>
 <hr>
 </section>
-<section id="part-4-two-sample-check-then-test" class="level1">
-<h1>Part 4 · Two-sample — check, then test</h1>
+<section id="part-4-paired-t-test-on-every-leaf" class="level1">
+<h1>Part 4 · Paired t-test on every leaf</h1>
+<p>The two sides are matched within a team, so let’s run the paired test. A paired test needs the two groups <strong>side by side in one row</strong>, so we reshape first.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Number the leaves within each team and side ----------</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>leaf_wide_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(teams, shade) <span class="sc">%&gt;%</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">leaf_n =</span> <span class="fu">row_number</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(teams, leaf_n, shade, mass_g) <span class="sc">%&gt;%</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> shade, <span class="at">values_from =</span> mass_g) <span class="sc">%&gt;%</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff =</span> shady <span class="sc">-</span> sunny)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>leaf_wide_df</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Paired t-test on all the leaves ----------------------</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>leaf_paired_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(leaf_wide_df<span class="sc">$</span>shady,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                            leaf_wide_df<span class="sc">$</span>sunny,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>                            <span class="at">paired =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>leaf_paired_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>row_number()</code> numbers the leaves <strong>1, 2, 3…</strong> inside each team and side</li>
+<li><code>pivot_wider()</code> puts the shady and sunny leaf with the <strong>same number</strong> in the same row</li>
+</ul>
+<blockquote class="blockquote">
+<p>⚠️ <strong>Watch out!</strong> Look at the <code>shady</code> and <code>sunny</code> columns for the teams with uneven counts — some rows have <code>NA</code>. Those leaves had no partner, and <code>t.test()</code> <strong>dropped them without telling you</strong>.</p>
+</blockquote>
+<p>✏️ <strong>QA4:</strong> Record t, df, and <em>p</em>. How many pairs does <code>df</code> say you have? Now look at your table — <strong>why</strong> does shady leaf #1 get paired with sunny leaf #1? Is there any real reason those two leaves belong together?</p>
+<hr>
+</section>
+<section id="part-5-pseudoreplication-and-the-one-line-fix" class="level1">
+<h1>Part 5 · Pseudoreplication — and the one-line fix</h1>
+<p>The 6 shady leaves one team turned in all came off <strong>one tree</strong>. They share that tree’s soil, water, light, and age — they are <strong>not independent</strong>. Treating all 53 leaves as independent is <strong>pseudoreplication</strong>: it pretends you have far more information than you collected.</p>
+<p>You did not sample 53 trees. You sampled <strong>5</strong>.</p>
+<p><strong>The fix:</strong> go back to the top of your script — to where you <strong>loaded</strong> the data — and add the averaging step to the end of that chain. Keep the <strong>same name</strong> (<code>leaf_df</code>) and the <strong>same column name</strong> (<code>mass_g</code>).</p>
+<p><strong>▶ Edit the chunk at the top of your script so it looks like this, then run it:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the leaf data and average each team's side ------</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="ot">&lt;-</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_excel</span>(<span class="st">"data/2026_09_03_data_sci_leaf_area.xlsx"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(teams, shade) <span class="sc">%&gt;%</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mass_g =</span> <span class="fu">mean</span>(mass_g),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>leaf_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Because you reused the names <code>leaf_df</code> and <code>mass_g</code>, <strong>every line of code below keeps working</strong> — this is how real analysis goes. You don’t write a new script; you fix how the data are built and rerun.</p>
+<p>✏️ <strong>QA5:</strong> How many rows does <code>leaf_df</code> have now? What is one row — a leaf, a side, a team, or a tree?</p>
+<hr>
+</section>
+<section id="part-6-rerun-the-same-code-and-compare" class="level1">
+<h1>Part 6 · Rerun the same code and compare</h1>
+<p><strong>▶ Rerun your Part 2 and Part 4 chunks, unchanged.</strong> Scroll up and run them again — nothing to retype.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep a copy of the pseudoreplicated results ----------</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>pseudo_2s     <span class="ot">&lt;-</span> leaf_model</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>pseudo_paired <span class="ot">&lt;-</span> leaf_paired_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<blockquote class="blockquote">
+<p>⚠️ Run those two lines <strong>before</strong> you rerun Parts 2 and 4, or the old results are gone.</p>
+</blockquote>
+<p>Then put all four side by side:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># All four results from the leaf data ------------------</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">analysis =</span> <span class="fu">c</span>(<span class="st">"Two-sample, every leaf"</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>               <span class="st">"Paired, every leaf"</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>               <span class="st">"Two-sample, team means"</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>               <span class="st">"Paired, team means"</span>),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">t  =</span> <span class="fu">c</span>(pseudo_2s<span class="sc">$</span>statistic, pseudo_paired<span class="sc">$</span>statistic,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>         leaf_model<span class="sc">$</span>statistic, leaf_paired_model<span class="sc">$</span>statistic),</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">df =</span> <span class="fu">c</span>(pseudo_2s<span class="sc">$</span>parameter, pseudo_paired<span class="sc">$</span>parameter,</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>         leaf_model<span class="sc">$</span>parameter, leaf_paired_model<span class="sc">$</span>parameter),</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">p  =</span> <span class="fu">c</span>(pseudo_2s<span class="sc">$</span>p.value, pseudo_paired<span class="sc">$</span>p.value,</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>         leaf_model<span class="sc">$</span>p.value, leaf_paired_model<span class="sc">$</span>p.value)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>QA6:</strong> What happened to <code>df</code>? Did you lose data, or stop double-counting it? Now look at the <strong>sign</strong> of t: shady leaves looked <em>heavier</em> before averaging and <em>lighter</em> after. Given your answer to QA3 about uneven leaf counts, why would averaging change the direction of the difference?</p>
+<hr>
+<blockquote class="blockquote">
+<h2 id="chunk-2-the-maple-test-after-lecture-chunk-2" class="anchored" data-anchor-id="part-6-rerun-the-same-code-and-compare">🧩 Chunk 2 — The maple test <em>(after lecture Chunk 2)</em></h2>
+<p>Parts 7–12, all in one go: average the leaves on each side of each tree, check the assumptions, run the two-sample and the paired t-test, plot and report the paired result, then the rank-based backups. Then start Part B.</p>
+</blockquote>
+</section>
+<section id="part-7-average-per-tree-and-side" class="level1">
+<h1>Part 7 · Average per tree and side</h1>
+<p><strong>Same problem, same fix.</strong> Each tree gave 2 leaves per side, and those 2 leaves are <strong>not independent</strong> (same tree, same soil, same light) — exactly like the 6 leaves one team pulled off one tree. So we start the same way: average up to the real replicate, the <strong>tree</strong>.</p>
+<p>One difference worth noting: this design is <strong>balanced</strong> — exactly 2 leaves on every tree-side, nothing uneven, nothing missing. So averaging won’t flip the difference the way it did for our leaf data. Every tree already had an equal say.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Average the 2 leaves per tree and side ---------------</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>maple_tree_df <span class="ot">&lt;-</span> maple_df <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(tree, side) <span class="sc">%&gt;%</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">area =</span> <span class="fu">mean</span>(total_area_cm2),</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>maple_tree_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>QA7:</strong> Why average? How many values per side do you have now? How many leaves went in?</p>
+<hr>
+</section>
+<section id="part-8-two-sample-check-then-test" class="level1">
+<h1>Part 8 · Two-sample — check, then test</h1>
 <blockquote class="blockquote">
 <p>💡 <strong>Check → decide → test.</strong> A two-sample t-test needs <strong>each side</strong> to be roughly normal.</p>
 </blockquote>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Normality of each side (tree means) ------------------</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>maple_tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(side) <span class="sc">%&gt;%</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">shapiro_p =</span> <span class="fu">shapiro.test</span>(area)<span class="sc">$</span>p.value)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Equal spread? ----------------------------------------</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(area <span class="sc">~</span> side, <span class="at">data =</span> maple_tree_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Normality of each side (tree means) ------------------</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>maple_tree_df <span class="sc">%&gt;%</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(side) <span class="sc">%&gt;%</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">shapiro_p =</span> <span class="fu">shapiro.test</span>(area)<span class="sc">$</span>p.value)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Equal spread? ----------------------------------------</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(area <span class="sc">~</span> side, <span class="at">data =</span> maple_tree_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <blockquote class="blockquote">
 <p>🔮 <strong>Predict first:</strong> assumptions OK? Then: with 8 trees per side, will the two-sample test be significant?</p>
 </blockquote>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Welch's two-sample t-test on the tree means ----------</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>maple_2s_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(area <span class="sc">~</span> side,</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">data =</span> maple_tree_df,</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>maple_2s_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>QA4:</strong> Assumptions OK? t, df, <em>p</em>? Reject or fail to reject?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Welch's two-sample t-test on the tree means ----------</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>maple_2s_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(area <span class="sc">~</span> side,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">data =</span> maple_tree_df,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>maple_2s_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>QA8:</strong> Assumptions OK? t, df, <em>p</em>? Reject or fail to reject?</p>
 <hr>
 </section>
-<section id="part-5-the-slope-plot" class="level1">
-<h1>Part 5 · The slope plot</h1>
+<section id="part-9-the-slope-plot" class="level1">
+<h1>Part 9 · The slope plot</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># One line per tree: sunny -&gt; shady --------------------</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>maple_tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> side, <span class="at">y =</span> area, <span class="at">group =</span> tree)) <span class="sc">+</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">limits =</span> <span class="fu">c</span>(<span class="st">"sunny"</span>, <span class="st">"shady"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># One line per tree: sunny -&gt; shady --------------------</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>maple_tree_df <span class="sc">%&gt;%</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> side, <span class="at">y =</span> area, <span class="at">group =</span> tree)) <span class="sc">+</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">limits =</span> <span class="fu">c</span>(<span class="st">"sunny"</span>, <span class="st">"shady"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><code>group = tree</code> joins the two points from the same tree with a line.</p>
-<p>✏️ <strong>QA5:</strong> How many lines go up? Why can this pattern be so clear when the two-sample test was borderline?</p>
+<p>✏️ <strong>QA9:</strong> How many lines go up? Why can this pattern be so clear when the two-sample test was borderline?</p>
 <hr>
 </section>
-<section id="part-6-paired-check-then-test" class="level1">
-<h1>Part 6 · Paired — check, then test</h1>
+<section id="part-10-paired-check-then-test" class="level1">
+<h1>Part 10 · Paired — check, then test</h1>
 <p>A paired test needs <strong>one row per tree</strong> and checks that the <strong>differences</strong> are roughly normal.</p>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># One row per tree + the shady - sunny difference ------</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>maple_wide_df <span class="ot">&lt;-</span> maple_tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> side, <span class="at">values_from =</span> area) <span class="sc">%&gt;%</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff =</span> shady <span class="sc">-</span> sunny)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>maple_wide_df</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># QQ plot of the differences ---------------------------</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>maple_wide_df <span class="sc">%&gt;%</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">sample =</span> diff)) <span class="sc">+</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq</span>() <span class="sc">+</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq_line</span>()</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Shapiro-Wilk on the differences ----------------------</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(maple_wide_df<span class="sc">$</span>diff)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># One row per tree + the shady - sunny difference ------</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>maple_wide_df <span class="ot">&lt;-</span> maple_tree_df <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> side, <span class="at">values_from =</span> area) <span class="sc">%&gt;%</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff =</span> shady <span class="sc">-</span> sunny)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>maple_wide_df</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># QQ plot of the differences ---------------------------</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>maple_wide_df <span class="sc">%&gt;%</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">sample =</span> diff)) <span class="sc">+</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq</span>() <span class="sc">+</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq_line</span>()</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Shapiro-Wilk on the differences ----------------------</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(maple_wide_df<span class="sc">$</span>diff)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li><code>pivot_wider()</code> turns the <code>side</code> column into a <code>shady</code> and a <code>sunny</code> column — a sneak peek; you’ll learn it in the Pivoting lecture.</li>
 <li>No Levene’s test for a paired test — there is only one set of numbers, the differences.</li>
@@ -633,65 +723,62 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <blockquote class="blockquote">
 <p>🔮 <strong>Predict first:</strong> will the paired <em>p</em> be bigger or smaller than the two-sample <em>p</em>?</p>
 </blockquote>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Paired t-test ----------------------------------------</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>maple_paired_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(maple_wide_df<span class="sc">$</span>shady,</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                             maple_wide_df<span class="sc">$</span>sunny,</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                             <span class="at">paired =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>maple_paired_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Paired t-test ----------------------------------------</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>maple_paired_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(maple_wide_df<span class="sc">$</span>shady,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                             maple_wide_df<span class="sc">$</span>sunny,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                             <span class="at">paired =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>maple_paired_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <blockquote class="blockquote">
 <p>⚠️ <strong>Watch out!</strong> <code>t.test(area ~ side, paired = TRUE)</code> gives an error — R doesn’t allow <code>paired</code> with a formula. That’s why we made the wide table.</p>
 </blockquote>
-<p>✏️ <strong>QA6:</strong> Differences normal enough? Paired t, df, <em>p</em>, and mean difference? Why is the paired test so much stronger than the two-sample test?</p>
+<p>✏️ <strong>QA10:</strong> Differences normal enough? Paired t, df, <em>p</em>, and mean difference? Why is the paired test so much stronger than the two-sample test?</p>
 <hr>
-<blockquote class="blockquote">
-<h2 id="chunk-3-show-it-report-it-backups-after-lecture-chunk-3" class="anchored" data-anchor-id="part-6-paired-check-then-test">🧩 Chunk 3 — Show it, report it, backups <em>(after lecture Chunk 3)</em></h2>
-</blockquote>
 </section>
-<section id="part-7-plot-and-report-the-paired-result" class="level1">
-<h1>Part 7 · Plot and report the paired result</h1>
+<section id="part-11-plot-and-report-the-paired-result" class="level1">
+<h1>Part 11 · Plot and report the paired result</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Label with the paired test result ---------------------</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>paired_label <span class="ot">&lt;-</span> <span class="fu">paste0</span>(</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Paired t-test: t = "</span>,</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(maple_paired_model<span class="sc">$</span>statistic, <span class="dv">2</span>),</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">", df = "</span>, maple_paired_model<span class="sc">$</span>parameter, <span class="st">", "</span>,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  scales<span class="sc">::</span><span class="fu">pvalue</span>(maple_paired_model<span class="sc">$</span>p.value,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                 <span class="at">add_p =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Each tree in grey + mean ± SE in color ---------------</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>maple_results_plot <span class="ot">&lt;-</span> maple_tree_df <span class="sc">%&gt;%</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> side, <span class="at">y =</span> area)) <span class="sc">+</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">group =</span> tree), <span class="at">color =</span> <span class="st">"grey70"</span>) <span class="sc">+</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> <span class="st">"grey70"</span>) <span class="sc">+</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun.data =</span> mean_se, <span class="at">geom =</span> <span class="st">"errorbar"</span>,</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>               <span class="at">width =</span> <span class="fl">0.1</span>, <span class="at">color =</span> <span class="st">"darkgreen"</span>) <span class="sc">+</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun =</span> mean, <span class="at">geom =</span> <span class="st">"point"</span>,</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>               <span class="at">size =</span> <span class="dv">4</span>, <span class="at">color =</span> <span class="st">"darkgreen"</span>) <span class="sc">+</span></span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">limits =</span> <span class="fu">c</span>(<span class="st">"sunny"</span>, <span class="st">"shady"</span>)) <span class="sc">+</span></span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Side of tree"</span>,</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Mean leaf area (cm²)"</span>,</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> paired_label) <span class="sc">+</span></span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>maple_results_plot</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Save it -----------------------------------------------</span></span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figures/maple_area_paired_plot.png"</span>,</span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot =</span> maple_results_plot,</span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>       <span class="at">width =</span> <span class="dv">5</span>, <span class="at">height =</span> <span class="dv">4</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>QA7:</strong> Write the results sentence: <em>[Finding] (paired t-test: t(df) = X.XX, p = X.XXX; mean difference = X.X cm²).</em> If <em>p</em> is tiny, write “p &lt; 0.001”.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Label with the paired test result ---------------------</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>paired_label <span class="ot">&lt;-</span> <span class="fu">paste0</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Paired t-test: t = "</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(maple_paired_model<span class="sc">$</span>statistic, <span class="dv">2</span>),</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">", df = "</span>, maple_paired_model<span class="sc">$</span>parameter, <span class="st">", "</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  scales<span class="sc">::</span><span class="fu">pvalue</span>(maple_paired_model<span class="sc">$</span>p.value,</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>                 <span class="at">add_p =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Each tree in grey + mean ± SE in color ---------------</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>maple_results_plot <span class="ot">&lt;-</span> maple_tree_df <span class="sc">%&gt;%</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> side, <span class="at">y =</span> area)) <span class="sc">+</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">group =</span> tree), <span class="at">color =</span> <span class="st">"grey70"</span>) <span class="sc">+</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> <span class="st">"grey70"</span>) <span class="sc">+</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun.data =</span> mean_se, <span class="at">geom =</span> <span class="st">"errorbar"</span>,</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>               <span class="at">width =</span> <span class="fl">0.1</span>, <span class="at">color =</span> <span class="st">"darkgreen"</span>) <span class="sc">+</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun =</span> mean, <span class="at">geom =</span> <span class="st">"point"</span>,</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>               <span class="at">size =</span> <span class="dv">4</span>, <span class="at">color =</span> <span class="st">"darkgreen"</span>) <span class="sc">+</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">limits =</span> <span class="fu">c</span>(<span class="st">"sunny"</span>, <span class="st">"shady"</span>)) <span class="sc">+</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Side of tree"</span>,</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Mean leaf area (cm²)"</span>,</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> paired_label) <span class="sc">+</span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>maple_results_plot</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Save it -----------------------------------------------</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figures/maple_area_paired_plot.png"</span>,</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot =</span> maple_results_plot,</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>       <span class="at">width =</span> <span class="dv">5</span>, <span class="at">height =</span> <span class="dv">4</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>QA11:</strong> Write the results sentence: <em>[Finding] (paired t-test: t(df) = X.XX, p = X.XXX; mean difference = X.X cm²).</em> If <em>p</em> is tiny, write “p &lt; 0.001”.</p>
 <hr>
 </section>
-<section id="part-8-rank-based-backups" class="level1">
-<h1>Part 8 · Rank-based backups</h1>
+<section id="part-12-rank-based-backups" class="level1">
+<h1>Part 12 · Rank-based backups</h1>
 <p>Use these when the QQ plot and Shapiro-Wilk say the data are <strong>clearly not normal</strong>.</p>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mann-Whitney U: two-sample partner -------------------</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">wilcox.test</span>(area <span class="sc">~</span> side, <span class="at">data =</span> maple_tree_df)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Wilcoxon signed-rank: paired partner -----------------</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">wilcox.test</span>(maple_wide_df<span class="sc">$</span>shady, maple_wide_df<span class="sc">$</span>sunny,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">paired =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mann-Whitney U: two-sample partner -------------------</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">wilcox.test</span>(area <span class="sc">~</span> side, <span class="at">data =</span> maple_tree_df)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Wilcoxon signed-rank: paired partner -----------------</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">wilcox.test</span>(maple_wide_df<span class="sc">$</span>shady, maple_wide_df<span class="sc">$</span>sunny,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">paired =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 34%">
@@ -718,11 +805,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<p>✏️ <strong>QA8:</strong> <em>p</em> for each? Which one “misses” the effect the t-test caught? Would you report these here — why or why not?</p>
+<p>✏️ <strong>QA12:</strong> <em>p</em> for each? Which one “misses” the effect the t-test caught? Would you report these here — why or why not?</p>
 <hr>
 </section>
-<section id="part-9-your-turn-leaf-mass-hand-in" class="level1">
-<h1>Part 9 · Your turn: leaf mass (hand in)</h1>
+<section id="part-13-your-turn-leaf-mass-hand-in" class="level1">
+<h1>Part 13 · Your turn: leaf mass (hand in)</h1>
 <p>Start in class, finish before next class. This is <strong>Part B</strong> of your skeleton and it is what gets graded.</p>
 <p>Every step in Part B matches a Part A step. For each <code># TODO:</code>, <strong>copy the matching Part A chunk, paste it under the TODO, and change what needs changing</strong>:</p>
 <ul>
@@ -734,7 +821,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <blockquote class="blockquote">
 <p>⚠️ <strong>Watch out!</strong> If you get <code>object 'area' not found</code>, you renamed the column to <code>mass</code> but missed an <code>area</code> further down.</p>
 </blockquote>
-<p>Leaf mass tells a <strong>different story</strong> from leaf area. Pay attention to the assumption checks and to what each test says — QB6 asks which test you trust and why.</p>
+<p>Leaf mass tells a <strong>different story</strong> from leaf area. Pay attention to the assumption checks and to what each test says — QB10 asks which test you trust and why.</p>
 <p>When you’re done, run the whole script top to bottom (<strong>Ctrl/Cmd + Shift + Enter</strong>) — it must run with no errors — and hand in <code>scripts/10_t_tests_2.R</code>.</p>
 <hr>
 <p><em>End of Activity 10. Next: Lecture 11 — linear regression.</em></p>
