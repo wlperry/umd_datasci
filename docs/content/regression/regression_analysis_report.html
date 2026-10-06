@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Your Name Here">
-<meta name="dcterms.date" content="2026-10-01">
+<meta name="dcterms.date" content="2026-10-05">
 
 <title>Paper Calibration Curve: Predicting Leaf Area from Mass – UMD DAta Science Biology</title>
 <style>
@@ -50,9 +50,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-0a682fb6683424e22d0973f9afb1aff8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../site_libs/bootstrap/bootstrap-dark-6632f43c76c69e813a602cc5faf6884a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../../site_libs/bootstrap/bootstrap-0a682fb6683424e22d0973f9afb1aff8.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-6d0e939ac4c85de6cdc8c1784edcb949.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-c84dc680449e80bcb379a5a3266ed777.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-6d0e939ac4c85de6cdc8c1784edcb949.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -84,10 +84,10 @@ ul.task-list li input[type="checkbox"] {
 
 <link rel="stylesheet" href="../../css/main.css">
 <meta property="og:title" content="Paper Calibration Curve: Predicting Leaf Area from Mass – UMD DAta Science Biology">
-<meta property="og:description" content="The same analysis as regression_analysis_script.R — but as a report">
+<meta property="og:description" content="The regression from Activity 11, written up as a report">
 <meta property="og:image" content="https://wlperry.github.io/umd_datasci/content/regression/regression_analysis_report_files/figure-html/calibration-plot-1.png">
 <meta property="og:site_name" content="UMD DAta Science Biology">
-<meta property="og:image:alt" content="Scatter plot of paper area against mass with a dark blue least-squares line and light blue 95 percent confidence band; the subtitle reports the fitted equation and R-squared. Points cluster tightly around the line, narrowing the band toward the middle of the mass range.">
+<meta property="og:image:alt" content="Scatter plot of paper area against paper mass with a straight fitted regression line and a narrow confidence band. The points sit almost exactly on the line.">
 <meta property="og:image:height" content="960">
 <meta property="og:image:width" content="960">
 </head>
@@ -377,7 +377,7 @@ ul.task-list li input[type="checkbox"] {
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Paper Calibration Curve: Predicting Leaf Area from Mass</h1>
-<p class="subtitle lead">The same analysis as regression_analysis_script.R — but as a report</p>
+<p class="subtitle lead">The regression from Activity 11, written up as a report</p>
 </div>
 
 
@@ -394,7 +394,7 @@ ul.task-list li input[type="checkbox"] {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 1, 2026</p>
+      <p class="date">October 5, 2026</p>
     </div>
   </div>
   
@@ -406,29 +406,21 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<!--
-HOW TO READ THIS WORKED EXAMPLE (active reading)
-Don't just skim. Before you press Render, PREDICT what each computed value and
-figure will show, then render and compare. Better still, retype a chunk or two by
-hand. The PREDICT comments below mark good places to pause. None of these comment
-lines appear in the rendered Word document.
--->
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>To estimate leaf surface area without a leaf-area meter, we built a <strong>calibration curve</strong>. Paper of uniform stock has a constant area-per-gram, so the <strong>mass</strong> of a paper square is a near-perfect linear predictor of its <strong>area</strong>. Once we know that relationship, we can trace a leaf onto the same paper, weigh the tracing, and convert its mass to area.</p>
+<p>To estimate leaf surface area without a leaf-area meter, we built a <strong>calibration curve</strong>. Paper from one stock has a constant area per gram, so the <strong>mass</strong> of a paper square is a near-perfect linear predictor of its <strong>area</strong>. Once we know that relationship, we can trace a leaf onto the same paper, weigh the tracing, and convert its mass to an area.</p>
 <ul>
 <li><strong>Explanatory variable (X):</strong> paper mass (g) — easy to measure on a balance</li>
-<li><strong>Response variable (Y):</strong> paper area (cm²) — what we want to predict</li>
+<li><strong>Response variable (Y):</strong> paper area (cm²) — what we actually want</li>
 </ul>
 </section>
 <section id="methods" class="level1">
 <h1>Methods</h1>
-<p>We weighed 118 paper squares of known area (1–567 cm²) and fit a simple linear regression, <code>area_cm2 ~ mass_g</code>, with <code>lm()</code>. We checked the four regression assumptions using base R’s diagnostic plots for a fitted model, with a Shapiro–Wilk test on the residuals as a formal companion. All work was done in R with the tidyverse; this report was written in Quarto so every number and figure below is computed directly from the data.</p>
+<p>We weighed 118 paper squares of known area (1–567 cm²) and fit a simple linear regression, <code>area_cm2 ~ mass_g</code>, with <code>lm()</code>. We checked the residuals with base R’s diagnostic plots for the fitted model. All work was done in R with the tidyverse; this report was written in Quarto, so every number and figure below is computed from the data rather than typed in by hand.</p>
 </section>
 <section id="results" class="level1">
 <h1>Results</h1>
-<!-- 🔮 PREDICT before you Render: what F, p, and R² will the model summary show, and what slope (cm² per gram)? Write your guesses, then render and check. -->
-<p>Paper mass was an extremely strong predictor of paper area. The overall model fit, coefficients, and <em>p</em>-values are shown in the two tables below.</p>
+<p>Paper mass was an extremely strong predictor of paper area. The overall fit is in Table 1 and the fitted equation is in Table 2.</p>
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
@@ -457,7 +449,7 @@ lines appear in the rendered Word document.
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
-<caption>Table 2. Calibration equation coefficients. The <code>mass_g</code> estimate is the area gained per additional gram of paper; <code>(Intercept)</code> is the fitted area at zero mass.</caption>
+<caption>Table 2. Coefficients of the calibration equation. The <code>mass_g</code> estimate is the area gained per additional gram of paper; <code>(Intercept)</code> is the fitted area at zero mass.</caption>
 <thead>
 <tr class="header">
 <th style="text-align: left;">Term</th>
@@ -486,72 +478,96 @@ lines appear in the rendered Word document.
 </table>
 </div>
 </div>
-<p>Read the calibration equation off Table 2: predicted area equals the <code>(Intercept)</code> estimate plus the <code>mass_g</code> estimate times paper mass. In words, every additional gram of paper corresponds to about the <code>mass_g</code> estimate in cm² of area.</p>
-<div class="callout callout-style-simple callout-note">
-<div class="callout-body d-flex">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-body-container">
-<p>Every number in Tables 1 and 2 is computed from the data when the document renders — nothing was typed by hand. Change the data file and re-render, and the tables update themselves. That is the difference from the <code>.R</code> script, where you would copy each number into Word yourself.</p>
-</div>
-</div>
-</div>
+<p>Read the equation off Table 2: predicted area equals the <code>(Intercept)</code> estimate plus the <code>mass_g</code> estimate times the mass. In words, each additional gram of this paper stock adds about the <code>mass_g</code> estimate in cm² of area. The slope’s <em>p</em>-value tests whether mass predicts area at all; the intercept is not distinguishable from zero, which is what physics says it should be — paper with no mass has no area.</p>
 <section id="the-calibration-curve" class="level2">
 <h2 class="anchored" data-anchor-id="the-calibration-curve">The calibration curve</h2>
 <div class="cell">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="regression_analysis_report_files/figure-html/calibration-plot-1.png" class="img-fluid figure-img" alt="Scatter plot of paper area against mass with a dark blue least-squares line and light blue 95 percent confidence band; the subtitle reports the fitted equation and R-squared. Points cluster tightly around the line, narrowing the band toward the middle of the mass range." width="480"></p>
-<figcaption>Figure 1. Paper area vs.&nbsp;mass with the least-squares line and 95% confidence band.</figcaption>
+<p><img src="regression_analysis_report_files/figure-html/calibration-plot-1.png" class="img-fluid figure-img" alt="Scatter plot of paper area against paper mass with a straight fitted regression line and a narrow confidence band. The points sit almost exactly on the line." width="480"></p>
+<figcaption>Figure 1. Paper area against mass, with the fitted regression line and its 95% confidence band.</figcaption>
 </figure>
 </div>
 </div>
 </div>
 </section>
-<section id="assumption-checks" class="level2">
-<h2 class="anchored" data-anchor-id="assumption-checks">Assumption checks</h2>
+<section id="residual-checks" class="level2">
+<h2 class="anchored" data-anchor-id="residual-checks">Residual checks</h2>
 <div class="cell">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="regression_analysis_report_files/figure-html/diagnostic-plots-1.png" class="img-fluid figure-img" alt="Four base R diagnostic plots for the calibration linear model in a two by two grid: residuals versus fitted values, a normal Q-Q plot of the residuals, a scale-location plot, and a residuals versus leverage plot." width="480"></p>
-<figcaption>Figure 2. Base R diagnostic plots for the fitted model — residuals vs.&nbsp;fitted, normal Q-Q, scale-location, and residuals vs.&nbsp;leverage. A random band with no funnel or curve in panel 1 supports linearity and equal variance.</figcaption>
+<p><img src="regression_analysis_report_files/figure-html/diagnostic-plots-1.png" class="img-fluid figure-img" alt="Four base R diagnostic plots for the paper calibration model in a two by two grid: residuals versus fitted values showing a funnel that widens to the right, a normal Q-Q plot with points curving away at both ends, a scale-location plot rising to the right, and residuals versus leverage." width="480"></p>
+<figcaption>Figure 2. Base R diagnostic plots for the fitted model — residuals vs.&nbsp;fitted, normal Q-Q, scale-location, and residuals vs.&nbsp;leverage.</figcaption>
 </figure>
 </div>
 </div>
 </div>
+<p>Panel 1 of Figure 2 shows a funnel rather than a flat cloud: the residuals get larger as the squares get larger. Table 3 puts numbers on it.</p>
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
-<caption>Table 3. Shapiro–Wilk normality test on the regression residuals.</caption>
+<caption>Table 3. The largest miss at each square size. The equal-variance assumption does not hold: a balance has percentage error, not fixed error, so bigger squares miss by more.</caption>
 <thead>
 <tr class="header">
-<th style="text-align: right;">W</th>
-<th style="text-align: right;">p-value</th>
-<th style="text-align: left;">Method</th>
+<th style="text-align: right;">Known area (cm²)</th>
+<th style="text-align: right;">Largest residual (cm²)</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: right;">0.677</td>
-<td style="text-align: right;">9.42496e-15</td>
-<td style="text-align: left;">Shapiro-Wilk normality test</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.35</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.59</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">0.65</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">0.96</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">64</td>
+<td style="text-align: right;">1.30</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">3.09</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">225</td>
+<td style="text-align: right;">2.00</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">400</td>
+<td style="text-align: right;">7.28</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">500</td>
+<td style="text-align: right;">7.39</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">567</td>
+<td style="text-align: right;">8.76</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<p>The Shapiro–Wilk result is in Table 3. Read <em>W</em> and its <em>p</em>-value there, then compare that verdict with the normal Q-Q panel of Figure 2.</p>
+<p>The equal-variance assumption is therefore violated at the large-square end of the range, and confidence intervals there should be treated with caution. The leaf tracings we apply the curve to below weigh 0.1–0.4 g, at the tight end of the line, where a typical miss is a fraction of a cm².</p>
 </section>
 <section id="predicting-leaf-area" class="level2">
 <h2 class="anchored" data-anchor-id="predicting-leaf-area">Predicting leaf area</h2>
-<!-- 🔮 PREDICT before you Render: which tracing gives the larger predicted area — the 0.092 g sunny or the 0.138 g shady? Guess the two areas, then render. -->
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
-<caption>Table 4. Predicted leaf area for two example paper tracings, from the calibration equation.</caption>
+<caption>Table 4. Predicted leaf area for two example paper tracings.</caption>
 <thead>
 <tr class="header">
 <th style="text-align: left;">Tracing</th>
@@ -574,12 +590,42 @@ lines appear in the rendered Word document.
 </table>
 </div>
 </div>
-<p>Table 4 applies the calibration equation to two example tracings. The heavier shady-side tracing has the larger predicted area — consistent with our earlier finding that shady leaves are larger.</p>
+<p>The same <code>predict()</code> call converts a whole column at once. Table 5 applies the calibration to every leaf in our class data set, then summarizes the predicted areas by side of the tree.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Table 5. Predicted leaf area by side of the tree. Leaves whose tracings were never weighed are excluded.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Side</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">Mean area (cm²)</th>
+<th style="text-align: right;">SD (cm²)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">shady</td>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">36.7</td>
+<td style="text-align: right;">5.8</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">sunny</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">36.0</td>
+<td style="text-align: right;">11.5</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Table 5 reports the predicted areas in the units we wanted. The two sides differ by about a square centimetre — the same story the Welch’s t-test told us about leaf mass.</p>
 </section>
 </section>
 <section id="discussion" class="level1">
 <h1>Discussion</h1>
-<p><em>Write one short paragraph here.</em> Did the calibration fit well (look at R² and Figure 1)? Did the residual plot and Shapiro–Wilk support the assumptions? Why is working in <strong>area</strong> (cm²) more biologically meaningful than raw <strong>mass</strong> (g) when comparing sunny and shady leaves? This is where you paste the results paragraph you drafted in the worksheet.</p>
+<p><em>Write one short paragraph here.</em> Did the calibration fit well — what do R² in Table 1 and Figure 1 say? What did the residual checks in Figure 2 and Table 3 show, and what does that mean for how far you would trust the curve? Why is working in <strong>area</strong> (cm²) more useful to a reader than raw tracing <strong>mass</strong> (g) when comparing sunny and shady leaves? This is where you paste the results paragraph you wrote in the activity.</p>
 </section>
 <section id="references" class="level1">
 <h1>References</h1>

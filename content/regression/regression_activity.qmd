@@ -1,15 +1,18 @@
 ---
 order: 11
 week: 6
-title: "Worksheet 11 — Linear Regression"
-subtitle: "Building a calibration curve to predict leaf area from paper tracing mass"
+title: "Activity 11 — Linear Regression"
+subtitle: "Fit a line, read the output, and turn a tracing mass into a leaf area"
 author: "Bill Perry"
 date: today
 
 type: activity
 description: >
-  Doing linear regressions and plotting
-categories: [r-basics, project-setup]
+  Hands-on companion to the Regression lecture: fit a calibration curve with
+  lm(), read the summary() output, check the residuals, and use predict() to
+  convert tracing masses into leaf areas. Students hand in the finished
+  script with their written answers.
+categories: [tidyverse, descriptive-stats]
 
 format:
   html: default
@@ -20,704 +23,331 @@ execute:
   message: false
 ---
 
-# Regression — Predicting Leaf Area
-
-### Recap from Worksheets 07, 09–10
-
-- **Quarto** — one `.qmd` file holds your writing *and* your code and renders to Word, HTML, or PowerPoint
-- **Three ingredients** — YAML front matter, Markdown text, and uniquely **named** code chunks
-- **Reproducibility** — every number and figure is *computed*, never copied by hand
-- **Inline code** — a live result drops straight into a sentence with `` `r ` ``
-- **Carried forward (Worksheets 09–10)** — shady leaves were significantly *heavier* than sunny leaves (Welch's t-test, *p* \< 0.001)
-- **But:** weight in grams tells us about *mass* — not directly about *leaf surface area*
+# In-class Activity 11: Linear Regression
 
 ### Today's Objectives
 
-1.  Load and inspect the paper calibration data
-2.  Make a scatter plot and visually assess linearity
-3.  Fit a linear regression with `lm()` and read every line of `summary()`
-4.  Extract slope, intercept, and R² from the model
-5.  Check all four regression assumptions (linearity, equal variance, normality of residuals)
-6.  Use the calibration equation to **predict leaf area** from a tracing mass
-7.  Use `predict()` with confidence and prediction intervals
-8.  Write a complete results paragraph following W&S Chapter 17 conventions
-
-> # **How to use this worksheet**
->
-> - Work through each part in order. Type the code into a new R script in Positron and run it line by line.
->   - Code blocks marked **▶ Run this** should be executed as written.
->
->   - Blocks marked **✏️ Your turn** ask you to write, modify, or interpret.
->
->   - The **Going further** section is optional.
-
-::: callout-note
-## 🔮 Predict before you run — and type, don't paste
-
-Before each **▶ Run this** block, cover the output and *predict* what R will print. Then type the code in yourself rather than pasting it.
-
-A regression handout has a lot of numbers in it — slope, intercept, R², a t-value, a p-value — and it's tempting to just read them off the screen. Committing to a guess about one of them first (is R² closer to 0.5 or 1? is the slope positive?) gives you a reason to actually look at the output instead of skimming past it. Typing the formula by hand also has a side benefit: it's how you catch that you flipped `area_cm2 ~ mass_g` backwards, or typed `newdata` with the wrong column name — mistakes that copy-paste would have hidden.
-:::
+1.  Fit a linear regression with `lm(Y ~ X, data)`
+2.  Read the slope, intercept, *p*-value, and R² **off the `summary()` output**
+3.  Draw the fitted line with `geom_smooth(method = "lm")`
+4.  Check the residuals with `plot(model)`
+5.  Use `predict()` to turn a tracing mass into a leaf area — one value, then a whole column
+6.  Write a standard regression results sentence
 
 ::: callout-tip
-## 📂 The same analysis, two ways — download both and compare
+## 📂 Files for today
 
-Today you get to *feel* the difference the Quarto intro talked about. These two files do the **exact same regression** — one as a plain script, one as a report:
-
-- **[`regression_analysis_script.R`](regression_analysis_script.R)** — the analysis as a classic **R script**. Great for *running* the numbers. To share results you would copy them into a document by hand.
-- **[`regression_analysis_report.qmd`](regression_analysis_report.qmd)** — the analysis as a **Quarto report**. Same code, but wrapped in writing, with figures and numbers that render straight into a Word document.
-
-Open them **side by side** in Positron. As you work through this worksheet, notice which one you would rather hand in.
+- **Skeleton script:** [`11_regression_skeleton.R`](scripts/11_regression_skeleton.R) → save it as `scripts/11_regression.R`.
+- **Paper calibration data:** [`paper_area_weights.xlsx`](data/paper_area_weights.xlsx) → `data/`.
+- **Leaf data:** [`2026_09_03_data_sci_leaf_area.xlsx`](data/2026_09_03_data_sci_leaf_area.xlsx) → `data/` (you should already have it).
 :::
+
+::: callout-important
+## What you hand in
+
+- The **code is already written** in the skeleton — run it chunk by chunk as you work through Parts 1–9 below.
+- What gets graded is **your answers**, typed into the **Q** boxes in the script.
+- Hand in `scripts/11_regression.R`. Run it top to bottom (**Ctrl/Cmd + Shift + Enter**) first — it must run with no errors.
+
+Answer boxes look like this — type after `ANSWER:` and start every line with `#`:
+
+``` r
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Q3. What is the slope, with units?
+# ANSWER: 130.52 cm2 per gram of paper
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+```
+:::
+
+Keep the plots plain today — no labels, colors, or themes. The goal is to **read** them.
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 1 — Set up the data *(after lecture Chunk 1)*
+> ## 🧩 Chunk 2 — Fit it and read it *(after lecture Chunk 2)*
 >
-> Parts 1–3: load the paper data, inspect it, and make the scatter plot.
+> Parts 1–4: load the paper data, plot it, fit the line, read the output.
 
 # Part 1 · Load libraries and data
 
-### Libraries
-
-**▶ Run this at the top of your script:**
+**▶ Run this** (already at the top of your skeleton):
 
 ``` r
-# Load packages at the top — always ----------------------
-library(readxl)      # reading Excel files
-library(tidyverse)   # data manipulation + ggplot2
-library(skimr)       # fast dataset overview
-```
+# Load libraries ---------------------------------------
+library(readxl)      # read Excel files
+library(tidyverse)   # dplyr + ggplot2
+library(janitor)     # clean_names()
 
-### The calibration dataset
-
-The file `paper_area_weights.xlsx` contains 118 paper squares of **known area** (1–567 cm²) with their measured masses in grams. We will fit a regression to convert mass → area, then apply it to leaf tracings.
-
-**▶ Run this:**
-
-``` r
-# Load the paper calibration data -----------------------
+# Load the paper calibration data ----------------------
 paper_df <- read_excel("data/paper_area_weights.xlsx")
+
+glimpse(paper_df)
 ```
 
-✏️ **Your turn:** Run `dim(paper_df)`. How many rows and columns does the dataset have?
+118 paper squares. `area_cm2` is the **known** area of each square; `mass_g` is what it weighed.
 
-``` r
-# Write your code here:
-```
-
-```
-Rows:
-Columns:
-Column names and their roles:
-  area_cm2 →  (response / explanatory / circle one)
-  mass_g   →  (response / explanatory / circle one)
-```
+✏️ **Q1:** Which column is the explanatory variable (X) and which is the response (Y)? Why that direction, given that we want leaf areas?
 
 ------------------------------------------------------------------------
 
-# Part 2 · Inspect the data
+# Part 2 · Plot it before you fit it
 
 **▶ Run this:**
 
 ``` r
-# Quick overview with skim --------------------------------
-skim(paper_df)
-```
-
-``` r
-# How many squares were measured at each area level? -----
+# Scatter plot of area against mass --------------------
 paper_df %>%
-  group_by(area_cm2) %>%
-  summarize(
-    n          = n(),
-    mean_mass  = round(mean(mass_g), 5),
-    min_mass   = round(min(mass_g),  5),
-    max_mass   = round(max(mass_g),  5)
-  )
-```
-
-✏️ **Your turn:** Fill in the table from the output above:
-
-```
-area_cm2   mean mass (g)
---------   -------------
-1
-4
-16
-64
-100
-400
-```
-
-✏️ **Your turn:** Is there a clear pattern — as area increases, what happens to mass? Is this what you expected from your knowledge of paper?
-
-```
-Your answer:
-```
-
-------------------------------------------------------------------------
-
-# Part 3 · First scatter plot
-
-**▶ Run this:**
-
-``` r
-# Scatter plot — check the relationship visually ---------
-scatter_09_plot <- paper_df %>%
   ggplot(aes(x = mass_g, y = area_cm2)) +
-  geom_point(alpha = 0.5, size = 2) +
-  labs(
-    title = "Paper Mass vs. Known Area",
-    x     = "Mass (g)",
-    y     = "Area (cm²)"
-  ) +
-  theme_minimal()
-
-scatter_09_plot
+  geom_point()
 ```
 
-✏️ **Your turn:** Describe the relationship. Is it linear? Is the variance (spread of points) roughly constant across the range of mass values?
+Look for three things: is it **straight**, is the **scatter the same all the way along**, and is any point **off on its own**?
 
-```
-Shape of relationship (linear / curved):
-Variance (constant / increases / decreases with X):
-Any obvious outliers?  Y / N
-```
-
-✏️ **Your turn:** In this study, which variable is the explanatory (X) and which is the response (Y)? Why does that direction make sense for our goal of predicting leaf area?
-
-```
-Explanatory (X):
-Response (Y):
-Reason for this direction:
-```
-
-> 💡 **Key idea:** You could measure leaf area directly with a planimeter or a scanner, but a balance is what's sitting on the lab bench. That's the whole point of a calibration curve — trade a hard measurement (area) for an easy one (mass) once you've established that the two move together.
+✏️ **Q2:** Straight or curved? Any obvious outlier? Is a straight line the right tool here?
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 2 — Fit & read the model *(after lecture Chunk 2)*
->
-> Parts 4–7: fit `lm()`, decode `summary()`, pull the equation and R².
-
-# Part 4 · Fit the regression with `lm()`
-
-> 🔮 **Predict first:** area rises with mass. Before you read `summary()` — will the slope be positive or negative, and roughly how many cm² per gram?
+# Part 3 · Fit the regression
 
 **▶ Run this:**
 
 ``` r
-# Fit the least-squares linear model --------------------
-# lm(response ~ predictor, data = data_frame)
+# Fit the regression line ------------------------------
 paper_lm_model <- lm(area_cm2 ~ mass_g, data = paper_df)
 ```
 
+Nothing prints — `lm()` stores the answer in a model object. The formula reads `Y ~ X`, "area **is predicted by** mass."
+
+**▶ Run this:**
+
 ``` r
-# Full summary — every number matters -------------------
+# Read the model ---------------------------------------
 summary(paper_lm_model)
 ```
 
-✏️ **Your turn:** Copy the Coefficients table output here:
-
-```
-Paste the Coefficients section of the summary() output:
-```
+> ⚠️ **Watch out!** Flip the formula to `lm(mass_g ~ area_cm2)` and R runs happily — it just answers a question you didn't ask. The response always goes on the **left** of `~`.
 
 ------------------------------------------------------------------------
 
-# Part 5 · Decode the `summary()` output line by line
+# Part 4 · Read the `summary()` output
 
-✏️ **Your turn:** Match each piece of output to its meaning. Fill in the blanks:
+Everything you need is in four places. Find each one in your output.
 
-```
-(Intercept) estimate = _____
-  → This is "a" in Ŷ = a + bX.
-    It is the predicted area when mass = _____.
-    Does this make physical sense? (a piece of
-    paper with zero mass has zero area)  Y / N
+| What you want | Where it is |
+|---------------------------|---------------------------------------------|
+| **slope** (*b*) | Coefficients table, `mass_g` row, `Estimate` column |
+| **intercept** (*a*) | Coefficients table, `(Intercept)` row, `Estimate` column |
+| ***p*****-value for the slope** | Coefficients table, `mass_g` row, `Pr(>|t|)` column |
+| **R²** | `Multiple R-squared` near the bottom |
+| **F and df** | the `F-statistic:` line at the very bottom |
 
-mass_g estimate = _____
-  → This is "b" (the slope).
-    It means: for every additional 1 gram
-    of paper, area increases by _____ cm².
-    Biologically, 1 gram of this paper
-    stock has _____ cm² of surface area.
+: {tbl-colwidths="[35,65]"}
 
-Std. Error for mass_g = _____
-  → The uncertainty in the slope estimate.
+✏️ **Q4a:** Write down the slope and say what it means **with units** — finish this sentence: "every extra 1 gram of this paper is another \_\_\_ cm² of area."
 
-t value for mass_g = _____
-  → slope / SE.  This tests H₀: β = _____.
+✏️ **Q4b:** Write down the intercept. Its *p*-value is 0.126 — not significant. Why is that the *right* answer physically? (What is the area of a piece of paper that weighs nothing?)
 
-Pr(>|t|) for mass_g = _____
-  → The p-value for the slope test. Is
-    it significant at α = 0.05?  Y / N
+✏️ **Q4c:** Write the fitted equation: `area = ____ + ____ × mass`
 
-Multiple R-squared = _____
-  → _____ % of the variation in area is explained by mass.
+✏️ **Q4d:** Write down the slope's *p*-value and R². What does each one tell you — and why are they answering different questions?
 
-F-statistic = _____  on _____ and _____ df
-  → Overall test of the model.  p = _____
-```
-
-> 📖 **Whitlock & Schluter §17.3 p. 551–553:** The slope is tested with a t-statistic: t = b / SE_b, with df = n − 2. If H₀: β = 0 is rejected, mass significantly predicts area.
+> 💡 **Key idea:** R² says *how tight* the fit is. The *p*-value says *whether the slope is real*. A relationship can be real and still scattered — that is most of biology.
 
 ------------------------------------------------------------------------
 
-# Part 6 · Extract the calibration equation
-
-**▶ Run this:**
-
-``` r
-# Pull intercept and slope from the model ---------------
-a_intercept <- coef(paper_lm_model)[1]
-b_slope     <- coef(paper_lm_model)[2]
-
-cat("Intercept (a) =", round(a_intercept, 4), "cm²\n")
-cat("Slope (b)     =", round(b_slope, 2), "cm²/g\n")
-```
-
-✏️ **Your turn:** Write the calibration equation for predicting area from mass:
-
-```
-area_cm2 = _____ × mass_g + _____
-```
-
-✏️ **Your turn:** Use the equation by hand to predict the area of a paper tracing that weighs 0.120 g. Show your work:
-
-```
-area = _____ × 0.120 + _____
-     = _____  cm²
-```
-
-------------------------------------------------------------------------
-
-# Part 7 · Extract and interpret R²
-
-> 🔮 **Predict first:** For uniform paper, predict R² — near 0, 0.5, or 1? Write your guess before you run it.
-
-**▶ Run this:**
-
-``` r
-# Pull R-squared from the model summary -----------------
-r2_val <- summary(paper_lm_model)$r.squared
-cat("R² =", round(r2_val, 6), "\n")
-```
-
-✏️ **Your turn:** What does R² = 0.9999 mean in plain language for our calibration?
-
-```
-Your answer:
-```
-
-✏️ **Your turn:** In ecology, you might see regression results with R² = 0.45. Is that a useful result? What does it mean?
-
-```
-Your answer:
-```
-
-> 📖 **Whitlock & Schluter §17.4 p. 555:** *"R² measures the fraction of variation in Y that is explained by X."* A high R² indicates a tight fit; a low R² indicates high scatter around the line — but a low R² does not mean the relationship is not real or useful.
-
-------------------------------------------------------------------------
-
-> ## 🧩 Chunk 3 — Visualize & check assumptions *(after lecture Chunk 3)*
+> ## 🧩 Chunk 3 — Plot it, check it, use it *(after lecture Chunk 3)*
 >
-> Parts 8–10: plot the curve, then check the residual and QQ/Shapiro assumptions.
+> Parts 5–9: draw the line, check the residuals, predict, report.
 
-# Part 8 · Plot the calibration curve
+# Part 5 · Draw the fitted line
 
 **▶ Run this:**
 
 ``` r
-# Regression line with 95% confidence band --------------
-calibration_plot <- paper_df %>%
+# Scatter plot with the fitted line --------------------
+paper_df %>%
   ggplot(aes(x = mass_g, y = area_cm2)) +
-  geom_point(alpha = 0.5, size = 1.8) +
-  geom_smooth(method = "lm", se = TRUE,
-              color = "darkblue", fill = "lightblue") +
-  labs(
-    title    = "Paper Calibration Curve",
-    subtitle = paste0("area = ", round(b_slope, 2),
-                      " × mass + ", round(a_intercept, 3),
-                      "  |  R² = ", round(r2_val, 4)),
-    x        = "Paper Mass (g)",
-    y        = "Area (cm²)"
-  ) +
-  theme_minimal()
-
-calibration_plot
+  geom_point() +
+  geom_smooth(method = "lm")
 ```
 
-✏️ **Your turn:** Where is the shaded confidence band *narrowest*? Where is it *widest*? Why does the width vary?
+`geom_smooth(method = "lm")` adds the regression line plus a grey 95% confidence band. Without `method = "lm"` you get a wiggly curve instead of a straight line.
 
-```
-Narrowest at:
-Widest at:
-Why it varies:
-```
-
-### Save the plot
-
-**▶ Run this:**
-
-``` r
-ggsave("figures/paper_calibration_curve.png",
-       plot   = calibration_plot,
-       width  = 5, height = 5, units = "in", dpi = 300)
-```
+✏️ **Q5:** Where is the grey band widest, and why? (Think about where the data are thickest.)
 
 ------------------------------------------------------------------------
 
-# Part 9 · Check assumptions — the base R diagnostic plots
+# Part 6 · Check the residuals
 
-> 🔮 **Predict first:** `plot()` on a fitted model gives four panels at once. One is a QQ plot of the residuals — what do you predict the other three will show?
+A **residual** is one point's miss: observed − predicted. `plot()` on a fitted model draws four residual plots at once — no extra code needed.
 
 **▶ Run this:**
 
 ``` r
-# plot() on an lm object gives all four diagnostics -----
+# All four residual plots in one call ------------------
 par(mfrow = c(2, 2))
 plot(paper_lm_model)
 ```
 
-✏️ **Your turn:** Describe panel 1 (Residuals vs Fitted). Do the points form a random cloud around zero, or is there a pattern?
+| Panel | Name                  | What it checks                 |
+|-------|-----------------------|--------------------------------|
+| 1     | Residuals vs Fitted   | straight line? equal scatter?  |
+| 2     | Normal Q-Q            | are the misses bell-shaped?    |
+| 3     | Scale-Location        | equal scatter, another view    |
+| 4     | Residuals vs Leverage | is one point running the show? |
 
-```
-Pattern or random cloud?:
-Any evidence of non-linearity (curved pattern)?  Y / N
-Any evidence of unequal variance
-(funnel shape in panel 1 or 3)?  Y / N
-```
+: {tbl-colwidths="[12,38,50]"}
 
-> ⚠️ **Watch out!** A funnel shape (residuals getting larger at higher fitted values) means variance is *not* constant — a violation of the equal variance assumption. A curved pattern means the relationship is not linear.
->
-> 📖 **Whitlock & Schluter §17.5 p. 559 (Figure 17.5-4):** *"A residual plot should show a roughly symmetric cloud of points with no pattern."*
+**Panel 1 first.** A flat shapeless cloud is good. A **curve** means the relationship isn't straight. A **funnel** means the scatter grows as Y grows.
 
-------------------------------------------------------------------------
+✏️ **Q6a:** Describe panel 1. Flat cloud, curve, or funnel?
 
-# Part 10 · Confirming normality — Shapiro-Wilk
-
-**▶ Run this:**
+**▶ Run this** to see the same thing as numbers:
 
 ``` r
-# Shapiro-Wilk test on residuals — NOT on raw data -----
-shapiro.test(residuals(paper_lm_model))
-```
-
-✏️ **Your turn:** Record the Shapiro-Wilk result:
-
-```
-W = _____   p = _____
-Decision (normal / not normal):
-```
-
-✏️ **Your turn:** Does the Shapiro-Wilk decision agree with what panel 2 (Normal Q-Q) of `plot(paper_lm_model)` showed you?
-
-```
-Your answer:
-```
-
-✏️ **Your turn:** An important distinction — in regression, normality is checked on the **residuals**, not on Y or X directly. Why does that matter?
-
-```
-Your answer:
-```
-
-------------------------------------------------------------------------
-
-> ## 🧩 Chunk 4 — Predict & report *(after lecture Chunk 4)*
->
-> Parts 11–12: predict leaf area from tracing mass, then write the results paragraph.
-
-# Part 11 · Predict leaf area from tracing mass
-
-> 🔮 **Predict first:** sunny tracing 0.092 g, shady 0.138 g. Which predicts the larger area? Does that match "shady leaves are bigger"? Predict before running.
-
-### Method 1 — Direct calculation
-
-**▶ Run this:**
-
-``` r
-# Direct calculation using the calibration equation ----
-mass_sunny <- 0.092   # g — example sunny leaf tracing
-mass_shady <- 0.138   # g — example shady leaf tracing
-
-area_sunny <- b_slope * mass_sunny + a_intercept
-area_shady <- b_slope * mass_shady + a_intercept
-
-cat("Sunny tracing:", mass_sunny, "g →",
-    round(area_sunny, 2), "cm²\n")
-cat("Shady tracing:", mass_shady, "g →",
-    round(area_shady, 2), "cm²\n")
-```
-
-✏️ **Your turn:** Does the shady leaf have a larger predicted area? In Worksheets 09–10 we found shady leaves were significantly *heavier*. Does a larger predicted area match that finding? What does this tell you about the relationship between leaf weight and leaf area?
-
-```
-Sunny predicted area:
-Shady predicted area:
-Larger side:
-Does larger area match the heavier
-weight from Worksheets 09–10?  Y / N
-What does this tell you about the relationship
-between weight and area in leaves?
-```
-
-### Method 2 — Using `predict()` with intervals
-
-**▶ Run this:**
-
-``` r
-# predict() gives uncertainty around predictions ------
-new_masses <- tibble(mass_g = c(0.092, 0.138))
-
-# 95% confidence interval for the MEAN area
-predict(paper_lm_model,
-        newdata  = new_masses,
-        interval = "confidence") %>%
-  as_tibble() %>%
-  mutate(mass_g = c(0.092, 0.138), .before = 1) %>%
-  round(3)
-```
-
-``` r
-# 95% prediction interval for a SINGLE observation
-predict(paper_lm_model,
-        newdata  = new_masses,
-        interval = "prediction") %>%
-  as_tibble() %>%
-  mutate(mass_g = c(0.092, 0.138), .before = 1) %>%
-  round(3)
-```
-
-✏️ **Your turn:** The prediction interval is wider than the confidence interval. In your own words, explain why — what additional source of uncertainty does a prediction interval capture?
-
-```
-Your answer:
-```
-
-> 📖 **Whitlock & Schluter §17.2 p. 549:** *"Confidence bands measure the precision of the predicted mean Y for each value of X. Prediction intervals measure the precision of the predicted single Y-values for each X."*
-
-------------------------------------------------------------------------
-
-# Part 12 · Write a scientific results paragraph
-
-✏️ **Your turn:** Write a complete results paragraph using the information below. Follow the format from Lecture 11.
-
-**Information to include:**
-
-- What the regression tested
-- F-statistic, df₁, df₂, and p-value (from the F-statistic line in `summary()`)
-- R²
-- The calibration equation (slope and intercept)
-- 95% confidence interval for the slope (use `confint(paper_lm_model)`)
-- Brief mention of assumption checks
-
-``` r
-# Get the 95% CI for the slope -------------------------
-confint(paper_lm_model)
-```
-
-```
-Write your results paragraph here:
-```
-
-::: callout-tip
-## ✍️ Now put it in a report
-
-Open **[`regression_analysis_report.qmd`](regression_analysis_report.qmd)**. Its Discussion section already pulls the slope, R², and *p*-value into the sentences with inline code. Paste your results paragraph in, press **Render**, and you have a Word document — no numbers copied by hand.
-:::
-
-------------------------------------------------------------------------
-
-# Part 13 · Review and checkpoint
-
-At this point you should be able to:
-
-- [ ] Identify the response (Y) and explanatory (X) variables for a regression problem
-- [ ] Make a scatter plot and assess linearity visually
-- [ ] Fit a linear regression with `lm(Y ~ X, data)` and call `summary()`
-- [ ] Extract slope, intercept, and R² from the model
-- [ ] Interpret slope, intercept, t-value, p-value, and R² in biological terms
-- [ ] Run `plot(model)` and read all four diagnostic panels
-- [ ] Check the residuals vs fitted panel for linearity and equal variance
-- [ ] Check the Normal Q-Q panel and Shapiro-Wilk on **residuals** for normality
-- [ ] Use `coef(model)` to write the prediction equation
-- [ ] Use `predict(model, newdata, interval = "prediction")` for predictions with uncertainty
-- [ ] Write a complete scientific results paragraph with F, df, p, R², and equation
-
-✏️ **Your turn — before you move on:** Run your entire script with **Ctrl/Cmd + Shift + Enter**. Does it run from top to bottom without errors?
-
-```
-Ran cleanly?  Y / N
-If not, what error appeared:
-```
-
-------------------------------------------------------------------------
-
-# Part 14 · Going further
-
-> This section is optional — work through it if you finish early or want to push deeper.
-
-### Explore the fit at each area group
-
-**▶ Try this:**
-
-``` r
-# How well does the model fit within each area group? --
+# How big are the misses at each square size? ---------
 paper_df %>%
-  mutate(
-    predicted = fitted(paper_lm_model),
-    residual  = residuals(paper_lm_model)
-  ) %>%
+  mutate(residual = residuals(paper_lm_model)) %>%
   group_by(area_cm2) %>%
+  summarize(biggest_miss = round(max(abs(residual)), 2))
+```
+
+✏️ **Q6b:** How big is the worst miss for a 1 cm² square? For a 567 cm² square? Which assumption does that pattern break?
+
+✏️ **Q6c:** R² is 0.9999 — the best fit you will ever see — and the residual plot still has a problem. In your own words, how can both be true at once?
+
+> 💡 **Key idea:** Our leaf tracings weigh 0.1–0.4 g, down at the tight end of the line where a typical miss is a fraction of a cm². The calibration is fine for the job we are using it for. Fixing the funnel properly is a graduate topic — **noticing it and saying so** is the undergraduate job.
+
+------------------------------------------------------------------------
+
+# Part 7 · Predict one tracing
+
+**▶ Run this:**
+
+``` r
+# Predict the area of one leaf tracing ----------------
+one_tracing <- tibble(mass_g = 0.138)
+
+predict(paper_lm_model, newdata = one_tracing)
+```
+
+**▶ Run this** to add a 95% interval:
+
+``` r
+# Two tracings, with 95% prediction intervals ---------
+two_tracings <- tibble(mass_g = c(0.092, 0.138))
+
+predict(paper_lm_model,
+        newdata = two_tracings,
+        interval = "prediction")
+```
+
+- `fit` is the prediction; `lwr` and `upr` are the 95% range
+- `interval = "confidence"` would give the range for the **average** tracing of that mass — narrower. For **one real leaf**, use `"prediction"`.
+
+> ⚠️ **Watch out!** `newdata` must use the **same column name** as the model. The model was built on `mass_g`, so the column must be called `mass_g`. Call it `mass` and R stops with *"object 'mass_g' not found."*
+
+✏️ **Q7:** Record the predicted area for the 0.138 g tracing and its 95% prediction interval. Which tracing is predicted to be larger, and does that make sense?
+
+------------------------------------------------------------------------
+
+# Part 8 · Convert a whole column of tracings
+
+`paper_mass_g` in the leaf data is the mass of each leaf's paper tracing. Now we turn all of them into areas at once.
+
+**▶ Run this:**
+
+``` r
+# Load our leaf data ----------------------------------
+leaf_df <-
+  read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names()
+
+# Turn every tracing mass into an area ----------------
+leaf_df <- leaf_df %>%
+  mutate(leaf_area_cm2 =
+           predict(paper_lm_model,
+                   newdata = tibble(mass_g = paper_mass_g)))
+
+leaf_df %>%
+  select(teams, shade, mass_g, paper_mass_g, leaf_area_cm2)
+```
+
+Same rule as Part 7: `predict()` wants a column called `mass_g`, so we hand it `tibble(mass_g = paper_mass_g)` — our tracing masses, under the name the model knows.
+
+**▶ Run this:**
+
+``` r
+# Predicted leaf area by side -------------------------
+leaf_df %>%
+  ggplot(aes(x = shade, y = leaf_area_cm2)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.15)
+```
+
+``` r
+# Mean predicted area per side ------------------------
+leaf_df %>%
+  group_by(shade) %>%
   summarize(
-    n             = n(),
-    mean_resid    = round(mean(residual), 4),
-    max_abs_resid = round(max(abs(residual)), 4)
+    n = sum(!is.na(leaf_area_cm2)),
+    mean_area = mean(leaf_area_cm2, na.rm = TRUE)
   )
 ```
 
-✏️ **Your turn:** Are the residuals larger at bigger area values? What does that pattern (or lack of it) tell you about the equal-variance assumption?
+✏️ **Q8a:** Record the mean predicted area for each side. Does that match what the t-test told you about leaf **mass** back in Activities 9–10?
 
-```
-Your observation:
-```
+✏️ **Q8b:** Some leaves have `NA` for `leaf_area_cm2`. Why? (Look at `paper_mass_g` for that team.) Is R right to leave them missing?
 
-### Prediction for a real leaf tracing
+✏️ **Q8c:** Why is "shady leaves are about 1 cm² bigger" a more useful sentence for a reader than "shady leaves weigh 0.02 g more"?
 
-Suppose you traced a leaf onto the same type of paper used in the calibration, cut it out, and weighed it. The tracing weighs **0.175 g**.
+------------------------------------------------------------------------
 
-**▶ Try this:**
+# Part 9 · Write the results sentence
 
-``` r
-# Predict area for your leaf tracing -------------------
-my_tracing <- tibble(mass_g = 0.175)
+Fill in the blanks from your `summary()` output — do not retype numbers from these instructions, read them off your own screen.
 
-predict(paper_lm_model,
-        newdata  = my_tracing,
-        interval = "prediction") %>%
-  round(2)
+```         
+____ was a strong predictor of ____ (linear regression:
+F(___, ___) = ____, p ____, R2 = ____). The fitted
+equation was area = ____ + ____ x mass.
 ```
 
-✏️ **Your turn:** What is the predicted leaf area? What is the 95% prediction interval? How confident are you in this prediction?
+Then add one sentence about the assumptions — what the residual plot showed and what you are being careful about because of it.
 
-```
-Predicted area:
-95% prediction interval:  _____ to _____ cm²
-Confidence in prediction:
-```
+✏️ **Q9:** Write the full results paragraph in your answer box.
 
-### Extrapolation warning
+**Save your script**, then run it top to bottom one last time before you hand it in.
 
-The calibration data ranges from 1 to 567 cm². Suppose a very large leaf tracing weighs 5.2 g.
+::: callout-tip
+## ✍️ Optional — the same analysis as a report
 
-✏️ **Your turn:** Would you trust a prediction for a tracing mass of 5.2 g? Why or why not? (Hint: what is the largest mass in the calibration data?)
+If you'd rather hand this in as a Word document than a script, [`regression_analysis_report.qmd`](regression_analysis_report.qmd) is the same analysis written up in Quarto. Its Discussion section is waiting for the paragraph you just wrote; paste it in and press **Render**. The `.R` script is still what's graded.
+:::
 
-```
-Max mass in calibration data:
-Is 5.2 g within the calibration range?  Y / N
-Should you predict at 5.2 g?  Y / N
-Why:
-```
+------------------------------------------------------------------------
+
+# Extension — out of class (\~20–30 min)
+
+*Turn this in with your script, as `#` comments at the bottom of the file. `paper_df` is the same for everyone — but the object you calibrate is one only **you** have.*
+
+## E1 · Calibrate something only you have
+
+1.  Cut **any shape you like** out of ordinary printer or notebook paper — trace your hand, your initials in bubble letters, a rough outline of your home state.
+2.  Weigh it in grams on a kitchen or postal scale. No scale? Estimate it against a US penny (2.5 g) or a sheet of printer paper (≈4.5 g), and say that's what you did.
+3.  In R, use `paper_lm_model` and `predict(..., interval = "prediction")` to estimate its area from its mass.
+4.  Measure the **real** area the low-tech way: trace it onto graph paper and count squares.
+
+Report, as comments: what the shape was, its mass, the predicted area and interval, your counted area, and whether the counted area landed inside the interval.
+
+## E2 · Explain your own numbers
+
+1.  Using **your** R² from Part 4, say in plain language what fraction of the variation in area the line accounts for — and one thing R² does **not** tell you.
+2.  Your **prediction** interval in E1 is wider than a **confidence** interval would be at the same mass. Why is predicting one specific object riskier than estimating an average?
+3.  Run `max(paper_df$mass_g)`. Suppose you had cut your shape out of cardboard and it weighed 9 g. Why would predicting its area be a different kind of mistake than the prediction you actually made?
 
 > 📖 **Whitlock & Schluter §17.2 p. 550:** *"Extrapolation is the prediction of Y at values of X beyond the range of X-values in the data. Extrapolation is problematic because there is no way to ensure the relationship between X and Y continues to be linear."*
 
-### Connect to Worksheets 09–10
-
-In Worksheets 09–10 you ran a Welch's t-test comparing leaf **weight** (grams) between sunny and shady sides and found a significant difference (*p* \< 0.001). Now you have a calibration curve that converts tracing weight to **area** (cm²) — a more biologically meaningful measurement. You could use the regression equation as a `mutate()` step to add predicted area to a leaf data frame, then redo the t-test on *area* rather than weight.
-
-**▶ Sketch the code (do not necessarily run it — you would need actual tracing masses):**
-
-``` r
-# How you WOULD apply the calibration to the leaf data
-# (assuming trace_df has columns: side, tracing_mass_g)
-
-# trace_df <- trace_df %>%
-#   mutate(predicted_area_cm2 = b_slope
-#   * tracing_mass_g + a_intercept)
-#
-# t.test(predicted_area_cm2 ~ side, data = trace_df,
-#        var.equal = FALSE, alternative = "two.sided")
-```
-
-✏️ **Your turn:** What is the advantage of working in units of **area** (cm²) rather than raw **weight** (g) when comparing sunny vs. shady leaves?
-
-```
-Your answer:
-```
-
 ------------------------------------------------------------------------
 
-# What your `figures/` folder should contain after this worksheet
-
-```
-figures/
-├── paper_calibration_curve.png     ← from Part 8
-```
-
-------------------------------------------------------------------------
-
-# Extension — out of class (~30–40 min)
-
-*Turn this in with your worksheet. `paper_df` is the same shared dataset for
-everyone — this task can't be copied, because the object is one **you** make.*
-
-::: callout-important
-**E2 and E3 must be handwritten** on paper, photographed, and embedded
-(`![caption](my_photo.jpg)`). Typed answers to E2/E3 get **at most half credit,
-even if correct** — I want your own eyeballed prediction and your own reasoning
-about *your own* numbers.
-:::
-
-## E1 · Calibrate an object only you have (4 pts)
-
-1.  Cut **any shape you like** from ordinary printer/notebook paper — trace your
-    hand, your initials in bubble letters, a rough state outline.
-2.  Weigh it in grams (kitchen or postal scale). No scale? Estimate by comparing
-    to a US penny (2.5 g) or a sheet of printer paper (~4.5 g) and say so.
-3.  In R, use `paper_lm_model` and `predict(..., interval = "prediction")` to
-    estimate its area from its mass, with a 95% prediction interval.
-4.  Measure the **real** area low-tech: trace onto graph paper and count squares,
-    or approximate with rectangles/triangles you compute by hand.
-
-Report: the shape, its mass, the predicted area + interval, your hand-measured
-area, and whether the real area fell inside the predicted interval.
-
-## E2 · Predict, then check — ✍️ by hand (3 pts)
-
-**Before running E1's `predict()`**, look only at your calibration plot from the
-in-class part. By hand: mark roughly where your shape's mass sits on the x-axis,
-sketch where the line puts the area, and write your guessed area range and *why*
-(steep/shallow line? near the middle of the data or an edge?). Photograph it.
-Then run `predict()` and add a line: were you close? What did you misjudge?
-
-## E3 · Explain it — ✍️ by hand, with YOUR numbers (3 pts)
-
-1.  Using **your** R² from the in-class fit, explain in plain language what
-    fraction of the variation in area is explained by mass — and what R² does
-    *not* tell you about whether the relationship is real or causal.
-2.  Your **prediction** interval in E1 is wider than a **confidence** interval
-    for the mean area at that mass. Explain why predicting one new object is
-    riskier than estimating an average.
-3.  Using `max(paper_df$mass_g)`, explain why extrapolating to a much heavier
-    object (a 5 g cardboard cutout) is a different kind of risk than the
-    interpolation you did in E1.
-
-------------------------------------------------------------------------
-
-# Getting unstuck
-
-1.  **`lm()` error:** the formula must be `lm(Y ~ X, data)` — response on the left, predictor on the right. Check column names with `names(paper_df)`.
-2.  **`coef()` gives two values:** `coef(model)[1]` is the intercept, `coef(model)[2]` is the slope for the first predictor.
-3.  **`residuals()` vs raw data:** always apply `shapiro.test()` and `plot(model)` to the fitted model — the residuals they check come from `residuals(model)`, not the raw Y column.
-4.  **`predict()` needs a tibble:** `newdata` must be a data frame or tibble with the exact same column name as the predictor (`mass_g`). A typo here is the most common error.
-5.  **`geom_smooth(se = TRUE)` shows confidence band, not prediction interval.** For prediction intervals, use `predict()` manually.
-6.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
-
-> 💡 **Key idea:** Plot it, fit it, check the residuals, interpret the coefficients, then predict — you followed those same five steps for this one calibration curve, and you'll follow them again, mostly unchanged, the first time you run an ANOVA next module.
-
-------------------------------------------------------------------------
-
-*End of the Regression worksheet. Next: downloading and summarizing real climate data.*
+*End of Activity 11. Next: real climate data with `GSODR` — and the same `lm()`, where the slope becomes a rate of change per year.*

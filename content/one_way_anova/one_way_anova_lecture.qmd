@@ -113,9 +113,9 @@ This lecture runs in **two short chunks**. After each chunk you switch to the **
 ::: callout-note
 **✅ Why bother? (the evidence)**
 
--   With three groups instead of two, it is tempting to just read off which box in the plot looks tallest. Committing to a prediction about the F-statistic *before* you see it forces you to reason about between- vs. within-group variance instead of eyeballing a boxplot.
--   Typing `type = "II"` yourself in `Anova()` is what makes you notice it's there — paste the line and you'll never ask why it matters for unbalanced groups.
--   Practicing each assumption check right after it's introduced keeps normality-of-residuals and Levene's test tied to *this* penguin model instead of turning into two more disconnected rules to memorize.
+- With three groups it is tempting to just read off the tallest box. Predicting the F-statistic first makes you reason about between- vs. within-group variance.
+- Typing `type = "II"` yourself in `Anova()` is what makes you notice it is there.
+- Checking each assumption right after it is introduced keeps it tied to *this* penguin model, not two more rules to memorize.
 :::
 ::::
 :::::
@@ -238,13 +238,14 @@ The groups are **unbalanced** (different n per species) — that matters when we
 # Explore First — Boxplot by Species
 
 ::: callout-note
-**🔮 Predict first:** Before the plot renders — do you expect all three species to differ, or just one? Which species do you think is heaviest?
+**🔮 Predict first:** Do you expect all three species to differ, or just one? Which is heaviest?
 :::
 
 ::::: columns
 :::: {.column width="60%"}
 ```{r boxplot-10}
 #| fig-format: png
+#| fig-height: 2.5
 #| fig-alt: "Boxplot of penguin body mass in grams by species (Adelie, Chinstrap, Gentoo) with jittered individual points overlaid, showing Gentoo penguins noticeably heavier than the other two species."
 mass_box_plot <- penguins_df %>%
   ggplot(aes(x = species, y = body_mass_g, fill = species)) +
@@ -402,33 +403,45 @@ differ?") is the same no matter which group you call the baseline.
 # Assumption 1 — Normality of the Residuals
 
 ::: callout-note
-**🔮 Predict first:** `plot(mass_model)` gives the same four panels you saw in the regression lecture. With ~340 penguins instead of 118 near-perfect paper squares, do you expect the Normal Q-Q panel to track the line as tightly?
+**🔮 Predict first:** `plot(mass_model)` gives the same four panels as the regression lecture. With ~340 penguins, will the Normal Q-Q panel track the line as tightly?
 :::
 
 ::::: columns
-:::: {.column width="60%"}
+:::: {.column width="55%"}
 ```{r diagnostic-plots-10}
 #| fig-format: png
-#| fig-width: 6
-#| fig-height: 6
+#| fig-width: 5.5
+#| fig-height: 4.2
 #| fig-alt: "Four base R diagnostic plots for the body mass by species linear model, arranged in a two by two grid: residuals versus fitted values, a normal Q-Q plot of the residuals, a scale-location plot, and a residuals versus leverage plot."
-# Same plot(model) diagnostics as Lecture 11's regression
+# Same plot(model) diagnostics as the regression lecture
 par(mfrow = c(2, 2))
 plot(mass_model)
 ```
+::::
 
+:::: {.column width="45%"}
+- Check normality of the **residuals**, not the raw masses
+- **Panel 2 (Normal Q-Q)** is the main visual tool
+- Panels 1 & 3 double-check equal variance — the same job Levene's does next, from a different angle
+::::
+:::::
+
+# Normality — Shapiro-Wilk as a Companion
+
+::::: columns
+:::: {.column width="55%"}
 ```{r shapiro-10}
+# Shapiro-Wilk on the RESIDUALS, not the raw masses ----
 shapiro.test(residuals(mass_model))
 ```
 ::::
 
-:::: {.column width="40%"}
-- Check normality of the **residuals**, not the raw masses
-- Panel 2 (Normal Q-Q) is the main visual tool; Shapiro-Wilk is a formal companion
-- Panels 1 & 3 double-check equal variance — the same job Levene's does next, from a different angle
+:::: {.column width="45%"}
+- **H₀:** the residuals are normal
+- *p* > 0.05 → no evidence against normality
 
 ::: callout-important
-**Large-sample caution:** with ~340 birds, Shapiro-Wilk flags *tiny* departures as "significant." Trust the **Q-Q panel** — if points track the line, you're fine.
+**Large-sample caution:** with ~340 birds, Shapiro-Wilk flags *tiny* departures as "significant." Trust the **Q-Q panel** — if the points track the line, you're fine.
 :::
 ::::
 :::::

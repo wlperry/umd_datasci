@@ -210,19 +210,20 @@ ice_raw <- read.table(
   rownames_to_column(var = "date") %>%
   as_tibble()
 
-head(ice_raw)
+dim(ice_raw)       # rows x columns - look how WIDE
+ice_raw[1:3, 1:5]  # just the first few columns
 ```
 :::
 
 :::: {.column width="40%"}
 **What's happening here:**
 
-- `read.table()` (base R) handles this better than `read_csv()` since the file isn't comma-separated
-- `na.strings` tells R which placeholder values actually mean "missing"
-- The day-of-winter labels (`Nov-10`, `Nov-11`...) were row names, not a real column — `rownames_to_column()` fixes that
+- `read.table()` beats `read_csv()` here — the file isn't comma-separated
+- `na.strings` says which placeholders really mean "missing"
+- The day labels (`Nov-10`…) were **row names**, not a column — `rownames_to_column()` fixes that
 
 ::: callout-important
-Look at the column names: `X1973`, `X1974`... R adds an `X` because column names can't start with a number!
+Column names `X1973`, `X1974`… — R adds an `X` because a name can't start with a number!
 :::
 ::::
 ::::::
@@ -242,7 +243,7 @@ Read `sup.txt` straight from the web with `read.table()`, turn the row labels in
 # `pivot_longer()` — Collapsing Wide to Long
 
 ::: callout-note
-**🔮 Predict first:** `ice_raw` is ~190 rows × 53 columns. After `pivot_longer()` collapses every year column, how many **columns** will `ice_long` have, and roughly how many **rows**?
+**🔮 Predict first:** `ice_raw` is ~190 rows × 53 columns. After `pivot_longer()`, how many **columns** will `ice_long` have?
 :::
 
 ::::: columns
@@ -348,7 +349,7 @@ Once a dataset's categories are trapped in column names instead of a column of v
 
 ::::: columns
 ::: {.column width="60%"}
-**The problem:** an ice season runs **Nov → May**, but NOAA labels the whole season by the year **winter ends in**. So `Nov-10` under column `1974` actually happened in **November 1973**.
+**The problem:** a season runs **Nov → May**, but NOAA labels it by the year winter **ends** in — so `Nov-10` under `1974` really happened in **November 1973**.
 
 ```{r fix-dates-07}
 # Assign Nov/Dec to the PREVIOUS calendar year ----------
@@ -490,21 +491,21 @@ Summarize mean ice cover by year-month, then use `pivot_wider()` to build the Ex
 
 ::::: columns
 ::: {.column width="60%"}
-NOAA publishes a live version of this exact plot every winter, comparing the **current year** (black), the **historical average** (red), and **every past year** (thin blue lines):
+NOAA publishes this plot live every winter — **current year** (black), **historical average** (red), **every past year** (thin blue):
 
 ![NOAA's live Lake Superior ice cover comparison — current season vs. historical average vs. all past years.](https://www.glerl.noaa.gov/data/ice/spaghetti/sup_ice_compare.png)
 
-Today, we'll build **our own version** of this plot from the raw data we just tidied.
+Today we build **our own version** from the data we just tidied.
 :::
 
 ::: {.column width="40%"}
 **Why "spaghetti plot"?**
 
 - Dozens of thin overlapping lines look like noodles
-- Each line is one year's entire ice season, Nov → May
-- The pattern that emerges — or doesn't — tells the real climate story
+- Each line is one year's whole ice season, Nov → May
+- The pattern that emerges — or doesn't — is the climate story
 
-This is a great example of how the **same chart type** appears in real published science.
+A good example of the **same chart type** showing up in published science.
 :::
 :::::
 
@@ -547,6 +548,7 @@ This is a common trick for any **seasonal, cyclical** time series.
 ::: {.column width="60%"}
 ```{r spaghetti-plot-07}
 #| fig-format: png
+#| fig-height: 2.6
 #| fig-alt: "Line plot of Lake Superior ice cover by day of winter (November through May). Many thin, semi-transparent blue lines each trace one past winter; a thick red line shows the historical daily average; a thick black line traces the current winter, drawn on top of the others. The y-axis is percent ice cover."
 ice_spaghetti_plot <- ggplot() +
   geom_line(
@@ -584,25 +586,23 @@ ice_spaghetti_plot
 ::: {.column width="40%"}
 **Three layers, three `geom_line()` calls:**
 
-- Thin, transparent blue lines — every past year, faded so patterns (not individual years) stand out
-- Thick red line — the 50+ year historical average
-- Thick black line — this year, drawn last so it's on top
+- Thin blue — every past year, faded so patterns stand out
+- Thick red — the 50+ year average
+- Thick black — this year, drawn last so it sits on top
 
-Compare your version to NOAA's published plot — did we recreate it?
+Compare it to NOAA's published plot — did we recreate it?
 :::
 :::::
 
 # A New Question: Is Maximum Ice Cover Changing?
 
 ::: callout-note
-**🔮 Predict first:** Commit now — over 50+ years, is Lake Superior's *maximum* winter ice cover **declining, flat, or rising**? Write your guess before the model runs.
+**🔮 Predict first:** Over 50+ years, is Lake Superior's *maximum* winter ice cover **declining, flat, or rising**?
 :::
 
 ::::: columns
 ::: {.column width="60%"}
-**So far:** we've visualized the *shape* of each ice season.
-
-**New question:** has the **peak** (maximum) ice cover of each winter changed over the last 50 years?
+- **New question:** has each winter's **peak** ice cover changed over 50 years?
 
 ```{r max-ice-07}
 # Find the single highest ice-cover day each year --------
@@ -632,17 +632,30 @@ head(max_ice_per_year %>% arrange(ice_cover))
 :::
 
 ::::: columns
-::: {.column width="60%"}
+::: {.column width="55%"}
 ```{r max-ice-lm-07}
-#| fig-format: png
-# Fit a regression: max ice cover by year -----------------
-max_ice_model <- lm(ice_cover ~ year, data = max_ice_per_year)
+# Fit a regression: max ice cover by year ---------------
+max_ice_model <- lm(ice_cover ~ year,
+                    data = max_ice_per_year)
 
 summary(max_ice_model)
 ```
+:::
 
+::: {.column width="45%"}
+- **Same `lm()` as the Regression lecture**, with `X = year` and `Y = ice_cover`
+- The **slope** = percentage points of max ice gained or lost per year
+- Read the slope's `Pr(>|t|)` to decide if the trend is real
+:::
+:::::
+
+# Plot the Trend
+
+::::: columns
+::: {.column width="55%"}
 ```{r max-ice-plot-07}
 #| fig-format: png
+#| fig-height: 3.4
 #| fig-alt: "Scatterplot of each year's maximum ice cover (percent) versus year, spanning roughly 1973 to the present, with a firebrick-colored linear trend line and a shaded confidence ribbon overlaid on the scattered points."
 max_ice_plot <- max_ice_per_year %>%
   ggplot(aes(x = year, y = ice_cover)) +
@@ -659,13 +672,14 @@ max_ice_plot
 ```
 :::
 
-::: {.column width="40%"}
-**Same `lm()` syntax as Lecture 11/13** — only now `X = year` and `Y = ice_cover` (the yearly peak, not a daily or monthly mean).
+::: {.column width="45%"}
+- Notice the **huge year-to-year scatter**
+  - Great Lakes ice is famously variable
+  - driven by short-term weather — ENSO, the polar vortex
+  - not just a steady climate trend
+- This is real data
+  - the story is messier, and more honest, than a clean line
 
-- The slope tells us how many percentage points of max ice cover change per year
-- Notice the **huge year-to-year scatter** — Great Lakes ice cover is famously variable, driven by short-term weather patterns like ENSO and the polar vortex, not just a steady climate trend
-
-This is real data — the story is messier (and more honest) than a clean line.
 :::
 :::::
 
@@ -679,12 +693,12 @@ Build the spaghetti plot, pull each winter's peak with `slice_max()`, and fit `l
 ::: {.column width="60%"}
 **Concepts:**
 
-- Real-world data is often **wide** — shaped for human eyes, not for R
-- `pivot_longer()` collapses many columns into key-value pairs — unlocking `group_by()`, `summarize()`, and `ggplot()`
+- Real data is often **wide** — shaped for human eyes, not for R
+- `pivot_longer()` collapses many columns into key-value pairs, unlocking `group_by()` and `ggplot()`
 - `pivot_wider()` does the reverse — builds a readable summary table from tidy data
 - Seasonal data that **crosses the calendar year boundary** needs careful date logic
 - `slice_max()` pulls out the single extreme value per group — useful for "ice-on/ice-off" type questions
-- The same `lm()` workflow from Lecture 12 applies to *any* time-indexed variable, including a yearly maximum
+- The same `lm()` workflow applies to *any* time-indexed variable
 
 **R skills:**
 
@@ -708,7 +722,7 @@ Build the spaghetti plot, pull each winter's peak with `slice_max()`, and fit `l
 
 **Up next — Extension (out of class):**
 
-- Apply the same wide-to-long pivot workflow to a Great Lake of your choice
-- Compare your lake's maximum ice trend to Lake Superior's, predicting first by hand
+- The same pivot workflow on a Great Lake of your choice
+- Compare its maximum ice trend to Lake Superior's
 :::
 :::::

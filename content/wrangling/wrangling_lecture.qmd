@@ -207,27 +207,44 @@ summarize()→ collapse to summaries (next lecture)
 # filter() keeps rows where the condition is TRUE -------
 
 # Keep only sunny leaves
-leaf_df %>% filter(shade == "sunny") %>% head()
-
-# Keep only leaves heavier than 0.5 g
-leaf_df %>% filter(mass_g > 0.5) %>% head()
-
-# Combine two conditions with , (AND)
-leaf_df %>% filter(shade == "shady", mass_g > 0.5) %>% head()
+leaf_df %>% filter(shade == "sunny") %>% head(3)
 ```
 :::
 
 :::: {.column width="40%"}
 **Common comparison operators:**
 
-| Symbol    | Meaning                             |
+| Symbol | Meaning |
 |-----------|-------------------------------------|
-| `==`      | exactly equal                       |
-| `!=`      | not equal                           |
-| `>` `<`   | greater / less than                 |
-| `>=` `<=` | greater / less than or equal        |
-| is.na     | return all NA rows                  |
-| !is.na    | return all rows that are **NOT NA** |
+| `==` | exactly equal |
+| `!=` | not equal |
+| `>` `<` | greater / less than |
+| `>=` `<=` | greater / less than or equal |
+| is.na | return all NA rows |
+| !is.na | return all rows that are **NOT NA** |
+
+: {tbl-colwidths="[30,70]"}
+::::
+::::::
+
+# `filter()` — Numbers and Two Conditions
+
+:::::: columns
+::: {.column width="60%"}
+```{r filter-demo-2}
+# Keep only leaves heavier than 0.5 g
+leaf_df %>% filter(mass_g > 0.5) %>% head(3)
+
+# Combine two conditions with , (AND)
+leaf_df %>%
+  filter(shade == "shady", mass_g > 0.5) %>%
+  head(3)
+```
+:::
+
+:::: {.column width="40%"}
+- A **comma** between conditions means **AND**
+  - both have to be true for the row to stay
 
 ::: callout-warning
 **⚠️ Watch out!**
@@ -283,21 +300,18 @@ leaf_df %>% filter(shade == "sunny")
 # select() keeps the columns you name ------------------
 
 # Keep only shade and mass
-leaf_df %>% select(shade, mass_g) %>% head()
+leaf_df %>% select(shade, mass_g) %>% head(2)
 
-# Drop the paper_mass_g column (use minus sign)
-leaf_df %>% select(-paper_mass_g) %>% head()
+# Drop a column with a minus sign - what is left?
+leaf_df %>% select(-paper_mass_g) %>% names()
 
 # Keep columns that start with a word
-leaf_df %>% select(starts_with("mass")) %>% head()
+leaf_df %>% select(starts_with("mass")) %>% head(2)
 ```
 :::
 
 ::: {.column width="40%"}
-- **Why `select()` matters:**
-  - Real datasets often have 50–100+ columns
-  - You rarely need all of them
-  - `select()` keeps your workspace clean
+- **Why it matters:** real data sets have 50–100+ columns and you rarely need all of them
 - **Useful helpers:**
   - `starts_with("x")` — columns starting with "x"
   - `ends_with("_mm")` — columns ending with "_mm"
@@ -321,13 +335,35 @@ leaf_df %>% select(starts_with("mass")) %>% head()
 # Convert grams to milligrams
 leaf_df %>%
   mutate(mass_mg = mass_g * 1000) %>%
-  head()
+  head(3)
+```
+:::
 
+:::: {.column width="40%"}
+- `mutate()` keeps **all existing columns** and adds new ones
+
+::: callout-note
+**✅ Watch the column count**
+
+- `mutate()` never removes columns
+  - it adds to the **right** of your data frame
+  - one new column per variable you create
+- To **overwrite** instead, reuse the name on the left:
+  - `mutate(mass_g = round(mass_g, 2))`
+:::
+::::
+::::::
+
+# `mutate()` — Categories and Several at Once
+
+:::::: columns
+::: {.column width="60%"}
+```{r mutate-demo-2}
 # Add a size category based on mass
 leaf_df %>%
   mutate(size_class = if_else(mass_g > 0.5, "large",
                               "small")) %>%
-  head()
+  head(2)
 
 # mutate() can create several new columns at once
 leaf_df %>%
@@ -335,21 +371,13 @@ leaf_df %>%
     mass_mg    = mass_g * 1000,
     petiole_cm = petiole_mm / 10 # petiole length in cm
   ) %>%
-  head()
+  head(2)
 ```
 :::
 
 :::: {.column width="40%"}
-- `mutate()` keeps **all existing columns** and adds new ones
-- **Use `if_else(condition, value_if_true, value_if_false)` to create categories**
-
-::: callout-note
-**✅ Watch the column count**
-
-`mutate()` never removes columns — it adds to the right of your data frame, so `leaf_df` gains one column per new variable you create.
-
-To overwrite a column instead of adding one, reuse the same name on the left: `mutate(mass_g = round(mass_g, 2))`
-:::
+- **Use `if_else(condition, value_if_true, value_if_false)`** to create categories
+- Separate several new columns with **commas**, like the arguments they are
 
 📖 [R4DS §3.3](https://r4ds.hadley.nz/data-transform#sec-mutate)
 ::::
@@ -363,13 +391,10 @@ To overwrite a column instead of adding one, reuse the same name on the left: `m
 # arrange() sorts rows by one or more columns ----------
 
 # Lightest leaves first
-leaf_df %>% arrange(mass_g)
+leaf_df %>% arrange(mass_g) %>% head(3)
 
 # Heaviest leaves first (use desc() to reverse)
-leaf_df %>% arrange(desc(mass_g))
-
-# Sort by shade, then by mass within each shade
-leaf_df %>% arrange(shade, desc(mass_g))
+leaf_df %>% arrange(desc(mass_g)) %>% head(3)
 ```
 :::
 
@@ -379,7 +404,28 @@ leaf_df %>% arrange(shade, desc(mass_g))
 - Very useful before printing a table or checking outliers
 
 ::: callout-tip
-`arrange()` is rarely used in the middle of an analysis pipeline — it is most useful at the **end** when you want to inspect your results in a specific order.
+`arrange()` is rarely used in the middle of a pipeline — it is most useful at the **end**, when you want to inspect your results in a specific order.
+:::
+::::
+::::::
+
+# `arrange()` — Sorting by Two Columns
+
+:::::: columns
+::: {.column width="60%"}
+```{r arrange-demo-2}
+# Sort by shade, then by mass within each shade
+leaf_df %>% arrange(shade, desc(mass_g)) %>% head(3)
+```
+:::
+
+:::: {.column width="40%"}
+- The **first** column sorts the whole data frame
+- The **second** breaks ties *inside* each group of the first
+- Here: shady leaves first, and within shady, heaviest first
+
+::: callout-note
+You can mix directions — `arrange(shade, desc(mass_g))` sorts shade ascending and mass descending in the same call.
 :::
 ::::
 ::::::
@@ -401,7 +447,7 @@ wrangled_df <- leaf_df %>%
   ) %>%
   arrange(shade, desc(mass_g)) # sort by shade, then mass
 
-head(wrangled_df)
+head(wrangled_df, 3)
 ```
 :::
 
@@ -417,7 +463,8 @@ head(wrangled_df)
 ::: callout-note
 **✅ Compare it to nested calls**
 
-Write the same pipeline as nested functions — `arrange(mutate(select(filter(leaf_df, mass_g > 0), shade, mass_g, thickness_mm), mass_mg = mass_g * 1000, size_class = if_else(mass_g > 0.5, "large", "small")), shade, desc(mass_g))` — and the *first* thing that runs is buried in the middle. The pipe lets you read top to bottom in the order R actually executes.
+- Written as nested functions, the **first** step ends up buried in the middle
+- The pipe lets you read top to bottom, in the order R actually runs things
 :::
 ::::
 ::::::

@@ -11,7 +11,7 @@
   <meta name="generator" content="quarto-1.10.18">
 
   <meta name="author" content="Bill Perry">
-  <meta name="dcterms.date" content="2026-10-01">
+  <meta name="dcterms.date" content="2026-10-05">
   <title>UMD DAta Science Biology – Lecture 11 — Linear Regression</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -198,7 +198,7 @@
     }
   </style>
 <meta property="og:title" content="Lecture 11 — Linear Regression – UMD DAta Science Biology">
-<meta property="og:description" content="How to fit a linear regression, test its assumptions, interpret the model output, and calculate predictions.">
+<meta property="og:description" content="Fitting a linear regression with lm(), reading the summary() output, checking the residuals, and using predict() to turn a mass into an area.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 <body class="quarto-light">
@@ -207,7 +207,7 @@
 
 <section id="title-slide" class="quarto-title-block center">
   <h1 class="title">Lecture 11 — Linear Regression</h1>
-  <p class="subtitle">Predicting leaf area from paper tracing mass (Whitlock &amp; Schluter Ch. 17)</p>
+  <p class="subtitle">Using one measurement to predict another (Whitlock &amp; Schluter Ch. 17)</p>
 
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
@@ -217,17 +217,16 @@ Bill Perry
 </div>
 </div>
 
-  <p class="date">2026-10-01</p>
+  <p class="date">2026-10-05</p>
 </section>
-<section id="where-we-left-off-lectures-07-0910" class="title-slide slide level1 center">
-<h1>Where we left off (Lectures 07, 09–10)</h1>
+<section id="where-we-left-off-lectures-0910" class="title-slide slide level1 center">
+<h1>Where we left off (Lectures 09–10)</h1>
 <ul>
-<li><strong>Quarto</strong> — one <code>.qmd</code> file holds your <strong>writing <em>and</em> your code</strong>, and renders to Word, HTML, or PowerPoint</li>
-<li><strong>Three ingredients</strong> — YAML front matter, Markdown text, and named code chunks</li>
-<li><strong>Reproducibility</strong> — numbers and figures are <em>computed</em>, never copied by hand; change the data, press <strong>Render</strong></li>
-<li><strong>Inline code</strong> — drop a live result straight into a sentence with <code>`r `</code></li>
-<li><strong>Word reports</strong> — <code>format: docx</code> with <code>toc</code> and <code>number-sections</code> gives a professional document</li>
-<li><strong>Carried forward (Lectures 09–10)</strong> — shady leaves were significantly <em>heavier</em> than sunny leaves (Welch’s t-test, <em>p</em> &lt; 0.001)</li>
+<li><strong>Five steps</strong> — hypotheses → check normality → check variance → run the test → interpret and report</li>
+<li><strong>Welch’s t-test</strong> compares the <strong>means of two groups</strong></li>
+<li><strong>Pseudoreplication</strong> — average up to the thing you actually sampled before you test</li>
+<li><strong>Our leaves</strong> — mean leaf <strong>mass</strong> did not differ between the shady and sunny sides</li>
+<li><strong>Our sugar maples</strong> — shady-side leaves were significantly <strong>larger in area</strong> than sunny-side leaves on the same tree</li>
 </ul>
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
@@ -238,8 +237,15 @@ Bill Perry
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>✅ Transition</strong></p>
-<p>You can now build a reproducible report. Today’s analysis — a <strong>calibration curve</strong> that converts leaf weight into a more meaningful measurement, <strong>leaf surface area</strong> (cm²) — is the perfect thing to write up in one. The activity gives you this same analysis as <em>both</em> a plain <code>.R</code> script <strong>and</strong> a Quarto report, so you can feel the difference.</p>
+<p><strong>✅ Where today comes in</strong></p>
+<ul>
+<li>A t-test compares two <strong>groups</strong>.</li>
+<li>Today we ask a different question:
+<ul>
+<li>can one <strong>number</strong> predict another number?</li>
+<li>we weighed our leaf tracings, but what we actually want is <strong>leaf area in cm²</strong></li>
+</ul></li>
+</ul>
 </div>
 </div>
 </div>
@@ -250,128 +256,172 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <ul>
-<li>Understand what linear regression does and when to use it</li>
-<li>Learn the equation: <span class="math inline">\(\hat{Y} = a + bX\)</span>
-<ul>
-<li>slope <em>b</em>, intercept <em>a</em>, residuals, R²</li>
-</ul></li>
-<li>Understand <strong>least squares</strong> — what the line minimizes</li>
-<li>Fit a model in R with <code>lm()</code> and read every line of <code>summary()</code></li>
-<li><strong>Apply it:</strong> build a calibration curve to predict leaf area from paper tracing mass</li>
-<li>Check all four assumptions of regression</li>
-<li>Use <code>predict()</code> to make predictions with intervals</li>
-<li>Use <code>mutate()</code> to add model results to a data frame</li>
+<li><strong>Understand</strong> what a linear regression does: fit a straight line, <span class="math inline">\(\hat{Y} = a + bX\)</span></li>
+<li><strong>See</strong> what a <strong>residual</strong> is, in a real plot</li>
+<li><strong>Fit</strong> a model with <code>lm()</code></li>
+<li><strong>Read and interpret</strong> the <code>summary()</code> output — slope, <em>p</em>-value, R²</li>
+<li><strong>Check</strong> the residuals the way R shows them to you</li>
+<li><strong>Use</strong> <code>predict()</code> to turn a tracing mass into a leaf area</li>
+<li><strong>Report</strong> the result in a standard sentence</li>
 </ul>
-<div class="callout callout-tip callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Tip</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>🖐 Try it yourself</strong></p>
-<p>By the end you will predict leaf area from a tracing weight.</p>
-</div>
-</div>
-</div>
 </div><div class="column" style="width:40%;">
-<p><strong>Tools today:</strong></p>
 <ul>
-<li><code>readxl</code>, <code>tidyverse</code></li>
-</ul>
-<p><strong>Textbook:</strong></p>
+<li><strong>Tools today:</strong>
 <ul>
-<li>📖 Whitlock &amp; Schluter <em>Analysis of Biological Data</em> 2nd ed.</li>
-<li><strong>Chapter 17 — Regression</strong> (pp.&nbsp;539–575)
+<li><code>lm()</code> — fit the line</li>
+<li><code>summary()</code> — read the result</li>
+<li><code>plot(model)</code> — check the residuals</li>
+<li><code>predict()</code> — make predictions</li>
+<li><code>geom_smooth(method = "lm")</code> — draw the line</li>
+</ul></li>
+<li><strong>Reading:</strong>
+<ul>
+<li>📖 Whitlock &amp; Schluter, Ch. 17 — <em>Regression</em>
 <ul>
 <li>§17.1 Linear regression</li>
-<li>§17.3 Testing slope hypotheses</li>
+<li>§17.3 Testing the slope</li>
 <li>§17.4 R²</li>
 <li>§17.5 Assumptions</li>
 </ul></li>
-</ul>
-<p><strong>Naming conventions:</strong></p>
+</ul></li>
+<li><strong>Today’s naming:</strong>
 <ul>
 <li>models → <code>_model</code></li>
 <li>plots → <code>_plot</code></li>
+</ul></li>
 </ul>
 </div></div>
 </section>
 
-<section id="how-to-use-these-slides-predict-type-run" class="title-slide slide level1 center scrollable">
-<h1>How to Use These Slides — Predict · Type · Run</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p>This lecture runs in <strong>four short chunks</strong>. After each chunk you switch to the <strong>activity</strong> and type the code yourself.</p>
-<p><strong>For every code block, do three things:</strong></p>
-<ol type="1">
-<li><strong>Predict</strong> — before it runs, say what you think the output will be</li>
-<li><strong>Type</strong> it out by hand — do not copy-paste</li>
-<li><strong>Run</strong> it and compare to your prediction</li>
-</ol>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-note callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Note</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>✅ Why bother? (the evidence)</strong></p>
+<section id="chunk-1-of-3-what-regression-does" class="title-slide slide level1 center">
+<h1>🧩 Chunk 1 of 3 · What Regression Does</h1>
 <ul>
-<li>A guess about the sign of the slope, or the size of R², is a claim you can be proven wrong about — and being wrong is what makes the right answer stick.</li>
-<li>Typing <code>lm(area_cm2 ~ mass_g, data = paper_df)</code> yourself, instead of pasting it, is what makes you actually notice which variable sits on which side of the <code>~</code>.</li>
-<li>Running each short chunk and then immediately applying it in the activity keeps the idea active in your head instead of letting it go stale between lecture and practice.</li>
+<li><p><strong>We will cover:</strong></p></li>
+<li><p>the question regression answers,</p></li>
+<li><p>the equation <span class="math inline">\(\hat{Y} = a + bX\)</span>,</p></li>
+<li><p>what a <strong>residual</strong> is,</p></li>
+<li><p>what <strong>R²</strong> tells you,</p></li>
+<li><p>and the assumptions.</p></li>
+<li><p>No code in this chunk — just the idea.</p></li>
 </ul>
-</div>
-</div>
-</div>
+</section>
+
+<section id="what-is-linear-regression" class="title-slide slide level1 center">
+<h1>What Is Linear Regression?</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p><strong>Linear regression</strong> fits the best straight line through a cloud of points so you can <strong>predict</strong> one number (Y) from another number (X).</p>
+<table class="caption-top">
+<colgroup>
+<col style="width: 30%">
+<col style="width: 40%">
+<col style="width: 30%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Role</th>
+<th>Variable</th>
+<th>On the plot</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Explanatory (X)</strong></td>
+<td>what you can measure easily</td>
+<td>x-axis</td>
+</tr>
+<tr class="even">
+<td><strong>Response (Y)</strong></td>
+<td>what you actually want to know</td>
+<td>y-axis</td>
+</tr>
+</tbody>
+</table>
+<p>X is usually the <strong>easy</strong> measurement. Y is the <strong>expensive</strong> one. Regression gives you an equation that converts X into Y.</p>
+<p>📖 W&amp;S §17.1 p.&nbsp;540–541</p>
+</div><div class="column" style="width:42%;">
+<p><strong>Regression vs.&nbsp;the t-test:</strong></p>
+<table class="caption-top">
+<colgroup>
+<col style="width: 35%">
+<col style="width: 65%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Test</th>
+<th>The question</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>t-test</td>
+<td>Do two <strong>groups</strong> have different means?</td>
+</tr>
+<tr class="even">
+<td>Regression</td>
+<td>Does X <strong>predict</strong> Y?</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Use regression when:</strong></p>
+<ul>
+<li>both variables are <strong>numeric</strong></li>
+<li>X could reasonably predict Y</li>
+<li>you want an <strong>equation</strong>, not just a yes/no</li>
+</ul>
 </div></div>
 </section>
 
-<section id="chunk-1-of-4-what-regression-is" class="title-slide slide level1 center">
-<h1>🧩 Chunk 1 of 4 · What Regression Is</h1>
-<p><strong>We will cover:</strong> the calibration idea, the equation <span class="math inline">\(\hat{Y}=a+bX\)</span>, least squares, R², and the four assumptions.</p>
-<div class="callout callout-tip callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Tip</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>🖐 After this chunk: Activity Parts 1–3</strong> (load, inspect, and scatter-plot the paper data).</p>
+<section id="a-real-example-from-the-textbook" class="title-slide slide level1 center">
+<h1>A Real Example from the Textbook</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="regression_lecture_files/figure-revealjs/lion-scatter-1.png" alt="Scatter plot of lion age in years against the proportion of the nose that is black, for 32 lions, with an upward-sloping least-squares line through the points. The points scatter noticeably around the line."></p>
+</figure>
 </div>
 </div>
 </div>
+<p><strong>W&amp;S Example 17.1 — “the lion’s nose.”</strong> 32 male lions of known age.</p>
+</div><div class="column" style="width:45%;">
+<p>Aging a wild lion is hard — you have to have watched it since it was a cub.</p>
+<p>But a male lion’s nose <strong>darkens as it ages</strong>, and you can photograph a nose from a truck.</p>
+<ul>
+<li><strong>X</strong> = proportion of the nose that is black — <em>easy</em></li>
+<li><strong>Y</strong> = age in years — <em>what you want</em></li>
+</ul>
+<p>Fit the line once on lions of known age, and from then on you can <strong>estimate</strong> a lion’s age from a photograph.</p>
+<p>📖 W&amp;S §17.1, Example 17.1</p>
+</div></div>
 </section>
 
-<section id="our-calibration-idea" class="title-slide slide level1 center scrollable">
-<h1>Our Calibration Idea</h1>
+<section id="our-version-of-the-same-problem" class="title-slide slide level1 center scrollable">
+<h1>Our Version of the Same Problem</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
-<p><strong>The problem:</strong> measuring leaf surface area without a leaf area meter.</p>
-<p><strong>The solution — a calibration curve:</strong></p>
+<div class="column" style="width:58%;">
+<p><strong>The problem:</strong> we want <strong>leaf area in cm²</strong>, but we don’t have a leaf-area meter. We have a balance.</p>
+<p><strong>The fix — a calibration curve:</strong></p>
 <ol type="1">
 <li>Cut paper squares of <strong>known area</strong> (1, 4, 16 … 567 cm²)</li>
-<li><strong>Weigh</strong> each square on a precision balance</li>
-<li>Fit a <strong>regression line</strong>: area ~ mass</li>
-<li>Trace a leaf on the <em>same paper</em>, weigh the tracing</li>
-<li><strong>Plug the tracing mass into the equation</strong> → predicted leaf area</li>
+<li><strong>Weigh</strong> each square</li>
+<li>Fit the line: <strong>area ~ mass</strong></li>
+<li>Trace a leaf onto the <strong>same paper</strong> and weigh the tracing</li>
+<li>Put the tracing mass into the equation → <strong>predicted leaf area</strong></li>
 </ol>
-<p><strong>Why does this work?</strong></p>
-<p>Paper of uniform stock has constant <em>area density</em> (cm² per gram). Mass and area are therefore <strong>perfectly linearly related</strong> within a sheet.</p>
-</div><div class="column" style="width:40%;">
+<p><strong>Why it works:</strong> paper from one stock has a constant <strong>area per gram</strong>, so mass and area move together almost perfectly.</p>
+</div><div class="column" style="width:42%;">
 <table class="caption-top">
+<colgroup>
+<col style="width: 55%">
+<col style="width: 45%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Known area (cm²)</th>
-<th>n replicates</th>
+<th>Squares weighed</th>
 </tr>
 </thead>
 <tbody>
@@ -401,261 +451,170 @@ Bill Perry
 </tr>
 <tr class="odd">
 <td>225–567</td>
-<td>12</td>
+<td>13</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Total:</strong> 118 paper squares weighed</p>
-<p>📖 W&amp;S §17.1, Example 17.1 (the same logic: measure X to predict Y)</p>
-</div></div>
-</section>
-
-<section id="what-is-linear-regression" class="title-slide slide level1 center">
-<h1>What Is Linear Regression?</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p><strong>Linear regression</strong> draws the <em>best straight line</em> through a scatter of points to <strong>predict</strong> a response variable (Y) from an explanatory variable (X).</p>
-<p><strong>Two key roles:</strong></p>
-<table class="caption-top">
-<colgroup>
-<col style="width: 23%">
-<col style="width: 57%">
-<col style="width: 18%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Role</th>
-<th>Variable</th>
-<th>Our example</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Explanatory (X)</td>
-<td>on the x-axis; what you measure</td>
-<td><code>mass_g</code></td>
-</tr>
-<tr class="even">
-<td>Response (Y)</td>
-<td>on the y-axis; what you want to predict</td>
-<td><code>area_cm2</code></td>
-</tr>
-</tbody>
-</table>
-<p>X is often something easy to measure; Y is what you actually want to know. Regression gives you the equation to convert X → Y.</p>
-<p>📖 W&amp;S §17.1 p.&nbsp;540–541</p>
-</div><div class="column" style="width:40%;">
-<p><strong>When to use regression:</strong></p>
-<ul>
-<li>You have <strong>two numeric variables</strong></li>
-<li>One variable can reasonably <strong>predict or cause</strong> the other</li>
-<li>You want an <strong>equation</strong> to make predictions for new observations</li>
-</ul>
-<p><strong>Regression vs.&nbsp;our t-test (Lectures 09–10):</strong></p>
-<table class="caption-top">
-<thead>
-<tr class="header">
-<th>Test</th>
-<th>Question</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>t-test</td>
-<td>Do two group <em>means</em> differ?</td>
-</tr>
-<tr class="even">
-<td>Regression</td>
-<td>Does X <em>predict</em> Y numerically?</td>
-</tr>
-</tbody>
-</table>
-<p>Regression produces a <strong>predictive equation</strong>. The t-test produces a decision about group means.</p>
+<p><strong>118 paper squares in all.</strong></p>
+<p>Remember <code>paper_mass_g</code> in our leaf data? That is the tracing mass. By the end of today it becomes an <strong>area</strong>.</p>
 </div></div>
 </section>
 
 <section id="the-regression-equation" class="title-slide slide level1 center">
 <h1>The Regression Equation</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
-<p><strong>Population model</strong> (W&amp;S §17.1):</p>
-<p><span class="math display">\[Y = \alpha + \beta X + \varepsilon\]</span></p>
-<p><strong>Sample estimate</strong> (what R calculates):</p>
+<div class="column" style="width:55%;">
 <p><span class="math display">\[\hat{Y} = a + bX\]</span></p>
 <table class="caption-top">
+<colgroup>
+<col style="width: 18%">
+<col style="width: 27%">
+<col style="width: 55%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Symbol</th>
 <th>Name</th>
-<th>Meaning</th>
+<th>What it means</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><span class="math inline">\(\hat{Y}\)</span></td>
 <td>predicted Y</td>
-<td>estimated mean area at a given mass</td>
+<td>what the line says Y should be</td>
 </tr>
 <tr class="even">
 <td><em>a</em></td>
-<td>intercept</td>
-<td>predicted Y when X = 0</td>
+<td><strong>intercept</strong></td>
+<td>Y when X = 0 — where the line crosses</td>
 </tr>
 <tr class="odd">
 <td><em>b</em></td>
-<td>slope</td>
-<td>change in Y per 1-unit increase in X</td>
-</tr>
-<tr class="even">
-<td><span class="math inline">\(\varepsilon\)</span></td>
-<td>residual</td>
-<td>observed − predicted</td>
+<td><strong>slope</strong></td>
+<td>how much Y changes per 1 unit of X</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Our equation will be:</strong> <span class="math display">\[\widehat{\text{area}} = a + b \times \text{mass\_g}\]</span></p>
-</div><div class="column" style="width:40%;">
-<p><strong>Interpreting the slope:</strong></p>
-<blockquote>
-<p><em>b</em> = the change in area (cm²) for every additional 1 gram of paper</p>
-</blockquote>
-<p>Since 1 g ≈ 130 cm² of paper, the slope is the <strong>area density</strong> of the paper stock.</p>
-<p><strong>Interpreting the intercept:</strong></p>
-<blockquote>
-<p><em>a</em> = predicted area when mass = 0</p>
-</blockquote>
-<p>Physically this should be 0 (no paper, no area). Small non-zero values reflect measurement error.</p>
+<p><strong>Ours will read:</strong></p>
+<p><span class="math display">\[\widehat{\text{area}} = a + b \times \text{mass}\]</span></p>
 <p>📖 W&amp;S §17.1 pp.&nbsp;543–545</p>
+</div><div class="column" style="width:45%;">
+<p><strong>The slope is the useful one.</strong></p>
+<blockquote>
+<p><em>b</em> = the extra cm² you get for each extra gram of paper</p>
+</blockquote>
+<p>That is just the <strong>area density</strong> of the paper stock — and it is the number that does the converting.</p>
+<p><strong>The intercept is a bookkeeping number.</strong></p>
+<blockquote>
+<p><em>a</em> = the predicted area of a piece of paper weighing nothing</p>
+</blockquote>
+<p>Physically that should be 0. A small value near zero is fine; it is measurement noise, not biology.</p>
 </div></div>
 </section>
 
-<section id="residuals-and-least-squares" class="title-slide slide level1 center">
-<h1>Residuals and Least Squares</h1>
+<section id="what-is-a-residual" class="title-slide slide level1 center">
+<h1>What Is a Residual?</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
-<p><strong>Residual</strong> for observation <em>i</em>:</p>
-<p><span class="math display">\[e_i = Y_i - \hat{Y}_i = \text{observed} - \text{predicted}\]</span></p>
-<p>The <strong>least-squares line</strong> minimizes the sum of <em>squared</em> residuals:</p>
-<p><span class="math display">\[\text{minimize} \sum_{i=1}^{n}(Y_i - \hat{Y}_i)^2\]</span></p>
+<div class="column" style="width:55%;">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="regression_lecture_files/figure-revealjs/lion-residuals-1.png" alt="The same lion scatter plot with the least-squares line, plus a vertical red segment drawn from every point to the line. Segments above the line are longer for a few lions; most are short. The plot shows the residual as the vertical gap between the observed point and the line."></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Red = the residuals</strong> for the lion data.</p>
+</div><div class="column" style="width:45%;">
+<p>A <strong>residual</strong> is one point’s miss:</p>
+<p><span class="math display">\[\text{residual} = \text{observed} - \text{predicted}\]</span></p>
 <ul>
-<li>Squaring serves two purposes:
-<ul>
-<li>Makes all deviations <strong>positive</strong> (no cancellation)</li>
-<li>Penalizes <strong>large</strong> deviations more than small ones</li>
-</ul></li>
-<li>There is only one line that achieves this minimum — it is unique.</li>
-<li>📖 W&amp;S §17.1 p.&nbsp;542 (Figure 17.1-2)</li>
+<li>A point <strong>above</strong> the line → <strong>positive</strong> residual (that lion was older than its nose suggested)</li>
+<li>A point <strong>below</strong> the line → <strong>negative</strong> residual</li>
+<li>A point <strong>on</strong> the line → residual of 0</li>
 </ul>
-</div><div class="column" style="width:40%;">
-<p><strong>Visual intuition:</strong></p>
-<p>Each data point has a <strong>vertical residual</strong> — the distance from the point to the regression line.</p>
-<pre><code>observed Y │     ●  ← residual (positive)
-           │     |
-predicted Ŷ│-----●--- regression line
-           │
-           └──────────── X</code></pre>
-<p>A point <em>above</em> the line has a <strong>positive</strong> residual. A point <em>below</em> has a <strong>negative</strong> residual. The sum of all residuals = 0.</p>
+<p><strong>The line R gives you is the one that makes those red segments as small as possible overall.</strong> That is all “least squares” means — and R does the work.</p>
+<p>📖 W&amp;S §17.1 p.&nbsp;542</p>
 </div></div>
 </section>
 
-<section id="r²-how-much-does-x-explain" class="title-slide slide level1 center">
-<h1>R² — How Much Does X Explain?</h1>
-<div class="callout callout-note callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Note</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>🔮 Predict first:</strong> Paper of uniform stock has constant area-per-gram. Before you see any output, predict: will R² be near <strong>0, 0.5, or 1</strong>?</p>
-</div>
-</div>
-</div>
+<section id="r²-how-tight-is-the-fit" class="title-slide slide level1 center">
+<h1>R² — How Tight Is the Fit?</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
-<p><span class="math display">\[R^2 = \frac{SS_\text{regression}}{SS_\text{total}} = 1 - \frac{SS_\text{residual}}{SS_\text{total}}\]</span></p>
-<ul>
-<li><strong>SS_total</strong> = total variation in Y around its mean</li>
-<li><strong>SS_regression</strong> = variation explained by X</li>
-<li><strong>SS_residual</strong> = variation <em>not</em> explained (scatter around the line)</li>
-</ul>
-<p>R² ranges from 0 to 1:</p>
+<div class="column" style="width:62%;">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="regression_lecture_files/figure-revealjs/r2-comparison-1.png" alt="Two scatter plots side by side. Left: lion age against nose blackness with a fitted line and clearly scattered points, labelled R-squared equals 0.62. Right: paper area against paper mass with a fitted line and points sitting almost exactly on it, labelled R-squared equals 0.9999."></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:38%;">
+<p><strong>R² runs from 0 to 1.</strong> It is the fraction of the variation in Y that the line accounts for.</p>
 <table class="caption-top">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 75%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>R²</th>
-<th>Interpretation</th>
+<th>Reads as</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td>1.00</td>
-<td>X explains all variation in Y</td>
+<td>points sit <strong>on</strong> the line</td>
 </tr>
 <tr class="even">
-<td>0.85</td>
-<td>X explains 85% of variation</td>
+<td>0.62</td>
+<td>X explains <strong>62%</strong> of the variation</td>
 </tr>
 <tr class="odd">
 <td>0.00</td>
-<td>X explains nothing</td>
+<td>the line tells you nothing</td>
 </tr>
 </tbody>
 </table>
+<p><strong>Both of these are good regressions.</strong> Nose blackness really does predict a lion’s age — just with scatter, because lions vary. Paper is manufactured to be uniform, so it has almost none.</p>
+<p>In biology, <strong>R² of 0.3–0.7 is normal and useful</strong>. Don’t expect 0.99.</p>
 <p>📖 W&amp;S §17.4 p.&nbsp;555</p>
-</div><div class="column" style="width:40%;">
-<p><strong>Our calibration data:</strong></p>
-<p>Because paper has uniform density, mass and area are nearly perfectly linearly related.</p>
-<p>We expect R² ≈ 1.00.</p>
-<p><strong>Important:</strong> R² tells you <em>how well the line fits</em> the data you have. It does not by itself tell you whether the relationship is statistically significant — that requires a test of the slope.</p>
-<p>A significant slope with a low R² is possible (weak but real relationship). In biology, R² values of 0.3–0.7 are common and meaningful.</p>
 </div></div>
 </section>
 
-<section id="assumptions-of-regression" class="title-slide slide level1 center">
-<h1>Assumptions of Regression</h1>
+<section id="r²-and-the-p-value-answer-different-questions" class="title-slide slide level1 center">
+<h1>R² and the <em>p</em>-value Answer Different Questions</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
-<p>Four assumptions must hold for the p-value and confidence intervals to be valid (W&amp;S §17.5):</p>
+<div class="column" style="width:52%;">
 <table class="caption-top">
 <colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
+<col style="width: 30%">
+<col style="width: 70%">
 </colgroup>
 <thead>
 <tr class="header">
-<th>#</th>
-<th>Assumption</th>
-<th>How to check</th>
+<th></th>
+<th>The question it answers</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>1</td>
-<td><strong>Linearity</strong> — Y changes linearly with X</td>
-<td><code>plot(model)</code>, panel 1</td>
+<td><strong><em>p</em>-value</strong></td>
+<td>Is there <strong>really</strong> a relationship, or could this slope be chance?</td>
 </tr>
 <tr class="even">
-<td>2</td>
-<td><strong>Independence</strong> — observations are independent</td>
-<td>Study design</td>
-</tr>
-<tr class="odd">
-<td>3</td>
-<td><strong>Equal variance</strong> — spread of residuals is constant</td>
-<td><code>plot(model)</code>, panels 1 &amp; 3</td>
-</tr>
-<tr class="even">
-<td>4</td>
-<td><strong>Normality</strong> — residuals are normally distributed</td>
-<td><code>plot(model)</code>, panel 2 + Shapiro-Wilk</td>
+<td><strong>R²</strong></td>
+<td><strong>How tightly</strong> do the points follow the line?</td>
 </tr>
 </tbody>
 </table>
-</div><div class="column" style="width:40%;">
+<p>You can have a <strong>significant slope with a low R²</strong> — a real relationship with a lot of scatter. That is most of ecology.</p>
+</div><div class="column" style="width:48%;">
 <div class="callout callout-important callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -665,238 +624,130 @@ predicted Ŷ│-----●--- regression line
 <p><strong>Important</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>Check residuals, not raw data.</strong></p>
-<p>The normality assumption is about the <strong>residuals</strong> (observed − predicted), not the original Y values.</p>
-<p>R builds these diagnostic plots for you the instant you fit a model — <code>plot()</code> on any <code>lm</code> object gives you all four in one call.</p>
+<p><strong>The slope is the hypothesis test.</strong></p>
+<p><strong>H₀:</strong> the slope is 0 — X does not predict Y</p>
+<p><strong>Hₐ:</strong> the slope is not 0 — X does predict Y</p>
+<p><code>summary()</code> gives you the <em>p</em>-value for exactly that test, and we will find it on the next few slides.</p>
 </div>
 </div>
 </div>
-<p>📖 W&amp;S §17.5 pp.&nbsp;557–560 (Figures 17.5-1, 17.5-4)</p>
+<p>📖 W&amp;S §17.3 pp.&nbsp;551–553</p>
 </div></div>
 </section>
 
-<section id="pause-do-activity-parts-13-now" class="title-slide slide level1 center">
-<h1>🛑 Pause — Do Activity Parts 1–3 Now</h1>
-<p>Load <code>paper_area_weights.xlsx</code>, inspect it with <code>skim()</code>, and make the scatter of area vs mass. Predict the shape before you plot it.</p>
-</section>
-
-<section id="chunk-2-of-4-fit-the-model-read-it" class="title-slide slide level1 center">
-<h1>🧩 Chunk 2 of 4 · Fit the Model &amp; Read It</h1>
-<p><strong>We will cover:</strong> loading the data, <code>lm()</code>, and reading every line of <code>summary()</code> — slope, intercept, and R².</p>
-<div class="callout callout-tip callout-titled callout-style-default">
+<section id="assumptions-of-regression" class="title-slide slide level1 center">
+<h1>Assumptions of Regression</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p>Four things need to be roughly true for the <em>p</em>-value and the intervals to mean anything (W&amp;S §17.5):</p>
+<table class="caption-top">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 42%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Assumption</th>
+<th>How you check it</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><strong>Linear</strong> — Y really does follow a straight line</td>
+<td>the scatter plot, then <code>plot(model)</code> panel 1</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><strong>Independent</strong> — one observation doesn’t depend on another</td>
+<td>your study design</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td><strong>Equal variance</strong> — the scatter is about the same all the way along</td>
+<td><code>plot(model)</code> panels 1 and 3</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td><strong>Normal residuals</strong> — the misses are bell-shaped</td>
+<td><code>plot(model)</code> panel 2</td>
+</tr>
+</tbody>
+</table>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-important callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
-<p><strong>Tip</strong></p>
+<p><strong>Important</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🖐 After this chunk: Activity Parts 4–7</strong> (fit <code>lm()</code>, decode <code>summary()</code>, pull the equation and R²).</p>
+<p><strong>Check the residuals, not the raw data.</strong></p>
+<p>Normality here is about the <strong>misses</strong> — the red segments — not about Y itself. Y is <em>supposed</em> to go up with X; of course it isn’t bell-shaped.</p>
+<p>The good news: once you have a fitted model, <code>plot()</code> draws all of these for you. No extra code.</p>
 </div>
 </div>
+</div>
+<p>Same habit as the t-test: <strong>check → decide → report.</strong></p>
+<p>📖 W&amp;S §17.5 pp.&nbsp;557–560</p>
+</div></div>
+</section>
+
+<section id="chunk-2-of-3-fit-it-and-read-it" class="title-slide slide level1 center">
+<h1>🧩 Chunk 2 of 3 · Fit It and Read It</h1>
+<p><strong>We will cover:</strong> loading the paper data, the scatter plot, fitting with <code>lm()</code>, and reading the <code>summary()</code> output line by line.</p>
+<div class="activitybanner">
+<p><strong>🛑 After this chunk: Activity Parts 1–4</strong> (load, plot, fit, read the summary).</p>
 </div>
 </section>
 
 <section id="load-libraries-and-data" class="title-slide slide level1 center">
 <h1>Load Libraries and Data</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a aria-label="1"></a><span class="co"># Load packages at the top of the script ---------------</span></span>
-<span id="cb2-2"><a aria-label="2"></a><span class="fu">library</span>(readxl) <span class="co"># reading Excel files</span></span>
-<span id="cb2-3"><a aria-label="3"></a><span class="fu">library</span>(tidyverse) <span class="co"># data manipulation + ggplot2</span></span>
-<span id="cb2-4"><a aria-label="4"></a><span class="fu">library</span>(skimr) <span class="co"># fast data overview</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a aria-label="1"></a><span class="co"># Load packages at the top ------------------------------</span></span>
+<span id="cb1-2"><a aria-label="2"></a><span class="fu">library</span>(readxl)    <span class="co"># read Excel files</span></span>
+<span id="cb1-3"><a aria-label="3"></a><span class="fu">library</span>(tidyverse) <span class="co"># dplyr + ggplot2</span></span>
+<span id="cb1-4"><a aria-label="4"></a><span class="fu">library</span>(janitor)   <span class="co"># clean_names()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a aria-label="1"></a><span class="co"># Load the paper calibration data ----------------------</span></span>
-<span id="cb3-2"><a aria-label="2"></a>paper_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/paper_area_weights.xlsx"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a aria-label="1"></a><span class="co"># Load the paper calibration data ----------------------</span></span>
+<span id="cb2-2"><a aria-label="2"></a>paper_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/paper_area_weights.xlsx"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div class="callout callout-note callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Note</strong></p>
-</div>
-<div class="callout-content">
-<p>The file <code>paper_area_weights.xlsx</code> contains 118 paper squares of <strong>known area</strong> (1–567 cm²) with their measured masses. This is the calibration dataset we use to predict leaf area from a tracing weight.</p>
-</div>
-</div>
-</div>
+<p>Two columns, 118 rows: <code>area_cm2</code> is the <strong>known</strong> area of each square, <code>mass_g</code> is what it weighed.</p>
 </section>
 
-<section id="inspect-the-data" class="title-slide slide level1 center">
-<h1>Inspect the Data</h1>
+<section id="always-plot-it-first" class="title-slide slide level1 center">
+<h1>Always Plot It First</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
+<div class="column" style="width:55%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a aria-label="1"></a><span class="co"># Quick overview of the calibration data ---------------</span></span>
-<span id="cb4-2"><a aria-label="2"></a><span class="fu">skim</span>(paper_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<table class="caption-top">
-<caption>Data summary</caption>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">Name</td>
-<td style="text-align: left;">paper_df</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Number of rows</td>
-<td style="text-align: left;">118</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Number of columns</td>
-<td style="text-align: left;">2</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">_______________________</td>
-<td style="text-align: left;"></td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Column type frequency:</td>
-<td style="text-align: left;"></td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">numeric</td>
-<td style="text-align: left;">2</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">________________________</td>
-<td style="text-align: left;"></td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Group variables</td>
-<td style="text-align: left;">None</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Variable type: numeric</strong></p>
-<table class="caption-top" style="width:100%;">
-<colgroup>
-<col style="width: 16%">
-<col style="width: 11%">
-<col style="width: 16%">
-<col style="width: 7%">
-<col style="width: 8%">
-<col style="width: 3%">
-<col style="width: 5%">
-<col style="width: 7%">
-<col style="width: 7%">
-<col style="width: 8%">
-<col style="width: 7%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">skim_variable</th>
-<th style="text-align: right;">n_missing</th>
-<th style="text-align: right;">complete_rate</th>
-<th style="text-align: right;">mean</th>
-<th style="text-align: right;">sd</th>
-<th style="text-align: right;">p0</th>
-<th style="text-align: right;">p25</th>
-<th style="text-align: right;">p50</th>
-<th style="text-align: right;">p75</th>
-<th style="text-align: right;">p100</th>
-<th style="text-align: left;">hist</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">area_cm2</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">71.64</td>
-<td style="text-align: right;">144.46</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">4.00</td>
-<td style="text-align: right;">16.00</td>
-<td style="text-align: right;">64.00</td>
-<td style="text-align: right;">567.00</td>
-<td style="text-align: left;">▇▁▁▁▁</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">mass_g</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.55</td>
-<td style="text-align: right;">1.11</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0.03</td>
-<td style="text-align: right;">0.12</td>
-<td style="text-align: right;">0.48</td>
-<td style="text-align: right;">4.39</td>
-<td style="text-align: left;">▇▁▁▁▁</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="co"># How many squares per area group? --------------------</span></span>
-<span id="cb5-2"><a aria-label="2"></a>paper_df <span class="sc">%&gt;%</span></span>
-<span id="cb5-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(area_cm2) <span class="sc">%&gt;%</span></span>
-<span id="cb5-4"><a aria-label="4"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb5-5"><a aria-label="5"></a>    <span class="at">n =</span> <span class="fu">n</span>(),</span>
-<span id="cb5-6"><a aria-label="6"></a>    <span class="at">mean_wt =</span> <span class="fu">round</span>(<span class="fu">mean</span>(mass_g), <span class="dv">5</span>)</span>
-<span id="cb5-7"><a aria-label="7"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 10 × 3
-   area_cm2     n mean_wt
-      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;
- 1        1    25 0.00677
- 2        4    32 0.0299 
- 3       16    24 0.121  
- 4       36     3 0.269  
- 5       64     7 0.484  
- 6      100    14 0.760  
- 7      225     1 1.74   
- 8      400     6 3.07   
- 9      500     1 3.77   
-10      567     5 4.35   </code></pre>
-</div>
-</div>
-</div></div>
-</section>
-
-<section id="first-plot-scatter" class="title-slide slide level1 center">
-<h1>First Plot — Scatter</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a><span class="co"># Scatter plot of area vs mass to check linearity -----</span></span>
-<span id="cb7-2"><a aria-label="2"></a>scatter_05_plot <span class="ot">&lt;-</span> paper_df <span class="sc">%&gt;%</span></span>
-<span id="cb7-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">y =</span> area_cm2)) <span class="sc">+</span></span>
-<span id="cb7-4"><a aria-label="4"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
-<span id="cb7-5"><a aria-label="5"></a>  <span class="fu">labs</span>(</span>
-<span id="cb7-6"><a aria-label="6"></a>    <span class="at">title =</span> <span class="st">"Paper Mass vs. Known Area"</span>,</span>
-<span id="cb7-7"><a aria-label="7"></a>    <span class="at">x =</span> <span class="st">"Mass (g)"</span>,</span>
-<span id="cb7-8"><a aria-label="8"></a>    <span class="at">y =</span> <span class="st">"Area (cm²)"</span></span>
-<span id="cb7-9"><a aria-label="9"></a>  ) <span class="sc">+</span></span>
-<span id="cb7-10"><a aria-label="10"></a>  <span class="fu">theme_minimal</span>()</span>
-<span id="cb7-11"><a aria-label="11"></a>scatter_05_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a aria-label="1"></a><span class="co"># Scatter plot of area against mass --------------------</span></span>
+<span id="cb3-2"><a aria-label="2"></a>scatter_plot <span class="ot">&lt;-</span> paper_df <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">y =</span> area_cm2)) <span class="sc">+</span></span>
+<span id="cb3-4"><a aria-label="4"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb3-5"><a aria-label="5"></a>  <span class="fu">geom_smooth</span>(<span class="at">method=</span><span class="st">"lm"</span>)</span>
+<span id="cb3-6"><a aria-label="6"></a>scatter_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="regression_lecture_files/figure-revealjs/scatter-raw-05-1.png" alt="Scatter plot of paper area in square centimeters against paper mass in grams, showing a tight, linear, positively sloped relationship with no obvious curve or outliers."></p>
+<p><img data-src="regression_lecture_files/figure-revealjs/scatter-11-1.png" alt="Scatter plot of paper area in square centimetres against paper mass in grams. The points form a tight straight line rising from the bottom left to the top right."></p>
 </figure>
 </div>
 </div>
 </div>
-</div><div class="column" style="width:40%;">
-<p><strong>What to look for before fitting:</strong></p>
+</div><div class="column" style="width:45%;">
+<p><strong>Three plain lines.</strong> <code>aes(x = , y = )</code> puts the explanatory variable on x and the response on y, and <code>geom_point()</code> draws the dots.</p>
+<p><strong>What you are looking for:</strong></p>
 <ul>
-<li>Is the relationship <strong>linear</strong>? → points should follow a straight line</li>
-<li>Is the variance <strong>constant</strong>? → spread around the trend should look similar at all X values</li>
-<li>Any obvious <strong>outliers</strong>?</li>
+<li><strong>Straight?</strong> → a line is the right tool</li>
+<li><strong>Scatter the same all the way along?</strong></li>
+<li><strong>Any point way off on its own?</strong></li>
 </ul>
-<p>Both variables are continuous and numeric → linear regression is appropriate.</p>
-<p>📖 W&amp;S §17.1 p.&nbsp;541</p>
-</div></div>
-</section>
-
-<section id="fit-the-model-with-lm-the-linear-model-function" class="title-slide slide level1 center">
-<h1>Fit the Model with <code>lm()</code> — the Linear Model Function</h1>
+<p>Here: straight, tight, nothing strange. Fit the line.</p>
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -906,20 +757,55 @@ predicted Ŷ│-----●--- regression line
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🔮 Predict first:</strong> area rises with mass. Before you read the output — will the slope be <strong>positive or negative</strong>? Roughly how many cm² per gram of paper?</p>
+<p>Never fit a regression you haven’t looked at. A curve, a funnel, or one wild point all change what you should do next.</p>
 </div>
 </div>
 </div>
+</div></div>
+</section>
+
+<section id="fit-the-model-with-lm" class="title-slide slide level1 center">
+<h1>Fit the Model with <code>lm()</code></h1>
 <div class="columns">
-<div class="column" style="width:60%;">
+<div class="column" style="width:55%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a aria-label="1"></a><span class="co"># Fit the least-squares regression line ---------------</span></span>
-<span id="cb8-2"><a aria-label="2"></a><span class="co"># formula: response ~ predictor</span></span>
-<span id="cb8-3"><a aria-label="3"></a>paper_lm_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(area_cm2 <span class="sc">~</span> mass_g, <span class="at">data =</span> paper_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a aria-label="1"></a><span class="co"># Fit the regression line ------------------------------</span></span>
+<span id="cb4-2"><a aria-label="2"></a>paper_lm_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(area_cm2 <span class="sc">~</span> mass_g,</span>
+<span id="cb4-3"><a aria-label="3"></a>                     <span class="at">data =</span> paper_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># Full model summary — every number matters -----------</span></span>
-<span id="cb9-2"><a aria-label="2"></a><span class="fu">summary</span>(paper_lm_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Nothing prints. <code>lm()</code> hands back a <strong>model object</strong> that is holding the answer — <code>summary()</code> is what shows it to you.</p>
+</div><div class="column" style="width:45%;">
+<p><strong>The formula is the whole trick:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="fu">lm</span>(Y <span class="sc">~</span> X, <span class="at">data =</span> df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><strong>Y</strong> — the response — goes on the <strong>left</strong> of <code>~</code></li>
+<li><strong>X</strong> — the explanatory variable — goes on the <strong>right</strong></li>
+<li><code>~</code> reads as <strong>“is predicted by”</strong></li>
+</ul>
+<p>So <code>area_cm2 ~ mass_g</code> is “area is predicted by mass.”</p>
+<div class="callout callout-warning callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Warning</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>⚠️ Get the order wrong and R will still answer.</strong> <code>lm(mass_g ~ area_cm2)</code> runs fine — it just fits the question you didn’t ask.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="summary-the-whole-output" class="title-slide slide level1 center scrollable">
+<h1><code>summary()</code> — the Whole Output</h1>
+<div class="cell columns column-output-location">
+<div class="column">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a aria-label="1"></a><span class="co"># Read the model ---------------------------------------</span></span>
+<span id="cb6-2"><a aria-label="2"></a><span class="fu">summary</span>(paper_lm_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div><div class="column">
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
@@ -940,135 +826,81 @@ Residual standard error: 1.764 on 116 degrees of freedom
 Multiple R-squared:  0.9999,    Adjusted R-squared:  0.9999 
 F-statistic: 7.849e+05 on 1 and 116 DF,  p-value: &lt; 2.2e-16</code></pre>
 </div>
-</div>
-</div><div class="column" style="width:40%;">
-<p><strong>The <code>lm()</code> formula syntax:</strong></p>
-<ul>
-<li><code>lm(Y ~ X, data = df)</code>
-<ul>
-<li><code>Y</code> goes on the <strong>left</strong> of <code>~</code></li>
-<li><code>X</code> goes on the <strong>right</strong></li>
-<li><code>~</code> reads as “is predicted by”</li>
-</ul></li>
-<li>So <code>area_cm2 ~ mass_g</code> means: “area is predicted by mass”</li>
-<li>The result is a <strong>model object</strong> — we can extract everything from it.</li>
-<li>📖 W&amp;S §17.1 p.&nbsp;543</li>
-</ul>
 </div></div>
+<p>There are only <strong>four numbers</strong> in here that you need, and we will take them one at a time:</p>
+<ol type="1">
+<li>the <strong>slope</strong> (<code>mass_g</code> → <code>Estimate</code>)</li>
+<li>the <strong>intercept</strong> (<code>(Intercept)</code> → <code>Estimate</code>)</li>
+<li>the slope’s <strong><em>p</em>-value</strong> (<code>mass_g</code> → <code>Pr(&gt;|t|)</code>)</li>
+<li>the <strong>R²</strong> (<code>Multiple R-squared</code>)</li>
+</ol>
 </section>
 
-<section id="reading-the-summary-output" class="title-slide slide level1 center">
-<h1>Reading the <code>summary()</code> Output</h1>
+<section id="reading-it-1.-the-coefficients-table" class="title-slide slide level1 center">
+<h1>Reading It — 1. The Coefficients Table</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="co"># Extract the key numbers from the model --------------</span></span>
-<span id="cb11-2"><a aria-label="2"></a>a_intercept <span class="ot">&lt;-</span> <span class="fu">coef</span>(paper_lm_model)[<span class="dv">1</span>] <span class="co"># intercept</span></span>
-<span id="cb11-3"><a aria-label="3"></a>b_slope <span class="ot">&lt;-</span> <span class="fu">coef</span>(paper_lm_model)[<span class="dv">2</span>] <span class="co"># slope</span></span>
-<span id="cb11-4"><a aria-label="4"></a></span>
-<span id="cb11-5"><a aria-label="5"></a><span class="fu">cat</span>(<span class="st">"Intercept (a) ="</span>, <span class="fu">round</span>(a_intercept, <span class="dv">4</span>), <span class="st">"cm²</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Intercept (a) = 0.2792 cm²</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"Slope (b)     ="</span>, <span class="fu">round</span>(b_slope, <span class="dv">2</span>), <span class="st">"cm²/g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Slope (b)     = 130.52 cm²/g</code></pre>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<p><strong>Decode the Coefficients table:</strong></p>
+<div class="column" style="width:52%;">
+<pre><code>Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)
+(Intercept)   0.2792     0.1812   1.541    0.126
+mass_g      130.5234     0.1473 885.964   &lt;2e-16</code></pre>
+<p><strong>The <code>Estimate</code> column is the equation.</strong></p>
+<ul>
+<li><code>(Intercept)</code> = <strong>0.28</strong> → that is <em>a</em></li>
+<li><code>mass_g</code> = <strong>130.52</strong> → that is <em>b</em>, the slope</li>
+</ul>
+<p>So the fitted line is:</p>
+<p><span class="math display">\[\widehat{\text{area}} = 0.28 + 130.52 \times \text{mass}\]</span></p>
+</div><div class="column" style="width:48%;">
+<p><strong>Say the slope out loud, with units:</strong></p>
+<blockquote>
+<p>Every extra <strong>1 gram</strong> of this paper is another <strong>130.5 cm²</strong> of area.</p>
+</blockquote>
+<p>That is the conversion factor we came for.</p>
+<p><strong>The other three columns, in one line each:</strong></p>
 <table class="caption-top">
+<colgroup>
+<col style="width: 35%">
+<col style="width: 65%">
+</colgroup>
 <thead>
 <tr class="header">
-<th>Row</th>
+<th>Column</th>
 <th>What it is</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>(Intercept)</code></td>
-<td><em>a</em> — predicted area when mass = 0</td>
-</tr>
-<tr class="even">
-<td><code>mass_g</code></td>
-<td><em>b</em> — cm² per gram of paper</td>
-</tr>
-<tr class="odd">
 <td><code>Std. Error</code></td>
-<td>uncertainty in each estimate</td>
+<td>how uncertain that estimate is</td>
 </tr>
 <tr class="even">
 <td><code>t value</code></td>
-<td><em>b</em> / SE — tests if slope ≠ 0</td>
+<td>Estimate ÷ Std. Error</td>
 </tr>
 <tr class="odd">
 <td><code>Pr(&gt;|t|)</code></td>
-<td><em>p</em>-value for that t-test</td>
+<td>the <strong><em>p</em>-value</strong> for that row</td>
 </tr>
 </tbody>
 </table>
-<p><strong>H₀:</strong> β = 0 (mass does not predict area)</p>
-<p><strong>Hₐ:</strong> β ≠ 0 — our slope tests this hypothesis</p>
-<p>📖 W&amp;S §17.3 p.&nbsp;551–553</p>
+<p>📖 W&amp;S §17.3 p.&nbsp;551</p>
 </div></div>
 </section>
 
-<section id="the-calibration-equation-and-r²" class="title-slide slide level1 center">
-<h1>The Calibration Equation and R²</h1>
+<section id="reading-it-2.-the-two-p-values" class="title-slide slide level1 center">
+<h1>Reading It — 2. The Two <em>p</em>-Values</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a aria-label="1"></a><span class="co"># Extract R-squared and build the equation label ------</span></span>
-<span id="cb15-2"><a aria-label="2"></a>r2_val <span class="ot">&lt;-</span> <span class="fu">summary</span>(paper_lm_model)<span class="sc">$</span>r.squared</span>
-<span id="cb15-3"><a aria-label="3"></a></span>
-<span id="cb15-4"><a aria-label="4"></a><span class="fu">cat</span>(<span class="st">"R² ="</span>, <span class="fu">round</span>(r2_val, <span class="dv">6</span>), <span class="st">"</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>R² = 0.999852 </code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"Calibration equation:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Calibration equation:</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a aria-label="1"></a><span class="fu">cat</span>(</span>
-<span id="cb19-2"><a aria-label="2"></a>  <span class="st">"  area (cm²) ="</span>,</span>
-<span id="cb19-3"><a aria-label="3"></a>  <span class="fu">round</span>(b_slope, <span class="dv">2</span>),</span>
-<span id="cb19-4"><a aria-label="4"></a>  <span class="st">"× mass (g) +"</span>,</span>
-<span id="cb19-5"><a aria-label="5"></a>  <span class="fu">round</span>(a_intercept, <span class="dv">4</span>),</span>
-<span id="cb19-6"><a aria-label="6"></a>  <span class="st">"</span><span class="sc">\n\n</span><span class="st">"</span></span>
-<span id="cb19-7"><a aria-label="7"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  area (cm²) = 130.52 × mass (g) + 0.2792 </code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"Interpretation of slope:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Interpretation of slope:</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"  Every 1 g of paper ="</span>, <span class="fu">round</span>(b_slope, <span class="dv">1</span>), <span class="st">"cm² of area</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  Every 1 g of paper = 130.5 cm² of area</code></pre>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
+<div class="column" style="width:52%;">
+<pre><code>(Intercept)   0.2792   ...   0.126
+mass_g      130.5234   ...  &lt;2e-16</code></pre>
+<p><strong>The slope row is the one that matters.</strong> <code>Pr(&gt;|t|)</code> for <code>mass_g</code> is <code>&lt;2e-16</code> — R’s way of writing “smaller than I can print.”</p>
 <ul>
-<li><strong>What R² = 0.9999 means:</strong>
-<ul>
-<li><p>99.99% of the variation in paper area is explained by mass. The remaining 0.01% is measurement noise from the balance.</p></li>
-<li><p>This is expected — the relationship between mass and area in uniform paper is essentially perfect.</p></li>
-<li><p>In biological data, R² values of 0.3–0.7 are common and meaningful.</p></li>
-<li><p>📖 W&amp;S §17.4 p.&nbsp;555</p></li>
-</ul></li>
+<li><strong>H₀:</strong> the slope is 0 → mass tells you nothing about area</li>
+<li><em>p</em> &lt; 0.001 → <strong>reject H₀</strong>. Mass predicts area.</li>
 </ul>
-</div></div>
-</section>
-
-<section id="pause-do-activity-parts-47-now" class="title-slide slide level1 center">
-<h1>🛑 Pause — Do Activity Parts 4–7 Now</h1>
-<p>Fit <code>lm(area_cm2 ~ mass_g)</code>, decode the <code>summary()</code> table, and pull the slope, intercept, and R². Predict each number before it prints.</p>
-</section>
-
-<section id="chunk-3-of-4-visualize-check-assumptions" class="title-slide slide level1 center">
-<h1>🧩 Chunk 3 of 4 · Visualize &amp; Check Assumptions</h1>
-<p><strong>We will cover:</strong> the calibration curve with its CI band, and the four base R diagnostic plots + Shapiro-Wilk on the residuals.</p>
+<p><strong>The intercept row:</strong> <em>p</em> = 0.126, so the intercept is <strong>not</strong> distinguishable from 0 — exactly what physics says it should be. A piece of paper with no mass has no area.</p>
+</div><div class="column" style="width:48%;">
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -1078,61 +910,11 @@ F-statistic: 7.849e+05 on 1 and 116 DF,  p-value: &lt; 2.2e-16</code></pre>
 <p><strong>Tip</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🖐 After this chunk: Activity Parts 8–10</strong> (plot the curve; check <code>plot(model)</code> and Shapiro-Wilk).</p>
+<p><strong>Which <em>p</em>-value do I report?</strong></p>
+<p>The <strong>slope’s</strong>. That is the biological question. Nobody reports the intercept’s <em>p</em>-value unless zero means something special.</p>
 </div>
 </div>
 </div>
-</section>
-
-<section id="plot-the-calibration-curve" class="title-slide slide level1 center">
-<h1>Plot the Calibration Curve</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a aria-label="1"></a><span class="co"># Calibration curve with regression line + 95% CI band</span></span>
-<span id="cb25-2"><a aria-label="2"></a>calibration_plot <span class="ot">&lt;-</span> paper_df <span class="sc">%&gt;%</span></span>
-<span id="cb25-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">y =</span> area_cm2)) <span class="sc">+</span></span>
-<span id="cb25-4"><a aria-label="4"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">size =</span> <span class="fl">1.8</span>) <span class="sc">+</span></span>
-<span id="cb25-5"><a aria-label="5"></a>  <span class="fu">geom_smooth</span>(</span>
-<span id="cb25-6"><a aria-label="6"></a>    <span class="at">method =</span> <span class="st">"lm"</span>,</span>
-<span id="cb25-7"><a aria-label="7"></a>    <span class="at">se =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb25-8"><a aria-label="8"></a>    <span class="at">color =</span> <span class="st">"darkblue"</span>,</span>
-<span id="cb25-9"><a aria-label="9"></a>    <span class="at">fill =</span> <span class="st">"lightblue"</span></span>
-<span id="cb25-10"><a aria-label="10"></a>  ) <span class="sc">+</span></span>
-<span id="cb25-11"><a aria-label="11"></a>  <span class="fu">labs</span>(</span>
-<span id="cb25-12"><a aria-label="12"></a>    <span class="at">title =</span> <span class="st">"Paper Calibration Curve"</span>,</span>
-<span id="cb25-13"><a aria-label="13"></a>    <span class="at">subtitle =</span> <span class="fu">paste0</span>(</span>
-<span id="cb25-14"><a aria-label="14"></a>      <span class="st">"area = "</span>,</span>
-<span id="cb25-15"><a aria-label="15"></a>      <span class="fu">round</span>(b_slope, <span class="dv">2</span>),</span>
-<span id="cb25-16"><a aria-label="16"></a>      <span class="st">" × mass + "</span>,</span>
-<span id="cb25-17"><a aria-label="17"></a>      <span class="fu">round</span>(a_intercept, <span class="dv">3</span>),</span>
-<span id="cb25-18"><a aria-label="18"></a>      <span class="st">"  |  R² = "</span>,</span>
-<span id="cb25-19"><a aria-label="19"></a>      <span class="fu">round</span>(r2_val, <span class="dv">4</span>)</span>
-<span id="cb25-20"><a aria-label="20"></a>    ),</span>
-<span id="cb25-21"><a aria-label="21"></a>    <span class="at">x =</span> <span class="st">"Paper Mass (g)"</span>,</span>
-<span id="cb25-22"><a aria-label="22"></a>    <span class="at">y =</span> <span class="st">"Area (cm²)"</span></span>
-<span id="cb25-23"><a aria-label="23"></a>  ) <span class="sc">+</span></span>
-<span id="cb25-24"><a aria-label="24"></a>  <span class="fu">theme_minimal</span>()</span>
-<span id="cb25-25"><a aria-label="25"></a></span>
-<span id="cb25-26"><a aria-label="26"></a>calibration_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure>
-<p><img data-src="regression_lecture_files/figure-revealjs/calibration-line-plot-05-1.png" alt="Scatter plot of paper area versus mass with a dark blue least-squares regression line and a light blue 95 percent confidence band that narrows near the middle of the mass range and widens at the extremes."></p>
-</figure>
-</div>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<p><strong>The shaded band</strong> = 95% confidence band for the <em>mean</em> predicted area at each mass value.</p>
-<p><strong>Key observation:</strong> the band is narrowest in the middle of the data range and widens at the extremes — predictions are most precise near <span class="math inline">\(\bar{X}\)</span>.</p>
-<p>This is exactly Figure 17.2-1 from W&amp;S (p.&nbsp;549).</p>
-<p>📖 W&amp;S §17.2 p.&nbsp;548–550</p>
-</div></div>
-</section>
-
-<section id="check-assumptions-the-base-r-diagnostic-plots" class="title-slide slide level1 center">
-<h1>Check Assumptions — the Base R Diagnostic Plots</h1>
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -1142,27 +924,174 @@ F-statistic: 7.849e+05 on 1 and 116 DF,  p-value: &lt; 2.2e-16</code></pre>
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🔮 Predict first:</strong> <code>plot()</code> on a fitted model gives you four panels at once. One of them is a QQ plot — what do you predict the other three will show?</p>
+<p><strong>Never write <em>p</em> = 0.</strong> When R prints <code>&lt;2e-16</code>, you write <strong><em>p</em></strong> <strong>&lt; 0.001</strong>.</p>
 </div>
 </div>
 </div>
+</div></div>
+</section>
+
+<section id="reading-it-3.-r²-and-the-bottom-line" class="title-slide slide level1 center">
+<h1>Reading It — 3. R² and the Bottom Line</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
+<div class="column" style="width:52%;">
+<pre><code>Residual standard error: 1.764 on 116 degrees of freedom
+Multiple R-squared:  0.9999, Adjusted R-squared:  0.9999
+F-statistic: 7.849e+05 on 1 and 116 DF,  p-value: &lt; 2.2e-16</code></pre>
+<ul>
+<li><strong>Multiple R-squared = 0.9999</strong> → mass explains <strong>99.99%</strong> of the variation in area. That is manufactured paper, not biology.</li>
+<li><strong>F-statistic</strong> with <strong>1 and 116 DF</strong>, <em>p</em> &lt; 2.2e-16 → the overall test of the model. With one X it tells you the same thing as the slope’s <em>p</em>-value.</li>
+<li><strong>Residual standard error = 1.76 cm²</strong> → a typical miss is about 1.8 cm².</li>
+</ul>
+</div><div class="column" style="width:48%;">
+<p><strong>Where the df come from:</strong></p>
+<ul>
+<li><strong>1</strong> = one explanatory variable</li>
+<li><strong>116</strong> = 118 squares − 2 numbers we estimated (<em>a</em> and <em>b</em>)</li>
+</ul>
+<p><strong>Use <code>Adjusted R-squared</code></strong> once you have more than one X; with a single X, report <code>Multiple R-squared</code>.</p>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>R² = 0.9999 does not mean “everything is fine.”</strong> It means the points are close to the line. Whether the <em>assumptions</em> hold is a separate question — and we check it two slides from now.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="activity-11-parts-14-now" class="title-slide slide level1 center">
+<h1>→ ACTIVITY 11 Parts 1–4 now</h1>
+<div class="activitybanner">
+<p><strong>🛑 Do Activity Parts 1–4 now</strong></p>
+<p>Load the paper data, make the scatter plot, fit <code>lm(area_cm2 ~ mass_g)</code>, and pull the slope, the <em>p</em>-value, and R² <strong>off the summary output</strong> — writing them in your answer boxes.</p>
+</div>
+</section>
+
+<section id="chunk-3-of-3-plot-it-check-it-use-it" class="title-slide slide level1 center">
+<h1>🧩 Chunk 3 of 3 · Plot It, Check It, Use It</h1>
+<p><strong>We will cover:</strong> drawing the fitted line, reading <code>plot(model)</code>, using <code>predict()</code> on one tracing and then on a whole column, and writing the result up.</p>
+<div class="activitybanner">
+<p><strong>🛑 After this chunk: Activity Parts 5–9</strong> (plot the line, check the residuals, predict, report).</p>
+</div>
+</section>
+
+<section id="draw-the-line" class="title-slide slide level1 center">
+<h1>Draw the Line</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a aria-label="1"></a><span class="co"># plot() on an lm object gives all four diagnostics -----</span></span>
-<span id="cb26-2"><a aria-label="2"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
-<span id="cb26-3"><a aria-label="3"></a><span class="fu">plot</span>(paper_lm_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="co"># Scatter plot with the fitted line --------------------</span></span>
+<span id="cb11-2"><a aria-label="2"></a>calibration_plot <span class="ot">&lt;-</span> paper_df <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">y =</span> area_cm2)) <span class="sc">+</span></span>
+<span id="cb11-4"><a aria-label="4"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb11-5"><a aria-label="5"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span>
+<span id="cb11-6"><a aria-label="6"></a>calibration_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="regression_lecture_files/figure-revealjs/diagnostic-plots-05-1.png" alt="Four base R diagnostic plots for the paper calibration linear model, arranged in a two by two grid: residuals versus fitted values, a normal Q-Q plot of the residuals, a scale-location plot, and a residuals versus leverage plot."></p>
+<p><img data-src="regression_lecture_files/figure-revealjs/calibration-plain-11-1.png" alt="Scatter plot of paper area against paper mass with a straight fitted regression line and a narrow grey confidence band through the points."></p>
 </figure>
 </div>
 </div>
 </div>
-</div><div class="column" style="width:40%;">
-<p><strong>No extra code needed.</strong> Once you have a fitted <code>lm</code> object, <code>plot()</code> already knows how to diagnose it.</p>
+</div><div class="column" style="width:45%;">
+<p><strong>One extra line.</strong> <code>geom_smooth(method = "lm")</code> fits the same regression again, just for drawing, and adds:</p>
+<ul>
+<li>the <strong>fitted line</strong></li>
+<li>a grey <strong>95% confidence band</strong> around it</li>
+</ul>
+<p><strong>The band is narrowest in the middle</strong> of the data and flares at the ends — the line is pinned down best where you have the most data. Here it is so narrow you can barely see it.</p>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><code>geom_smooth()</code> defaults to a wiggly curve. <strong><code>method = "lm"</code> is what makes it a straight regression line.</strong></p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="the-same-plot-dressed-up" class="title-slide slide level1 center">
+<h1>The Same Plot, Dressed Up</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="co"># The publication version — for reference ---------------</span></span>
+<span id="cb12-2"><a aria-label="2"></a>calibration_plot <span class="ot">&lt;-</span> paper_df <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">y =</span> area_cm2)) <span class="sc">+</span></span>
+<span id="cb12-4"><a aria-label="4"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb12-5"><a aria-label="5"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
+<span id="cb12-6"><a aria-label="6"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Paper mass (g)"</span>,</span>
+<span id="cb12-7"><a aria-label="7"></a>       <span class="at">y =</span> <span class="st">"Paper area (cm²)"</span>) <span class="sc">+</span></span>
+<span id="cb12-8"><a aria-label="8"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb12-9"><a aria-label="9"></a>calibration_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="regression_lecture_files/figure-revealjs/calibration-dressed-11-1.png" alt="The same paper calibration scatter plot with the fitted line, now with axis labels reading Paper mass in grams and Paper area in square centimetres, on a minimal theme."></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:45%;">
+<p><strong>This is the version you’d put in a report</strong> — and it is only two additions to the plot you already made:</p>
+<ul>
+<li><code>labs()</code> — real axis labels with units</li>
+<li><code>theme_minimal()</code> — drop the grey background</li>
+</ul>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Don’t type this today.</strong> Get the plain <code>geom_point() + geom_smooth(method = "lm")</code> working first. Labels and themes are the last thing you add, once you know the plot is right.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="check-the-residuals-plotmodel" class="title-slide slide level1 center">
+<h1>Check the Residuals — <code>plot(model)</code></h1>
+<div class="columns">
+<div class="column" style="width:50%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># All four residual plots in one call ------------------</span></span>
+<span id="cb13-2"><a aria-label="2"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
+<span id="cb13-3"><a aria-label="3"></a><span class="fu">plot</span>(paper_lm_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="regression_lecture_files/figure-revealjs/diagnostic-plots-11-1.png" alt="Four base R diagnostic plots for the paper calibration model in a two by two grid: residuals versus fitted values showing a clear funnel that widens to the right, a normal Q-Q plot with points curving away at both ends, a scale-location plot rising to the right, and residuals versus leverage."></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:50%;">
+<p><code>par(mfrow = c(2, 2))</code> just says “put the next four plots in a 2×2 grid.”</p>
 <table class="caption-top">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 38%">
+<col style="width: 50%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Panel</th>
@@ -1174,86 +1103,218 @@ F-statistic: 7.849e+05 on 1 and 116 DF,  p-value: &lt; 2.2e-16</code></pre>
 <tr class="odd">
 <td>1</td>
 <td>Residuals vs Fitted</td>
-<td>linearity, equal variance</td>
+<td>linear? equal scatter?</td>
 </tr>
 <tr class="even">
 <td>2</td>
 <td>Normal Q-Q</td>
-<td>normality of residuals</td>
+<td>residuals bell-shaped?</td>
 </tr>
 <tr class="odd">
 <td>3</td>
 <td>Scale-Location</td>
-<td>equal variance (another view)</td>
+<td>equal scatter again</td>
 </tr>
 <tr class="even">
 <td>4</td>
 <td>Residuals vs Leverage</td>
-<td>influential points</td>
+<td>any one point running the show</td>
 </tr>
 </tbody>
 </table>
-<p><strong>What to look for:</strong></p>
+<p><strong>Panel 1 is the one to look at first.</strong></p>
 <ul>
-<li>✅ <strong>Good:</strong> panel 1 &amp; 3 show a random flat cloud; panel 2 tracks the dashed line</li>
-<li>❌ <strong>Bad:</strong> a curve or funnel in panel 1, or points curving away at the ends of panel 2</li>
+<li>✅ <strong>Good:</strong> a flat, shapeless cloud around 0</li>
+<li>❌ <strong>Curved:</strong> the relationship isn’t straight</li>
+<li>❌ <strong>Funnel:</strong> the scatter grows as Y grows</li>
 </ul>
-<p>📖 W&amp;S §17.5 p.&nbsp;557–560 (Figures 17.5-1, 17.5-4)</p>
 </div></div>
 </section>
 
-<section id="confirming-normality-shapiro-wilk" class="title-slide slide level1 center">
-<h1>Confirming Normality — Shapiro-Wilk</h1>
+<section id="what-our-residual-plot-is-telling-us" class="title-slide slide level1 center">
+<h1>What Our Residual Plot Is Telling Us</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
+<div class="column" style="width:52%;">
+<p>Look at panel 1 again. The points <strong>fan out</strong> — a 1 cm² square misses by hundredths of a cm², a 567 cm² square misses by several cm².</p>
+<p>That is a <strong>funnel</strong>: assumption 3 (equal variance) does not hold.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a aria-label="1"></a><span class="co"># Shapiro-Wilk test on residuals — NOT on raw data ---</span></span>
-<span id="cb27-2"><a aria-label="2"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(paper_lm_model))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a aria-label="1"></a><span class="co"># How big are the misses at each square size? ---------</span></span>
+<span id="cb14-2"><a aria-label="2"></a>paper_df <span class="sc">%&gt;%</span></span>
+<span id="cb14-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">residual =</span> <span class="fu">residuals</span>(paper_lm_model)) <span class="sc">%&gt;%</span></span>
+<span id="cb14-4"><a aria-label="4"></a>  <span class="fu">group_by</span>(area_cm2) <span class="sc">%&gt;%</span></span>
+<span id="cb14-5"><a aria-label="5"></a>  <span class="fu">summarize</span>(<span class="at">biggest_miss =</span> <span class="fu">round</span>(<span class="fu">max</span>(<span class="fu">abs</span>(residual)), <span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>
-    Shapiro-Wilk normality test
-
-data:  residuals(paper_lm_model)
-W = 0.67735, p-value = 9.425e-15</code></pre>
+<pre><code># A tibble: 10 × 2
+   area_cm2 biggest_miss
+      &lt;dbl&gt;        &lt;dbl&gt;
+ 1        1         0.35
+ 2        4         0.59
+ 3       16         0.65
+ 4       36         0.96
+ 5       64         1.3 
+ 6      100         3.09
+ 7      225         2   
+ 8      400         7.28
+ 9      500         7.39
+10      567         8.76</code></pre>
 </div>
 </div>
-</div><div class="column" style="width:40%;">
-<p><strong>Remember:</strong></p>
-<ul>
-<li>The normality assumption is about <strong>residuals</strong>, not raw data</li>
-<li>H₀ (Shapiro-Wilk): residuals are normally distributed</li>
-<li><em>p</em> &gt; 0.05 → proceed with confidence intervals and <em>p</em>-values</li>
-<li>Use this as a <strong>formal companion</strong> to panel 2 of the diagnostic plot — not a replacement for looking at it</li>
-</ul>
-<p>📖 W&amp;S §17.5 p.&nbsp;559</p>
-</div></div>
-</section>
-
-<section id="pause-do-activity-parts-810-now" class="title-slide slide level1 center">
-<h1>🛑 Pause — Do Activity Parts 8–10 Now</h1>
-<p>Plot the calibration curve, then run <code>plot(model)</code> and Shapiro-Wilk on the residuals. Predict each diagnostic before you run it.</p>
-</section>
-
-<section id="chunk-4-of-4-predict-report" class="title-slide slide level1 center">
-<h1>🧩 Chunk 4 of 4 · Predict &amp; Report</h1>
-<p><strong>We will cover:</strong> turning a tracing mass into a predicted area, <code>predict()</code> with confidence vs prediction intervals, and writing the results paragraph.</p>
-<div class="callout callout-tip callout-titled callout-style-default">
+</div><div class="column" style="width:48%;">
+<div class="callout callout-important callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
-<p><strong>Tip</strong></p>
+<p><strong>Important</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🖐 After this chunk: Activity Parts 11–12</strong> (predict leaf area; write the results paragraph).</p>
+<p><strong>A great R² and a bad residual plot can live together.</strong> R² says the points are near the line. The residual plot says the <em>size of the miss</em> depends on how big the square is — which it does, because a balance has percentage error, not fixed error.</p>
 </div>
 </div>
 </div>
+<p><strong>So what do we do?</strong></p>
+<ul>
+<li>For <strong>predicting a leaf tracing</strong> (0.1–0.4 g) we are down in the tight end of the line, where a typical miss is a fraction of a cm². The calibration is fine for the job.</li>
+<li>The <strong>confidence intervals</strong> at the big-square end are the part you shouldn’t trust.</li>
+<li>The proper fix — fitting on a log scale, or weighting the points — is a <strong>graduate</strong> topic. Knowing to look, and saying what you saw, is the undergraduate job.</li>
+</ul>
+</div></div>
 </section>
 
-<section id="predict-leaf-area-from-tracing-mass" class="title-slide slide level1 center">
-<h1>Predict Leaf Area from Tracing Mass</h1>
+<section id="predict-one-tracing" class="title-slide slide level1 center">
+<h1>Predict One Tracing</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a aria-label="1"></a><span class="co"># Predict the area of one leaf tracing ----------------</span></span>
+<span id="cb16-2"><a aria-label="2"></a><span class="co"># The tracing weighed 0.138 g</span></span>
+<span id="cb16-3"><a aria-label="3"></a>one_tracing <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">mass_g =</span> <span class="fl">0.138</span>)</span>
+<span id="cb16-4"><a aria-label="4"></a></span>
+<span id="cb16-5"><a aria-label="5"></a><span class="fu">predict</span>(paper_lm_model, <span class="at">newdata =</span> one_tracing)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       1 
+18.29144 </code></pre>
+</div>
+</div>
+<p>An 0.138 g tracing is about <strong>18.3 cm²</strong> of leaf.</p>
+</div><div class="column" style="width:45%;">
+<p><strong><code>predict()</code> takes two things:</strong></p>
+<ul>
+<li>the <strong>model</strong> you fitted</li>
+<li><code>newdata =</code> — a small data frame of the X values you want predictions for</li>
+</ul>
+<div class="callout callout-warning callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Warning</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>⚠️ The column in <code>newdata</code> must have the same name as in the model.</strong> The model was built on <code>mass_g</code>, so <code>newdata</code> needs a column called <code>mass_g</code>. Call it <code>mass</code> and R stops with <em>“object ‘mass_g’ not found.”</em></p>
+</div>
+</div>
+</div>
+<p>This beats doing the arithmetic yourself — no copying the slope, nothing to mistype.</p>
+</div></div>
+</section>
+
+<section id="predict-with-an-interval" class="title-slide slide level1 center">
+<h1>Predict with an Interval</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a aria-label="1"></a><span class="co"># Two tracings, with 95% prediction intervals ---------</span></span>
+<span id="cb18-2"><a aria-label="2"></a>two_tracings <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">mass_g =</span> <span class="fu">c</span>(<span class="fl">0.092</span>, <span class="fl">0.138</span>))</span>
+<span id="cb18-3"><a aria-label="3"></a></span>
+<span id="cb18-4"><a aria-label="4"></a><span class="fu">predict</span>(paper_lm_model,</span>
+<span id="cb18-5"><a aria-label="5"></a>        <span class="at">newdata =</span> two_tracings,</span>
+<span id="cb18-6"><a aria-label="6"></a>        <span class="at">interval =</span> <span class="st">"prediction"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       fit       lwr      upr
+1 12.28736  8.777018 15.79771
+2 18.29144 14.781578 21.80131</code></pre>
+</div>
+</div>
+<p>The 0.138 g tracing is <strong>18.3 cm²</strong>, somewhere between about <strong>14.8 and 21.8 cm²</strong>.</p>
+</div><div class="column" style="width:45%;">
+<p><code>interval = "prediction"</code> adds two columns:</p>
+<ul>
+<li><code>fit</code> — the prediction</li>
+<li><code>lwr</code> and <code>upr</code> — the 95% range</li>
+</ul>
+<p><strong>Two kinds of interval:</strong></p>
+<table class="caption-top">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 50%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><code>interval =</code></th>
+<th>Range for</th>
+<th>Width</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>"confidence"</code></td>
+<td>the <strong>average</strong> area of all tracings this heavy</td>
+<td>narrower</td>
+</tr>
+<tr class="even">
+<td><code>"prediction"</code></td>
+<td><strong>one particular</strong> tracing</td>
+<td>wider</td>
+</tr>
+</tbody>
+</table>
+<p>For a single real leaf, use <strong><code>"prediction"</code></strong>.</p>
+<p>📖 W&amp;S §17.2 pp.&nbsp;548–550</p>
+</div></div>
+</section>
+
+<section id="convert-a-whole-column-of-tracings" class="title-slide slide level1 center">
+<h1>Convert a Whole Column of Tracings</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a aria-label="1"></a><span class="co"># Load our leaf data ----------------------------------</span></span>
+<span id="cb20-2"><a aria-label="2"></a>leaf_df <span class="ot">&lt;-</span></span>
+<span id="cb20-3"><a aria-label="3"></a>  <span class="fu">read_excel</span>(<span class="st">"data/2026_09_03_data_sci_leaf_area.xlsx"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb20-4"><a aria-label="4"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb20-5"><a aria-label="5"></a></span>
+<span id="cb20-6"><a aria-label="6"></a><span class="co"># Turn every tracing mass into an area ----------------</span></span>
+<span id="cb20-7"><a aria-label="7"></a>leaf_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb20-8"><a aria-label="8"></a>  <span class="fu">mutate</span>(<span class="at">leaf_area_cm2 =</span></span>
+<span id="cb20-9"><a aria-label="9"></a>           <span class="fu">predict</span>(paper_lm_model,</span>
+<span id="cb20-10"><a aria-label="10"></a>                   <span class="at">newdata =</span> <span class="fu">tibble</span>(<span class="at">mass_g =</span> paper_mass_g)))</span>
+<span id="cb20-11"><a aria-label="11"></a></span>
+<span id="cb20-12"><a aria-label="12"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb20-13"><a aria-label="13"></a>  <span class="fu">select</span>(teams, shade, mass_g, paper_mass_g, leaf_area_cm2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 53 × 5
+   teams shade mass_g paper_mass_g leaf_area_cm2
+   &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;        &lt;dbl&gt;         &lt;dbl&gt;
+ 1 12345 sunny   0.4          0.21          27.7
+ 2 12345 sunny   0.48         0.21          27.7
+ 3 12345 sunny   0.34         0.21          27.7
+ 4 12345 sunny   0.65         0.24          31.6
+ 5 12345 sunny   0.27         0.15          19.9
+ 6 12345 sunny   0.43         0.34          44.7
+ 7 12345 shady   0.39         0.29          38.1
+ 8 12345 shady   0.45         0.25          32.9
+ 9 12345 shady   0.6          0.23          30.3
+10 12345 shady   0.57         0.28          36.8
+# ℹ 43 more rows</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:42%;">
+<p><strong>This is the payoff.</strong> <code>paper_mass_g</code> was the mass of each leaf’s tracing. Now every leaf has a <strong><code>leaf_area_cm2</code></strong>.</p>
+<p><strong>The one fiddly bit</strong> is the same rule as before: <code>predict()</code> wants a column called <code>mass_g</code>, so we hand it <code>tibble(mass_g = paper_mass_g)</code> — our tracing masses, under the name the model knows.</p>
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -1263,244 +1324,171 @@ W = 0.67735, p-value = 9.425e-15</code></pre>
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🔮 Predict first:</strong> The sunny tracing weighs 0.092 g, the shady 0.138 g. Before running — which predicts the <strong>larger</strong> area, and does that match “shady leaves are bigger”?</p>
+<p><strong>The <code>NA</code>s are honest.</strong> One team never weighed their tracings, so those leaves have no area. <code>predict()</code> passes the missing value straight through instead of inventing a number.</p>
 </div>
 </div>
 </div>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a aria-label="1"></a><span class="co"># Plug tracing masses into the calibration line -------</span></span>
-<span id="cb29-2"><a aria-label="2"></a><span class="co"># Suppose sunny leaf tracing weighs 0.092 g</span></span>
-<span id="cb29-3"><a aria-label="3"></a><span class="co"># and shady leaf tracing weighs 0.138 g</span></span>
-<span id="cb29-4"><a aria-label="4"></a></span>
-<span id="cb29-5"><a aria-label="5"></a>mass_sunny <span class="ot">&lt;-</span> <span class="fl">0.092</span></span>
-<span id="cb29-6"><a aria-label="6"></a>mass_shady <span class="ot">&lt;-</span> <span class="fl">0.138</span></span>
-<span id="cb29-7"><a aria-label="7"></a></span>
-<span id="cb29-8"><a aria-label="8"></a>area_sunny <span class="ot">&lt;-</span> b_slope <span class="sc">*</span> mass_sunny <span class="sc">+</span> a_intercept</span>
-<span id="cb29-9"><a aria-label="9"></a>area_shady <span class="ot">&lt;-</span> b_slope <span class="sc">*</span> mass_shady <span class="sc">+</span> a_intercept</span>
-<span id="cb29-10"><a aria-label="10"></a></span>
-<span id="cb29-11"><a aria-label="11"></a><span class="fu">cat</span>(<span class="st">"Sunny tracing mass:"</span>, mass_sunny, <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Sunny tracing mass: 0.092 g</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"Predicted area:    "</span>, <span class="fu">round</span>(area_sunny, <span class="dv">2</span>), <span class="st">"cm²</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Predicted area:     12.29 cm²</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"Shady tracing mass:"</span>, mass_shady, <span class="st">"g</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Shady tracing mass: 0.138 g</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"Predicted area:    "</span>, <span class="fu">round</span>(area_shady, <span class="dv">2</span>), <span class="st">"cm²</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Predicted area:     18.29 cm²</code></pre>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<p><strong>The equation in action:</strong></p>
-<p><span class="math display">\[\widehat{\text{area}} = 130.5 \times \text{mass} + 0.28\]</span></p>
-<p>For a sunny tracing at 0.092 g:</p>
-<p><span class="math inline">\(130.5 \times 0.092 + 0.28 = 12.3\)</span> cm²</p>
-<p>For a shady tracing at 0.138 g:</p>
-<p><span class="math inline">\(130.5 \times 0.138 + 0.28 = 18.3\)</span> cm²</p>
-<p>This matches our confirmed result from Lectures 09–10 — shady leaves are significantly heavier and, now, larger in area too!</p>
 </div></div>
 </section>
 
-<section id="live-demo-watch-it-break-on-purpose" class="title-slide slide level1 center">
-<h1>Live Demo — Watch It Break (on purpose)</h1>
+<section id="was-the-area-different-between-sides" class="title-slide slide level1 center">
+<h1>Was the Area Different Between Sides?</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
-<p><code>predict()</code> needs the <strong>exact</strong> predictor column name. I’ll get it wrong:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a aria-label="1"></a><span class="co"># The column is mass_g, but I typed mass</span></span>
-<span id="cb37-2"><a aria-label="2"></a>new <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">mass =</span> <span class="fl">0.092</span>)</span>
-<span id="cb37-3"><a aria-label="3"></a><span class="fu">predict</span>(paper_lm_model, <span class="at">newdata =</span> new)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>R errors:</p>
-<pre><code>Error in eval(predvars, data, env) :
-  object 'mass_g' not found</code></pre>
-<p>The fix — match the model’s variable name exactly:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a aria-label="1"></a>new <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">mass_g =</span> <span class="fl">0.092</span>)</span>
-<span id="cb39-2"><a aria-label="2"></a><span class="fu">predict</span>(paper_lm_model, <span class="at">newdata =</span> new)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-tip callout-titled callout-style-default">
+<div class="column" style="width:52%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a aria-label="1"></a><span class="co"># Predicted leaf area by side -------------------------</span></span>
+<span id="cb22-2"><a aria-label="2"></a>leaf_area_plot <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb22-3"><a aria-label="3"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> leaf_area_cm2)) <span class="sc">+</span></span>
+<span id="cb22-4"><a aria-label="4"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb22-5"><a aria-label="5"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>)</span>
+<span id="cb22-6"><a aria-label="6"></a>leaf_area_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="regression_lecture_files/figure-revealjs/leaf-area-plot-11-1.png" alt="Box plot of predicted leaf area in square centimetres for shady and sunny leaves with the individual leaves jittered over the boxes. The two boxes overlap almost completely."></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:48%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a aria-label="1"></a><span class="co"># Mean predicted area per side ------------------------</span></span>
+<span id="cb23-2"><a aria-label="2"></a>leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb23-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
+<span id="cb23-4"><a aria-label="4"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb23-5"><a aria-label="5"></a>    <span class="at">n =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(leaf_area_cm2)),</span>
+<span id="cb23-6"><a aria-label="6"></a>    <span class="at">mean_area =</span> <span class="fu">mean</span>(leaf_area_cm2, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb23-7"><a aria-label="7"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 3
+  shade     n mean_area
+  &lt;chr&gt; &lt;int&gt;     &lt;dbl&gt;
+1 shady    21      36.7
+2 sunny    19      36.0</code></pre>
+</div>
+</div>
+<p>About <strong>37 cm²</strong> on the shady side and <strong>36 cm²</strong> on the sunny side — the same story the t-test told us about mass, now in the units we actually wanted.</p>
+<div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
-<p><strong>Tip</strong></p>
+<p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>✅ Why show a broken run?</strong></p>
-<p><code>predict()</code> looks for the same column names the model was built on. <em>“object ‘mass_g’ not found”</em> means your <code>newdata</code> is missing that column — almost always a typo. This is the #1 <code>predict()</code> mistake.</p>
+<p><strong>✅ Why this matters.</strong> “Shady leaves weigh 0.02 g more” means little to a reader. “Shady leaves are about 1 cm² bigger” is a sentence an ecologist can use.</p>
 </div>
 </div>
 </div>
 </div></div>
 </section>
 
-<section id="using-predict-with-prediction-intervals" class="title-slide slide level1 center">
-<h1>Using <code>predict()</code> — with Prediction Intervals</h1>
+<section id="how-to-report-a-regression" class="title-slide slide level1 center">
+<h1>How to Report a Regression</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a aria-label="1"></a><span class="co"># predict() gives uncertainty around predictions ------</span></span>
-<span id="cb40-2"><a aria-label="2"></a>new_masses <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">mass_g =</span> <span class="fu">c</span>(<span class="fl">0.092</span>, <span class="fl">0.138</span>))</span>
-<span id="cb40-3"><a aria-label="3"></a></span>
-<span id="cb40-4"><a aria-label="4"></a><span class="co"># Confidence interval: for the MEAN area at this mass</span></span>
-<span id="cb40-5"><a aria-label="5"></a><span class="fu">predict</span>(paper_lm_model, <span class="at">newdata =</span> new_masses,</span>
-<span id="cb40-6"><a aria-label="6"></a>        <span class="at">interval =</span> <span class="st">"confidence"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb40-7"><a aria-label="7"></a>  <span class="fu">round</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>     fit    lwr    upr
-1 12.287 11.940 12.635
-2 18.291 17.948 18.634</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a aria-label="1"></a><span class="co"># Prediction interval: for a SINGLE new observation</span></span>
-<span id="cb42-2"><a aria-label="2"></a><span class="fu">predict</span>(paper_lm_model, <span class="at">newdata =</span> new_masses,</span>
-<span id="cb42-3"><a aria-label="3"></a>        <span class="at">interval =</span> <span class="st">"prediction"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb42-4"><a aria-label="4"></a>  <span class="fu">round</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>     fit    lwr    upr
-1 12.287  8.777 15.798
-2 18.291 14.782 21.801</code></pre>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<p><strong>Two types of interval (W&amp;S §17.2 p.&nbsp;549):</strong></p>
+<div class="column" style="width:52%;">
+<p><strong>The template — fill in from your <code>summary()</code> output:</strong></p>
+<blockquote>
+<p><em>[What predicted what] (linear regression: F(df₁, df₂) = ___, p ___, R² = ___). The fitted equation was Y = ___ + ___ × X.</em></p>
+</blockquote>
+<p><strong>Ours:</strong></p>
+<blockquote>
+<p><em>Paper mass was a very strong predictor of paper area (linear regression: F(1, 116) = 784,900, p &lt; 0.001, R² = 0.9999). The calibration equation was area = 0.28 + 130.52 × mass. Residual scatter increased with square size, so intervals for the largest squares should be treated with caution.</em></p>
+</blockquote>
+</div><div class="column" style="width:48%;">
+<p><strong>Where every number comes from:</strong></p>
 <table class="caption-top">
+<colgroup>
+<col style="width: 38%">
+<col style="width: 62%">
+</colgroup>
 <thead>
 <tr class="header">
-<th>Type</th>
-<th>Predicts</th>
-<th>Width</th>
+<th>In the sentence</th>
+<th>In <code>summary()</code></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><strong>Confidence</strong></td>
-<td>mean area for <em>all</em> leaves this mass</td>
-<td>narrower</td>
+<td>F and both df</td>
+<td>the <code>F-statistic:</code> line</td>
 </tr>
 <tr class="even">
-<td><strong>Prediction</strong></td>
-<td>area of <em>one specific</em> leaf</td>
-<td>wider</td>
+<td><em>p</em></td>
+<td>that same line</td>
+</tr>
+<tr class="odd">
+<td>R²</td>
+<td><code>Multiple R-squared</code></td>
+</tr>
+<tr class="even">
+<td>intercept</td>
+<td><code>(Intercept)</code> → <code>Estimate</code></td>
+</tr>
+<tr class="odd">
+<td>slope</td>
+<td><code>mass_g</code> → <code>Estimate</code></td>
 </tr>
 </tbody>
 </table>
-<p>For predicting a single leaf, use the <strong>prediction interval</strong> — it captures individual-to-individual variation within the same mass class.</p>
-<p>📖 W&amp;S §17.2 pp.&nbsp;548–550</p>
-</div></div>
-</section>
-
-<section id="how-to-report-regression-results" class="title-slide slide level1 center">
-<h1>How to Report Regression Results</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a aria-label="1"></a><span class="co"># Pull reporting values from the model ----------------</span></span>
-<span id="cb44-2"><a aria-label="2"></a>f_stat <span class="ot">&lt;-</span> <span class="fu">summary</span>(paper_lm_model)<span class="sc">$</span>fstatistic</span>
-<span id="cb44-3"><a aria-label="3"></a>f_val <span class="ot">&lt;-</span> <span class="fu">round</span>(f_stat[<span class="dv">1</span>], <span class="dv">1</span>)</span>
-<span id="cb44-4"><a aria-label="4"></a>df1 <span class="ot">&lt;-</span> f_stat[<span class="dv">2</span>]</span>
-<span id="cb44-5"><a aria-label="5"></a>df2 <span class="ot">&lt;-</span> f_stat[<span class="dv">3</span>]</span>
-<span id="cb44-6"><a aria-label="6"></a>p_val <span class="ot">&lt;-</span> <span class="fu">pf</span>(f_stat[<span class="dv">1</span>], df1, df2, <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb44-7"><a aria-label="7"></a></span>
-<span id="cb44-8"><a aria-label="8"></a><span class="fu">cat</span>(<span class="st">"--- Results paragraph ---</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>--- Results paragraph ---</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"Paper mass was a strong predictor of paper area</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Paper mass was a strong predictor of paper area</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"(linear regression: F("</span>, df1, <span class="st">","</span>, df2, <span class="st">") ="</span>, f_val, <span class="st">",</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>(linear regression: F( 1 , 116 ) = 784932.9 ,</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"p &lt;"</span>, <span class="fu">signif</span>(p_val, <span class="dv">1</span>), <span class="st">", R² ="</span>, <span class="fu">round</span>(r2_val, <span class="dv">4</span>), <span class="st">").</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>p &lt; 5e-224 , R² = 0.9999 ).</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb52"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"The calibration equation is:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>The calibration equation is:</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb54"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a aria-label="1"></a><span class="fu">cat</span>(<span class="st">"  area ="</span>, <span class="fu">round</span>(b_slope, <span class="dv">2</span>), <span class="st">"× mass +"</span>,</span>
-<span id="cb54-2"><a aria-label="2"></a>    <span class="fu">round</span>(a_intercept, <span class="dv">3</span>), <span class="st">"cm²</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  area = 130.52 × mass + 0.279 cm²</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb56"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a aria-label="1"></a><span class="fu">cat</span>(</span>
-<span id="cb56-2"><a aria-label="2"></a>  <span class="st">"(slope 95% CI:"</span>,</span>
-<span id="cb56-3"><a aria-label="3"></a>  <span class="fu">round</span>(<span class="fu">confint</span>(paper_lm_model)[<span class="dv">2</span>, <span class="dv">1</span>], <span class="dv">2</span>),</span>
-<span id="cb56-4"><a aria-label="4"></a>  <span class="st">"to"</span>,</span>
-<span id="cb56-5"><a aria-label="5"></a>  <span class="fu">round</span>(<span class="fu">confint</span>(paper_lm_model)[<span class="dv">2</span>, <span class="dv">2</span>], <span class="dv">2</span>),</span>
-<span id="cb56-6"><a aria-label="6"></a>  <span class="st">"cm²/g)</span><span class="sc">\n</span><span class="st">"</span></span>
-<span id="cb56-7"><a aria-label="7"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>(slope 95% CI: 130.23 to 130.82 cm²/g)</code></pre>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<p><strong>Standard report format:</strong></p>
-<blockquote>
-<p><em>“Paper area was accurately predicted from paper mass (linear regression: F(df₁, df₂) = F, p &lt; 0.001, R² = 0.9999). The regression equation was area = 130.5 × mass + 0.28 (slope 95% CI: X to Y cm²/g).”</em></p>
-</blockquote>
-<p><strong>Always include:</strong></p>
-<ul>
-<li>F-statistic and both df</li>
-<li><em>p</em>-value (never “p = 0.000” — write “p &lt; 0.001”)</li>
-<li>R²</li>
-<li>The actual equation</li>
-<li>95% CI for the slope</li>
-</ul>
+<p><strong>Always include:</strong> the test name, F with both df, <em>p</em>, R², and <strong>the equation</strong>. Add a line about the assumptions you checked.</p>
 <p>📖 W&amp;S §17.3 p.&nbsp;553</p>
 </div></div>
 </section>
 
-<section id="pause-do-activity-parts-1112-now" class="title-slide slide level1 center">
-<h1>🛑 Pause — Do Activity Parts 11–12 Now</h1>
-<p>Predict leaf area from tracing mass, compare confidence vs prediction intervals, and write your results paragraph. Predict the numbers before they print.</p>
+<section id="activity-11-parts-59-now" class="title-slide slide level1 center">
+<h1>→ ACTIVITY 11 Parts 5–9 now</h1>
+<div class="activitybanner">
+<p><strong>🛑 Do Activity Parts 5–9 now</strong></p>
+<ul>
+<li>Draw the line and run <code>plot(model)</code></li>
+<li>Predict one tracing, then convert the whole <code>paper_mass_g</code> column into areas</li>
+<li>Write your results sentence</li>
+<li>Your <strong>answers</strong> in the script are what you hand in</li>
+</ul>
+</div>
 </section>
 
 <section id="what-we-learned-today" class="title-slide slide level1 center">
 <h1>What We Learned Today</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
-<p><strong>Concepts:</strong></p>
+<div class="column" style="width:58%;">
+<p><strong>The ideas:</strong></p>
 <ul>
-<li><strong>Regression</strong> predicts Y from X using a straight line equation</li>
-<li>Equation: <span class="math inline">\(\hat{Y} = a + bX\)</span> — slope <em>b</em>, intercept <em>a</em></li>
-<li><strong>Least squares</strong> — minimizes sum of squared residuals</li>
-<li><strong>R²</strong> — fraction of Y variation explained by X</li>
-<li><strong>Four assumptions</strong> — linearity, independence, equal variance, normality of residuals</li>
-<li><strong>Two prediction types</strong> — confidence vs.&nbsp;prediction intervals</li>
+<li>Regression fits a line so you can <strong>predict Y from X</strong></li>
+<li><span class="math inline">\(\hat{Y} = a + bX\)</span> — the <strong>slope</strong> converts X into Y</li>
+<li>A <strong>residual</strong> is one point’s miss: observed − predicted</li>
+<li><strong>R²</strong> = how tight the fit is; <strong><em>p</em></strong> = whether the slope is real</li>
+<li>Check the <strong>residuals</strong> — and say what you saw</li>
 </ul>
-<p><strong>R skills:</strong></p>
+<p><strong>The code:</strong></p>
 <ul>
-<li><code>lm(Y ~ X, data)</code> — fits the model</li>
-<li><code>summary()</code> — extracts slope, intercept, R², p-values</li>
-<li><code>coef()</code>, <code>fitted()</code>, <code>residuals()</code> — pull model components</li>
-<li><code>plot(model)</code> — all four diagnostic plots in one call</li>
-<li><code>predict(model, newdata, interval = "prediction")</code> — predictions with uncertainty</li>
-<li><code>geom_smooth(method = "lm", se = TRUE)</code> — plot the line with CI band</li>
+<li><code>lm(Y ~ X, data = df)</code> — fit it</li>
+<li><code>summary(model)</code> — slope, intercept, <em>p</em>, R²</li>
+<li><code>geom_smooth(method = "lm")</code> — draw it</li>
+<li><code>plot(model)</code> — check it</li>
+<li><code>predict(model, newdata = ...)</code> — use it</li>
 </ul>
-</div><div class="column" style="width:40%;">
-<p><strong>Chapter references:</strong></p>
+</div><div class="column" style="width:42%;">
 <ul>
-<li>📖 W&amp;S §17.1 — Linear regression</li>
-<li>📖 W&amp;S §17.2 — Confidence in predictions</li>
-<li>📖 W&amp;S §17.3 — Testing slope hypotheses</li>
-<li>📖 W&amp;S §17.4 — R²</li>
-<li>📖 W&amp;S §17.5 — Assumptions</li>
+<li><strong>Hand in:</strong> your finished <code>scripts/11_regression.R</code> — the code is given; your <strong>answers</strong> are graded</li>
+</ul>
+<p><strong>📖 W&amp;S Ch. 17:</strong></p>
+<ul>
+<li>§17.1 Linear regression · §17.2 Prediction</li>
+<li>§17.3 Testing the slope · §17.4 R²</li>
+<li>§17.5 Assumptions</li>
 </ul>
 <p><strong>Up next — Lecture 12:</strong></p>
 <ul>
-<li>Downloading real climate data straight into R with <code>GSODR</code></li>
-<li>Summarizing daily data to reveal long-term trends</li>
-<li>Reusing <code>lm()</code> to estimate a rate of change over time</li>
+<li>Pulling real climate data into R with <code>GSODR</code></li>
+<li>Summarizing daily weather into yearly values</li>
+<li>The <strong>same <code>lm()</code></strong> — temperature predicted by date
+<ul>
+<li>the slope becomes a rate of change per year</li>
+<li>and you write that regression yourself</li>
+</ul></li>
 </ul>
 </div></div>
 

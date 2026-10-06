@@ -1,15 +1,16 @@
 ---
-order: 6
-week: 3
+order: 11
+week: 6
 # =====================================================================
 #  regression_analysis_report.qmd
-#  THE "MARKDOWN WAY" of doing the SAME regression analysis.
-#  This is the twin of regression_analysis_script.R — identical code,
-#  but wrapped in writing so that pressing Render produces a finished
-#  Word report with the numbers and figures already in place.
+#  OPTIONAL / SECONDARY. The same regression as the activity skeleton
+#  (scripts/11_regression_skeleton.R), wrapped in writing so that
+#  pressing Render produces a finished Word report with the numbers and
+#  figures already in place. The .R script is what you hand in; this is
+#  here if you would rather hand in a report.
 # =====================================================================
 title: "Paper Calibration Curve: Predicting Leaf Area from Mass"
-subtitle: "The same analysis as regression_analysis_script.R — but as a report"
+subtitle: "The regression from Activity 11, written up as a report"
 author: "Your Name Here"
 date: today
 
@@ -20,10 +21,9 @@ format:
     fig-width: 6
     fig-height: 4
     fig-format: png
-  html: default          # bonus: the same file also makes a web page
+  html: default          # the same file also makes a web page
 
 # Hide the code by default so the report reads like a report.
-# Flip echo to true if you want a teaching handout that shows the code.
 execute:
   echo: false
   warning: false
@@ -34,8 +34,8 @@ execute:
 # Load all packages in one chunk at the top ----------------------------
 library(readxl)
 library(tidyverse)
-library(skimr)
-library(broom)   # tidy() and glance() turn model objects into data frames
+library(janitor)
+library(broom)   # tidy() and glance() turn a model into a table
 ```
 
 ```{r load-data}
@@ -43,53 +43,37 @@ library(broom)   # tidy() and glance() turn model objects into data frames
 paper_df <- read_excel("data/paper_area_weights.xlsx")
 ```
 
-<!--
-HOW TO READ THIS WORKED EXAMPLE (active reading)
-Don't just skim. Before you press Render, PREDICT what each computed value and
-figure will show, then render and compare. Better still, retype a chunk or two by
-hand. The PREDICT comments below mark good places to pause. None of these comment
-lines appear in the rendered Word document.
--->
-
 # Introduction
 
 To estimate leaf surface area without a leaf-area meter, we built a
-**calibration curve**. Paper of uniform stock has a constant area-per-gram, so
-the **mass** of a paper square is a near-perfect linear predictor of its
-**area**. Once we know that relationship, we can trace a leaf onto the same
-paper, weigh the tracing, and convert its mass to area.
+**calibration curve**. Paper from one stock has a constant area per gram, so the
+**mass** of a paper square is a near-perfect linear predictor of its **area**.
+Once we know that relationship, we can trace a leaf onto the same paper, weigh
+the tracing, and convert its mass to an area.
 
 - **Explanatory variable (X):** paper mass (g) — easy to measure on a balance
-- **Response variable (Y):** paper area (cm²) — what we want to predict
+- **Response variable (Y):** paper area (cm²) — what we actually want
 
 # Methods
 
 We weighed 118 paper squares of known area (1–567 cm²) and fit a simple linear
-regression, `area_cm2 ~ mass_g`, with `lm()`. We checked the four regression
-assumptions using base R's diagnostic plots for a fitted model, with a
-Shapiro–Wilk test on the residuals as a formal companion. All work was done in
-R with the tidyverse; this report was written in Quarto so every number and
-figure below is computed directly from the data.
+regression, `area_cm2 ~ mass_g`, with `lm()`. We checked the residuals with base
+R's diagnostic plots for the fitted model. All work was done in R with the
+tidyverse; this report was written in Quarto, so every number and figure below is
+computed from the data rather than typed in by hand.
 
 # Results
 
 ```{r fit-model}
-# Fit the least-squares regression line --------------------------------
+# Fit the regression line ----------------------------------------------
 paper_lm_model <- lm(area_cm2 ~ mass_g, data = paper_df)
-
-# Values used by the figure and prediction code below (not in the text) -
-a_intercept <- coef(paper_lm_model)[1]
-b_slope <- coef(paper_lm_model)[2]
-r2_val <- summary(paper_lm_model)$r.squared
 ```
 
-<!-- 🔮 PREDICT before you Render: what F, p, and R² will the model summary show, and what slope (cm² per gram)? Write your guesses, then render and check. -->
-
-Paper mass was an extremely strong predictor of paper area. The overall model
-fit, coefficients, and *p*-values are shown in the two tables below.
+Paper mass was an extremely strong predictor of paper area. The overall fit is in
+Table 1 and the fitted equation is in Table 2.
 
 ```{r model-summary}
-# Overall model fit: F-statistic, R-squared, p-value ------------------
+# Overall model fit: R-squared, F, p -----------------------------------
 glance(paper_lm_model) |>
   select(r.squared, statistic, df, df.residual, p.value) |>
   knitr::kable(digits = c(4, 1, 0, 0, 20),
@@ -99,107 +83,117 @@ glance(paper_lm_model) |>
 ```
 
 ```{r coef-table}
-# The calibration equation: intercept and slope ----------------------
+# The calibration equation: intercept and slope ------------------------
 tidy(paper_lm_model) |>
   knitr::kable(digits = c(0, 3, 3, 1, 20),
                col.names = c("Term", "Estimate", "Std. error",
                              "t", "p-value"),
-               caption = "Table 2. Calibration equation coefficients. The `mass_g` estimate is the area gained per additional gram of paper; `(Intercept)` is the fitted area at zero mass.")
+               caption = "Table 2. Coefficients of the calibration equation. The `mass_g` estimate is the area gained per additional gram of paper; `(Intercept)` is the fitted area at zero mass.")
 ```
 
-Read the calibration equation off Table 2: predicted area equals the
-`(Intercept)` estimate plus the `mass_g` estimate times paper mass. In words,
-every additional gram of paper corresponds to about the `mass_g` estimate in
-cm² of area.
-
-::: {.callout-note appearance="simple"}
-Every number in Tables 1 and 2 is computed from the data when the document
-renders — nothing was typed by hand. Change the data file and re-render, and the
-tables update themselves. That is the difference from the `.R` script, where you
-would copy each number into Word yourself.
-:::
+Read the equation off Table 2: predicted area equals the `(Intercept)` estimate
+plus the `mass_g` estimate times the mass. In words, each additional gram of this
+paper stock adds about the `mass_g` estimate in cm² of area. The slope's
+*p*-value tests whether mass predicts area at all; the intercept is not
+distinguishable from zero, which is what physics says it should be — paper with
+no mass has no area.
 
 ## The calibration curve
 
 ```{r calibration-plot}
-#| fig-cap: "Figure 1. Paper area vs. mass with the least-squares line and 95% confidence band."
-#| fig-alt: "Scatter plot of paper area against mass with a dark blue least-squares line and light blue 95 percent confidence band; the subtitle reports the fitted equation and R-squared. Points cluster tightly around the line, narrowing the band toward the middle of the mass range."
-calibration_plot <- paper_df %>%
+#| fig-cap: "Figure 1. Paper area against mass, with the fitted regression line and its 95% confidence band."
+#| fig-alt: "Scatter plot of paper area against paper mass with a straight fitted regression line and a narrow confidence band. The points sit almost exactly on the line."
+paper_df %>%
   ggplot(aes(x = mass_g, y = area_cm2)) +
-  geom_point(alpha = 0.5, size = 1.8) +
-  geom_smooth(
-    method = "lm",
-    se = TRUE,
-    color = "darkblue",
-    fill = "lightblue"
-  ) +
-  labs(
-    subtitle = paste0(
-      "area = ",
-      round(b_slope, 2),
-      " × mass + ",
-      round(a_intercept, 3),
-      "  |  R² = ",
-      round(r2_val, 4)
-    ),
-    x = "Paper Mass (g)",
-    y = "Area (cm²)"
-  ) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(x = "Paper mass (g)",
+       y = "Paper area (cm²)") +
   theme_minimal()
-
-calibration_plot
 ```
 
-## Assumption checks
+## Residual checks
 
 ```{r diagnostic-plots}
-#| fig-cap: "Figure 2. Base R diagnostic plots for the fitted model — residuals vs. fitted, normal Q-Q, scale-location, and residuals vs. leverage. A random band with no funnel or curve in panel 1 supports linearity and equal variance."
-#| fig-alt: "Four base R diagnostic plots for the calibration linear model in a two by two grid: residuals versus fitted values, a normal Q-Q plot of the residuals, a scale-location plot, and a residuals versus leverage plot."
+#| fig-cap: "Figure 2. Base R diagnostic plots for the fitted model — residuals vs. fitted, normal Q-Q, scale-location, and residuals vs. leverage."
+#| fig-alt: "Four base R diagnostic plots for the paper calibration model in a two by two grid: residuals versus fitted values showing a funnel that widens to the right, a normal Q-Q plot with points curving away at both ends, a scale-location plot rising to the right, and residuals versus leverage."
 par(mfrow = c(2, 2))
 plot(paper_lm_model)
 ```
 
-```{r shapiro}
-# Shapiro-Wilk on the RESIDUALS (not the raw data)
-shapiro.test(residuals(paper_lm_model)) |>
-  tidy() |>
-  knitr::kable(digits = c(3, 20, 0),
-               col.names = c("W", "p-value", "Method"),
-               caption = "Table 3. Shapiro–Wilk normality test on the regression residuals.")
+Panel 1 of Figure 2 shows a funnel rather than a flat cloud: the residuals get
+larger as the squares get larger. Table 3 puts numbers on it.
+
+```{r residual-table}
+# How big are the misses at each square size? --------------------------
+paper_df %>%
+  mutate(residual = residuals(paper_lm_model)) %>%
+  group_by(area_cm2) %>%
+  summarize(biggest_miss = max(abs(residual))) %>%
+  knitr::kable(digits = c(0, 2),
+               col.names = c("Known area (cm²)", "Largest residual (cm²)"),
+               caption = "Table 3. The largest miss at each square size. The equal-variance assumption does not hold: a balance has percentage error, not fixed error, so bigger squares miss by more.")
 ```
 
-The Shapiro–Wilk result is in Table 3. Read *W* and its *p*-value there, then
-compare that verdict with the normal Q-Q panel of Figure 2.
+The equal-variance assumption is therefore violated at the large-square end of
+the range, and confidence intervals there should be treated with caution. The
+leaf tracings we apply the curve to below weigh 0.1–0.4 g, at the tight end of
+the line, where a typical miss is a fraction of a cm².
 
 ## Predicting leaf area
 
-<!-- 🔮 PREDICT before you Render: which tracing gives the larger predicted area — the 0.092 g sunny or the 0.138 g shady? Guess the two areas, then render. -->
-
-```{r predict}
-# Predict area for two example leaf tracings --------------------------
+```{r predict-two}
+# Predict area for two example leaf tracings ---------------------------
 new_tracings <- tibble(
   tracing = c("sunny-side", "shady-side"),
   mass_g  = c(0.092, 0.138)
 )
 
 new_tracings |>
-  mutate(predicted_area_cm2 = predict(paper_lm_model, newdata = new_tracings)) |>
+  mutate(predicted_area_cm2 =
+           predict(paper_lm_model, newdata = new_tracings)) |>
   knitr::kable(digits = c(0, 3, 1),
                col.names = c("Tracing", "Mass (g)", "Predicted area (cm²)"),
-               caption = "Table 4. Predicted leaf area for two example paper tracings, from the calibration equation.")
+               caption = "Table 4. Predicted leaf area for two example paper tracings.")
 ```
 
-Table 4 applies the calibration equation to two example tracings. The heavier
-shady-side tracing has the larger predicted area — consistent with our earlier
-finding that shady leaves are larger.
+The same `predict()` call converts a whole column at once. Table 5 applies the
+calibration to every leaf in our class data set, then summarizes the predicted
+areas by side of the tree.
+
+```{r predict-column}
+# Turn every tracing mass in the leaf data into an area ----------------
+leaf_df <-
+  read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names() %>%
+  mutate(leaf_area_cm2 =
+           predict(paper_lm_model,
+                   newdata = tibble(mass_g = paper_mass_g)))
+
+leaf_df %>%
+  group_by(shade) %>%
+  summarize(
+    n         = sum(!is.na(leaf_area_cm2)),
+    mean_area = mean(leaf_area_cm2, na.rm = TRUE),
+    sd_area   = sd(leaf_area_cm2, na.rm = TRUE)
+  ) %>%
+  knitr::kable(digits = c(0, 0, 1, 1),
+               col.names = c("Side", "n", "Mean area (cm²)", "SD (cm²)"),
+               caption = "Table 5. Predicted leaf area by side of the tree. Leaves whose tracings were never weighed are excluded.")
+```
+
+Table 5 reports the predicted areas in the units we wanted. The two sides differ
+by about a square centimetre — the same story the Welch's t-test told us about
+leaf mass.
 
 # Discussion
 
-*Write one short paragraph here.* Did the calibration fit well (look at R² and
-Figure 1)? Did the residual plot and Shapiro–Wilk support the assumptions? Why
-is working in **area** (cm²) more biologically meaningful than raw **mass** (g)
+*Write one short paragraph here.* Did the calibration fit well — what do R² in
+Table 1 and Figure 1 say? What did the residual checks in Figure 2 and Table 3
+show, and what does that mean for how far you would trust the curve? Why is
+working in **area** (cm²) more useful to a reader than raw tracing **mass** (g)
 when comparing sunny and shady leaves? This is where you paste the results
-paragraph you drafted in the worksheet.
+paragraph you wrote in the activity.
 
 # References
 

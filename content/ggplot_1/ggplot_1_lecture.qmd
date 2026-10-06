@@ -155,26 +155,23 @@ glimpse(leaf_df)
 ::: {.column width="60%"}
 ```{r pipe-into-ggplot}
 #| fig-format: png
+#| fig-height: 2.7
 #| fig-alt: "Boxplot of leaf mass in grams by shade, with jittered points overlaid, using default ggplot colors."
 # Pipe the data frame straight into ggplot() -----------
 leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   geom_jitter(width = 0.15, alpha = 0.6) +
-  labs(
-    title = "Leaf Mass by Shade",
-    x = "Shade",
-    y = "Leaf Mass (g)",
-    fill = "Shade"
-  ) +
+  labs(title = "Leaf Mass by Shade", x = "Shade",
+       y = "Leaf Mass (g)", fill = "Shade") +
   theme_minimal()
 ```
 :::
 
 ::: {.column width="40%"}
-- `leaf_df %>% ggplot(...)` reads as *"take `leaf_df`, then plot it"* — the same pipe you've already used
-- Everything after `ggplot()` is added with `+`, not `%>%` — **ggplot layers use plus, pipelines use the pipe**
-- `fill = shade` maps a **column** to color — ggplot chooses the colors *for* you
+- `leaf_df %>% ggplot(...)` = *"take `leaf_df`, then plot it"*
+- Everything after `ggplot()` is added with `+`, not `%>%`
+- `fill = shade` maps a **column** to color — ggplot picks the colors
 
 ::: callout-warning
 **⚠️ Watch out!**
@@ -187,29 +184,24 @@ leaf_df %>%
 # Choosing Colors on Purpose — `scale_color_manual()`
 
 ::: callout-note
-**🔮 Predict first:** `scale_fill_manual()` needs one color per group. We have two groups (`sunny`, `shady`). How many colors do we need to supply?
+**🔮 Predict first:** `scale_fill_manual()` needs one color per group. We have two groups — how many colors do we supply?
 :::
 
 :::::: columns
 ::: {.column width="60%"}
 ```{r scale-manual-demo}
 #| fig-format: png
+#| fig-height: 2.7
 #| fig-alt: "Boxplot of leaf mass in grams by shade with jittered points, using custom gold and forest-green colors for sunny and shady respectively."
 # scale_fill_manual() assigns exact colors to exact groups
 leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, fill = shade)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) +
   geom_jitter(width = 0.15, alpha = 0.6) +
-  scale_fill_manual(values = c(
-    "sunny" = "goldenrod",
-    "shady" = "forestgreen"
-  )) +
-  labs(
-    title = "Leaf Mass by Shade",
-    x = "Shade",
-    y = "Leaf Mass (g)",
-    fill = "Shade"
-  ) +
+  scale_fill_manual(values = c("sunny" = "goldenrod",
+                               "shady" = "forestgreen")) +
+  labs(title = "Leaf Mass by Shade", x = "Shade",
+       y = "Leaf Mass (g)", fill = "Shade") +
   theme_minimal() +
   theme(legend.position = "none")
 ```
@@ -218,12 +210,10 @@ leaf_df %>%
 :::: {.column width="40%"}
 - `scale_fill_manual()` — for `fill =` aesthetics (boxes, bars, columns)
 - `scale_color_manual()` — for `color =` aesthetics (points, lines)
-- The **names inside `c()` must exactly match** the values in your data (`"sunny"`, `"shady"`) — case and spelling both count
+- The **names in `c()` must exactly match** your data's values — case and spelling count
 
 ::: callout-warning
-**⚠️ Watch out!**
-
-If a name in `values = c(...)` doesn't match a value in your data exactly, that group's color falls back to grey and ggplot prints a warning.
+**⚠️ Watch out!** A name that doesn't match falls back to grey, with a warning.
 :::
 ::::
 ::::::
@@ -329,6 +319,7 @@ Build both a `facet_wrap()` and a `facet_grid()` version of the histogram. Predi
 ::: {.column width="60%"}
 ```{r stat-summary-mean}
 #| fig-format: png
+#| fig-height: 2.7
 #| fig-alt: "Jittered points of leaf mass by shade in gold and green, with a larger black point marking the mean for each group."
 # stat_summary() computes the mean straight from the data
 leaf_df %>%
@@ -338,51 +329,40 @@ leaf_df %>%
                color = "black") +
   scale_color_manual(values = c("sunny" = "goldenrod",
                                 "shady" = "forestgreen")) +
-  labs(
-    title = "Leaf Mass with Group Means",
-    x = "Shade", y = "Leaf Mass (g)"
-  ) +
+  labs(title = "Leaf Mass with Group Means",
+       x = "Shade", y = "Leaf Mass (g)") +
   theme_minimal() +
   theme(legend.position = "none")
 ```
 :::
 
 ::: {.column width="40%"}
-- `stat_summary()` computes a statistic **from the raw data** and draws it — no pre-built summary table needed
-- `fun = mean` — any function that returns one number (`mean`, `median`, `max`, …)
-- `geom = "point"` — draw that number as a point
-- Put `geom_jitter()` **before** `stat_summary()` so the mean sits on top of the raw points, not buried under them
+- Computes a statistic **from the raw data** — no summary table needed
+- `fun = mean` — any function returning one number (`median`, `max`, …)
+- `geom = "point"` — draw it as a point
+- Put `geom_jitter()` **before** `stat_summary()` so the mean sits on top
 :::
 :::::
 
 # `stat_summary()` — Mean ± SE
 
-::: callout-note
-**🔮 Predict first:** `fun.data = mean_se` returns three numbers per group instead of one (the mean, and the bar's top and bottom). What do you think those three are called?
-:::
-
 :::::: columns
 ::: {.column width="60%"}
 ```{r stat-summary-se}
 #| fig-format: png
+#| fig-height: 2.3
 #| fig-alt: "Jittered points of leaf mass by shade in gold and green with mean plus or minus one standard error error bars overlaid for each group."
 # fun.data = returns THREE values: y, ymin, ymax -------
 leaf_mean_se_plot <- leaf_df %>%
   ggplot(aes(x = shade, y = mass_g, color = shade)) +
   geom_jitter(width = 0.15, alpha = 0.35, size = 2) +
   stat_summary(fun = mean, geom = "point", size = 4) +
-  stat_summary(
-    fun.data = mean_se,
-    geom = "errorbar",
-    width = 0.15,
-    linewidth = 0.9
-  ) +
+  stat_summary(fun.data = mean_se, geom = "errorbar",
+               width = 0.15, linewidth = 0.9) +
   scale_color_manual(values = c("sunny" = "goldenrod",
                                 "shady" = "forestgreen")) +
-  labs(
-    title = "Mean ± SE Leaf Mass by Shade",
-    x = "Shade", y = "Leaf Mass (g)"
-  ) +
+  labs(title = "Mean ± SE Leaf Mass by Shade",
+       x = "Shade", y = "Leaf Mass (g)") +
   theme_minimal() +
   theme(legend.position = "none")
 
@@ -391,16 +371,18 @@ leaf_mean_se_plot
 :::
 
 :::: {.column width="40%"}
+**🔮 Predict first:** `fun.data = mean_se` returns three numbers per group, not one — what are they?
+
 **Two `stat_summary()` layers, stacked:**
 
 | call | what it draws |
-|---|---|
+|----------------------|------------------------|
 | `fun = mean` | a point at the mean |
 | `fun.data = mean_se` | error bars for ± 1 SE |
 
-- Raw points in the **background** (`alpha = 0.35`)
-- Mean as a **larger foreground point**
-- Error bars = **± 1 SE**
+: {tbl-colwidths="[50,50]"}
+
+- Raw points in the **background**, mean as a **larger point**, bars = **± 1 SE**
 
 📖 Whitlock & Schluter, Ch. 3 — *Describing Data*
 ::::
