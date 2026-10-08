@@ -8,7 +8,7 @@
 
 <meta name="author" content="Bill Perry">
 <meta name="dcterms.date" content="2026-10-08">
-<meta name="description" content="Hands-on companion to the Regression lecture: fit a calibration curve with lm(), read the summary() output, check the residuals, and use predict() to convert tracing masses into leaf areas. Students hand in the finished script with their written answers.">
+<meta name="description" content="Hands-on companion to the Regression lecture: fit a calibration line with lm(), check the residuals with plot(model), convert tracing masses into leaf areas, average away the pseudoreplication, and finish with paired t-tests on area and on mass. Students hand in the finished script with their answers.">
 
 <title>Activity 11 — Linear Regression – UMD DAta Science Biology</title>
 <style>
@@ -117,10 +117,39 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../../css/main.css">
 <meta property="og:title" content="Activity 11 — Linear Regression – UMD DAta Science Biology">
-<meta property="og:description" content="Hands-on companion to the Regression lecture: fit a calibration curve with lm(), read the summary() output, check the residuals, and use predict() to convert tracing masses into leaf areas. Students hand in the finished script with their written answers.">
+<meta property="og:description" content="Hands-on companion to the Regression lecture: fit a calibration line with lm(), check the residuals with plot(model), convert tracing masses into leaf areas, average away the pseudoreplication, and finish with paired t-tests on area and on mass. Students hand in the finished script with their answers.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 
@@ -409,7 +438,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Activity 11 — Linear Regression</h1>
-<p class="subtitle lead">Fit a line, read the output, and turn a tracing mass into a leaf area</p>
+<p class="subtitle lead">Calibrate paper, convert tracings to leaf area, then test sunny against shady</p>
   <div class="quarto-categories">
     <div class="quarto-category">tidyverse</div>
     <div class="quarto-category">descriptive-stats</div>
@@ -418,7 +447,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    <p>Hands-on companion to the Regression lecture: fit a calibration curve with lm(), read the summary() output, check the residuals, and use predict() to convert tracing masses into leaf areas. Students hand in the finished script with their written answers.</p>
+    <p>Hands-on companion to the Regression lecture: fit a calibration line with lm(), check the residuals with plot(model), convert tracing masses into leaf areas, average away the pseudoreplication, and finish with paired t-tests on area and on mass. Students hand in the finished script with their answers.</p>
   </div>
 </div>
 
@@ -450,14 +479,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="in-class-activity-11-linear-regression" class="level1">
 <h1>In-class Activity 11: Linear Regression</h1>
 <section id="todays-objectives" class="level3">
-<h3 class="anchored">Today’s Objectives</h3>
+<h3 class="anchored" data-anchor-id="todays-objectives">Today’s Objectives</h3>
 <ol type="1">
-<li>Fit a linear regression with <code>lm(Y ~ X, data)</code></li>
-<li>Read the slope, intercept, <em>p</em>-value, and R² <strong>off the <code>summary()</code> output</strong></li>
-<li>Draw the fitted line with <code>geom_smooth(method = "lm")</code></li>
-<li>Check the residuals with <code>plot(model)</code></li>
-<li>Use <code>predict()</code> to turn a tracing mass into a leaf area — one value, then a whole column</li>
-<li>Write a standard regression results sentence</li>
+<li>Fit a calibration line with <code>lm(Y ~ X, data)</code> — the <strong>measured</strong> variable on the left</li>
+<li>Check the regression assumptions with <code>plot(model)</code></li>
+<li>Use the intercept and slope to turn a tracing mass into a leaf area</li>
+<li>Average to one value per team per side, so there is no pseudoreplication</li>
+<li>Finish with paired <em>t</em>-tests on leaf <strong>area</strong> and leaf <strong>mass</strong></li>
 </ol>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -473,6 +501,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Skeleton script:</strong> <a href="scripts/11_regression_skeleton.R"><code>11_regression_skeleton.R</code></a> → save it as <code>scripts/11_regression.R</code>.</li>
 <li><strong>Paper calibration data:</strong> <a href="data/paper_area_weights.xlsx"><code>paper_area_weights.xlsx</code></a> → <code>data/</code>.</li>
 <li><strong>Leaf data:</strong> <a href="data/2026_09_03_data_sci_leaf_area.xlsx"><code>2026_09_03_data_sci_leaf_area.xlsx</code></a> → <code>data/</code> (you should already have it).</li>
+<li><strong>For the homework:</strong> <a href="data/2026_09_02_sugar_maple_leaf_area.xlsx"><code>2026_09_02_sugar_maple_leaf_area.xlsx</code></a> → <code>data/</code>.</li>
 </ul>
 </div>
 </div>
@@ -487,142 +516,98 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="callout-body-container callout-body">
 <ul>
-<li>The <strong>code is already written</strong> in the skeleton — run it chunk by chunk as you work through Parts 1–9 below.</li>
-<li>What gets graded is <strong>your answers</strong>, typed into the <strong>Q</strong> boxes in the script.</li>
+<li><strong>All the code is written for you.</strong> Run it chunk by chunk and watch what comes out.</li>
+<li>You answer <strong>four questions</strong>: the question of the study, the hypotheses, whether the regression assumptions are met, and what the <em>t</em>-tests mean.</li>
 <li>Hand in <code>scripts/11_regression.R</code>. Run it top to bottom (<strong>Ctrl/Cmd + Shift + Enter</strong>) first — it must run with no errors.</li>
 </ul>
-<p>Answer boxes look like this — type after <code>ANSWER:</code> and start every line with <code>#</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># # # # # # # # # # # # # # # # # # # # # # # # # # # # #</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Q3. What is the slope, with units?</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># ANSWER: 130.52 cm2 per gram of paper</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># # # # # # # # # # # # # # # # # # # # # # # # # # # # #</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <p>Keep the plots plain today — no labels, colors, or themes. The goal is to <strong>read</strong> them.</p>
 <hr>
+</section>
+</section>
+<section id="part-1-the-study" class="level1">
+<h1>Part 1 · The study</h1>
+<p>We picked a tree and took leaves from the <strong>sunny</strong> side and from the <strong>shady</strong> side. Each team traced their leaves onto paper, cut out the tracings, and weighed them.</p>
+<p>A tracing mass is not an area. So we also weighed pieces of the <strong>same paper</strong> cut to areas we already knew. That is what the regression is for.</p>
+<p>✏️ <strong>Q1:</strong> What is the <strong>question</strong> this study is asking? One sentence.</p>
+<p>✏️ <strong>Q2:</strong> What are the <strong>hypotheses</strong> — the null and the alternative, for leaf area and for leaf mass?</p>
+<hr>
+</section>
+<section id="part-2-read-the-calibration-data" class="level1">
+<h1>Part 2 · Read the calibration data</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>paper_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/paper_area_weights.xlsx"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>paper_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>118 pieces of paper. <code>area_cm2</code> is what we <strong>cut it to</strong>; <code>mass_g</code> is what the balance <strong>said</strong>.</p>
+<hr>
+</section>
+<section id="part-3-the-regression" class="level1">
+<h1>Part 3 · The regression</h1>
+<p>We <strong>chose</strong> the areas and <strong>measured</strong> the masses. So area goes on x and mass goes on y.</p>
 <blockquote class="blockquote">
-<h2 id="chunk-2-fit-it-and-read-it-after-lecture-chunk-2" class="anchored" data-anchor-id="todays-objectives">🧩 Chunk 2 — Fit it and read it <em>(after lecture Chunk 2)</em></h2>
-<p>Parts 1–4: load the paper data, plot it, fit the line, read the output.</p>
+<p>The variable you <strong>measured</strong>, with the error in it, always goes on the <strong>y</strong> axis. The one you <strong>set</strong> goes on x.</p>
 </blockquote>
-</section>
-</section>
-<section id="part-1-load-libraries-and-data" class="level1">
-<h1>Part 1 · Load libraries and data</h1>
-<p><strong>▶ Run this</strong> (already at the top of your skeleton):</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load libraries ---------------------------------------</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)      <span class="co"># read Excel files</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># dplyr + ggplot2</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)     <span class="co"># clean_names()</span></span>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>paper_df <span class="sc">%&gt;%</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> area_cm2, <span class="at">y =</span> mass_g)) <span class="sc">+</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the paper calibration data ----------------------</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>paper_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/paper_area_weights.xlsx"</span>)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(paper_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>118 paper squares. <code>area_cm2</code> is the <strong>known</strong> area of each square; <code>mass_g</code> is what it weighed.</p>
-<p>✏️ <strong>Q1:</strong> Which column is the explanatory variable (X) and which is the response (Y)? Why that direction, given that we want leaf areas?</p>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>paper_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(mass_g <span class="sc">~</span> area_cm2, <span class="at">data =</span> paper_df)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(paper_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>These numbers are tiny, so R prints them in <strong>scientific notation</strong>:</p>
+<pre><code>Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)
+(Intercept) -2.058e-03  1.389e-03  -1.481    0.141
+area_cm2     7.660e-03  8.646e-06 885.964   &lt;2e-16</code></pre>
+<p><code>7.660e-03</code> means 7.660 × 10⁻³ — move the decimal point <strong>three places left</strong> to get <code>0.007660</code>. Same for the intercept: <code>-2.058e-03</code> is <code>-0.002058</code>.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The slope is a real property of the paper
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The <code>area_cm2</code> slope is <strong>0.007660</strong> — the mass, in grams, of <strong>1 cm²</strong> of this paper.</p>
+<p>Multiply by 10,000 (the number of cm² in a m²) and you get <strong>76.6 g/m²</strong>.</p>
+<p>That is the paper’s <strong>grammage</strong> — the number printers put on the side of the ream. Standard copy paper is sold at 75–80 g/m², so your regression just recovered a property of the paper that you can go and check against the label.</p>
+<p>This is why the measured variable goes on y. Fit it the other way round and the slope is 130.5 cm²/g, which is correct but not a number you can look up anywhere.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Optional — if you’d rather not read scientific notation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">scipen =</span> <span class="dv">999</span>)   <span class="co"># scientific notation off</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">scipen =</span> <span class="dv">0</span>)     <span class="co"># and back on again</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>We leave it <strong>on</strong> in this activity. With it off, the slope’s <em>p</em>-value prints as <code>&lt;0.0000000000000002</code> instead of <code>&lt;2e-16</code>, which is worse, not better.</p>
+</div>
+</div>
 <hr>
 </section>
-<section id="part-2-plot-it-before-you-fit-it" class="level1">
-<h1>Part 2 · Plot it before you fit it</h1>
+<section id="part-4-are-the-assumptions-met" class="level1">
+<h1>Part 4 · Are the assumptions met?</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Scatter plot of area against mass --------------------</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>paper_df <span class="sc">%&gt;%</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">y =</span> area_cm2)) <span class="sc">+</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Look for three things: is it <strong>straight</strong>, is the <strong>scatter the same all the way along</strong>, and is any point <strong>off on its own</strong>?</p>
-<p>✏️ <strong>Q2:</strong> Straight or curved? Any obvious outlier? Is a straight line the right tool here?</p>
-<hr>
-</section>
-<section id="part-3-fit-the-regression" class="level1">
-<h1>Part 3 · Fit the regression</h1>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the regression line ------------------------------</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>paper_lm_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(area_cm2 <span class="sc">~</span> mass_g, <span class="at">data =</span> paper_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Nothing prints — <code>lm()</code> stores the answer in a model object. The formula reads <code>Y ~ X</code>, “area <strong>is predicted by</strong> mass.”</p>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the model ---------------------------------------</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(paper_lm_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<blockquote class="blockquote">
-<p>⚠️ <strong>Watch out!</strong> Flip the formula to <code>lm(mass_g ~ area_cm2)</code> and R runs happily — it just answers a question you didn’t ask. The response always goes on the <strong>left</strong> of <code>~</code>.</p>
-</blockquote>
-<hr>
-</section>
-<section id="part-4-read-the-summary-output" class="level1">
-<h1>Part 4 · Read the <code>summary()</code> output</h1>
-<p>Everything you need is in four places. Find each one in your output.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># All four residual plots in one call</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(paper_model)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Put the plotting window back to one panel</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 35%">
-<col style="width: 65%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>What you want</th>
-<th>Where it is</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>slope</strong> (<em>b</em>)</td>
-<td>Coefficients table, <code>mass_g</code> row, <code>Estimate</code> column</td>
-</tr>
-<tr class="even">
-<td><strong>intercept</strong> (<em>a</em>)</td>
-<td>Coefficients table, <code>(Intercept)</code> row, <code>Estimate</code> column</td>
-</tr>
-<tr class="odd">
-<td><strong><em>p</em>-value for the slope</strong></td>
-<td>Coefficients table, <code>mass_g</code> row, <code>Pr(&gt;|t|)</code> column</td>
-</tr>
-<tr class="even">
-<td><strong>R²</strong></td>
-<td><code>Multiple R-squared</code> near the bottom</td>
-</tr>
-<tr class="odd">
-<td><strong>F and df</strong></td>
-<td>the <code>F-statistic:</code> line at the very bottom</td>
-</tr>
-</tbody>
-</table>
-<p>✏️ <strong>Q4a:</strong> Write down the slope and say what it means <strong>with units</strong> — finish this sentence: “every extra 1 gram of this paper is another ___ cm² of area.”</p>
-<p>✏️ <strong>Q4b:</strong> Write down the intercept. Its <em>p</em>-value is 0.126 — not significant. Why is that the <em>right</em> answer physically? (What is the area of a piece of paper that weighs nothing?)</p>
-<p>✏️ <strong>Q4c:</strong> Write the fitted equation: <code>area = ____ + ____ × mass</code></p>
-<p>✏️ <strong>Q4d:</strong> Write down the slope’s <em>p</em>-value and R². What does each one tell you — and why are they answering different questions?</p>
-<blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> R² says <em>how tight</em> the fit is. The <em>p</em>-value says <em>whether the slope is real</em>. A relationship can be real and still scattered — that is most of biology.</p>
-</blockquote>
-<hr>
-<blockquote class="blockquote">
-<h2 id="chunk-3-plot-it-check-it-use-it-after-lecture-chunk-3" class="anchored" data-anchor-id="part-4-read-the-summary-output">🧩 Chunk 3 — Plot it, check it, use it <em>(after lecture Chunk 3)</em></h2>
-<p>Parts 5–9: draw the line, check the residuals, predict, report.</p>
-</blockquote>
-</section>
-<section id="part-5-draw-the-fitted-line" class="level1">
-<h1>Part 5 · Draw the fitted line</h1>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Scatter plot with the fitted line --------------------</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>paper_df <span class="sc">%&gt;%</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mass_g, <span class="at">y =</span> area_cm2)) <span class="sc">+</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><code>geom_smooth(method = "lm")</code> adds the regression line plus a grey 95% confidence band. Without <code>method = "lm"</code> you get a wiggly curve instead of a straight line.</p>
-<p>✏️ <strong>Q5:</strong> Where is the grey band widest, and why? (Think about where the data are thickest.)</p>
-<hr>
-</section>
-<section id="part-6-check-the-residuals" class="level1">
-<h1>Part 6 · Check the residuals</h1>
-<p>A <strong>residual</strong> is one point’s miss: observed − predicted. <code>plot()</code> on a fitted model draws four residual plots at once — no extra code needed.</p>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># All four residual plots in one call ------------------</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(paper_lm_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 12%">
-<col style="width: 38%">
-<col style="width: 50%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>Panel</th>
@@ -644,142 +629,153 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td>3</td>
 <td>Scale-Location</td>
-<td>equal scatter, another view</td>
+<td>is the scatter constant?</td>
 </tr>
 <tr class="even">
 <td>4</td>
 <td>Residuals vs Leverage</td>
-<td>is one point running the show?</td>
+<td>is any one point in charge?</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Panel 1 first.</strong> A flat shapeless cloud is good. A <strong>curve</strong> means the relationship isn’t straight. A <strong>funnel</strong> means the scatter grows as Y grows.</p>
-<p>✏️ <strong>Q6a:</strong> Describe panel 1. Flat cloud, curve, or funnel?</p>
-<p><strong>▶ Run this</strong> to see the same thing as numbers:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># How big are the misses at each square size? ---------</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>paper_df <span class="sc">%&gt;%</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">residual =</span> <span class="fu">residuals</span>(paper_lm_model)) <span class="sc">%&gt;%</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(area_cm2) <span class="sc">%&gt;%</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">biggest_miss =</span> <span class="fu">round</span>(<span class="fu">max</span>(<span class="fu">abs</span>(residual)), <span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Q6b:</strong> How big is the worst miss for a 1 cm² square? For a 567 cm² square? Which assumption does that pattern break?</p>
-<p>✏️ <strong>Q6c:</strong> R² is 0.9999 — the best fit you will ever see — and the residual plot still has a problem. In your own words, how can both be true at once?</p>
-<blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> Our leaf tracings weigh 0.1–0.4 g, down at the tight end of the line where a typical miss is a fraction of a cm². The calibration is fine for the job we are using it for. Fixing the funnel properly is a graduate topic — <strong>noticing it and saying so</strong> is the undergraduate job.</p>
-</blockquote>
+<p>✏️ <strong>Q3:</strong> Looking at the four plots, <strong>are the assumptions of the regression met?</strong> Say what you <strong>see</strong> in each plot, not what you hope to see. If something looks wrong, say which plot and what it means.</p>
 <hr>
 </section>
-<section id="part-7-predict-one-tracing" class="level1">
-<h1>Part 7 · Predict one tracing</h1>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Predict the area of one leaf tracing ----------------</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>one_tracing <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">mass_g =</span> <span class="fl">0.138</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(paper_lm_model, <span class="at">newdata =</span> one_tracing)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><strong>▶ Run this</strong> to add a 95% interval:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Two tracings, with 95% prediction intervals ---------</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>two_tracings <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">mass_g =</span> <span class="fu">c</span>(<span class="fl">0.092</span>, <span class="fl">0.138</span>))</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(paper_lm_model,</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">newdata =</span> two_tracings,</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">interval =</span> <span class="st">"prediction"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<ul>
-<li><code>fit</code> is the prediction; <code>lwr</code> and <code>upr</code> are the 95% range</li>
-<li><code>interval = "confidence"</code> would give the range for the <strong>average</strong> tracing of that mass — narrower. For <strong>one real leaf</strong>, use <code>"prediction"</code>.</li>
-</ul>
-<blockquote class="blockquote">
-<p>⚠️ <strong>Watch out!</strong> <code>newdata</code> must use the <strong>same column name</strong> as the model. The model was built on <code>mass_g</code>, so the column must be called <code>mass_g</code>. Call it <code>mass</code> and R stops with <em>“object ‘mass_g’ not found.”</em></p>
-</blockquote>
-<p>✏️ <strong>Q7:</strong> Record the predicted area for the 0.138 g tracing and its 95% prediction interval. Which tracing is predicted to be larger, and does that make sense?</p>
-<hr>
-</section>
-<section id="part-8-convert-a-whole-column-of-tracings" class="level1">
-<h1>Part 8 · Convert a whole column of tracings</h1>
-<p><code>paper_mass_g</code> in the leaf data is the mass of each leaf’s paper tracing. Now we turn all of them into areas at once.</p>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load our leaf data ----------------------------------</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="ot">&lt;-</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_excel</span>(<span class="st">"data/2026_09_03_data_sci_leaf_area.xlsx"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Turn every tracing mass into an area ----------------</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">leaf_area_cm2 =</span></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>           <span class="fu">predict</span>(paper_lm_model,</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>                   <span class="at">newdata =</span> <span class="fu">tibble</span>(<span class="at">mass_g =</span> paper_mass_g)))</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(teams, shade, mass_g, paper_mass_g, leaf_area_cm2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Same rule as Part 7: <code>predict()</code> wants a column called <code>mass_g</code>, so we hand it <code>tibble(mass_g = paper_mass_g)</code> — our tracing masses, under the name the model knows.</p>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Predicted leaf area by side -------------------------</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> shade, <span class="at">y =</span> leaf_area_cm2)) <span class="sc">+</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mean predicted area per side ------------------------</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="sc">%&gt;%</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(shade) <span class="sc">%&gt;%</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(leaf_area_cm2)),</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_area =</span> <span class="fu">mean</span>(leaf_area_cm2, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Q8a:</strong> Record the mean predicted area for each side. Does that match what the t-test told you about leaf <strong>mass</strong> back in Activities 9–10?</p>
-<p>✏️ <strong>Q8b:</strong> Some leaves have <code>NA</code> for <code>leaf_area_cm2</code>. Why? (Look at <code>paper_mass_g</code> for that team.) Is R right to leave them missing?</p>
-<p>✏️ <strong>Q8c:</strong> Why is “shady leaves are about 1 cm² bigger” a more useful sentence for a reader than “shady leaves weigh 0.02 g more”?</p>
-<hr>
-</section>
-<section id="part-9-write-the-results-sentence" class="level1">
-<h1>Part 9 · Write the results sentence</h1>
-<p>Fill in the blanks from your <code>summary()</code> output — do not retype numbers from these instructions, read them off your own screen.</p>
-<pre><code>____ was a strong predictor of ____ (linear regression:
-F(___, ___) = ____, p ____, R2 = ____). The fitted
-equation was area = ____ + ____ x mass.</code></pre>
-<p>Then add one sentence about the assumptions — what the residual plot showed and what you are being careful about because of it.</p>
-<p>✏️ <strong>Q9:</strong> Write the full results paragraph in your answer box.</p>
-<p><strong>Save your script</strong>, then run it top to bottom one last time before you hand it in.</p>
+<section id="part-5-turn-every-tracing-mass-into-a-leaf-area" class="level1">
+<h1>Part 5 · Turn every tracing mass into a leaf area</h1>
+<p>The model you just fitted says</p>
+<p><span class="math display">\[\text{mass} = \text{intercept} + \text{slope} \times \text{area}\]</span></p>
+<p>We have the mass of each tracing and we want its area, so rearrange it:</p>
+<p><span class="math display">\[\text{area} = \frac{\text{mass} - \text{intercept}}{\text{slope}}\]</span></p>
+<p><strong>▶ Run this</strong> — type the two numbers in from the Coefficients table in Part 3, written out of scientific notation:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Straight off the summary() output above</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>intercept <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.002058</span>    <span class="co"># from -2.058e-03</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>slope     <span class="ot">&lt;-</span>  <span class="fl">0.007660</span>    <span class="co"># from  7.660e-03</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Paper is sold by mass per square METRE. 1 m2 = 10000 cm2</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>slope <span class="sc">*</span> <span class="dv">10000</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>leaf_df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/2026_09_03_data_sci_leaf_area.xlsx"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">area_cm2 =</span> (paper_mass_g <span class="sc">-</span> intercept) <span class="sc">/</span> slope)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>leaf_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Typing the numbers in by hand is fine here, and it keeps the arithmetic in plain sight. Rounding to six decimals changes nothing — the <em>t</em>, df and <em>p</em> you get in Part 7 are identical either way.</p>
+<p>Some leaves have <code>NA</code> for area — that team never weighed their tracings, and R keeps the gap instead of inventing a number.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>✍️ Optional — the same analysis as a report
+<span class="screen-reader-only">Tip</span>Optional — let R hand you the numbers
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>If you’d rather hand this in as a Word document than a script, <a href="../../content/regression/regression_analysis_report.html"><code>regression_analysis_report.qmd</code></a> is the same analysis written up in Quarto. Its Discussion section is waiting for the paragraph you just wrote; paste it in and press <strong>Render</strong>. The <code>.R</code> script is still what’s graded.</p>
+<p>You don’t have to type the coefficients. <code>coef()</code> pulls them out of the model:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(paper_model)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># One at a time, by position</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(paper_model)[<span class="dv">1</span>]   <span class="co"># the intercept</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(paper_model)[<span class="dv">2</span>]   <span class="co"># the slope</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Or by name, which is harder to get wrong</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(paper_model)[<span class="st">"(Intercept)"</span>]</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(paper_model)[<span class="st">"area_cm2"</span>]</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co"># So Part 5 could be written with no typed numbers at all.</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co"># A second copy, so the rest of the script keeps using</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co"># the version you typed in</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>leaf_coef_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">area_cm2 =</span> (paper_mass_g <span class="sc">-</span> <span class="fu">coef</span>(paper_model)[<span class="dv">1</span>]) <span class="sc">/</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">coef</span>(paper_model)[<span class="dv">2</span>])</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Same answer either way</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(leaf_df<span class="sc">$</span>area_cm2, <span class="dv">3</span>)</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(leaf_coef_df<span class="sc">$</span>area_cm2, <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Two things worth noticing: <code>coef()</code> prints <strong>plain decimals</strong>, so there is no scientific notation to convert — and you cannot mistype a digit. Typing the numbers in keeps the arithmetic visible. Either way is fine.</p>
 </div>
 </div>
 <hr>
 </section>
-<section id="extension-out-of-class-2030-min" class="level1">
-<h1>Extension — out of class (~20–30 min)</h1>
-<p><em>Turn this in with your script, as <code>#</code> comments at the bottom of the file. <code>paper_df</code> is the same for everyone — but the object you calibrate is one only <strong>you</strong> have.</em></p>
-<section id="e1-calibrate-something-only-you-have" class="level2">
-<h2 class="anchored" data-anchor-id="e1-calibrate-something-only-you-have">E1 · Calibrate something only you have</h2>
-<ol type="1">
-<li>Cut <strong>any shape you like</strong> out of ordinary printer or notebook paper — trace your hand, your initials in bubble letters, a rough outline of your home state.</li>
-<li>Weigh it in grams on a kitchen or postal scale. No scale? Estimate it against a US penny (2.5 g) or a sheet of printer paper (≈4.5 g), and say that’s what you did.</li>
-<li>In R, use <code>paper_lm_model</code> and <code>predict(..., interval = "prediction")</code> to estimate its area from its mass.</li>
-<li>Measure the <strong>real</strong> area the low-tech way: trace it onto graph paper and count squares.</li>
-</ol>
-<p>Report, as comments: what the shape was, its mass, the predicted area and interval, your counted area, and whether the counted area landed inside the interval.</p>
+<section id="part-6-one-value-per-team-per-side" class="level1">
+<h1>Part 6 · One value per team per side</h1>
+<p>Leaves from the same team on the same side of the tree are <strong>not independent</strong> — they came off the same branch of the same tree. Treating all 53 leaves as independent is <strong>pseudoreplication</strong>, and it makes your <em>p</em>-value look far better than the study earned.</p>
+<p>The fix: average them, so each team gives <strong>one</strong> sunny value and <strong>one</strong> shady value.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>team_df <span class="ot">&lt;-</span> leaf_df <span class="sc">%&gt;%</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(teams, shade) <span class="sc">%&gt;%</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">area_cm2 =</span> <span class="fu">mean</span>(area_cm2, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">mass_g   =</span> <span class="fu">mean</span>(mass_g,   <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">.groups  =</span> <span class="st">"drop"</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>team_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
 </section>
-<section id="e2-explain-your-own-numbers" class="level2">
-<h2 class="anchored" data-anchor-id="e2-explain-your-own-numbers">E2 · Explain your own numbers</h2>
-<ol type="1">
-<li>Using <strong>your</strong> R² from Part 4, say in plain language what fraction of the variation in area the line accounts for — and one thing R² does <strong>not</strong> tell you.</li>
-<li>Your <strong>prediction</strong> interval in E1 is wider than a <strong>confidence</strong> interval would be at the same mass. Why is predicting one specific object riskier than estimating an average?</li>
-<li>Run <code>max(paper_df$mass_g)</code>. Suppose you had cut your shape out of cardboard and it weighed 9 g. Why would predicting its area be a different kind of mistake than the prediction you actually made?</li>
-</ol>
+<section id="part-7-paired-t-tests" class="level1">
+<h1>Part 7 · Paired <em>t</em>-tests</h1>
+<p>Each team measured <strong>both</strong> sides of the same tree, so sunny and shady are <strong>paired</strong> within a team. A paired test needs one row per team, so reshape first.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>wide_df <span class="ot">&lt;-</span> team_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> shade,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">values_from =</span> <span class="fu">c</span>(area_cm2, mass_g))</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>wide_df</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Paired t-test on leaf AREA</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>area_paired_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(wide_df<span class="sc">$</span>area_cm2_shady,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>                            wide_df<span class="sc">$</span>area_cm2_sunny,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>                            <span class="at">paired =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>area_paired_model</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Paired t-test on leaf MASS</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>mass_paired_model <span class="ot">&lt;-</span> <span class="fu">t.test</span>(wide_df<span class="sc">$</span>mass_g_shady,</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>                            wide_df<span class="sc">$</span>mass_g_sunny,</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>                            <span class="at">paired =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>mass_paired_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Check the <code>df</code> on each. One team has no tracings at all, so the <strong>area</strong> test uses 4 teams and the <strong>mass</strong> test uses 5.</p>
 <blockquote class="blockquote">
-<p>📖 <strong>Whitlock &amp; Schluter §17.2 p.&nbsp;550:</strong> <em>“Extrapolation is the prediction of Y at values of X beyond the range of X-values in the data. Extrapolation is problematic because there is no way to ensure the relationship between X and Y continues to be linear.”</em></p>
+<p>⚠️ <strong>Watch out!</strong> <code>t.test(area_cm2 ~ shade, paired = TRUE)</code> gives an error — R doesn’t allow <code>paired</code> with a formula. That is why we made the wide table.</p>
 </blockquote>
+<p>✏️ <strong>Q4:</strong> What do you <strong>conclude</strong> from the two paired <em>t</em>-tests? For each one give the mean difference, <em>t</em>, df and <em>p</em>, then say in plain words what it means for sunny versus shady leaves. Do the two tests agree?</p>
 <hr>
-<p><em>End of Activity 11. Next: real climate data with <code>GSODR</code> — and the same <code>lm()</code>, where the slope becomes a rate of change per year.</em></p>
-
-
 </section>
+<section id="homework-sugar-maple" class="level1">
+<h1>Homework — sugar maple</h1>
+<p><em>Write your own script. Hand it in with the four answers as <code>#</code> comments.</em></p>
+<p>Do the same analysis on leaves I collected from sugar maple trees: <code>data/2026_09_02_sugar_maple_leaf_area.xlsx</code>.</p>
+<p>The steps are the same as Parts 1–7, and most lines change only by a name. There is a bare, code-free guide at the bottom of the skeleton script to walk you through it.</p>
+<p><strong>One difference.</strong> These leaves went through a scanner, so the area is already in the file as <code>total_area_cm2</code> — there is no tracing paper to convert. Your regression is therefore leaf <strong>mass</strong> against leaf <strong>area</strong>, which gives you the mass of 1 cm² of <em>leaf</em> instead of paper.</p>
+<p>The columns you need are <code>tree</code>, <code>side</code>, <code>total_area_cm2</code> and <code>mass_g</code>.</p>
+<p>Answer the <strong>same four questions</strong> for sugar maple:</p>
+<ol type="1">
+<li>What is the question of the study?</li>
+<li>What are the hypotheses?</li>
+<li>Are the regression assumptions met? Say what you see in each of the four plots, and whether it is better or worse behaved than the paper.</li>
+<li>What do you conclude from the two paired <em>t</em>-tests? Which side has the bigger leaves, and is the result clearer or murkier than the class data? Why might that be?</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Two things to think about
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>Each tree has a sunny side <strong>and</strong> a shady side, so the <strong>tree</strong> is the pair — just as the team was in class.</li>
+<li>Two leaves from the same side of the same tree are not independent either. Average them first, exactly as in Part 6.</li>
+</ul>
+</div>
+</div>
+<hr>
+<p><em>End of Activity 11. Next: real climate data, where the slope of a regression on time becomes a rate of change per year.</em></p>
+
+
 </section>
 
 </main> <!-- /main -->

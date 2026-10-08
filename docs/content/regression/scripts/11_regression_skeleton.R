@@ -1,12 +1,14 @@
 # ==========================================================
-# Activity 11: Linear Regression
+# Activity 11: Regression — tracing mass into leaf area
 # Name:
 # Date:
 #
 # Save this file as scripts/11_regression.R
 #
-# The code is already written. Run it chunk by chunk and
-# type your answers in the boxes marked  # # # # # #  —
+# ALL the code is written for you. Run it chunk by chunk and
+# watch what comes out.
+#
+# You answer FOUR questions, in the boxes marked # # # # # #
 # after "ANSWER:", with every line starting with #
 #
 # Your ANSWERS are what gets graded.
@@ -17,242 +19,295 @@ library(readxl) # read Excel files
 library(tidyverse) # dplyr + ggplot2
 library(janitor) # clean_names()
 
-# Load the paper calibration data -------------------------
-paper_df <- read_excel("data/paper_area_weights.xlsx")
 
-# Load our leaf data (used in Step 8) ----------------------
-leaf_df <-
-  read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+# ---- 1: The study ----------------------------------------
+# We picked a tree and took leaves from the SUNNY side and
+# from the SHADY side. Each team traced their leaves onto
+# paper, cut out the tracings, and weighed them.
+#
+# A tracing mass is not an area. So we also weighed pieces
+# of the SAME paper cut to areas we already knew. That is
+# what the regression is for.
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Q1. What is the QUESTION this study is asking?
+#     One sentence.
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Q2. What are the HYPOTHESES?
+#     Give the null and the alternative, for leaf area and
+#     for leaf mass.
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# ---- 2: Read the calibration data ------------------------
+
+paper_df <- read_excel("data/paper_area_weights.xlsx") %>%
   clean_names()
 
-glimpse(paper_df)
+paper_df
 
 
-# ---- 1: Which variable is which -------------------------
+# ---- 3: The regression -----------------------------------
+# We CHOSE the areas and MEASURED the masses, so area goes
+# on x and mass goes on y. The thing you measured, with the
+# error in it, always goes on the y axis.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q1. Which column is the explanatory variable (X) and
-#      which is the response (Y)? Why that direction,
-#      given that what we want is leaf AREA?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-# ---- 2: Plot it before you fit it -----------------------
-
-# Scatter plot of area against mass
 paper_df %>%
-  ggplot(aes(x = mass_g, y = area_cm2)) +
-  geom_point()
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q2. Straight or curved? Any obvious outlier?
-#      Is a straight line the right tool here?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-# ---- 3: Fit the regression ------------------------------
-
-# Fit the regression line (Y ~ X)
-paper_lm_model <- lm(area_cm2 ~ mass_g, data = paper_df)
-
-# Read the model
-summary(paper_lm_model)
-
-# ---- 4: Read the summary() output -----------------------
-# slope       = Coefficients, mass_g row, Estimate column
-# intercept   = Coefficients, (Intercept) row, Estimate
-# p for slope = Coefficients, mass_g row, Pr(>|t|)
-# R-squared   = Multiple R-squared, near the bottom
-# F and df    = the F-statistic line at the very bottom
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q4a. The slope, with units: every extra 1 g of this
-#       paper is another ____ cm2 of area.
-# ANSWER:
-#
-# Q4b. The intercept is ____ and its p-value is 0.126 —
-#       not significant. Why is that the RIGHT answer
-#       physically? (What is the area of a piece of paper
-#       that weighs nothing?)
-# ANSWER:
-#
-# Q4c. The fitted equation:
-#       area = ____ + ____ x mass
-# ANSWER:
-#
-# Q4d. The slope's p-value = ____   R-squared = ____
-#       What does each one tell you, and why are they
-#       answering different questions?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-# ---- 5: Draw the fitted line ----------------------------
-
-# Scatter plot with the fitted line and 95% band
-paper_df %>%
-  ggplot(aes(x = mass_g, y = area_cm2)) +
+  ggplot(aes(x = area_cm2, y = mass_g)) +
   geom_point() +
   geom_smooth(method = "lm")
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q5. Where is the grey band widest, and why?
-# ANSWER:
+paper_model <- lm(mass_g ~ area_cm2, data = paper_df)
+
+summary(paper_model)
+
+# These numbers are tiny, so R prints them in SCIENTIFIC
+# notation. In the Coefficients table you will see:
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#   (Intercept) -2.058e-03     which is  -0.002058
+#   area_cm2     7.660e-03     which is   0.007660
+#
+# 7.660e-03 means 7.660 x 10^-3: move the decimal point
+# three places to the LEFT.
+#
+# OPTIONAL - if you would rather read plain decimals:
+#   options(scipen = 999)     # scientific notation off
+#   options(scipen = 0)       # and back on again
+# We leave it on, because with it off a tiny p-value
+# prints as <0.0000000000000002.
 
-# ---- 6: Check the residuals -----------------------------
-
+# ---- 4: Are the regression assumptions met? --------------
 # All four residual plots in one call
 par(mfrow = c(2, 2))
-plot(paper_lm_model)
+plot(paper_model)
 
 # Put the plotting window back to one panel
 par(mfrow = c(1, 1))
 
-# How big are the misses at each square size?
-paper_df %>%
-  mutate(residual = residuals(paper_lm_model)) %>%
-  group_by(area_cm2) %>%
-  summarize(biggest_miss = round(max(abs(residual)), 2))
+# Panel 1  Residuals vs Fitted - straight? equal scatter?
+# Panel 2  Normal Q-Q          - misses bell-shaped?
+# Panel 3  Scale-Location      - scatter constant?
+# Panel 4  Residuals vs Leverage - any one point in charge?
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q6a. Describe panel 1. Flat cloud, curve, or funnel?
-# ANSWER:
-#
-# Q6b. Worst miss for a 1 cm2 square = ____
-#       Worst miss for a 567 cm2 square = ____
-#       Which assumption does that pattern break?
-# ANSWER:
-#
-# Q6c. R-squared is 0.9999 and the residual plot still
-#       has a problem. How can both be true at once?
+# Q3. Looking at the four plots, are the assumptions of
+#     the regression met? Say what you SEE in each plot,
+#     not what you hope to see. If something looks wrong,
+#     say which plot and what it means.
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- 7: Predict one tracing -----------------------------
+# ---- 5: Turn every tracing mass into a leaf area ---------
 
-# Predict the area of one leaf tracing
-one_tracing <- tibble(mass_g = 0.138)
-
-predict(paper_lm_model, newdata = one_tracing)
-
-# Two tracings, with 95% prediction intervals
-two_tracings <- tibble(mass_g = c(0.092, 0.138))
-
-predict(paper_lm_model, newdata = two_tracings, interval = "prediction")
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q7. Predicted area for the 0.138 g tracing = ____
-#      95% prediction interval = ____ to ____
-#      Which tracing is predicted larger, and does that
-#      make sense?
-# ANSWER:
+# The model says
+#     mass = intercept + slope * area
+# We have the mass and we want the area, so rearrange:
+#     area = (mass - intercept) / slope
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Type the two numbers in from the summary() output above,
+# written out of scientific notation.
 
-# ---- 8: Convert a whole column of tracings --------------
+intercept <- -0.002058
+slope <- 0.007660
 
-# Turn every tracing mass into an area
-# predict() needs the column to be called mass_g —
-# the same name the model was built with
-leaf_df <- leaf_df %>%
+# Paper is sold by mass per square METRE. 1 m2 = 10000 cm2.
+slope * 10000
+
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names() %>%
+  mutate(area_cm2 = (paper_mass_g - intercept) / slope)
+
+leaf_df
+
+# Some leaves have NA for area - that team never weighed
+# their tracings. R keeps the gap instead of inventing a
+# number, which is what you want.
+
+# ---- 5b: OPTIONAL - let R hand you the numbers -----------
+# You do not have to type the coefficients in. coef() pulls
+# them straight out of the model.
+
+coef(paper_model)
+
+# Notice coef() prints plain decimals - there is no
+# scientific notation to convert.
+
+# One at a time, by position:
+coef(paper_model)[1] # the intercept
+coef(paper_model)[2] # the slope
+
+# Or by name, which is harder to get wrong:
+coef(paper_model)["(Intercept)"]
+coef(paper_model)["area_cm2"]
+
+# So Part 5 could be written with no typed numbers at all.
+# This makes a SECOND copy so the rest of the script keeps
+# using the version you typed:
+leaf_coef_df <- leaf_df %>%
   mutate(
-    leaf_area_cm2 = predict(
-      paper_lm_model,
-      newdata = tibble(mass_g = paper_mass_g)
-    )
+    area_cm2 = (paper_mass_g - coef(paper_model)[1]) /
+      coef(paper_model)[2]
   )
 
-leaf_df %>%
-  select(teams, shade, mass_g, paper_mass_g, leaf_area_cm2)
+# Same answer either way - compare the first three:
+head(leaf_df$area_cm2, 3)
+head(leaf_coef_df$area_cm2, 3)
 
-# Predicted leaf area by side
-leaf_df %>%
-  ggplot(aes(x = shade, y = leaf_area_cm2)) +
-  geom_boxplot() +
-  geom_jitter(width = 0.15)
+# Either way is fine. Typing them in keeps the arithmetic
+# visible; coef() means you cannot mistype a digit.
 
-# Mean predicted area per side
-leaf_df %>%
-  group_by(shade) %>%
+# ---- 6: One value per team per side ----------------------
+# Leaves from the same team on the same side are NOT
+# independent - they came off the same branch of the same
+# tree. Using all 53 leaves as if they were independent is
+# PSEUDOREPLICATION.
+#
+# The fix: average them, so each team gives ONE sunny value
+# and ONE shady value.
+
+team_df <- leaf_df %>%
+  group_by(teams, shade) %>%
   summarize(
-    n = sum(!is.na(leaf_area_cm2)),
-    mean_area = mean(leaf_area_cm2, na.rm = TRUE)
+    area_cm2 = mean(area_cm2, na.rm = TRUE),
+    mass_g = mean(mass_g, na.rm = TRUE),
+    .groups = "drop"
   )
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q8a. Mean predicted area: shady = ____  sunny = ____
-#       Does that match what the t-test told you about
-#       leaf MASS in Activities 9-10?
-# ANSWER:
-#
-# Q8b. Some leaves have NA for leaf_area_cm2. Why?
-#       (Look at paper_mass_g for that team.) Is R right
-#       to leave them missing?
-# ANSWER:
-#
-# Q8c. Why is "shady leaves are about 1 cm2 bigger" more
-#       useful to a reader than "shady leaves weigh
-#       0.02 g more"?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+team_df
 
-# ---- 9: Write the results sentence ----------------------
-# Read every number off YOUR summary() output.
+
+# ---- 7: Paired t-tests -----------------------------------
+# Each team measured BOTH sides of the tree, so sunny and
+# shady are paired within a team. A paired test needs one
+# row per team, so reshape first.
+
+wide_df <- team_df %>%
+  pivot_wider(names_from = shade, values_from = c(area_cm2, mass_g))
+
+wide_df
+
+# Paired t-test on leaf AREA
+area_paired_model <- t.test(
+  wide_df$area_cm2_shady,
+  wide_df$area_cm2_sunny,
+  paired = TRUE
+)
+
+area_paired_model
+
+# Paired t-test on leaf MASS
+mass_paired_model <- t.test(
+  wide_df$mass_g_shady,
+  wide_df$mass_g_sunny,
+  paired = TRUE
+)
+
+mass_paired_model
+
+# Note the df. One team has no tracings at all, so the AREA
+# test uses 4 teams and the MASS test uses 5.
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q9. Fill this in, then add one sentence about what the
-#      residual plot showed and what you are being
-#      careful about because of it.
-#
-#      ____ was a strong predictor of ____ (linear
-#      regression: F(___, ___) = ____, p ____,
-#      R2 = ____). The fitted equation was
-#      area = ____ + ____ x mass.
+# Q4. What do you CONCLUDE from the two paired t-tests?
+#     For each test give the mean difference, t, df and p,
+#     and say in plain words what it means for sunny
+#     versus shady leaves. Do the two tests agree?
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
 
 # ##########################################################
-# EXTENSION — out of class. Answers as # comments below.
+# HOMEWORK - sugar maple
+#
+# Now do the same thing on your own, with leaves I collected
+# from sugar maple trees:
+#
+#   data/2026_09_02_sugar_maple_leaf_area.xlsx
+#
+# Write your own script - nothing is filled in below. Use
+# the activity above as your model; the steps are the same
+# and most lines change only by a name.
+#
+# ONE difference: these leaves were measured on a scanner,
+# so the area is already in the file as total_area_cm2.
+# There is no tracing paper to convert. Your regression is
+# therefore leaf MASS against leaf AREA, which gives you the
+# mass of one square centimetre of LEAF.
+#
+# The columns you need: tree, side, total_area_cm2, mass_g
+#
+# Answer the SAME four questions, as comments, in your
+# script.
 # ##########################################################
 
-# ---- E1: Calibrate something only you have ---------------
-# Cut a shape out of paper, weigh it, predict its area
-# from paper_lm_model with a prediction interval, then
-# measure the real area on graph paper.
-# TODO: your predict() code here
-
+# ---- H1: Read the data -----------------------------------
+# TODO: library() calls, then read_excel() + clean_names()
+#       Look at it. How many trees? How many leaves per
+#       tree per side?
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# E1. Shape = ____   mass = ____ g
-#     Predicted area = ____   interval ____ to ____
-#     Counted area = ____
-#     Did the counted area land inside the interval?
+# H-Q1. What is the QUESTION of this study?
 # ANSWER:
 #
-# E2a. Using YOUR R-squared from Step 4: what fraction of
-#      the variation in area does the line account for,
-#      and what does R-squared NOT tell you?
-# ANSWER:
-#
-# E2b. Why is a PREDICTION interval wider than a
-#      CONFIDENCE interval at the same mass?
-# ANSWER:
-#
-# E2c. Run max(paper_df$mass_g). If your shape had been
-#      cardboard weighing 9 g, why would predicting its
-#      area be a different kind of mistake?
+# H-Q2. What are the HYPOTHESES, for area and for mass?
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- Before you hand in ----------------------------------
+# ---- H2: The regression ----------------------------------
+# TODO: plot mass_g against total_area_cm2 - area on x,
+#       mass on y, for the same reason as in class.
+# TODO: fit it with lm(), then summary().
+# TODO: write down the intercept and the slope, out of
+#       scientific notation. What is the mass of 1 cm2 of
+#       leaf? And of 1 m2?
+#
+# NOTE: the maple areas were scanned, so you do NOT need to
+#       convert anything. You already have the area.
+
+# ---- H3: Check the assumptions ---------------------------
+# TODO: par(mfrow = c(2, 2)), plot() the model, then set
+#       par(mfrow = c(1, 1)) again.
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# H-Q3. Are the assumptions of the regression met? Say
+#       what you see in each of the four plots. Is it
+#       better or worse behaved than the paper?
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# ---- H4: One value per tree per side ---------------------
+# Two leaves from the same side of the same tree are not
+# independent - same pseudoreplication problem as in class.
+#
+# TODO: group_by() the tree and the side, then summarize()
+#       the mean area and the mean mass.
+#       How many rows should you end up with?
+
+# ---- H5: Paired t-tests ----------------------------------
+# Each tree has a sunny side AND a shady side, so the tree
+# is the pair.
+#
+# TODO: pivot_wider() to one row per tree.
+# TODO: paired t-test on area, and on mass.
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# H-Q4. What do you CONCLUDE from the two paired t-tests?
+#       Mean difference, t, df and p for each, then what it
+#       means in plain words. Which side has the bigger
+#       leaves, and is the result clearer or murkier than
+#       the class data? Why might that be?
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# ---- Before you hand in -----------------------------------
 # Run the whole script top to bottom (Ctrl/Cmd + Shift + Enter)
 # and make sure there are no errors.

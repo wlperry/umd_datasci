@@ -12,7 +12,7 @@ week: 6
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
   Fitting a linear regression with lm(), reading the summary() output,
-  checking the residuals, and using predict() to turn a mass into an area.
+  checking the residuals, and using the slope to turn a tracing mass into a leaf area.
 categories: [tidyverse, descriptive-stats]
 
 format:
@@ -88,7 +88,7 @@ library(patchwork)
 - **Fit** a model with `lm()`
 - **Read and interpret** the `summary()` output — slope, *p*-value, R²
 - **Check** the residuals the way R shows them to you
-- **Use** `predict()` to turn a tracing mass into a leaf area
+- **Use** the slope to turn a tracing mass into a leaf area
 - **Report** the result in a standard sentence
 :::
 
@@ -97,7 +97,7 @@ library(patchwork)
   - `lm()` — fit the line
   - `summary()` — read the result
   - `plot(model)` — check the residuals
-  - `predict()` — make predictions
+  - reading `7.660e-03` as 0.007660
   - `geom_smooth(method = "lm")` — draw the line
 - **Reading:**
   - 📖 Whitlock & Schluter, Ch. 17 — *Regression*
@@ -326,10 +326,10 @@ lion_panel <- ggplot(lion_df, aes(x = proportionBlack, y = ageInYears)) +
      ) +
      theme_minimal(base_size = 12)
 
-paper_panel <- ggplot(paper_demo_df, aes(x = mass_g, y = area_cm2)) +
+paper_panel <- ggplot(paper_demo_df, aes(x = area_cm2, y = mass_g)) +
      geom_point(size = 2, color = "blue4") +
      geom_smooth(method = "lm", se = FALSE, color = "black") +
-     labs(subtitle = "Paper:  R² = 0.9999", x = "Mass (g)", y = "Area (cm²)") +
+     labs(subtitle = "Paper:  R² = 0.9999", x = "Area (cm²)", y = "Mass (g)") +
      theme_minimal(base_size = 12)
 
 lion_panel + paper_panel
@@ -353,7 +353,7 @@ In biology, **R² of 0.3–0.7 is normal and useful**. Don't expect 0.99.
 :::
 :::::
 
-# R² and the *p*-value Answer Different Questions
+# R² and the *p*-value Answer Different Questions 
 
 :::::: columns
 ::: {.column width="52%"}
@@ -414,7 +414,7 @@ Same habit as the t-test: **check → decide → report.**
 **We will cover:** loading the paper data, the scatter plot, fitting with `lm()`, and reading the `summary()` output line by line.
 
 ::: activitybanner
-**🛑 After this chunk: Activity Parts 1–4** (load, plot, fit, read the summary).
+**🛑 After this chunk: Activity Parts 1–3** (the study, load, plot, fit, read the summary).
 :::
 
 # Load Libraries and Data
@@ -439,10 +439,10 @@ Two columns, 118 rows: `area_cm2` is the **known** area of each square, `mass_g`
 ::: {.column width="55%"}
 ```{r scatter-11}
 #| fig-format: png
-#| fig-alt: "Scatter plot of paper area in square centimetres against paper mass in grams. The points form a tight straight line rising from the bottom left to the top right."
-# Scatter plot of area against mass --------------------
+#| fig-alt: "Scatter plot of paper mass in grams against known paper area in square centimetres. The points form a tight straight line rising from the bottom left to the top right."
+# Scatter plot of mass against known area --------------
 scatter_plot <- paper_df %>%
-  ggplot(aes(x = mass_g, y = area_cm2)) +
+  ggplot(aes(x = area_cm2, y = mass_g)) +
   geom_point() +
   geom_smooth(method = "lm")
 scatter_plot
@@ -450,7 +450,7 @@ scatter_plot
 :::
 
 :::: {.column width="45%"}
-**Three plain lines.** `aes(x = , y = )` puts the explanatory variable on x and the response on y, and `geom_point()` draws the dots.
+**Three plain lines.** `aes(x = , y = )` puts the variable you **set** on x and the one you **measured** on y, and `geom_point()` draws the dots.
 
 **What you are looking for:**
 
@@ -472,7 +472,7 @@ Never fit a regression you haven't looked at. A curve, a funnel, or one wild poi
 ::: {.column width="55%"}
 ```{r fit-lm-11}
 # Fit the regression line ------------------------------
-paper_lm_model <- lm(area_cm2 ~ mass_g, data = paper_df)
+paper_model <- lm(mass_g ~ area_cm2, data = paper_df)
 ```
 
 Nothing prints. `lm()` hands back a **model object** that is holding the answer — `summary()` is what shows it to you.
@@ -489,10 +489,10 @@ lm(Y ~ X, data = df)
 - **X** — the explanatory variable — goes on the **right**
 - `~` reads as **"is predicted by"**
 
-So `area_cm2 ~ mass_g` is "area is predicted by mass."
+So `mass_g ~ area_cm2` is "mass is predicted by area."
 
 ::: callout-warning
-**⚠️ Get the order wrong and R will still answer.** `lm(mass_g ~ area_cm2)` runs fine — it just fits the question you didn't ask.
+**⚠️ Which way round?** We **cut** the areas and **measured** the masses, so **mass** is the response. `lm(area_cm2 ~ mass_g)` runs fine too — it just asks R to treat ten areas we chose on purpose as if they were the noisy measurement.
 :::
 ::::
 ::::::
@@ -502,43 +502,51 @@ So `area_cm2 ~ mass_g` is "area is predicted by mass."
 ```{r summary-lm-11}
 #| output-location: column
 # Read the model ---------------------------------------
-summary(paper_lm_model)
+summary(paper_model)
 ```
 
 There are only **four numbers** in here that you need, and we will take them one at a time:
 
-1.  the **slope** (`mass_g` → `Estimate`)
+1.  the **slope** (`area_cm2` → `Estimate`)
 2.  the **intercept** (`(Intercept)` → `Estimate`)
-3.  the slope's ***p*****-value** (`mass_g` → `Pr(>|t|)`)
+3.  the slope's ***p*****-value** (`area_cm2` → `Pr(>|t|)`)
 4.  the **R²** (`Multiple R-squared`)
 
 # Reading It — 1. The Coefficients Table
 
-::::: columns
-::: {.column width="52%"}
+::::::: columns
+:::: {.column width="52%"}
 ```         
 Coefficients:
-            Estimate Std. Error t value Pr(>|t|)
-(Intercept)   0.2792     0.1812   1.541    0.126
-mass_g      130.5234     0.1473 885.964   <2e-16
+              Estimate Std. Error t value Pr(>|t|)
+(Intercept) -2.058e-03  1.389e-03  -1.481    0.141
+area_cm2     7.660e-03  8.646e-06 885.964   <2e-16
 ```
 
 **The `Estimate` column is the equation.**
 
-- `(Intercept)` = **0.28** → that is *a*
-- `mass_g` = **130.52** → that is *b*, the slope
+- `(Intercept)` = **-0.002058** → that is *a*
+- `area_cm2` = **0.007660** → that is *b*, the slope
+
+**`7.660e-03` means 7.660 × 10⁻³** — move the decimal point three places left.
+
+::: callout-tip
+Prefer plain decimals? `options(scipen = 999)` turns scientific notation off and `options(scipen = 0)` turns it back on. We leave it on — with it off, *p* prints as `<0.0000000000000002`.
+:::
 
 So the fitted line is:
 
-$$\widehat{\text{area}} = 0.28 + 130.52 \times \text{mass}$$
-:::
+$$\widehat{\text{mass}} = -0.0021 + 0.00766 \times \text{area}$$
+::::
 
-::: {.column width="48%"}
+:::: {.column width="48%"}
 **Say the slope out loud, with units:**
 
-> Every extra **1 gram** of this paper is another **130.5 cm²** of area.
+> Every extra **1 cm²** of this paper weighs another **0.00766 g**.
 
-That is the conversion factor we came for.
+::: callout-note
+**×10,000 → 76.6 g/m²** — the paper's **grammage**, the number on the side of the ream. Copy paper is sold at 75–80 g/m², so the slope is a property you can go and check.
+:::
 
 **The other three columns, in one line each:**
 
@@ -549,24 +557,24 @@ That is the conversion factor we came for.
 | `Pr(>|t|)`   | the ***p*****-value** for that row |
 
 📖 W&S §17.3 p. 551
-:::
-:::::
+::::
+:::::::
 
 # Reading It — 2. The Two *p*-Values
 
 ::::::: columns
 ::: {.column width="52%"}
 ```         
-(Intercept)   0.2792   ...   0.126
-mass_g      130.5234   ...  <2e-16
+(Intercept) -2.058e-03  ...   0.141
+area_cm2     7.660e-03  ...  <2e-16
 ```
 
-**The slope row is the one that matters.** `Pr(>|t|)` for `mass_g` is `<2e-16` — R's way of writing "smaller than I can print."
+**The slope row is the one that matters.** `Pr(>|t|)` for `area_cm2` is `<2e-16` — R's way of writing "smaller than I can print."
 
-- **H₀:** the slope is 0 → mass tells you nothing about area
-- *p* \< 0.001 → **reject H₀**. Mass predicts area.
+- **H₀:** the slope is 0 → area tells you nothing about mass
+- *p* \< 0.001 → **reject H₀**. Area predicts mass.
 
-**The intercept row:** *p* = 0.126, so the intercept is **not** distinguishable from 0 — exactly what physics says it should be. A piece of paper with no mass has no area.
+**The intercept row:** *p* = 0.141, so the intercept is **not** distinguishable from 0 — exactly what physics says it should be. A piece of paper with no area has no mass.
 :::
 
 ::::: {.column width="48%"}
@@ -587,14 +595,14 @@ The **slope's**. That is the biological question. Nobody reports the intercept's
 :::::: columns
 ::: {.column width="52%"}
 ```         
-Residual standard error: 1.764 on 116 degrees of freedom
+Residual standard error: 0.01351 on 116 degrees of freedom
 Multiple R-squared:  0.9999, Adjusted R-squared:  0.9999
 F-statistic: 7.849e+05 on 1 and 116 DF,  p-value: < 2.2e-16
 ```
 
-- **Multiple R-squared = 0.9999** → mass explains **99.99%** of the variation in area. That is manufactured paper, not biology.
+- **Multiple R-squared = 0.9999** → area explains **99.99%** of the variation in mass. That is manufactured paper, not biology.
 - **F-statistic** with **1 and 116 DF**, *p* \< 2.2e-16 → the overall test of the model. With one X it tells you the same thing as the slope's *p*-value.
-- **Residual standard error = 1.76 cm²** → a typical miss is about 1.8 cm².
+- **Residual standard error = 0.0135 g** → a typical miss is about 13 mg.
 :::
 
 :::: {.column width="48%"}
@@ -611,20 +619,20 @@ F-statistic: 7.849e+05 on 1 and 116 DF,  p-value: < 2.2e-16
 ::::
 ::::::
 
-# → ACTIVITY 11 Parts 1–4 now
+# → ACTIVITY 11 Parts 1–3 now
 
 ::: activitybanner
-**🛑 Do Activity Parts 1–4 now**
+**🛑 Do Activity Parts 1–3 now**
 
-Load the paper data, make the scatter plot, fit `lm(area_cm2 ~ mass_g)`, and pull the slope, the *p*-value, and R² **off the summary output** — writing them in your answer boxes.
+Load the paper data, make the scatter plot, fit `lm(mass_g ~ area_cm2)`, and read the slope, the *p*-value and R² **off the summary output**.
 :::
 
 # 🧩 Chunk 3 of 3 · Plot It, Check It, Use It
 
-**We will cover:** drawing the fitted line, reading `plot(model)`, using `predict()` on one tracing and then on a whole column, and writing the result up.
+**We will cover:** drawing the fitted line, reading `plot(model)`, converting the whole column of tracings, averaging away the pseudoreplication, and the paired *t*-tests.
 
 ::: activitybanner
-**🛑 After this chunk: Activity Parts 5–9** (plot the line, check the residuals, predict, report).
+**🛑 After this chunk: Activity Parts 4–7** (check the residuals, convert, average, paired *t*-tests).
 :::
 
 # Draw the Line
@@ -633,10 +641,10 @@ Load the paper data, make the scatter plot, fit `lm(area_cm2 ~ mass_g)`, and pul
 ::: {.column width="55%"}
 ```{r calibration-plain-11}
 #| fig-format: png
-#| fig-alt: "Scatter plot of paper area against paper mass with a straight fitted regression line and a narrow grey confidence band through the points."
+#| fig-alt: "Scatter plot of paper mass against known paper area with a straight fitted regression line and a narrow grey confidence band through the points."
 # Scatter plot with the fitted line --------------------
 calibration_plot <- paper_df %>%
-  ggplot(aes(x = mass_g, y = area_cm2)) +
+  ggplot(aes(x = area_cm2, y = mass_g)) +
   geom_point() +
   geom_smooth(method = "lm")
 calibration_plot
@@ -664,11 +672,11 @@ calibration_plot
 ``` r
 # The publication version — for reference ---------------
 calibration_plot <- paper_df %>%
-  ggplot(aes(x = mass_g, y = area_cm2)) +
+  ggplot(aes(x = area_cm2, y = mass_g)) +
   geom_point() +
   geom_smooth(method = "lm") +
-  labs(x = "Paper mass (g)",
-       y = "Paper area (cm²)") +
+  labs(x = "Paper area (cm²)",
+       y = "Paper mass (g)") +
   theme_minimal()
 calibration_plot
 ```
@@ -677,12 +685,12 @@ calibration_plot
 #| echo: false
 #| fig-format: png
 #| fig-height: 3.2
-#| fig-alt: "The same paper calibration scatter plot with the fitted line, now with axis labels reading Paper mass in grams and Paper area in square centimetres, on a minimal theme."
+#| fig-alt: "The same paper calibration scatter plot with the fitted line, now with axis labels reading Paper area in square centimetres and Paper mass in grams, on a minimal theme."
 paper_df %>%
-     ggplot(aes(x = mass_g, y = area_cm2)) +
+     ggplot(aes(x = area_cm2, y = mass_g)) +
      geom_point() +
      geom_smooth(method = "lm") +
-     labs(x = "Paper mass (g)", y = "Paper area (cm²)") +
+     labs(x = "Paper area (cm²)", y = "Paper mass (g)") +
      theme_minimal()
 ```
 :::
@@ -710,7 +718,7 @@ paper_df %>%
 #| fig-alt: "Four base R diagnostic plots for the paper calibration model in a two by two grid: residuals versus fitted values showing a clear funnel that widens to the right, a normal Q-Q plot with points curving away at both ends, a scale-location plot rising to the right, and residuals versus leverage."
 # All four residual plots in one call ------------------
 par(mfrow = c(2, 2))
-plot(paper_lm_model)
+plot(paper_model)
 ```
 :::
 
@@ -743,7 +751,7 @@ That is a **funnel**: assumption 3 (equal variance) does not hold.
 ```{r resid-by-size-11}
 # How big are the misses at each square size? ---------
 paper_df %>%
-  mutate(residual = residuals(paper_lm_model)) %>%
+  mutate(residual = residuals(paper_model)) %>%
   group_by(area_cm2) %>%
   summarize(biggest_miss = round(max(abs(residual)), 2))
 ```
@@ -762,67 +770,42 @@ paper_df %>%
 ::::
 ::::::
 
-# Predict One Tracing
+# From Tracing Mass to Leaf Area
 
 :::::: columns
-::: {.column width="55%"}
-```{r predict-one-11}
-# Predict the area of one leaf tracing ----------------
-# The tracing weighed 0.138 g
-one_tracing <- tibble(mass_g = 0.138)
+::: {.column width="52%"}
+The model says
 
-predict(paper_lm_model, newdata = one_tracing)
+$$\text{mass} = a + b \times \text{area}$$
+
+We have the **mass** and want the **area**, so rearrange:
+
+$$\text{area} = \frac{\text{mass} - a}{b}$$
+
+```{r typed-coefs-11}
+# Typed off the summary(), out of sci notation --------
+intercept <- -0.002058   # from -2.058e-03
+slope     <-  0.007660   # from  7.660e-03
+
+# 1 m2 = 10000 cm2
+slope * 10000
 ```
-
-An 0.138 g tracing is about **18.3 cm²** of leaf.
 :::
 
-:::: {.column width="45%"}
-**`predict()` takes two things:**
+:::: {.column width="48%"}
+- **Type the two numbers in.** They are right there in the Coefficients table, and the arithmetic stays in plain sight
+- Rounding to six decimals changes **nothing** — same *t*, df and *p* at the end
+- Or let R hand them to you: **`coef(paper_model)`**, then `[1]` and `[2]` — and it prints plain decimals
 
-- the **model** you fitted
-- `newdata =` — a small data frame of the X values you want predictions for
-
-::: callout-warning
-**⚠️ The column in `newdata` must have the same name as in the model.** The model was built on `mass_g`, so `newdata` needs a column called `mass_g`. Call it `mass` and R stops with *"object 'mass_g' not found."*
+::: callout-note
+**×10,000 → 76.6 g/m²** — the paper's **grammage**, the number on the side of the ream. Copy paper is sold at 75–80 g/m², so the slope is a property you can **check against the label**.
 :::
 
-This beats doing the arithmetic yourself — no copying the slope, nothing to mistype.
+A tracing weighing 0.138 g is
+
+$$\frac{0.138 - (-0.002058)}{0.007660} = 18.3 \text{ cm}^2$$
 ::::
 ::::::
-
-# Predict with an Interval
-
-::::: columns
-::: {.column width="55%"}
-```{r predict-interval-11}
-# Two tracings, with 95% prediction intervals ---------
-two_tracings <- tibble(mass_g = c(0.092, 0.138))
-
-predict(paper_lm_model, newdata = two_tracings, interval = "prediction")
-```
-
-The 0.138 g tracing is **18.3 cm²**, somewhere between about **14.8 and 21.8 cm²**.
-:::
-
-::: {.column width="45%"}
-`interval = "prediction"` adds two columns:
-
-- `fit` — the prediction
-- `lwr` and `upr` — the 95% range
-
-**Two kinds of interval:**
-
-| `interval =`   | Range for                                       | Width    |
-|---------------------|---------------------------------|------------------|
-| `"confidence"` | the **average** area of all tracings this heavy | narrower |
-| `"prediction"` | **one particular** tracing                      | wider    |
-
-For a single real leaf, use **`"prediction"`**.
-
-📖 W&S §17.2 pp. 548–550
-:::
-:::::
 
 # Convert a Whole Column of Tracings
 
@@ -834,63 +817,85 @@ leaf_df <-
   read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
   clean_names()
 
-# Turn every tracing mass into an area ----------------
+# Every tracing mass becomes an area ------------------
 leaf_df <- leaf_df %>%
-  mutate(
-    leaf_area_cm2 = predict(
-      paper_lm_model,
-      newdata = tibble(mass_g = paper_mass_g)
-    )
-  )
+  mutate(area_cm2 = (paper_mass_g - intercept) / slope)
 
 leaf_df %>%
-  select(teams, shade, mass_g, paper_mass_g, leaf_area_cm2)
+  select(teams, shade, mass_g, paper_mass_g, area_cm2)
 ```
 :::
 
 :::: {.column width="42%"}
-**This is the payoff.** `paper_mass_g` was the mass of each leaf's tracing. Now every leaf has a **`leaf_area_cm2`**.
+**This is the payoff.** `paper_mass_g` was the mass of each leaf's tracing — now every leaf has an **`area_cm2`**.
 
-**The one fiddly bit** is the same rule as before: `predict()` wants a column called `mass_g`, so we hand it `tibble(mass_g = paper_mass_g)` — our tracing masses, under the name the model knows.
+- One line of arithmetic, all 53 rows at once
+- No new function to learn
 
 ::: callout-note
-**The `NA`s are honest.** One team never weighed their tracings, so those leaves have no area. `predict()` passes the missing value straight through instead of inventing a number.
+**The `NA`s are honest.** One team never weighed their tracings, so those leaves have no area. R keeps the gap instead of inventing a number.
 :::
 ::::
 ::::::
 
-# Was the Area Different Between Sides?
+# One Value per Team per Side
 
 :::::: columns
-::: {.column width="52%"}
-```{r leaf-area-plot-11}
-#| fig-format: png
-#| fig-height: 3.4
-#| fig-alt: "Box plot of predicted leaf area in square centimetres for shady and sunny leaves with the individual leaves jittered over the boxes. The two boxes overlap almost completely."
-# Predicted leaf area by side -------------------------
-leaf_area_plot <- leaf_df %>%
-  ggplot(aes(x = shade, y = leaf_area_cm2)) +
-  geom_boxplot() +
-  geom_jitter(width = 0.15)
-leaf_area_plot
+::: {.column width="55%"}
+```{r team-means-11}
+# Average away the pseudoreplication ------------------
+team_df <- leaf_df %>%
+  group_by(teams, shade) %>%
+  summarize(area_cm2 = mean(area_cm2, na.rm = TRUE),
+            mass_g   = mean(mass_g,   na.rm = TRUE),
+            .groups  = "drop")
+
+team_df
 ```
 :::
 
-:::: {.column width="48%"}
-```{r leaf-area-mean-11}
-# Mean predicted area per side ------------------------
-leaf_df %>%
-  group_by(shade) %>%
-  summarize(
-    n = sum(!is.na(leaf_area_cm2)),
-    mean_area = mean(leaf_area_cm2, na.rm = TRUE)
-  )
-```
-
-About **37 cm²** on the shady side and **36 cm²** on the sunny side — the same story the t-test told us about mass, now in the units we actually wanted.
+:::: {.column width="45%"}
+- Six leaves off one branch are **not six independent measurements**
+- Using all 53 is **pseudoreplication** — it makes *p* look better than the study earned
+- Averaging gives each team **one** sunny and **one** shady value
 
 ::: callout-note
-**✅ Why this matters.** "Shady leaves weigh 0.02 g more" means little to a reader. "Shady leaves are about 1 cm² bigger" is a sentence an ecologist can use.
+You met this in T-Tests II. Same tree, same pairing — now in **cm²** instead of grams.
+:::
+::::
+::::::
+
+# Paired *t*-Tests on Area and Mass
+
+:::::: columns
+::: {.column width="55%"}
+``` r
+# One row per team ------------------------------------
+wide_df <- team_df %>%
+  pivot_wider(names_from = shade,
+              values_from = c(area_cm2, mass_g))
+
+t.test(wide_df$area_cm2_shady,
+       wide_df$area_cm2_sunny, paired = TRUE)
+
+t.test(wide_df$mass_g_shady,
+       wide_df$mass_g_sunny, paired = TRUE)
+```
+:::
+
+:::: {.column width="45%"}
+Each team measured **both** sides, so the team is the **pair**.
+
+|      | mean diff | *t*   | df  | *p*  |
+|------|-----------|-------|-----|------|
+| area | −1.2 cm²  | −0.34 | 3   | 0.76 |
+| mass | −0.016 g  | −0.25 | 4   | 0.81 |
+
+- **Neither is significant** — with 5 teams there is not much power
+- The **area** test has df = 3: one team never traced their leaves
+
+::: callout-note
+A real answer of "we could not detect a difference" is still an answer.
 :::
 ::::
 ::::::
@@ -905,7 +910,7 @@ About **37 cm²** on the shady side and **36 cm²** on the sunny side — the sa
 
 **Ours:**
 
-> *Paper mass was a very strong predictor of paper area (linear regression: F(1, 116) = 784,900, p \< 0.001, R² = 0.9999). The calibration equation was area = 0.28 + 130.52 × mass. Residual scatter increased with square size, so intervals for the largest squares should be treated with caution.*
+> *Paper area was a very strong predictor of paper mass (linear regression: F(1, 116) = 784,900, p \< 0.001, R² = 0.9999). The calibration equation was mass = −0.0021 + 0.00766 × area, equivalent to 76.6 g/m². Residual scatter increased with square size, so the largest squares are the least well described.*
 :::
 
 ::: {.column width="48%"}
@@ -917,7 +922,7 @@ About **37 cm²** on the shady side and **36 cm²** on the sunny side — the sa
 | *p*             | that same line             |
 | R²              | `Multiple R-squared`       |
 | intercept       | `(Intercept)` → `Estimate` |
-| slope           | `mass_g` → `Estimate`      |
+| slope           | `area_cm2` → `Estimate`    |
 
 **Always include:** the test name, F with both df, *p*, R², and **the equation**. Add a line about the assumptions you checked.
 
@@ -925,15 +930,15 @@ About **37 cm²** on the shady side and **36 cm²** on the sunny side — the sa
 :::
 :::::
 
-# → ACTIVITY 11 Parts 5–9 now
+# → ACTIVITY 11 Parts 4–7 now
 
 ::: activitybanner
-**🛑 Do Activity Parts 5–9 now**
+**🛑 Do Activity Parts 4–7 now**
 
-- Draw the line and run `plot(model)`
-- Predict one tracing, then convert the whole `paper_mass_g` column into areas
-- Write your results sentence
-- Your **answers** in the script are what you hand in
+- Run `plot(model)` and say whether the assumptions are met
+- Convert the whole `paper_mass_g` column into areas
+- Average to one value per team per side, then run both paired *t*-tests
+- Your **four answers** in the script are what you hand in
 :::
 
 # What We Learned Today
@@ -954,7 +959,7 @@ About **37 cm²** on the shady side and **36 cm²** on the sunny side — the sa
 - `summary(model)` — slope, intercept, *p*, R²
 - `geom_smooth(method = "lm")` — draw it
 - `plot(model)` — check it
-- `predict(model, newdata = ...)` — use it
+- `7.660e-03` = 0.007660 — reading scientific notation
 :::
 
 ::: {.column width="42%"}

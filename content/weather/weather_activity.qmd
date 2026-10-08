@@ -38,15 +38,15 @@ execute:
 
 - **Skeleton script:** [`12_weather_skeleton.R`](scripts/12_weather_skeleton.R) → save it as `scripts/12_weather.R`.
 - **No data file today** — you download the data from NOAA inside R.
-- **New package:** install `GSODR` once, from the Console: `install.packages("GSODR")`
-  - loading it prints a notice that the GSOD data **retired in Aug 2025**. That is expected — not an error. The historical archive still downloads fine.
+- **New packages:** install these two once, from the Console: `install.packages("GSODR")` and `install.packages("nasapower")`
+  - loading `GSODR` prints a notice that the GSOD data **retired in Aug 2025**. That is expected — not an error. The historical archive still downloads fine.
 :::
 
 ::: callout-important
 ## What you hand in
 
 - The **code is already written** in the skeleton — run it chunk by chunk as you work through Parts 1–10 below.
-- What gets graded is **your answers**, typed into the **Q** boxes in the script, plus the **Extension** at the bottom (your own city).
+- What gets graded is **your answers**, typed into the **Q** boxes in the script, plus the **Homework** at the bottom (your own city).
 - Hand in `scripts/12_weather.R`. Run it top to bottom (**Ctrl/Cmd + Shift + Enter**) first — it must run with no errors.
 
 Answer boxes look like this — type after `ANSWER:` and start every line with `#`:
@@ -76,7 +76,8 @@ Keep the plots plain today — no labels, colors, or themes. The goal is to **re
 # Load libraries ---------------------------------------
 library(tidyverse)   # dplyr + ggplot2
 library(janitor)     # clean_names()
-library(GSODR)       # NOAA weather station data
+library(GSODR)       # NOAA station data - Duluth, in class
+library(nasapower)   # NASA data by lat/long - your city, homework
 
 # Download daily Duluth weather, 1948-2024 -------------
 # 1965-1972 are missing for this station, so skip them
@@ -321,55 +322,55 @@ winter
 
 ------------------------------------------------------------------------
 
-# Part 10 · Find the station for your city
+# Part 10 · Get the coordinates for your city
 
-**▶ Run this:**
+Duluth is done. For homework you do the same analysis somewhere else — and for that we switch packages.
 
-``` r
-# Find stations near a place -- Duluth is 46.84, -92.19
-nearest_stations(LAT = 46.84, LON = -92.19,
-                 distance = 50) %>%
-  clean_names() %>%
-  select(stnid, name, begin, end) %>%
-  head(3)
-```
+`GSODR` needs a **station ID**, and most stations outside the US have missing years. `nasapower` needs only a **longitude and a latitude**, and gives you 1981 to now for anywhere on Earth with no gaps.
 
-`nearest_stations()` takes a latitude, a longitude, and a radius in km.
-
-**✏️ Your turn:** pick a city — anywhere in the world. Look up its latitude and longitude (any search engine will tell you). Remember:
+Look up your city's lat/long in any search engine.
 
 - **south** of the equator → **negative** latitude
 - **west** of Greenwich → **negative** longitude
 
-Then run `nearest_stations()` with your coordinates.
+**▶ Run this**, with London filled in as an example:
 
-✏️ **Q10a:** What city did you pick? What is its latitude and longitude?
+``` r
+# NASA POWER: lonlat = c(LONGITUDE, LATITUDE) -----------
+city_df <- get_power(community = "ag",
+                     lonlat = c(-0.13, 51.51),
+                     pars = "T2M",
+                     dates = c("1981-01-01", "2024-12-31"),
+                     temporal_api = "daily") %>%
+  clean_names() %>%
+  rename(month = mm, temp = t2m)
 
-✏️ **Q10b:** Give the `stnid`, the `name`, and the `begin` and `end` years of the station you chose.
+dim(city_df)
+```
 
-✏️ **Q10c:** Is your city in the northern or southern hemisphere? Will you need to swap the season labels?
+Watch the **order**: longitude first, then latitude. `rename()` makes the columns match the names you used all class, so every line after this is code you have already written.
 
-> ⚠️ **Watch out!** A trend needs decades. Pick a station whose `begin` year is **1970 or earlier**, and only ask `get_GSOD()` for years the station actually has. Asking for even **one** year the station is missing makes the *whole* download fail — not just that year. If it fails, request a single year at a time to find the hole, then `setdiff()` it out the way we did for Duluth's 1965–1972.
+✏️ **Your turn:** replace those two numbers with your own city and run it again. Expect about 16,000 rows.
 
-**Save your script**, then run it top to bottom one last time before you hand it in.
+✏️ **Q10a:** What city did you pick? Longitude and latitude?
+
+✏️ **Q10b:** How many rows, and how many years? How does that compare with Duluth's 69?
+
+✏️ **Q10c:** Northern or southern hemisphere? Will you need to swap the season labels?
+
+**Save your script.** The rest is homework.
 
 ------------------------------------------------------------------------
 
-# Extension — out of class (\~30 min)
+# Homework — out of class
 
-*Turn this in with your script, as `#` comments at the bottom of the file. Everyone analyses Duluth — the city is yours.*
+*Add this to the bottom of the same script. Answers as `#` comments.*
 
-## E1 · Your city's warming rate
+## H1 · Your city's warming rate
 
-Only **one line changes** from the in-class code — the station in `get_GSOD()`. Everything after it is identical:
+Parts 4 and 5 again, on `city_df`:
 
 ``` r
-# The ONLY line that changes ---------------------------
-city_df <- get_GSOD(years = 1973:2024,
-                    station = "YOUR-STATION-ID") %>%
-  clean_names()
-
-# Everything below is the same as Parts 2, 4 and 5 -----
 city_year_df <- city_df %>%
   group_by(year) %>%
   summarize(temp = mean(temp, na.rm = TRUE))
@@ -380,31 +381,104 @@ city_year_df %>%
   geom_smooth(method = "lm")
 
 city_model <- lm(temp ~ year, data = city_year_df)
+
 summary(city_model)
 ```
 
-Report, as comments: your city and station ID, the years of record, the slope in **°C per decade**, the *p*-value, R², and whether your city is warming **faster or slower** than Duluth.
+✏️ **H1:** Slope in °C per year and per decade, *p*, and R². Is your city warming?
 
-## E2 · Your city's seasons
+## H2 · Your city's seasons
 
-Repeat Parts 6–9 on your city. **If your city is in the southern hemisphere, swap the labels in `case_when()`:**
+Parts 6–9 again. The labels below are **northern** hemisphere — if your city is south of the equator, swap `summer` and `winter`.
 
 ``` r
-# SOUTHERN hemisphere seasons --------------------------
-mutate(season = case_when(
-  month %in% c(12, 1, 2) ~ "summer",
-  month %in% c(6, 7, 8) ~ "winter",
-  TRUE ~ "shoulder"
-))
+city_season_df <- city_df %>%
+  mutate(season = case_when(
+    month %in% c(6, 7, 8) ~ "summer",
+    month %in% c(12, 1, 2) ~ "winter",
+    TRUE ~ "shoulder"
+  )) %>%
+  filter(season != "shoulder") %>%
+  group_by(year, season) %>%
+  summarize(temp = mean(temp, na.rm = TRUE),
+            .groups = "drop")
+
+city_season_df %>%
+  ggplot(aes(x = year, y = temp, color = season)) +
+  geom_point() +
+  geom_smooth(method = "lm")
 ```
 
-Report both seasonal rates in °C per decade. Is the winter-warms-faster pattern you found in Duluth also true in your city?
+Then fit a model for each season, exactly as in Part 9.
 
-## E3 · Explain your own numbers
+✏️ **H2:** Both seasonal rates in °C per decade. Does winter warm faster in your city too?
 
-1.  Using **your** R², what fraction of the year-to-year variation in your city's temperature does year alone explain? What is the rest?
-2.  How can a low R² sit next to a *p*-value below 0.001? What is each one telling you?
-3.  One station's significant trend does not prove *why* a city is warming. Name one thing that could inflate a single station's trend with nothing to do with global climate — and say how you might check for it.
+## H3 · Is your slope different from Duluth's?
+
+Your city and Duluth almost certainly gave you different numbers. That does **not** mean the two rates are really different — the difference might be within the scatter. This tests it.
+
+First get Duluth from the **same source and the same years** as your city. Otherwise a difference in *place* is mixed up with a difference in source and years.
+
+``` r
+duluth_power_df <- get_power(community = "ag",
+                             lonlat = c(-92.19, 46.84),
+                             pars = "T2M",
+                             dates = c("1981-01-01", "2024-12-31"),
+                             temporal_api = "daily") %>%
+  clean_names() %>%
+  rename(month = mm, temp = t2m)
+
+duluth_year_df <- duluth_power_df %>%
+  group_by(year) %>%
+  summarize(temp = mean(temp, na.rm = TRUE)) %>%
+  mutate(station = "duluth")
+
+city_labeled_df <- city_year_df %>%
+  mutate(station = "my_city")
+
+both_df <- bind_rows(duluth_year_df, city_labeled_df)
+
+both_df %>%
+  ggplot(aes(x = year, y = temp, color = station)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+slope_model <- lm(temp ~ year * station, data = both_df)
+
+summary(slope_model)
+```
+
+`temp ~ year * station` fits a **separate slope for each station**. In the Coefficients table:
+
+| Row | What it is |
+|-----|------------|
+| `year` | Duluth's slope |
+| `year:stationmy_city` | how much your city's slope **differs** |
+
+: {tbl-colwidths="[40,60]"}
+
+So your city's slope is `year` **+** `year:stationmy_city`. The *p*-value on that second row is the answer: it is a **t-test on the difference between two slopes**, reported in the same `t value` and `Pr(>|t|)` columns you have been reading all class.
+
+- *p* < 0.05 → the two places warm at **measurably different** rates
+- *p* > 0.05 → you **cannot tell the two rates apart**, even if the numbers look different
+
+> ⚠️ If that row is exactly 0 with *p* = 1, you are comparing Duluth with Duluth — go back to Part 10 and put in your own coordinates.
+
+✏️ **H3a:** Both slopes in °C per decade, and the difference.
+
+✏️ **H3b:** The *p*-value on the `year:stationmy_city` row. Can you tell the two rates apart?
+
+✏️ **H3c:** One sentence reporting the comparison — both rates, the difference, and *p*.
+
+## H4 · Explain your numbers
+
+✏️ **H4a:** Using your R² from H1, what fraction of the year-to-year variation does year alone explain? What is the rest?
+
+✏️ **H4b:** How can a low R² sit next to a *p*-value below 0.001? What is each telling you?
+
+✏️ **H4c:** Duluth used 69 years, your city 44. Why does a longer record make a trend easier to detect?
+
+✏️ **H4d:** A significant trend at one place does not prove *why* it is warming. Name one thing that could inflate a single location's trend with nothing to do with global climate — and how you would check for it.
 
 ------------------------------------------------------------------------
 

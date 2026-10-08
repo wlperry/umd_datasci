@@ -97,7 +97,8 @@ options(width = 65)   # printed R output wraps at 65 too
 ::: {.column width="42%"}
 **Tools today:**
 
-- `GSODR` — download NOAA station data
+- `GSODR` — NOAA station data (Duluth)
+- `nasapower` — data by lat/long (your city)
 - `janitor` — `clean_names()`
 - `tidyverse` — summarize and plot
 - `lm()` — the slope is the answer
@@ -131,16 +132,14 @@ options(width = 65)   # printed R output wraps at 65 too
 - The **`GSODR`** package pulls it straight into R
   - you give it a **station ID** and a range of **years**
   - it hands back a data frame
-  - loading it prints a notice that GSOD **retired in Aug 2025** — expected, not an error
-    - the historical archive is still there; it just stops at 2025
+  - it warns GSOD **retired in Aug 2025** — expected; the archive still works
 
 **Our station to start:**
 
 - Duluth International Airport
 - Station ID **`727450-14913`**
-- Daily records from **1948** to **2024**
-  - but **1965–1972 are missing** — the airport reported under a different station ID then
-  - real archives have holes; you work around them
+- Daily records **1948–2024**
+  - **1965–1972 missing** — a different station ID back then
 :::
 
 ::: {.column width="42%"}
@@ -233,9 +232,10 @@ $$\widehat{\text{temp}} = a + b \times \text{year}$$
 ::: {.column width="55%"}
 ```{r load-libs-12}
 # Load packages at the top -----------------------------
-library(tidyverse) # dplyr + ggplot2
-library(janitor)   # clean_names()
-library(GSODR)     # NOAA weather station data
+library(tidyverse)  # dplyr + ggplot2
+library(janitor)    # clean_names()
+library(GSODR)      # NOAA station data - Duluth
+library(nasapower)  # NASA data by lat/long - your city
 ```
 
 ```{r get-duluth-12}
@@ -675,43 +675,42 @@ Both slopes come straight off the `year` row of each `summary()`:
 
 ::::: columns
 ::: {.column width="55%"}
-```{r nearest-12}
-# Find stations near a place you care about ------------
-# Duluth is 46.84 N, -92.19 W
-nearest_stations(LAT = 46.84, LON = -92.19,
-                 distance = 50) %>%
+```{r power-12}
+# NASA POWER - lon and lat, no station -----------------
+city_df <- get_power(community = "ag",
+                     lonlat = c(-0.13, 51.51),
+                     pars = "T2M",
+                     dates = c("1981-01-01",
+                               "2024-12-31"),
+                     temporal_api = "daily") %>%
   clean_names() %>%
-  select(stnid, name, begin, end) %>%
-  head(3)
+  rename(month = mm, temp = t2m)
+
+dim(city_df)
 ```
 :::
 
 ::: {.column width="45%"}
-- `nearest_stations()` takes a **latitude**, a **longitude**, and a radius in km
-- Look up your city's lat/long in any search engine
-  - **south** of the equator → negative latitude
-  - **west** of Greenwich → negative longitude
-- Then read the table:
-  - **`stnid`** is what you paste into `get_GSOD()`
-  - **`begin`** and **`end`** tell you the years available
-
-::: callout-important
-**Pick a station with a long record.** A trend needs decades — aim for a `begin` date of 1970 or earlier.
-:::
+- **Why switch packages?**
+  - `GSODR` needs a **station ID**
+  - most stations outside the US have **missing years**
+  - Melbourne's nearest long station is missing **48 of 59**
+- **`nasapower` needs only coordinates**
+  - anywhere on Earth, **1981 to now, no gaps**
+  - watch the order: **longitude first**
+- `rename()` makes the columns match Duluth's
 :::
 :::::
 
-# Swap One Line, Get a New City
+# Swap Two Numbers, Get a New City
 
 ::::: columns
 ::: {.column width="55%"}
 ``` r
-# The ONLY line that changes ---------------------------
-city_df <- get_GSOD(years = 1973:2024,
-                    station = "948660-99999") %>%
-  clean_names()
+# The ONLY numbers that change ------------------
+lonlat = c(-0.13, 51.51)
 
-# Everything below is identical ------------------------
+# Everything below is identical -----------------
 city_year_df <- city_df %>%
   group_by(year) %>%
   summarize(temp = mean(temp, na.rm = TRUE))
@@ -723,15 +722,50 @@ summary(city_model)
 
 ::: {.column width="45%"}
 - That is the whole point of today
-  - **one line** names the place
+  - **two numbers** name the place
   - the rest of the analysis never changes
-- Use the `years =` range your station actually has — don't ask for years before `begin`
+- Look up lat/long in any search engine
+  - **south** of the equator → negative latitude
+  - **west** of Greenwich → negative longitude
 
 ::: callout-important
-**If your city is in the southern hemisphere**, swap the season labels in `case_when()`:
+**Southern hemisphere?** Swap the season labels in `case_when()`:
 
 - `month %in% c(12, 1, 2)` → **summer**
 - `month %in% c(6, 7, 8)` → **winter**
+:::
+:::
+:::::
+
+# Are the Two Slopes Different?
+
+::::: columns
+::: {.column width="55%"}
+``` r
+# Stack the two yearly summaries ----------------
+both_df <- bind_rows(duluth_year_df,
+                     city_labeled_df)
+
+# One slope per station -------------------------
+slope_model <- lm(temp ~ year * station,
+                  data = both_df)
+summary(slope_model)
+```
+
+Your city and Duluth gave different numbers. **Different-looking slopes are not always different slopes.**
+:::
+
+::: {.column width="45%"}
+- `year * station` fits a **separate slope** for each place
+- Read the **`year:stationmy_city`** row
+  - `Estimate` — how much your slope **differs**
+  - `Pr(>|t|)` — is that difference real?
+- This is a **t-test on two slopes**, in the same two columns you have read all class
+  - *p* \< 0.05 → rates **really differ**
+  - *p* > 0.05 → **cannot tell them apart**
+
+::: callout-important
+Pull Duluth from the **same source and years** as your city — or you are comparing place *plus* source *plus* years.
 :::
 :::
 :::::
@@ -744,7 +778,7 @@ summary(city_model)
 - Label the seasons with `case_when()` and summarize by year and season
 - Plot both seasons, then fit a model for each
 - Write the warming rates in °C per decade
-- Find the station for a city you choose — that is your Extension
+- Get the coordinates for a city you choose — the analysis is your homework
 :::
 
 # What We Learned Today
@@ -753,29 +787,31 @@ summary(city_model)
 ::: {.column width="58%"}
 **The ideas:**
 
-- A regression **on time** turns a slope into a **rate of change** — ×10 for per decade
+- A regression **on time** makes the slope a **rate of change** — ×10 per decade
 - Raw daily data **hides** the trend; `group_by(year) %>% summarize()` is the fix
-- An **annual mean hides which season moved** — Duluth's winter warms ~1.6× faster
+- An **annual mean hides which season moved** — Duluth's winter warms ~1.7× faster
 - Seasons are set by **hemisphere**, not by month number
 - A modest **R² with a tiny *p*** is normal — real trend, weather scatter
 
 **The code:**
 
-- `get_GSOD(years =, station =)` and `nearest_stations()`
-- `clean_names()` — lower-case names, once, at the top
-- `group_by()` + `summarize()` — to the right level
+- `get_GSOD()` — Duluth, by station ID
+- `get_power()` — anywhere, by coordinates
+- `clean_names()` — lower-case names, once
+- `group_by()` + `summarize()` — the right level
 - `case_when()` — build the season
-- `lm(temp ~ year)` + `summary()` — the rate
+- `lm(temp ~ year)`, `lm(temp ~ year * station)`
 :::
 
 ::: {.column width="42%"}
-**Hand in:** your finished activity script, plus the warming rate you found for **your own city**.
+**Hand in:** your finished activity script, plus the homework — your own city's warming rate and how it compares with Duluth's.
 
 **References:**
 
 - 📖 R4DS Ch. 3 — Data transformation
 - 📖 W&S Ch. 17 — Regression
 - NOAA GSOD — `ncei.noaa.gov`
+- NASA POWER — `power.larc.nasa.gov`
 
 **Up next:**
 

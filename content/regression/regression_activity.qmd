@@ -2,16 +2,16 @@
 order: 11
 week: 6
 title: "Activity 11 — Linear Regression"
-subtitle: "Fit a line, read the output, and turn a tracing mass into a leaf area"
+subtitle: "Calibrate paper, convert tracings to leaf area, then test sunny against shady"
 author: "Bill Perry"
 date: today
 
 type: activity
 description: >
-  Hands-on companion to the Regression lecture: fit a calibration curve with
-  lm(), read the summary() output, check the residuals, and use predict() to
-  convert tracing masses into leaf areas. Students hand in the finished
-  script with their written answers.
+  Hands-on companion to the Regression lecture: fit a calibration line with
+  lm(), check the residuals with plot(model), convert tracing masses into leaf
+  areas, average away the pseudoreplication, and finish with paired t-tests on
+  area and on mass. Students hand in the finished script with their answers.
 categories: [tidyverse, descriptive-stats]
 
 format:
@@ -23,16 +23,15 @@ execute:
   message: false
 ---
 
-# In-class Activity 11: Linear Regression
+# In-class Activity 11: Linear Regression 
 
 ### Today's Objectives
 
-1.  Fit a linear regression with `lm(Y ~ X, data)`
-2.  Read the slope, intercept, *p*-value, and R² **off the `summary()` output**
-3.  Draw the fitted line with `geom_smooth(method = "lm")`
-4.  Check the residuals with `plot(model)`
-5.  Use `predict()` to turn a tracing mass into a leaf area — one value, then a whole column
-6.  Write a standard regression results sentence
+1.  Fit a calibration line with `lm(Y ~ X, data)` — the **measured** variable on the left
+2.  Check the regression assumptions with `plot(model)`
+3.  Use the intercept and slope to turn a tracing mass into a leaf area
+4.  Average to one value per team per side, so there is no pseudoreplication
+5.  Finish with paired *t*-tests on leaf **area** and leaf **mass**
 
 ::: callout-tip
 ## 📂 Files for today
@@ -40,314 +39,273 @@ execute:
 - **Skeleton script:** [`11_regression_skeleton.R`](scripts/11_regression_skeleton.R) → save it as `scripts/11_regression.R`.
 - **Paper calibration data:** [`paper_area_weights.xlsx`](data/paper_area_weights.xlsx) → `data/`.
 - **Leaf data:** [`2026_09_03_data_sci_leaf_area.xlsx`](data/2026_09_03_data_sci_leaf_area.xlsx) → `data/` (you should already have it).
+- **For the homework:** [`2026_09_02_sugar_maple_leaf_area.xlsx`](data/2026_09_02_sugar_maple_leaf_area.xlsx) → `data/`.
 :::
 
 ::: callout-important
 ## What you hand in
 
-- The **code is already written** in the skeleton — run it chunk by chunk as you work through Parts 1–9 below.
-- What gets graded is **your answers**, typed into the **Q** boxes in the script.
+- **All the code is written for you.** Run it chunk by chunk and watch what comes out.
+- You answer **four questions**: the question of the study, the hypotheses, whether the regression assumptions are met, and what the *t*-tests mean.
 - Hand in `scripts/11_regression.R`. Run it top to bottom (**Ctrl/Cmd + Shift + Enter**) first — it must run with no errors.
-
-Answer boxes look like this — type after `ANSWER:` and start every line with `#`:
-
-``` r
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q3. What is the slope, with units?
-# ANSWER: 130.52 cm2 per gram of paper
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-```
 :::
 
 Keep the plots plain today — no labels, colors, or themes. The goal is to **read** them.
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 2 — Fit it and read it *(after lecture Chunk 2)*
->
-> Parts 1–4: load the paper data, plot it, fit the line, read the output.
+# Part 1 · The study
 
-# Part 1 · Load libraries and data
+We picked a tree and took leaves from the **sunny** side and from the **shady** side. Each team traced their leaves onto paper, cut out the tracings, and weighed them.
 
-**▶ Run this** (already at the top of your skeleton):
+A tracing mass is not an area. So we also weighed pieces of the **same paper** cut to areas we already knew. That is what the regression is for.
 
-``` r
-# Load libraries ---------------------------------------
-library(readxl)      # read Excel files
-library(tidyverse)   # dplyr + ggplot2
-library(janitor)     # clean_names()
+✏️ **Q1:** What is the **question** this study is asking? One sentence.
 
-# Load the paper calibration data ----------------------
-paper_df <- read_excel("data/paper_area_weights.xlsx")
-
-glimpse(paper_df)
-```
-
-118 paper squares. `area_cm2` is the **known** area of each square; `mass_g` is what it weighed.
-
-✏️ **Q1:** Which column is the explanatory variable (X) and which is the response (Y)? Why that direction, given that we want leaf areas?
+✏️ **Q2:** What are the **hypotheses** — the null and the alternative, for leaf area and for leaf mass?
 
 ------------------------------------------------------------------------
 
-# Part 2 · Plot it before you fit it
+# Part 2 · Read the calibration data
 
 **▶ Run this:**
 
 ``` r
-# Scatter plot of area against mass --------------------
-paper_df %>%
-  ggplot(aes(x = mass_g, y = area_cm2)) +
-  geom_point()
-```
-
-Look for three things: is it **straight**, is the **scatter the same all the way along**, and is any point **off on its own**?
-
-✏️ **Q2:** Straight or curved? Any obvious outlier? Is a straight line the right tool here?
-
-------------------------------------------------------------------------
-
-# Part 3 · Fit the regression
-
-**▶ Run this:**
-
-``` r
-# Fit the regression line ------------------------------
-paper_lm_model <- lm(area_cm2 ~ mass_g, data = paper_df)
-```
-
-Nothing prints — `lm()` stores the answer in a model object. The formula reads `Y ~ X`, "area **is predicted by** mass."
-
-**▶ Run this:**
-
-``` r
-# Read the model ---------------------------------------
-summary(paper_lm_model)
-```
-
-> ⚠️ **Watch out!** Flip the formula to `lm(mass_g ~ area_cm2)` and R runs happily — it just answers a question you didn't ask. The response always goes on the **left** of `~`.
-
-------------------------------------------------------------------------
-
-# Part 4 · Read the `summary()` output
-
-Everything you need is in four places. Find each one in your output.
-
-| What you want | Where it is |
-|---------------------------|---------------------------------------------|
-| **slope** (*b*) | Coefficients table, `mass_g` row, `Estimate` column |
-| **intercept** (*a*) | Coefficients table, `(Intercept)` row, `Estimate` column |
-| ***p*****-value for the slope** | Coefficients table, `mass_g` row, `Pr(>|t|)` column |
-| **R²** | `Multiple R-squared` near the bottom |
-| **F and df** | the `F-statistic:` line at the very bottom |
-
-: {tbl-colwidths="[35,65]"}
-
-✏️ **Q4a:** Write down the slope and say what it means **with units** — finish this sentence: "every extra 1 gram of this paper is another \_\_\_ cm² of area."
-
-✏️ **Q4b:** Write down the intercept. Its *p*-value is 0.126 — not significant. Why is that the *right* answer physically? (What is the area of a piece of paper that weighs nothing?)
-
-✏️ **Q4c:** Write the fitted equation: `area = ____ + ____ × mass`
-
-✏️ **Q4d:** Write down the slope's *p*-value and R². What does each one tell you — and why are they answering different questions?
-
-> 💡 **Key idea:** R² says *how tight* the fit is. The *p*-value says *whether the slope is real*. A relationship can be real and still scattered — that is most of biology.
-
-------------------------------------------------------------------------
-
-> ## 🧩 Chunk 3 — Plot it, check it, use it *(after lecture Chunk 3)*
->
-> Parts 5–9: draw the line, check the residuals, predict, report.
-
-# Part 5 · Draw the fitted line
-
-**▶ Run this:**
-
-``` r
-# Scatter plot with the fitted line --------------------
-paper_df %>%
-  ggplot(aes(x = mass_g, y = area_cm2)) +
-  geom_point() +
-  geom_smooth(method = "lm")
-```
-
-`geom_smooth(method = "lm")` adds the regression line plus a grey 95% confidence band. Without `method = "lm"` you get a wiggly curve instead of a straight line.
-
-✏️ **Q5:** Where is the grey band widest, and why? (Think about where the data are thickest.)
-
-------------------------------------------------------------------------
-
-# Part 6 · Check the residuals
-
-A **residual** is one point's miss: observed − predicted. `plot()` on a fitted model draws four residual plots at once — no extra code needed.
-
-**▶ Run this:**
-
-``` r
-# All four residual plots in one call ------------------
-par(mfrow = c(2, 2))
-plot(paper_lm_model)
-```
-
-| Panel | Name                  | What it checks                 |
-|-------|-----------------------|--------------------------------|
-| 1     | Residuals vs Fitted   | straight line? equal scatter?  |
-| 2     | Normal Q-Q            | are the misses bell-shaped?    |
-| 3     | Scale-Location        | equal scatter, another view    |
-| 4     | Residuals vs Leverage | is one point running the show? |
-
-: {tbl-colwidths="[12,38,50]"}
-
-**Panel 1 first.** A flat shapeless cloud is good. A **curve** means the relationship isn't straight. A **funnel** means the scatter grows as Y grows.
-
-✏️ **Q6a:** Describe panel 1. Flat cloud, curve, or funnel?
-
-**▶ Run this** to see the same thing as numbers:
-
-``` r
-# How big are the misses at each square size? ---------
-paper_df %>%
-  mutate(residual = residuals(paper_lm_model)) %>%
-  group_by(area_cm2) %>%
-  summarize(biggest_miss = round(max(abs(residual)), 2))
-```
-
-✏️ **Q6b:** How big is the worst miss for a 1 cm² square? For a 567 cm² square? Which assumption does that pattern break?
-
-✏️ **Q6c:** R² is 0.9999 — the best fit you will ever see — and the residual plot still has a problem. In your own words, how can both be true at once?
-
-> 💡 **Key idea:** Our leaf tracings weigh 0.1–0.4 g, down at the tight end of the line where a typical miss is a fraction of a cm². The calibration is fine for the job we are using it for. Fixing the funnel properly is a graduate topic — **noticing it and saying so** is the undergraduate job.
-
-------------------------------------------------------------------------
-
-# Part 7 · Predict one tracing
-
-**▶ Run this:**
-
-``` r
-# Predict the area of one leaf tracing ----------------
-one_tracing <- tibble(mass_g = 0.138)
-
-predict(paper_lm_model, newdata = one_tracing)
-```
-
-**▶ Run this** to add a 95% interval:
-
-``` r
-# Two tracings, with 95% prediction intervals ---------
-two_tracings <- tibble(mass_g = c(0.092, 0.138))
-
-predict(paper_lm_model,
-        newdata = two_tracings,
-        interval = "prediction")
-```
-
-- `fit` is the prediction; `lwr` and `upr` are the 95% range
-- `interval = "confidence"` would give the range for the **average** tracing of that mass — narrower. For **one real leaf**, use `"prediction"`.
-
-> ⚠️ **Watch out!** `newdata` must use the **same column name** as the model. The model was built on `mass_g`, so the column must be called `mass_g`. Call it `mass` and R stops with *"object 'mass_g' not found."*
-
-✏️ **Q7:** Record the predicted area for the 0.138 g tracing and its 95% prediction interval. Which tracing is predicted to be larger, and does that make sense?
-
-------------------------------------------------------------------------
-
-# Part 8 · Convert a whole column of tracings
-
-`paper_mass_g` in the leaf data is the mass of each leaf's paper tracing. Now we turn all of them into areas at once.
-
-**▶ Run this:**
-
-``` r
-# Load our leaf data ----------------------------------
-leaf_df <-
-  read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+paper_df <- read_excel("data/paper_area_weights.xlsx") %>%
   clean_names()
 
-# Turn every tracing mass into an area ----------------
-leaf_df <- leaf_df %>%
-  mutate(leaf_area_cm2 =
-           predict(paper_lm_model,
-                   newdata = tibble(mass_g = paper_mass_g)))
-
-leaf_df %>%
-  select(teams, shade, mass_g, paper_mass_g, leaf_area_cm2)
+paper_df
 ```
 
-Same rule as Part 7: `predict()` wants a column called `mass_g`, so we hand it `tibble(mass_g = paper_mass_g)` — our tracing masses, under the name the model knows.
+118 pieces of paper. `area_cm2` is what we **cut it to**; `mass_g` is what the balance **said**.
+
+------------------------------------------------------------------------
+
+# Part 3 · The regression
+
+We **chose** the areas and **measured** the masses. So area goes on x and mass goes on y.
+
+> The variable you **measured**, with the error in it, always goes on the **y** axis. The one you **set** goes on x.
 
 **▶ Run this:**
 
 ``` r
-# Predicted leaf area by side -------------------------
-leaf_df %>%
-  ggplot(aes(x = shade, y = leaf_area_cm2)) +
-  geom_boxplot() +
-  geom_jitter(width = 0.15)
+paper_df %>%
+  ggplot(aes(x = area_cm2, y = mass_g)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+paper_model <- lm(mass_g ~ area_cm2, data = paper_df)
+
+summary(paper_model)
 ```
 
-``` r
-# Mean predicted area per side ------------------------
-leaf_df %>%
-  group_by(shade) %>%
-  summarize(
-    n = sum(!is.na(leaf_area_cm2)),
-    mean_area = mean(leaf_area_cm2, na.rm = TRUE)
-  )
-```
-
-✏️ **Q8a:** Record the mean predicted area for each side. Does that match what the t-test told you about leaf **mass** back in Activities 9–10?
-
-✏️ **Q8b:** Some leaves have `NA` for `leaf_area_cm2`. Why? (Look at `paper_mass_g` for that team.) Is R right to leave them missing?
-
-✏️ **Q8c:** Why is "shady leaves are about 1 cm² bigger" a more useful sentence for a reader than "shady leaves weigh 0.02 g more"?
-
-------------------------------------------------------------------------
-
-# Part 9 · Write the results sentence
-
-Fill in the blanks from your `summary()` output — do not retype numbers from these instructions, read them off your own screen.
+These numbers are tiny, so R prints them in **scientific notation**:
 
 ```         
-____ was a strong predictor of ____ (linear regression:
-F(___, ___) = ____, p ____, R2 = ____). The fitted
-equation was area = ____ + ____ x mass.
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)
+(Intercept) -2.058e-03  1.389e-03  -1.481    0.141
+area_cm2     7.660e-03  8.646e-06 885.964   <2e-16
 ```
 
-Then add one sentence about the assumptions — what the residual plot showed and what you are being careful about because of it.
+`7.660e-03` means 7.660 × 10⁻³ — move the decimal point **three places left** to get `0.007660`. Same for the intercept: `-2.058e-03` is `-0.002058`.
 
-✏️ **Q9:** Write the full results paragraph in your answer box.
+::: callout-note
+## The slope is a real property of the paper
 
-**Save your script**, then run it top to bottom one last time before you hand it in.
+The `area_cm2` slope is **0.007660** — the mass, in grams, of **1 cm²** of this paper.
+
+Multiply by 10,000 (the number of cm² in a m²) and you get **76.6 g/m²**.
+
+That is the paper's **grammage** — the number printers put on the side of the ream. Standard copy paper is sold at 75–80 g/m², so your regression just recovered a property of the paper that you can go and check against the label.
+
+This is why the measured variable goes on y. Fit it the other way round and the slope is 130.5 cm²/g, which is correct but not a number you can look up anywhere.
+:::
 
 ::: callout-tip
-## ✍️ Optional — the same analysis as a report
+## Optional — if you'd rather not read scientific notation
 
-If you'd rather hand this in as a Word document than a script, [`regression_analysis_report.qmd`](regression_analysis_report.qmd) is the same analysis written up in Quarto. Its Discussion section is waiting for the paragraph you just wrote; paste it in and press **Render**. The `.R` script is still what's graded.
+``` r
+options(scipen = 999)   # scientific notation off
+options(scipen = 0)     # and back on again
+```
+
+We leave it **on** in this activity. With it off, the slope's *p*-value prints as `<0.0000000000000002` instead of `<2e-16`, which is worse, not better.
 :::
 
 ------------------------------------------------------------------------
 
-# Extension — out of class (\~20–30 min)
+# Part 4 · Are the assumptions met?
 
-*Turn this in with your script, as `#` comments at the bottom of the file. `paper_df` is the same for everyone — but the object you calibrate is one only **you** have.*
+**▶ Run this:**
 
-## E1 · Calibrate something only you have
+``` r
+# All four residual plots in one call
+par(mfrow = c(2, 2))
+plot(paper_model)
 
-1.  Cut **any shape you like** out of ordinary printer or notebook paper — trace your hand, your initials in bubble letters, a rough outline of your home state.
-2.  Weigh it in grams on a kitchen or postal scale. No scale? Estimate it against a US penny (2.5 g) or a sheet of printer paper (≈4.5 g), and say that's what you did.
-3.  In R, use `paper_lm_model` and `predict(..., interval = "prediction")` to estimate its area from its mass.
-4.  Measure the **real** area the low-tech way: trace it onto graph paper and count squares.
+# Put the plotting window back to one panel
+par(mfrow = c(1, 1))
+```
 
-Report, as comments: what the shape was, its mass, the predicted area and interval, your counted area, and whether the counted area landed inside the interval.
+| Panel | Name                  | What it checks                |
+|-------|-----------------------|-------------------------------|
+| 1     | Residuals vs Fitted   | straight line? equal scatter? |
+| 2     | Normal Q-Q            | are the misses bell-shaped?   |
+| 3     | Scale-Location        | is the scatter constant?      |
+| 4     | Residuals vs Leverage | is any one point in charge?   |
 
-## E2 · Explain your own numbers
-
-1.  Using **your** R² from Part 4, say in plain language what fraction of the variation in area the line accounts for — and one thing R² does **not** tell you.
-2.  Your **prediction** interval in E1 is wider than a **confidence** interval would be at the same mass. Why is predicting one specific object riskier than estimating an average?
-3.  Run `max(paper_df$mass_g)`. Suppose you had cut your shape out of cardboard and it weighed 9 g. Why would predicting its area be a different kind of mistake than the prediction you actually made?
-
-> 📖 **Whitlock & Schluter §17.2 p. 550:** *"Extrapolation is the prediction of Y at values of X beyond the range of X-values in the data. Extrapolation is problematic because there is no way to ensure the relationship between X and Y continues to be linear."*
+✏️ **Q3:** Looking at the four plots, **are the assumptions of the regression met?** Say what you **see** in each plot, not what you hope to see. If something looks wrong, say which plot and what it means.
 
 ------------------------------------------------------------------------
 
-*End of Activity 11. Next: real climate data with `GSODR` — and the same `lm()`, where the slope becomes a rate of change per year.*
+# Part 5 · Turn every tracing mass into a leaf area
+
+The model you just fitted says
+
+$$\text{mass} = \text{intercept} + \text{slope} \times \text{area}$$
+
+We have the mass of each tracing and we want its area, so rearrange it:
+
+$$\text{area} = \frac{\text{mass} - \text{intercept}}{\text{slope}}$$
+
+**▶ Run this** — type the two numbers in from the Coefficients table in Part 3, written out of scientific notation:
+
+``` r
+# Straight off the summary() output above
+intercept <- -0.002058    # from -2.058e-03
+slope     <-  0.007660    # from  7.660e-03
+
+# Paper is sold by mass per square METRE. 1 m2 = 10000 cm2
+slope * 10000
+
+leaf_df <- read_excel("data/2026_09_03_data_sci_leaf_area.xlsx") %>%
+  clean_names() %>%
+  mutate(area_cm2 = (paper_mass_g - intercept) / slope)
+
+leaf_df
+```
+
+Typing the numbers in by hand is fine here, and it keeps the arithmetic in plain sight. Rounding to six decimals changes nothing — the *t*, df and *p* you get in Part 7 are identical either way.
+
+Some leaves have `NA` for area — that team never weighed their tracings, and R keeps the gap instead of inventing a number.
+
+::: callout-tip
+## Optional — let R hand you the numbers
+
+You don't have to type the coefficients. `coef()` pulls them out of the model:
+
+``` r
+coef(paper_model)
+
+# One at a time, by position
+coef(paper_model)[1]   # the intercept
+coef(paper_model)[2]   # the slope
+
+# Or by name, which is harder to get wrong
+coef(paper_model)["(Intercept)"]
+coef(paper_model)["area_cm2"]
+
+# So Part 5 could be written with no typed numbers at all.
+# A second copy, so the rest of the script keeps using
+# the version you typed in
+leaf_coef_df <- leaf_df %>%
+  mutate(area_cm2 = (paper_mass_g - coef(paper_model)[1]) /
+                     coef(paper_model)[2])
+
+# Same answer either way
+head(leaf_df$area_cm2, 3)
+head(leaf_coef_df$area_cm2, 3)
+```
+
+Two things worth noticing: `coef()` prints **plain decimals**, so there is no scientific notation to convert — and you cannot mistype a digit. Typing the numbers in keeps the arithmetic visible. Either way is fine.
+:::
+
+------------------------------------------------------------------------
+
+# Part 6 · One value per team per side
+
+Leaves from the same team on the same side of the tree are **not independent** — they came off the same branch of the same tree. Treating all 53 leaves as independent is **pseudoreplication**, and it makes your *p*-value look far better than the study earned.
+
+The fix: average them, so each team gives **one** sunny value and **one** shady value.
+
+**▶ Run this:**
+
+``` r
+team_df <- leaf_df %>%
+  group_by(teams, shade) %>%
+  summarize(area_cm2 = mean(area_cm2, na.rm = TRUE),
+            mass_g   = mean(mass_g,   na.rm = TRUE),
+            .groups  = "drop")
+
+team_df
+```
+
+------------------------------------------------------------------------
+
+# Part 7 · Paired *t*-tests
+
+Each team measured **both** sides of the same tree, so sunny and shady are **paired** within a team. A paired test needs one row per team, so reshape first.
+
+**▶ Run this:**
+
+``` r
+wide_df <- team_df %>%
+  pivot_wider(names_from = shade,
+              values_from = c(area_cm2, mass_g))
+
+wide_df
+
+# Paired t-test on leaf AREA
+area_paired_model <- t.test(wide_df$area_cm2_shady,
+                            wide_df$area_cm2_sunny,
+                            paired = TRUE)
+
+area_paired_model
+
+# Paired t-test on leaf MASS
+mass_paired_model <- t.test(wide_df$mass_g_shady,
+                            wide_df$mass_g_sunny,
+                            paired = TRUE)
+
+mass_paired_model
+```
+
+Check the `df` on each. One team has no tracings at all, so the **area** test uses 4 teams and the **mass** test uses 5.
+
+> ⚠️ **Watch out!** `t.test(area_cm2 ~ shade, paired = TRUE)` gives an error — R doesn't allow `paired` with a formula. That is why we made the wide table.
+
+✏️ **Q4:** What do you **conclude** from the two paired *t*-tests? For each one give the mean difference, *t*, df and *p*, then say in plain words what it means for sunny versus shady leaves. Do the two tests agree?
+
+------------------------------------------------------------------------
+
+# Homework — sugar maple
+
+*Write your own script. Hand it in with the four answers as `#` comments.*
+
+Do the same analysis on leaves I collected from sugar maple trees: `data/2026_09_02_sugar_maple_leaf_area.xlsx`.
+
+The steps are the same as Parts 1–7, and most lines change only by a name. There is a bare, code-free guide at the bottom of the skeleton script to walk you through it.
+
+**One difference.** These leaves went through a scanner, so the area is already in the file as `total_area_cm2` — there is no tracing paper to convert. Your regression is therefore leaf **mass** against leaf **area**, which gives you the mass of 1 cm² of *leaf* instead of paper.
+
+The columns you need are `tree`, `side`, `total_area_cm2` and `mass_g`.
+
+Answer the **same four questions** for sugar maple:
+
+1.  What is the question of the study?
+2.  What are the hypotheses?
+3.  Are the regression assumptions met? Say what you see in each of the four plots, and whether it is better or worse behaved than the paper.
+4.  What do you conclude from the two paired *t*-tests? Which side has the bigger leaves, and is the result clearer or murkier than the class data? Why might that be?
+
+::: callout-tip
+## Two things to think about
+
+- Each tree has a sunny side **and** a shady side, so the **tree** is the pair — just as the team was in class.
+- Two leaves from the same side of the same tree are not independent either. Average them first, exactly as in Part 6.
+:::
+
+------------------------------------------------------------------------
+
+*End of Activity 11. Next: real climate data, where the slope of a regression on time becomes a rate of change per year.*

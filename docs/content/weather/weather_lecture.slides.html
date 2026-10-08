@@ -262,7 +262,7 @@ Bill Perry
 <ul>
 <li><strong>Download</strong> real weather station data from inside R — no Excel, no copy-paste</li>
 <li><strong>Clean</strong> the names with <code>janitor</code> so the code stays easy to type</li>
-<li><strong>Summarize</strong> ~28,000 daily records into one mean per year</li>
+<li><strong>Summarize</strong> ~25,000 daily records into one mean per year</li>
 <li><strong>Fit</strong> <code>lm(temp ~ year)</code> and read the warming rate straight off <code>summary()</code></li>
 <li><strong>Split by season</strong> — is winter warming faster than summer?</li>
 <li><strong>Find a station for a city you choose</strong> and run the whole thing again</li>
@@ -288,7 +288,8 @@ Bill Perry
 </div><div class="column" style="width:42%;">
 <p><strong>Tools today:</strong></p>
 <ul>
-<li><code>GSODR</code> — download NOAA station data</li>
+<li><code>GSODR</code> — NOAA station data (Duluth)</li>
+<li><code>nasapower</code> — data by lat/long (your city)</li>
 <li><code>janitor</code> — <code>clean_names()</code></li>
 <li><code>tidyverse</code> — summarize and plot</li>
 <li><code>lm()</code> — the slope is the answer</li>
@@ -330,13 +331,17 @@ Bill Perry
 <ul>
 <li>you give it a <strong>station ID</strong> and a range of <strong>years</strong></li>
 <li>it hands back a data frame</li>
+<li>it warns GSOD <strong>retired in Aug 2025</strong> — expected; the archive still works</li>
 </ul></li>
 </ul>
 <p><strong>Our station to start:</strong></p>
 <ul>
 <li>Duluth International Airport</li>
 <li>Station ID <strong><code>727450-14913</code></strong></li>
-<li>Daily records since <strong>1948</strong></li>
+<li>Daily records <strong>1948–2024</strong>
+<ul>
+<li><strong>1965–1972 missing</strong> — a different station ID back then</li>
+</ul></li>
 </ul>
 </div><div class="column" style="width:42%;">
 <ul>
@@ -398,7 +403,7 @@ Bill Perry
 <ul>
 <li>A station reports <strong>one row per day</strong>
 <ul>
-<li>78 years × 365 days ≈ <strong>28,000 rows</strong></li>
+<li>69 years × 365 days ≈ <strong>25,000 rows</strong></li>
 </ul></li>
 <li>Every one of those days carries the <strong>seasonal cycle</strong>
 <ul>
@@ -424,12 +429,12 @@ Bill Perry
 <tr class="odd">
 <td>Daily (raw)</td>
 <td>none</td>
-<td>~28,000</td>
+<td>~25,000</td>
 </tr>
 <tr class="even">
 <td><strong>Yearly</strong></td>
 <td><code>year</code></td>
-<td><strong>78</strong></td>
+<td><strong>69</strong></td>
 </tr>
 </tbody>
 </table>
@@ -473,23 +478,30 @@ Bill Perry
 <div class="column" style="width:55%;">
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a aria-label="1"></a><span class="co"># Load packages at the top -----------------------------</span></span>
-<span id="cb1-2"><a aria-label="2"></a><span class="fu">library</span>(tidyverse) <span class="co"># dplyr + ggplot2</span></span>
-<span id="cb1-3"><a aria-label="3"></a><span class="fu">library</span>(janitor)   <span class="co"># clean_names()</span></span>
-<span id="cb1-4"><a aria-label="4"></a><span class="fu">library</span>(GSODR)     <span class="co"># NOAA weather station data</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-2"><a aria-label="2"></a><span class="fu">library</span>(tidyverse)  <span class="co"># dplyr + ggplot2</span></span>
+<span id="cb1-3"><a aria-label="3"></a><span class="fu">library</span>(janitor)    <span class="co"># clean_names()</span></span>
+<span id="cb1-4"><a aria-label="4"></a><span class="fu">library</span>(GSODR)      <span class="co"># NOAA station data - Duluth</span></span>
+<span id="cb1-5"><a aria-label="5"></a><span class="fu">library</span>(nasapower)  <span class="co"># NASA data by lat/long - your city</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a aria-label="1"></a><span class="co"># Download daily Duluth weather, 1948-2025 -------------</span></span>
-<span id="cb2-2"><a aria-label="2"></a><span class="co"># clean_names() makes every column lower case</span></span>
-<span id="cb2-3"><a aria-label="3"></a>duluth_df <span class="ot">&lt;-</span> <span class="fu">get_GSOD</span>(<span class="at">years =</span> <span class="dv">1948</span><span class="sc">:</span><span class="dv">2025</span>,</span>
-<span id="cb2-4"><a aria-label="4"></a>                      <span class="at">station =</span> <span class="st">"727450-14913"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb2-5"><a aria-label="5"></a>  <span class="fu">clean_names</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a aria-label="1"></a><span class="co"># Download daily Duluth weather, 1948-2024 -------------</span></span>
+<span id="cb2-2"><a aria-label="2"></a><span class="co"># 1965-1972 are missing for this station, so skip them</span></span>
+<span id="cb2-3"><a aria-label="3"></a>gap_years <span class="ot">&lt;-</span> <span class="dv">1965</span><span class="sc">:</span><span class="dv">1972</span></span>
+<span id="cb2-4"><a aria-label="4"></a></span>
+<span id="cb2-5"><a aria-label="5"></a>duluth_df <span class="ot">&lt;-</span> <span class="fu">get_GSOD</span>(<span class="at">years =</span> <span class="fu">setdiff</span>(<span class="dv">1948</span><span class="sc">:</span><span class="dv">2024</span>, gap_years),</span>
+<span id="cb2-6"><a aria-label="6"></a>                      <span class="at">station =</span> <span class="st">"727450-14913"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb2-7"><a aria-label="7"></a>  <span class="fu">clean_names</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div><div class="column" style="width:45%;">
 <ul>
 <li><code>get_GSOD()</code> takes <strong>years</strong> and a <strong>station</strong> and goes and gets the data
 <ul>
-<li><code>1948:2025</code> is a vector — “every year in this range”</li>
-<li>it takes a minute; 78 years of daily data is a lot</li>
+<li><code>1948:2024</code> is a vector — “every year in this range”</li>
+<li><code>setdiff()</code> removes the 8 missing years from that vector
+<ul>
+<li>ask for a year the station does not have and the <strong>whole download fails</strong></li>
+</ul></li>
+<li>it takes a minute; 69 years of daily data is a lot</li>
 </ul></li>
 <li><strong><code>clean_names()</code> is the important habit here</strong>
 <ul>
@@ -531,7 +543,7 @@ Bill Perry
 </div>
 </div><div class="column" style="width:45%;">
 <ul>
-<li><strong>~28,000 rows</strong> — one per day</li>
+<li><strong>~25,000 rows</strong> — one per day</li>
 <li><strong>47 columns</strong> — temperature, dew point, wind, precipitation, flags…</li>
 <li>The handful we care about:
 <ul>
@@ -609,15 +621,15 @@ Bill Perry
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="weather_lecture_files/figure-revealjs/raw-plot-12-1.png" alt="Scatter plot of daily mean temperature in Duluth from 1948 to 2025. The points overlap into a dense band about 60 degrees tall, driven entirely by the seasonal cycle, with no visible long-term trend."></p>
+<p><img data-src="weather_lecture_files/figure-revealjs/raw-plot-12-1.png" alt="Scatter plot of daily mean temperature in Duluth from 1948 to 2024. The points overlap into a dense band about 60 degrees tall, driven entirely by the seasonal cycle, with no visible long-term trend."></p>
 </figure>
 </div>
 </div>
 </div>
 </div><div class="column" style="width:45%;">
 <ul>
-<li>A solid band about <strong>60 °C tall</strong> — that is summer vs winter, repeated 78 times</li>
-<li>~28,000 points on top of each other</li>
+<li>A solid band about <strong>60 °C tall</strong> — that is summer vs winter, repeated 69 times</li>
+<li>~25,000 points on top of each other</li>
 <li>Any warming trend is in there, but it is a <strong>fraction of a degree</strong> against a 60 °C swing</li>
 </ul>
 <p><strong>So you cannot see it.</strong> That is not a plotting problem — it is a summarizing problem.</p>
@@ -648,7 +660,7 @@ Bill Perry
 <ul>
 <li><code>group_by(year)</code> — one group per year</li>
 <li><code>summarize(temp = mean(temp))</code> — one number per group</li>
-<li><strong>28,000 rows become 78</strong></li>
+<li><strong>25,000 rows become 69</strong></li>
 <li><code>na.rm = TRUE</code> ignores days the station missed</li>
 </ul>
 <div class="callout callout-note callout-titled callout-style-default">
@@ -681,7 +693,7 @@ Bill Perry
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="weather_lecture_files/figure-revealjs/yearly-plot-12-1.png" alt="Scatter plot of Duluth annual mean temperature against year from 1948 to 2025 with a fitted straight regression line sloping clearly upward from about 3.5 to about 5.5 degrees Celsius."></p>
+<p><img data-src="weather_lecture_files/figure-revealjs/yearly-plot-12-1.png" alt="Scatter plot of Duluth annual mean temperature against year from 1948 to 2024 with a fitted straight regression line sloping clearly upward from about 3.3 to about 5.3 degrees Celsius."></p>
 </figure>
 </div>
 </div>
@@ -689,7 +701,7 @@ Bill Perry
 </div><div class="column" style="width:45%;">
 <ul>
 <li><strong>Now you can see it.</strong> The line clearly rises</li>
-<li>78 points instead of 28,000 — and the story is <em>clearer</em>, not weaker</li>
+<li>69 points instead of 25,000 — and the story is <em>clearer</em>, not weaker</li>
 <li>Still plenty of scatter: single years are weather, the line is climate</li>
 <li>Exactly the same <code>geom_smooth(method = "lm")</code> as the Regression lecture</li>
 </ul>
@@ -753,7 +765,7 @@ F-statistic: 34.34 on 1 and 68 DF,  p-value: 1.489e-07</code></pre>
 <li>units: <strong>°C per year</strong></li>
 <li>positive → Duluth is <strong>warming</strong></li>
 <li>×10 → about <strong>0.27 °C per decade</strong></li>
-<li>over ~78 years → roughly <strong>2 °C</strong></li>
+<li>over ~77 years → roughly <strong>2 °C</strong></li>
 </ul></li>
 <li><strong><code>Pr(&gt;|t|)</code> is tiny</strong> (far below 0.001)
 <ul>
@@ -762,7 +774,7 @@ F-statistic: 34.34 on 1 and 68 DF,  p-value: 1.489e-07</code></pre>
 </ul>
 </div><div class="column" style="width:50%;">
 <ul>
-<li><strong><code>Multiple R-squared</code> ≈ 0.34</strong>
+<li><strong><code>Multiple R-squared</code> ≈ 0.32</strong>
 <ul>
 <li>year explains about <strong>a third</strong> of the variation in annual temperature</li>
 <li>the other two thirds is <strong>weather</strong> — some years are just cold</li>
@@ -930,7 +942,7 @@ F-statistic: 34.34 on 1 and 68 DF,  p-value: 1.489e-07</code></pre>
 <li><code>group_by(year, season)</code> — <strong>two</strong> grouping columns
 <ul>
 <li>one row per year <strong>per season</strong></li>
-<li>78 years × 2 seasons ≈ 156 rows</li>
+<li>69 years × 2 seasons = 138 rows</li>
 </ul></li>
 <li><code>.groups = "drop"</code> tidies up afterwards</li>
 </ul>
@@ -1012,9 +1024,9 @@ F-statistic: 14.99 on 1 and 68 DF,  p-value: 0.0002448</code></pre>
 <li><code>filter()</code> first, then the <strong>same <code>lm()</code> as before</strong></li>
 <li>Two small models are far easier to read than one complicated one</li>
 </ul>
-<p><strong>Summer slope ≈ 0.021 °C/year</strong></p>
+<p><strong>Summer slope ≈ 0.022 °C/year</strong></p>
 <ul>
-<li>×10 → about <strong>0.21 °C per decade</strong></li>
+<li>×10 → about <strong>0.22 °C per decade</strong></li>
 <li><em>p</em> = 0.0002 → real</li>
 </ul>
 <p>Now do exactly the same thing for winter.</p>
@@ -1054,12 +1066,12 @@ F-statistic: 11.43 on 1 and 68 DF,  p-value: 0.001202</code></pre>
 </div>
 </div>
 </div><div class="column" style="width:45%;">
-<p><strong>Winter slope ≈ 0.034 °C/year</strong></p>
+<p><strong>Winter slope ≈ 0.037 °C/year</strong></p>
 <ul>
-<li>×10 → about <strong>0.34 °C per decade</strong></li>
-<li><em>p</em> = 0.001 → real</li>
+<li>×10 → about <strong>0.37 °C per decade</strong></li>
+<li><em>p</em> = 0.0006 → real</li>
 </ul>
-<p><strong>Winter is warming about 1.6× as fast as summer.</strong></p>
+<p><strong>Winter is warming about 1.7× as fast as summer.</strong></p>
 <ul>
 <li>This is the expected pattern across the northern continents</li>
 <li>Fewer extreme-cold nights, shorter ice seasons, earlier thaw</li>
@@ -1093,19 +1105,19 @@ F-statistic: 11.43 on 1 and 68 DF,  p-value: 0.001202</code></pre>
 <td>Annual</td>
 <td>0.027</td>
 <td>0.27</td>
-<td>&lt;0.001</td>
+<td>0.0000003</td>
 </tr>
 <tr class="even">
 <td>Summer</td>
-<td>0.021</td>
-<td>0.21</td>
-<td>&lt;0.001</td>
+<td>0.022</td>
+<td>0.22</td>
+<td>0.0002</td>
 </tr>
 <tr class="odd">
 <td>Winter</td>
-<td>0.034</td>
-<td>0.34</td>
-<td>0.001</td>
+<td>0.037</td>
+<td>0.37</td>
+<td>0.0006</td>
 </tr>
 </tbody>
 </table>
@@ -1116,7 +1128,7 @@ F-statistic: 11.43 on 1 and 68 DF,  p-value: 0.001202</code></pre>
 </div><div class="column" style="width:48%;">
 <p><strong>How to write it up:</strong></p>
 <blockquote>
-<p><em>Mean annual temperature at Duluth rose significantly from 1948 to 2025 (linear regression: slope = 0.027 °C yr⁻¹, equivalent to 0.27 °C per decade; F(1, 68) = 34.3, p &lt; 0.001, R² = 0.34). Winter warmed roughly 1.6 times faster than summer (0.34 vs 0.21 °C per decade).</em></p>
+<p><em>Mean annual temperature at Duluth rose significantly from 1948 to 2024 (linear regression: slope = 0.027 °C yr⁻¹, equivalent to 0.27 °C per decade; F(1, 67) = 32.1, p &lt; 0.001, R² = 0.32). Winter warmed roughly 1.7 times faster than summer (0.37 vs 0.22 °C per decade).</em></p>
 </blockquote>
 <ul>
 <li>Give the slope <strong>with units</strong></li>
@@ -1131,33 +1143,64 @@ F-statistic: 11.43 on 1 and 68 DF,  p-value: 0.001202</code></pre>
 <div class="columns">
 <div class="column" style="width:55%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a aria-label="1"></a><span class="co"># Find stations near a place you care about ------------</span></span>
-<span id="cb24-2"><a aria-label="2"></a><span class="co"># Duluth is 46.84 N, -92.19 W</span></span>
-<span id="cb24-3"><a aria-label="3"></a><span class="fu">nearest_stations</span>(<span class="at">LAT =</span> <span class="fl">46.84</span>, <span class="at">LON =</span> <span class="sc">-</span><span class="fl">92.19</span>,</span>
-<span id="cb24-4"><a aria-label="4"></a>                 <span class="at">distance =</span> <span class="dv">50</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb24-5"><a aria-label="5"></a>  <span class="fu">clean_names</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb24-6"><a aria-label="6"></a>  <span class="fu">select</span>(stnid, name, begin, end) <span class="sc">%&gt;%</span></span>
-<span id="cb24-7"><a aria-label="7"></a>  <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a aria-label="1"></a><span class="co"># NASA POWER - lon and lat, no station -----------------</span></span>
+<span id="cb24-2"><a aria-label="2"></a>city_df <span class="ot">&lt;-</span> <span class="fu">get_power</span>(<span class="at">community =</span> <span class="st">"ag"</span>,</span>
+<span id="cb24-3"><a aria-label="3"></a>                     <span class="at">lonlat =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.13</span>, <span class="fl">51.51</span>),</span>
+<span id="cb24-4"><a aria-label="4"></a>                     <span class="at">pars =</span> <span class="st">"T2M"</span>,</span>
+<span id="cb24-5"><a aria-label="5"></a>                     <span class="at">dates =</span> <span class="fu">c</span>(<span class="st">"1981-01-01"</span>,</span>
+<span id="cb24-6"><a aria-label="6"></a>                               <span class="st">"2024-12-31"</span>),</span>
+<span id="cb24-7"><a aria-label="7"></a>                     <span class="at">temporal_api =</span> <span class="st">"daily"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb24-8"><a aria-label="8"></a>  <span class="fu">clean_names</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb24-9"><a aria-label="9"></a>  <span class="fu">rename</span>(<span class="at">month =</span> mm, <span class="at">temp =</span> t2m)</span>
+<span id="cb24-10"><a aria-label="10"></a></span>
+<span id="cb24-11"><a aria-label="11"></a><span class="fu">dim</span>(city_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>          stnid                         name    begin      end
-         &lt;char&gt;                       &lt;char&gt;    &lt;int&gt;    &lt;int&gt;
-1: 727450-14913 DULUTH INTERNATIONAL AIRPORT 19480101 20250827
-2: 999999-14913 DULUTH WILLIAMSN-JOHNSN MUNI 19650101 19721231
-3: 997269-99999                       DULUTH 20080101 20081231</code></pre>
+<pre><code>[1] 16071     8</code></pre>
 </div>
 </div>
 </div><div class="column" style="width:45%;">
 <ul>
-<li><code>nearest_stations()</code> takes a <strong>latitude</strong>, a <strong>longitude</strong>, and a radius in km</li>
-<li>Look up your city’s lat/long in any search engine
+<li><strong>Why switch packages?</strong>
+<ul>
+<li><code>GSODR</code> needs a <strong>station ID</strong></li>
+<li>most stations outside the US have <strong>missing years</strong></li>
+<li>Melbourne’s nearest long station is missing <strong>48 of 59</strong></li>
+</ul></li>
+<li><strong><code>nasapower</code> needs only coordinates</strong>
+<ul>
+<li>anywhere on Earth, <strong>1981 to now, no gaps</strong></li>
+<li>watch the order: <strong>longitude first</strong></li>
+</ul></li>
+<li><code>rename()</code> makes the columns match Duluth’s</li>
+</ul>
+</div></div>
+</section>
+
+<section id="swap-two-numbers-get-a-new-city" class="title-slide slide level1 center">
+<h1>Swap Two Numbers, Get a New City</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a aria-label="1"></a><span class="co"># The ONLY numbers that change ------------------</span></span>
+<span id="cb26-2"><a aria-label="2"></a>lonlat <span class="ot">=</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.13</span>, <span class="fl">51.51</span>)</span>
+<span id="cb26-3"><a aria-label="3"></a></span>
+<span id="cb26-4"><a aria-label="4"></a><span class="co"># Everything below is identical -----------------</span></span>
+<span id="cb26-5"><a aria-label="5"></a>city_year_df <span class="ot">&lt;-</span> city_df <span class="sc">%&gt;%</span></span>
+<span id="cb26-6"><a aria-label="6"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
+<span id="cb26-7"><a aria-label="7"></a>  <span class="fu">summarize</span>(<span class="at">temp =</span> <span class="fu">mean</span>(temp, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb26-8"><a aria-label="8"></a></span>
+<span id="cb26-9"><a aria-label="9"></a>city_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(temp <span class="sc">~</span> year, <span class="at">data =</span> city_year_df)</span>
+<span id="cb26-10"><a aria-label="10"></a><span class="fu">summary</span>(city_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div><div class="column" style="width:45%;">
+<ul>
+<li>That is the whole point of today
+<ul>
+<li><strong>two numbers</strong> name the place</li>
+<li>the rest of the analysis never changes</li>
+</ul></li>
+<li>Look up lat/long in any search engine
 <ul>
 <li><strong>south</strong> of the equator → negative latitude</li>
 <li><strong>west</strong> of Greenwich → negative longitude</li>
-</ul></li>
-<li>Then read the table:
-<ul>
-<li><strong><code>stnid</code></strong> is what you paste into <code>get_GSOD()</code></li>
-<li><strong><code>begin</code></strong> and <strong><code>end</code></strong> tell you the years available</li>
 </ul></li>
 </ul>
 <div class="callout callout-important callout-titled callout-style-default">
@@ -1169,37 +1212,43 @@ F-statistic: 11.43 on 1 and 68 DF,  p-value: 0.001202</code></pre>
 <p><strong>Important</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>Pick a station with a long record.</strong> A trend needs decades — aim for a <code>begin</code> date of 1970 or earlier.</p>
+<p><strong>Southern hemisphere?</strong> Swap the season labels in <code>case_when()</code>:</p>
+<ul>
+<li><code>month %in% c(12, 1, 2)</code> → <strong>summer</strong></li>
+<li><code>month %in% c(6, 7, 8)</code> → <strong>winter</strong></li>
+</ul>
 </div>
 </div>
 </div>
 </div></div>
 </section>
 
-<section id="swap-one-line-get-a-new-city" class="title-slide slide level1 center">
-<h1>Swap One Line, Get a New City</h1>
+<section id="are-the-two-slopes-different" class="title-slide slide level1 center">
+<h1>Are the Two Slopes Different?</h1>
 <div class="columns">
 <div class="column" style="width:55%;">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a aria-label="1"></a><span class="co"># The ONLY line that changes ---------------------------</span></span>
-<span id="cb26-2"><a aria-label="2"></a>city_df <span class="ot">&lt;-</span> <span class="fu">get_GSOD</span>(<span class="at">years =</span> <span class="dv">1973</span><span class="sc">:</span><span class="dv">2025</span>,</span>
-<span id="cb26-3"><a aria-label="3"></a>                    <span class="at">station =</span> <span class="st">"948660-99999"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb26-4"><a aria-label="4"></a>  <span class="fu">clean_names</span>()</span>
-<span id="cb26-5"><a aria-label="5"></a></span>
-<span id="cb26-6"><a aria-label="6"></a><span class="co"># Everything below is identical ------------------------</span></span>
-<span id="cb26-7"><a aria-label="7"></a>city_year_df <span class="ot">&lt;-</span> city_df <span class="sc">%&gt;%</span></span>
-<span id="cb26-8"><a aria-label="8"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
-<span id="cb26-9"><a aria-label="9"></a>  <span class="fu">summarize</span>(<span class="at">temp =</span> <span class="fu">mean</span>(temp, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb26-10"><a aria-label="10"></a></span>
-<span id="cb26-11"><a aria-label="11"></a>city_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(temp <span class="sc">~</span> year, <span class="at">data =</span> city_year_df)</span>
-<span id="cb26-12"><a aria-label="12"></a><span class="fu">summary</span>(city_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a aria-label="1"></a><span class="co"># Stack the two yearly summaries ----------------</span></span>
+<span id="cb27-2"><a aria-label="2"></a>both_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(duluth_year_df,</span>
+<span id="cb27-3"><a aria-label="3"></a>                     city_labeled_df)</span>
+<span id="cb27-4"><a aria-label="4"></a></span>
+<span id="cb27-5"><a aria-label="5"></a><span class="co"># One slope per station -------------------------</span></span>
+<span id="cb27-6"><a aria-label="6"></a>slope_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(temp <span class="sc">~</span> year <span class="sc">*</span> station,</span>
+<span id="cb27-7"><a aria-label="7"></a>                  <span class="at">data =</span> both_df)</span>
+<span id="cb27-8"><a aria-label="8"></a><span class="fu">summary</span>(slope_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Your city and Duluth gave different numbers. <strong>Different-looking slopes are not always different slopes.</strong></p>
 </div><div class="column" style="width:45%;">
 <ul>
-<li>That is the whole point of today
+<li><code>year * station</code> fits a <strong>separate slope</strong> for each place</li>
+<li>Read the <strong><code>year:stationmy_city</code></strong> row
 <ul>
-<li><strong>one line</strong> names the place</li>
-<li>the rest of the analysis never changes</li>
+<li><code>Estimate</code> — how much your slope <strong>differs</strong></li>
+<li><code>Pr(&gt;|t|)</code> — is that difference real?</li>
 </ul></li>
-<li>Use the <code>years =</code> range your station actually has — don’t ask for years before <code>begin</code></li>
+<li>This is a <strong>t-test on two slopes</strong>, in the same two columns you have read all class
+<ul>
+<li><em>p</em> &lt; 0.05 → rates <strong>really differ</strong></li>
+<li><em>p</em> &gt; 0.05 → <strong>cannot tell them apart</strong></li>
+</ul></li>
 </ul>
 <div class="callout callout-important callout-titled callout-style-default">
 <div class="callout-body">
@@ -1210,11 +1259,7 @@ F-statistic: 11.43 on 1 and 68 DF,  p-value: 0.001202</code></pre>
 <p><strong>Important</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>If your city is in the southern hemisphere</strong>, swap the season labels in <code>case_when()</code>:</p>
-<ul>
-<li><code>month %in% c(12, 1, 2)</code> → <strong>summer</strong></li>
-<li><code>month %in% c(6, 7, 8)</code> → <strong>winter</strong></li>
-</ul>
+<p>Pull Duluth from the <strong>same source and years</strong> as your city — or you are comparing place <em>plus</em> source <em>plus</em> years.</p>
 </div>
 </div>
 </div>
@@ -1229,7 +1274,7 @@ F-statistic: 11.43 on 1 and 68 DF,  p-value: 0.001202</code></pre>
 <li>Label the seasons with <code>case_when()</code> and summarize by year and season</li>
 <li>Plot both seasons, then fit a model for each</li>
 <li>Write the warming rates in °C per decade</li>
-<li>Find the station for a city you choose — that is your Extension</li>
+<li>Get the coordinates for a city you choose — the analysis is your homework</li>
 </ul>
 </div>
 </section>
@@ -1240,27 +1285,29 @@ F-statistic: 11.43 on 1 and 68 DF,  p-value: 0.001202</code></pre>
 <div class="column" style="width:58%;">
 <p><strong>The ideas:</strong></p>
 <ul>
-<li>A regression <strong>on time</strong> turns a slope into a <strong>rate of change</strong> — ×10 for per decade</li>
+<li>A regression <strong>on time</strong> makes the slope a <strong>rate of change</strong> — ×10 per decade</li>
 <li>Raw daily data <strong>hides</strong> the trend; <code>group_by(year) %&gt;% summarize()</code> is the fix</li>
-<li>An <strong>annual mean hides which season moved</strong> — Duluth’s winter warms ~1.6× faster</li>
+<li>An <strong>annual mean hides which season moved</strong> — Duluth’s winter warms ~1.7× faster</li>
 <li>Seasons are set by <strong>hemisphere</strong>, not by month number</li>
 <li>A modest <strong>R² with a tiny <em>p</em></strong> is normal — real trend, weather scatter</li>
 </ul>
 <p><strong>The code:</strong></p>
 <ul>
-<li><code>get_GSOD(years =, station =)</code> and <code>nearest_stations()</code></li>
-<li><code>clean_names()</code> — lower-case names, once, at the top</li>
-<li><code>group_by()</code> + <code>summarize()</code> — to the right level</li>
+<li><code>get_GSOD()</code> — Duluth, by station ID</li>
+<li><code>get_power()</code> — anywhere, by coordinates</li>
+<li><code>clean_names()</code> — lower-case names, once</li>
+<li><code>group_by()</code> + <code>summarize()</code> — the right level</li>
 <li><code>case_when()</code> — build the season</li>
-<li><code>lm(temp ~ year)</code> + <code>summary()</code> — the rate</li>
+<li><code>lm(temp ~ year)</code>, <code>lm(temp ~ year * station)</code></li>
 </ul>
 </div><div class="column" style="width:42%;">
-<p><strong>Hand in:</strong> your finished activity script, plus the warming rate you found for <strong>your own city</strong>.</p>
+<p><strong>Hand in:</strong> your finished activity script, plus the homework — your own city’s warming rate and how it compares with Duluth’s.</p>
 <p><strong>References:</strong></p>
 <ul>
 <li>📖 R4DS Ch. 3 — Data transformation</li>
 <li>📖 W&amp;S Ch. 17 — Regression</li>
 <li>NOAA GSOD — <code>ncei.noaa.gov</code></li>
+<li>NASA POWER — <code>power.larc.nasa.gov</code></li>
 </ul>
 <p><strong>Up next:</strong></p>
 <ul>
