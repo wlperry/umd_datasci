@@ -51,7 +51,7 @@ execute:
 ```{r setup}
 #| echo: false
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
-options(width = 65)   # printed R output wraps at 65 too
+options(width = 65) # printed R output wraps at 65 too
 ```
 
 ```{r hidden-libs}
@@ -73,10 +73,10 @@ library(patchwork)
 ::: callout-note
 **✅ Where today comes in**
 
--  A t-test compares two **groups**.
+- A t-test compares two **groups**.
 - Today we ask a different question:
   - can one **number** predict another number?
-  -  we weighed our leaf tracings, but what we actually want is **leaf area in cm²**
+  - we weighed our leaf tracings, but what we actually want is **leaf area in cm²**
 :::
 
 # Goals for Today
@@ -113,16 +113,18 @@ library(patchwork)
 
 # 🧩 Chunk 1 of 3 · What Regression Does
 
--  **We will cover:**
-  - the question regression answers,
+- **We will cover:**
 
-  - the equation $\hat{Y} = a + bX$,
+- the question regression answers,
 
-  - what a **residual** is,
+- the equation $\hat{Y} = a + bX$,
 
-  - what **R²** tells you,
+- what a **residual** is,
 
-  - and the assumptions.
+- what **R²** tells you,
+
+- and the assumptions.
+
 - No code in this chunk — just the idea.
 
 # What Is Linear Regression?
@@ -136,8 +138,6 @@ library(patchwork)
 | **Explanatory (X)** | what you can measure easily    | x-axis      |
 | **Response (Y)**    | what you actually want to know | y-axis      |
 
-: {tbl-colwidths="[30,40,30]"}
-
 X is usually the **easy** measurement. Y is the **expensive** one. Regression gives you an equation that converts X into Y.
 
 📖 W&S §17.1 p. 540–541
@@ -150,8 +150,6 @@ X is usually the **easy** measurement. Y is the **expensive** one. Regression gi
 |------------|-----------------------------------------|
 | t-test     | Do two **groups** have different means? |
 | Regression | Does X **predict** Y?                   |
-
-: {tbl-colwidths="[35,65]"}
 
 **Use regression when:**
 
@@ -170,15 +168,13 @@ X is usually the **easy** measurement. Y is the **expensive** one. Regression gi
 #| fig-format: png
 #| fig-height: 3.8
 #| fig-alt: "Scatter plot of lion age in years against the proportion of the nose that is black, for 32 lions, with an upward-sloping least-squares line through the points. The points scatter noticeably around the line."
-lion_df <- read_csv("data/ws_lion_noses.csv",
-                    show_col_types = FALSE)
+lion_df <- read_csv("data/ws_lion_noses.csv", show_col_types = FALSE)
 
 ggplot(lion_df, aes(x = proportionBlack, y = ageInYears)) +
-  geom_point(size = 2.2, color = "sienna") +
-  geom_smooth(method = "lm", se = FALSE, color = "black") +
-  labs(x = "Proportion of nose that is black",
-       y = "Age (years)") +
-  theme_minimal(base_size = 13)
+     geom_point(size = 2.2, color = "sienna") +
+     geom_smooth(method = "lm", se = FALSE, color = "black") +
+     labs(x = "Proportion of nose that is black", y = "Age (years)") +
+     theme_minimal(base_size = 13)
 ```
 
 **W&S Example 17.1 — "the lion's nose."** 32 male lions of known age.
@@ -226,8 +222,6 @@ Fit the line once on lions of known age, and from then on you can **estimate** a
 | 100              | 14              |
 | 225–567          | 13              |
 
-: {tbl-colwidths="[55,45]"}
-
 **118 paper squares in all.**
 
 Remember `paper_mass_g` in our leaf data? That is the tracing mass. By the end of today it becomes an **area**.
@@ -245,8 +239,6 @@ $$\hat{Y} = a + bX$$
 | $\hat{Y}$ | predicted Y   | what the line says Y should be        |
 | *a*       | **intercept** | Y when X = 0 — where the line crosses |
 | *b*       | **slope**     | how much Y changes per 1 unit of X    |
-
-: {tbl-colwidths="[18,27,55]"}
 
 **Ours will read:**
 
@@ -280,16 +272,17 @@ Physically that should be 0. A small value near zero is fine; it is measurement 
 #| fig-height: 4
 #| fig-alt: "The same lion scatter plot with the least-squares line, plus a vertical red segment drawn from every point to the line. Segments above the line are longer for a few lions; most are short. The plot shows the residual as the vertical gap between the observed point and the line."
 lion_fit_df <- lion_df %>%
-  mutate(predicted = fitted(lm(ageInYears ~ proportionBlack,
-                               data = lion_df)))
+  mutate(predicted = fitted(lm(ageInYears ~ proportionBlack, data = lion_df)))
 
 ggplot(lion_fit_df, aes(x = proportionBlack, y = ageInYears)) +
-  geom_segment(aes(xend = proportionBlack, yend = predicted),
-               color = "firebrick", linewidth = 0.7) +
+  geom_segment(
+    aes(xend = proportionBlack, yend = predicted),
+    color = "firebrick",
+    linewidth = 0.7
+  ) +
   geom_smooth(method = "lm", se = FALSE, color = "black") +
   geom_point(size = 2.2, color = "sienna") +
-  labs(x = "Proportion of nose that is black",
-       y = "Age (years)") +
+  labs(x = "Proportion of nose that is black", y = "Age (years)") +
   theme_minimal(base_size = 13)
 ```
 
@@ -323,21 +316,21 @@ $$\text{residual} = \text{observed} - \text{predicted}$$
 #| fig-alt: "Two scatter plots side by side. Left: lion age against nose blackness with a fitted line and clearly scattered points, labelled R-squared equals 0.62. Right: paper area against paper mass with a fitted line and points sitting almost exactly on it, labelled R-squared equals 0.9999."
 paper_demo_df <- read_excel("data/paper_area_weights.xlsx")
 
-lion_panel <- ggplot(lion_df,
-                     aes(x = proportionBlack, y = ageInYears)) +
-  geom_point(size = 2, color = "sienna") +
-  geom_smooth(method = "lm", se = FALSE, color = "black") +
-  labs(subtitle = "Lions:  R² = 0.62",
-       x = "Proportion black", y = "Age (years)") +
-  theme_minimal(base_size = 12)
+lion_panel <- ggplot(lion_df, aes(x = proportionBlack, y = ageInYears)) +
+     geom_point(size = 2, color = "sienna") +
+     geom_smooth(method = "lm", se = FALSE, color = "black") +
+     labs(
+          subtitle = "Lions:  R² = 0.62",
+          x = "Proportion black",
+          y = "Age (years)"
+     ) +
+     theme_minimal(base_size = 12)
 
-paper_panel <- ggplot(paper_demo_df,
-                      aes(x = mass_g, y = area_cm2)) +
-  geom_point(size = 2, color = "steelblue") +
-  geom_smooth(method = "lm", se = FALSE, color = "black") +
-  labs(subtitle = "Paper:  R² = 0.9999",
-       x = "Mass (g)", y = "Area (cm²)") +
-  theme_minimal(base_size = 12)
+paper_panel <- ggplot(paper_demo_df, aes(x = mass_g, y = area_cm2)) +
+     geom_point(size = 2, color = "blue4") +
+     geom_smooth(method = "lm", se = FALSE, color = "black") +
+     labs(subtitle = "Paper:  R² = 0.9999", x = "Mass (g)", y = "Area (cm²)") +
+     theme_minimal(base_size = 12)
 
 lion_panel + paper_panel
 ```
@@ -352,8 +345,6 @@ lion_panel + paper_panel
 | 0.62 | X explains **62%** of the variation |
 | 0.00 | the line tells you nothing          |
 
-: {tbl-colwidths="[25,75]"}
-
 **Both of these are good regressions.** Nose blackness really does predict a lion's age — just with scatter, because lions vary. Paper is manufactured to be uniform, so it has almost none.
 
 In biology, **R² of 0.3–0.7 is normal and useful**. Don't expect 0.99.
@@ -367,11 +358,9 @@ In biology, **R² of 0.3–0.7 is normal and useful**. Don't expect 0.99.
 :::::: columns
 ::: {.column width="52%"}
 |   | The question it answers |
-|------------------------|-----------------------------------------------|
+|-------------------------|-----------------------------------------------|
 | ***p*****-value** | Is there **really** a relationship, or could this slope be chance? |
 | **R²** | **How tightly** do the points follow the line? |
-
-: {tbl-colwidths="[30,70]"}
 
 You can have a **significant slope with a low R²** — a real relationship with a lot of scatter. That is most of ecology.
 :::
@@ -398,13 +387,11 @@ You can have a **significant slope with a low R²** — a real relationship with
 Four things need to be roughly true for the *p*-value and the intervals to mean anything (W&S §17.5):
 
 | \# | Assumption | How you check it |
-|--------------|-------------------------------|---------------------------|
+|------------------|-----------------------------|-------------------------|
 | 1 | **Linear** — Y really does follow a straight line | the scatter plot, then `plot(model)` panel 1 |
 | 2 | **Independent** — one observation doesn't depend on another | your study design |
 | 3 | **Equal variance** — the scatter is about the same all the way along | `plot(model)` panels 1 and 3 |
 | 4 | **Normal residuals** — the misses are bell-shaped | `plot(model)` panel 2 |
-
-: {tbl-colwidths="[8,42,50]"}
 :::
 
 :::: {.column width="42%"}
@@ -434,9 +421,9 @@ Same habit as the t-test: **check → decide → report.**
 
 ```{r load-libs-11}
 # Load packages at the top ------------------------------
-library(readxl)    # read Excel files
+library(readxl) # read Excel files
 library(tidyverse) # dplyr + ggplot2
-library(janitor)   # clean_names()
+library(janitor) # clean_names()
 ```
 
 ```{r load-data-11}
@@ -457,7 +444,7 @@ Two columns, 118 rows: `area_cm2` is the **known** area of each square, `mass_g`
 scatter_plot <- paper_df %>%
   ggplot(aes(x = mass_g, y = area_cm2)) +
   geom_point() +
-  geom_smooth(method="lm")
+  geom_smooth(method = "lm")
 scatter_plot
 ```
 :::
@@ -485,8 +472,7 @@ Never fit a regression you haven't looked at. A curve, a funnel, or one wild poi
 ::: {.column width="55%"}
 ```{r fit-lm-11}
 # Fit the regression line ------------------------------
-paper_lm_model <- lm(area_cm2 ~ mass_g,
-                     data = paper_df)
+paper_lm_model <- lm(area_cm2 ~ mass_g, data = paper_df)
 ```
 
 Nothing prints. `lm()` hands back a **model object** that is holding the answer — `summary()` is what shows it to you.
@@ -561,8 +547,6 @@ That is the conversion factor we came for.
 | `Std. Error` | how uncertain that estimate is     |
 | `t value`    | Estimate ÷ Std. Error              |
 | `Pr(>|t|)`   | the ***p*****-value** for that row |
-
-: {tbl-colwidths="[35,65]"}
 
 📖 W&S §17.3 p. 551
 :::
@@ -695,12 +679,11 @@ calibration_plot
 #| fig-height: 3.2
 #| fig-alt: "The same paper calibration scatter plot with the fitted line, now with axis labels reading Paper mass in grams and Paper area in square centimetres, on a minimal theme."
 paper_df %>%
-  ggplot(aes(x = mass_g, y = area_cm2)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  labs(x = "Paper mass (g)",
-       y = "Paper area (cm²)") +
-  theme_minimal()
+     ggplot(aes(x = mass_g, y = area_cm2)) +
+     geom_point() +
+     geom_smooth(method = "lm") +
+     labs(x = "Paper mass (g)", y = "Paper area (cm²)") +
+     theme_minimal()
 ```
 :::
 
@@ -740,8 +723,6 @@ plot(paper_lm_model)
 | 2     | Normal Q-Q            | residuals bell-shaped?         |
 | 3     | Scale-Location        | equal scatter again            |
 | 4     | Residuals vs Leverage | any one point running the show |
-
-: {tbl-colwidths="[12,38,50]"}
 
 **Panel 1 is the one to look at first.**
 
@@ -818,9 +799,7 @@ This beats doing the arithmetic yourself — no copying the slope, nothing to mi
 # Two tracings, with 95% prediction intervals ---------
 two_tracings <- tibble(mass_g = c(0.092, 0.138))
 
-predict(paper_lm_model,
-        newdata = two_tracings,
-        interval = "prediction")
+predict(paper_lm_model, newdata = two_tracings, interval = "prediction")
 ```
 
 The 0.138 g tracing is **18.3 cm²**, somewhere between about **14.8 and 21.8 cm²**.
@@ -835,11 +814,9 @@ The 0.138 g tracing is **18.3 cm²**, somewhere between about **14.8 and 21.8 cm
 **Two kinds of interval:**
 
 | `interval =`   | Range for                                       | Width    |
-|---------------------|----------------------------------|-----------------|
+|---------------------|---------------------------------|------------------|
 | `"confidence"` | the **average** area of all tracings this heavy | narrower |
 | `"prediction"` | **one particular** tracing                      | wider    |
-
-: {tbl-colwidths="[25,50,25]"}
 
 For a single real leaf, use **`"prediction"`**.
 
@@ -859,9 +836,12 @@ leaf_df <-
 
 # Turn every tracing mass into an area ----------------
 leaf_df <- leaf_df %>%
-  mutate(leaf_area_cm2 =
-           predict(paper_lm_model,
-                   newdata = tibble(mass_g = paper_mass_g)))
+  mutate(
+    leaf_area_cm2 = predict(
+      paper_lm_model,
+      newdata = tibble(mass_g = paper_mass_g)
+    )
+  )
 
 leaf_df %>%
   select(teams, shade, mass_g, paper_mass_g, leaf_area_cm2)
@@ -938,8 +918,6 @@ About **37 cm²** on the shady side and **36 cm²** on the sunny side — the sa
 | R²              | `Multiple R-squared`       |
 | intercept       | `(Intercept)` → `Estimate` |
 | slope           | `mass_g` → `Estimate`      |
-
-: {tbl-colwidths="[38,62]"}
 
 **Always include:** the test name, F with both df, *p*, R², and **the equation**. Add a line about the assumptions you checked.
 

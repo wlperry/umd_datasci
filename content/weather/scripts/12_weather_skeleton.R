@@ -15,6 +15,10 @@
 
 # Install GSODR once, from the Console:
 # install.packages("GSODR")
+#
+# Loading GSODR prints a notice that the GSOD data retired
+# in Aug 2025. That is EXPECTED - not an error. The
+# historical archive still downloads fine.
 
 # Load libraries -------------------------------------------
 library(tidyverse)   # dplyr + ggplot2
@@ -25,8 +29,16 @@ library(GSODR)       # NOAA weather station data
 # ---- 1: Download the Duluth record -----------------------
 # clean_names() makes every column lower case, so you never
 # have to think about NOAA's CAPITALS again.
-# This takes a minute - 78 years of daily records.
-duluth_df <- get_GSOD(years = 1948:2025,
+#
+# Duluth reported under a DIFFERENT station ID from 1965 to
+# 1972, so this station has no files for those 8 years.
+# setdiff() removes them from the year vector. Leave them in
+# and the WHOLE download fails - not just those years.
+#
+# This takes a minute - 69 years of daily records.
+gap_years <- 1965:1972
+
+duluth_df <- get_GSOD(years = setdiff(1948:2024, gap_years),
                       station = "727450-14913") %>%
   clean_names()
 
@@ -118,7 +130,8 @@ summary(dlh_year_model)
 # ANSWER:
 #
 # Q5b. Slope x 10 = ____ deg C per DECADE.
-#      Over 78 years that is roughly ____ degrees total.
+#      The record spans 77 years (1948-2024), so that is
+#      roughly ____ degrees in total.
 # ANSWER:
 #
 # Q5c. p-value = ____   Is the trend real, or luck?
@@ -254,6 +267,10 @@ nearest_stations(LAT = 46.84, LON = -92.19,
 # TODO: look up YOUR city's lat/long and run it again here.
 #       Pick a station whose `begin` year is 1970 or EARLIER
 #       - a trend needs decades.
+#
+# If your download fails, your station is missing a year in
+# the range you asked for. Request one year at a time to
+# find the hole, then setdiff() it out like we did above.
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -280,7 +297,7 @@ nearest_stations(LAT = 46.84, LON = -92.19,
 # station actually has (see `begin` and `end` above).
 
 # TODO: fill in your station id and year range
-# city_df <- get_GSOD(years = 1973:2025,
+# city_df <- get_GSOD(years = 1973:2024,
 #                     station = "YOUR-STATION-ID") %>%
 #   clean_names()
 

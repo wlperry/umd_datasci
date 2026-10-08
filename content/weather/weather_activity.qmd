@@ -28,7 +28,7 @@ execute:
 
 1.  Download real NOAA weather station data from inside R with `GSODR`
 2.  Clean the column names with `janitor::clean_names()`
-3.  Summarize ~28,000 daily records into one mean per year
+3.  Summarize ~25,000 daily records into one mean per year
 4.  Fit `lm(temp ~ year)` and read the warming rate off `summary()`
 5.  Split the year into seasons with `case_when()` and compare warming rates
 6.  Find the station for a city you choose and run it again
@@ -39,6 +39,7 @@ execute:
 - **Skeleton script:** [`12_weather_skeleton.R`](scripts/12_weather_skeleton.R) → save it as `scripts/12_weather.R`.
 - **No data file today** — you download the data from NOAA inside R.
 - **New package:** install `GSODR` once, from the Console: `install.packages("GSODR")`
+  - loading it prints a notice that the GSOD data **retired in Aug 2025**. That is expected — not an error. The historical archive still downloads fine.
 :::
 
 ::: callout-important
@@ -77,13 +78,18 @@ library(tidyverse)   # dplyr + ggplot2
 library(janitor)     # clean_names()
 library(GSODR)       # NOAA weather station data
 
-# Download daily Duluth weather, 1948-2025 -------------
-duluth_df <- get_GSOD(years = 1948:2025,
+# Download daily Duluth weather, 1948-2024 -------------
+# 1965-1972 are missing for this station, so skip them
+gap_years <- 1965:1972
+
+duluth_df <- get_GSOD(years = setdiff(1948:2024, gap_years),
                       station = "727450-14913") %>%
   clean_names()
 ```
 
-This takes a minute — it is pulling 78 years of daily records from NOAA.
+This takes a minute — it is pulling 69 years of daily records from NOAA.
+
+Duluth International reported under a **different station ID from 1965 to 1972**, so this station has no files for those 8 years. `setdiff()` takes them out of the year vector. If you leave them in, `get_GSOD()` does not quietly skip them — the **entire download fails** with `The file downloads have failed. Please retry.` Retrying will not help; the year vector is the problem.
 
 **▶ Run this:**
 
@@ -191,7 +197,7 @@ Everything you need is in three places:
 
 ✏️ **Q5a:** Write down the slope **with units**. Is it positive or negative — is Duluth warming or cooling?
 
-✏️ **Q5b:** Multiply the slope by 10. That is the warming rate in **°C per decade**. Write it down. Over the 78 years of record, roughly how many degrees is that in total?
+✏️ **Q5b:** Multiply the slope by 10. That is the warming rate in **°C per decade**. Write it down. The record spans 77 years (1948–2024) — roughly how many degrees is that in total?
 
 ✏️ **Q5c:** Write down the *p*-value. Is the trend real, or could it be year-to-year luck?
 
@@ -343,7 +349,7 @@ Then run `nearest_stations()` with your coordinates.
 
 ✏️ **Q10c:** Is your city in the northern or southern hemisphere? Will you need to swap the season labels?
 
-> ⚠️ **Watch out!** A trend needs decades. Pick a station whose `begin` year is **1970 or earlier**, and only ask `get_GSOD()` for years the station actually has — requesting years before `begin` makes the download fail.
+> ⚠️ **Watch out!** A trend needs decades. Pick a station whose `begin` year is **1970 or earlier**, and only ask `get_GSOD()` for years the station actually has. Asking for even **one** year the station is missing makes the *whole* download fail — not just that year. If it fails, request a single year at a time to find the hole, then `setdiff()` it out the way we did for Duluth's 1965–1972.
 
 **Save your script**, then run it top to bottom one last time before you hand it in.
 
@@ -359,7 +365,7 @@ Only **one line changes** from the in-class code — the station in `get_GSOD()`
 
 ``` r
 # The ONLY line that changes ---------------------------
-city_df <- get_GSOD(years = 1973:2025,
+city_df <- get_GSOD(years = 1973:2024,
                     station = "YOUR-STATION-ID") %>%
   clean_names()
 

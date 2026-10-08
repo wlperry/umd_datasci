@@ -80,7 +80,7 @@ options(width = 65)   # printed R output wraps at 65 too
 :::: {.column width="58%"}
 - **Download** real weather station data from inside R — no Excel, no copy-paste
 - **Clean** the names with `janitor` so the code stays easy to type
-- **Summarize** ~28,000 daily records into one mean per year
+- **Summarize** ~25,000 daily records into one mean per year
 - **Fit** `lm(temp ~ year)` and read the warming rate straight off `summary()`
 - **Split by season** — is winter warming faster than summer?
 - **Find a station for a city you choose** and run the whole thing again
@@ -131,12 +131,16 @@ options(width = 65)   # printed R output wraps at 65 too
 - The **`GSODR`** package pulls it straight into R
   - you give it a **station ID** and a range of **years**
   - it hands back a data frame
+  - loading it prints a notice that GSOD **retired in Aug 2025** — expected, not an error
+    - the historical archive is still there; it just stops at 2025
 
 **Our station to start:**
 
 - Duluth International Airport
 - Station ID **`727450-14913`**
-- Daily records since **1948**
+- Daily records from **1948** to **2024**
+  - but **1965–1972 are missing** — the airport reported under a different station ID then
+  - real archives have holes; you work around them
 :::
 
 ::: {.column width="42%"}
@@ -187,7 +191,7 @@ $$\widehat{\text{temp}} = a + b \times \text{year}$$
 :::::: columns
 ::: {.column width="58%"}
 - A station reports **one row per day**
-  - 78 years × 365 days ≈ **28,000 rows**
+  - 69 years × 365 days ≈ **25,000 rows**
 - Every one of those days carries the **seasonal cycle**
   - January is 30 °C colder than July, every single year
   - that swing is enormous compared with a few tenths of a degree of warming
@@ -195,8 +199,8 @@ $$\widehat{\text{temp}} = a + b \times \text{year}$$
 
 | Summary level | `group_by()` | Rows left |
 |---------------|--------------|-----------|
-| Daily (raw) | none | ~28,000 |
-| **Yearly** | `year` | **78** |
+| Daily (raw) | none | ~25,000 |
+| **Yearly** | `year` | **69** |
 
 : {tbl-colwidths="[40,30,30]"}
 :::
@@ -235,9 +239,11 @@ library(GSODR)     # NOAA weather station data
 ```
 
 ```{r get-duluth-12}
-# Download daily Duluth weather, 1948-2025 -------------
-# clean_names() makes every column lower case
-duluth_df <- get_GSOD(years = 1948:2025,
+# Download daily Duluth weather, 1948-2024 -------------
+# 1965-1972 are missing for this station, so skip them
+gap_years <- 1965:1972
+
+duluth_df <- get_GSOD(years = setdiff(1948:2024, gap_years),
                       station = "727450-14913") %>%
   clean_names()
 ```
@@ -245,8 +251,10 @@ duluth_df <- get_GSOD(years = 1948:2025,
 
 ::: {.column width="45%"}
 - `get_GSOD()` takes **years** and a **station** and goes and gets the data
-  - `1948:2025` is a vector — "every year in this range"
-  - it takes a minute; 78 years of daily data is a lot
+  - `1948:2024` is a vector — "every year in this range"
+  - `setdiff()` removes the 8 missing years from that vector
+    - ask for a year the station does not have and the **whole download fails**
+  - it takes a minute; 69 years of daily data is a lot
 - **`clean_names()` is the important habit here**
   - NOAA ships columns as `TEMP`, `YEARMODA`, `MXSPD`
   - R is case-sensitive, so `temp` would error
@@ -271,7 +279,7 @@ names(duluth_df)[13:18]
 :::
 
 ::: {.column width="45%"}
-- **~28,000 rows** — one per day
+- **~25,000 rows** — one per day
 - **47 columns** — temperature, dew point, wind, precipitation, flags…
 - The handful we care about:
   - `yearmoda` — the date
@@ -315,7 +323,7 @@ Trim early. Every later line is easier to read when the data frame has 5 columns
 ```{r raw-plot-12}
 #| fig-format: png
 #| fig-height: 2.5
-#| fig-alt: "Scatter plot of daily mean temperature in Duluth from 1948 to 2025. The points overlap into a dense band about 60 degrees tall, driven entirely by the seasonal cycle, with no visible long-term trend."
+#| fig-alt: "Scatter plot of daily mean temperature in Duluth from 1948 to 2024. The points overlap into a dense band about 60 degrees tall, driven entirely by the seasonal cycle, with no visible long-term trend."
 # Every single daily temperature -----------------------
 raw_temp_plot <- dlh_df %>%
   ggplot(aes(x = yearmoda, y = temp)) +
@@ -325,8 +333,8 @@ raw_temp_plot
 :::
 
 ::: {.column width="45%"}
-- A solid band about **60 °C tall** — that is summer vs winter, repeated 78 times
-- ~28,000 points on top of each other
+- A solid band about **60 °C tall** — that is summer vs winter, repeated 69 times
+- ~25,000 points on top of each other
 - Any warming trend is in there, but it is a **fraction of a degree** against a 60 °C swing
 
 **So you cannot see it.** That is not a plotting problem — it is a summarizing problem.
@@ -350,7 +358,7 @@ head(dlh_year_df, 3)
 ::: {.column width="45%"}
 - `group_by(year)` — one group per year
 - `summarize(temp = mean(temp))` — one number per group
-- **28,000 rows become 78**
+- **25,000 rows become 69**
 - `na.rm = TRUE` ignores days the station missed
 
 ::: callout-note
@@ -366,7 +374,7 @@ Reusing the name `temp` on the left means every line below keeps working — the
 ```{r yearly-plot-12}
 #| fig-format: png
 #| fig-height: 2.7
-#| fig-alt: "Scatter plot of Duluth annual mean temperature against year from 1948 to 2025 with a fitted straight regression line sloping clearly upward from about 3.5 to about 5.5 degrees Celsius."
+#| fig-alt: "Scatter plot of Duluth annual mean temperature against year from 1948 to 2024 with a fitted straight regression line sloping clearly upward from about 3.3 to about 5.3 degrees Celsius."
 # Yearly means with the regression line ----------------
 yearly_temp_plot <- dlh_year_df %>%
   ggplot(aes(x = year, y = temp)) +
@@ -378,7 +386,7 @@ yearly_temp_plot
 
 ::: {.column width="45%"}
 - **Now you can see it.** The line clearly rises
-- 78 points instead of 28,000 — and the story is *clearer*, not weaker
+- 69 points instead of 25,000 — and the story is *clearer*, not weaker
 - Still plenty of scatter: single years are weather, the line is climate
 - Exactly the same `geom_smooth(method = "lm")` as the Regression lecture
 
@@ -419,13 +427,13 @@ summary(dlh_year_model)
   - units: **°C per year**
   - positive → Duluth is **warming**
   - ×10 → about **0.27 °C per decade**
-  - over ~78 years → roughly **2 °C**
+  - over ~77 years → roughly **2 °C**
 - **`Pr(>|t|)` is tiny** (far below 0.001)
   - the warming is **real**, not year-to-year luck
 :::
 
 ::: {.column width="50%"}
-- **`Multiple R-squared` ≈ 0.34**
+- **`Multiple R-squared` ≈ 0.32**
   - year explains about **a third** of the variation in annual temperature
   - the other two thirds is **weather** — some years are just cold
   - a modest R² next to a rock-solid *p* is completely normal in climate data
@@ -543,7 +551,7 @@ head(season_year_df, 4)
   - keeps only the two extremes
 - `group_by(year, season)` — **two** grouping columns
   - one row per year **per season**
-  - 78 years × 2 seasons ≈ 156 rows
+  - 69 years × 2 seasons = 138 rows
 - `.groups = "drop"` tidies up afterwards
 
 This is the same two-column `group_by()` from T-Tests II.
@@ -597,9 +605,9 @@ summary(summer_model)
 - `filter()` first, then the **same `lm()` as before**
 - Two small models are far easier to read than one complicated one
 
-**Summer slope ≈ 0.021 °C/year**
+**Summer slope ≈ 0.022 °C/year**
 
-- ×10 → about **0.21 °C per decade**
+- ×10 → about **0.22 °C per decade**
 - *p* = 0.0002 → real
 
 Now do exactly the same thing for winter.
@@ -621,12 +629,12 @@ summary(winter_model)
 :::
 
 ::: {.column width="45%"}
-**Winter slope ≈ 0.034 °C/year**
+**Winter slope ≈ 0.037 °C/year**
 
-- ×10 → about **0.34 °C per decade**
-- *p* = 0.001 → real
+- ×10 → about **0.37 °C per decade**
+- *p* = 0.0006 → real
 
-**Winter is warming about 1.6× as fast as summer.**
+**Winter is warming about 1.7× as fast as summer.**
 
 - This is the expected pattern across the northern continents
 - Fewer extreme-cold nights, shorter ice seasons, earlier thaw
@@ -642,9 +650,9 @@ Both slopes come straight off the `year` row of each `summary()`:
 
 | Model | Slope (°C/yr) | ×10 (°C/decade) | *p* |
 |--------|--------|--------|--------|
-| Annual | 0.027 | 0.27 | \<0.001 |
-| Summer | 0.021 | 0.21 | \<0.001 |
-| Winter | 0.034 | 0.34 | 0.001 |
+| Annual | 0.027 | 0.27 | 0.0000003 |
+| Summer | 0.022 | 0.22 | 0.0002 |
+| Winter | 0.037 | 0.37 | 0.0006 |
 
 : {tbl-colwidths="[25,25,28,22]"}
 
@@ -655,7 +663,7 @@ Both slopes come straight off the `year` row of each `summary()`:
 ::: {.column width="48%"}
 **How to write it up:**
 
-> *Mean annual temperature at Duluth rose significantly from 1948 to 2025 (linear regression: slope = 0.027 °C yr⁻¹, equivalent to 0.27 °C per decade; F(1, 68) = 34.3, p \< 0.001, R² = 0.34). Winter warmed roughly 1.6 times faster than summer (0.34 vs 0.21 °C per decade).*
+> *Mean annual temperature at Duluth rose significantly from 1948 to 2024 (linear regression: slope = 0.027 °C yr⁻¹, equivalent to 0.27 °C per decade; F(1, 67) = 32.1, p \< 0.001, R² = 0.32). Winter warmed roughly 1.7 times faster than summer (0.37 vs 0.22 °C per decade).*
 
 - Give the slope **with units**
 - Convert to **per decade** so a reader can feel it
@@ -699,7 +707,7 @@ nearest_stations(LAT = 46.84, LON = -92.19,
 ::: {.column width="55%"}
 ``` r
 # The ONLY line that changes ---------------------------
-city_df <- get_GSOD(years = 1973:2025,
+city_df <- get_GSOD(years = 1973:2024,
                     station = "948660-99999") %>%
   clean_names()
 
