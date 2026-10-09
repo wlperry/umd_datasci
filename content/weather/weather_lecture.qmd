@@ -52,7 +52,7 @@ execute:
 ```{r setup}
 #| echo: false
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
-options(width = 65)   # printed R output wraps at 65 too
+options(width = 65) # printed R output wraps at 65 too
 ```
 
 # Where we left off (Lecture 11 — Regression)
@@ -60,7 +60,7 @@ options(width = 65)   # printed R output wraps at 65 too
 - **`lm(Y ~ X, data = df)`** fits a straight line through a cloud of points
 - **`summary(model)`** gives you:
   - the **slope** — how much Y changes per 1 unit of X
-  - its ***p*-value** — is that slope real, or could it be chance?
+  - its ***p*****-value** — is that slope real, or could it be chance?
   - **R²** — how tightly the points follow the line
 - **`geom_smooth(method = "lm")`** draws the line
 - **`plot(model)`** checks the residuals
@@ -80,7 +80,7 @@ options(width = 65)   # printed R output wraps at 65 too
 :::: {.column width="58%"}
 - **Download** real weather station data from inside R — no Excel, no copy-paste
 - **Clean** the names with `janitor` so the code stays easy to type
-- **Summarize** ~25,000 daily records into one mean per year
+- **Summarize** \~25,000 daily records into one mean per year
 - **Fit** `lm(temp ~ year)` and read the warming rate straight off `summary()`
 - **Split by season** — is winter warming faster than summer?
 - **Find a station for a city you choose** and run the whole thing again
@@ -89,7 +89,7 @@ options(width = 65)   # printed R output wraps at 65 too
 **🖐 Where this is going**
 
 - The analysis is the same four lines every time
-- Change the station, and it is a new city
+- Change the station ID, and it is a new city
 - That is your out-of-class extension
 :::
 ::::
@@ -98,7 +98,7 @@ options(width = 65)   # printed R output wraps at 65 too
 **Tools today:**
 
 - `GSODR` — NOAA station data (Duluth)
-- `nasapower` — data by lat/long (your city)
+- `nasapower` — data by lat/long (another source)
 - `janitor` — `clean_names()`
 - `tidyverse` — summarize and plot
 - `lm()` — the slope is the answer
@@ -138,8 +138,9 @@ options(width = 65)   # printed R output wraps at 65 too
 
 - Duluth International Airport
 - Station ID **`727450-14913`**
-- Daily records **1948–2024**
-  - **1965–1972 missing** — a different station ID back then
+- Daily records **1948–2025**
+  - **1965–1972 missing** — a hole in the GSOD archive due to a data issues
+  - so you get **70** years, not 78
 :::
 
 ::: {.column width="42%"}
@@ -190,7 +191,7 @@ $$\widehat{\text{temp}} = a + b \times \text{year}$$
 :::::: columns
 ::: {.column width="58%"}
 - A station reports **one row per day**
-  - 69 years × 365 days ≈ **25,000 rows**
+  - 70 years × 365 days ≈ **25,000 rows**
 - Every one of those days carries the **seasonal cycle**
   - January is 30 °C colder than July, every single year
   - that swing is enormous compared with a few tenths of a degree of warming
@@ -198,10 +199,8 @@ $$\widehat{\text{temp}} = a + b \times \text{year}$$
 
 | Summary level | `group_by()` | Rows left |
 |---------------|--------------|-----------|
-| Daily (raw) | none | ~25,000 |
-| **Yearly** | `year` | **69** |
-
-: {tbl-colwidths="[40,30,30]"}
+| Daily (raw)   | none         | \~25,000  |
+| **Yearly**    | `year`       | **69**    |
 :::
 
 :::: {.column width="42%"}
@@ -222,39 +221,36 @@ $$\widehat{\text{temp}} = a + b \times \text{year}$$
 
 **We will cover:** downloading the Duluth record, cleaning the names, summarizing to yearly means, and fitting `lm(temp ~ year)`.
 
-::: {.activitybanner}
+::: activitybanner
 **🛑 After this chunk: Activity Parts 1–5** (download, summarize, plot, fit, read the slope).
 :::
 
 # Load Libraries and Download the Data
 
-::::: columns
+:::::: columns
 ::: {.column width="55%"}
 ```{r load-libs-12}
 # Load packages at the top -----------------------------
-library(tidyverse)  # dplyr + ggplot2
-library(janitor)    # clean_names()
-library(GSODR)      # NOAA station data - Duluth
-library(nasapower)  # NASA data by lat/long - your city
+library(tidyverse) # dplyr + ggplot2
+library(janitor) # clean_names()
+library(GSODR) # NOAA station data - Duluth
+library(nasapower) # NASA data by lat/long - another source
 ```
 
 ```{r get-duluth-12}
-# Download daily Duluth weather, 1948-2024 -------------
-# 1965-1972 are missing for this station, so skip them
-gap_years <- 1965:1972
-
-duluth_df <- get_GSOD(years = setdiff(1948:2024, gap_years),
+# Download the whole Duluth record, 1948-2025 ----------
+duluth_df <- get_GSOD(years = 1948:2025,
                       station = "727450-14913") %>%
   clean_names()
 ```
 :::
 
-::: {.column width="45%"}
+:::: {.column width="45%"}
 - `get_GSOD()` takes **years** and a **station** and goes and gets the data
-  - `1948:2024` is a vector — "every year in this range"
-  - `setdiff()` removes the 8 missing years from that vector
-    - ask for a year the station does not have and the **whole download fails**
-  - it takes a minute; 69 years of daily data is a lot
+  - `get_GSOD()` takes a **year range** and a **station**
+  - `1948:2025` is a vector — "every year in this range"
+  - years NOAA doesn't have are **skipped**, so you get **70**, not 78
+  - it takes a minute; 70 years of daily data is a lot
 - **`clean_names()` is the important habit here**
   - NOAA ships columns as `TEMP`, `YEARMODA`, `MXSPD`
   - R is case-sensitive, so `temp` would error
@@ -263,12 +259,12 @@ duluth_df <- get_GSOD(years = setdiff(1948:2024, gap_years),
 ::: callout-tip
 Clean the names as you load the data, and you never think about capitals again.
 :::
-:::
-:::::
+::::
+::::::
 
 # What Did We Get?
 
-::::: columns
+:::::: columns
 ::: {.column width="55%"}
 ```{r peek-duluth-12}
 # How big is it, and what is in it? --------------------
@@ -278,8 +274,8 @@ names(duluth_df)[13:18]
 ```
 :::
 
-::: {.column width="45%"}
-- **~25,000 rows** — one per day
+:::: {.column width="45%"}
+- **\~25,000 rows** — one per day
 - **47 columns** — temperature, dew point, wind, precipitation, flags…
 - The handful we care about:
   - `yearmoda` — the date
@@ -289,12 +285,12 @@ names(duluth_df)[13:18]
 ::: callout-note
 `names(df)` is how you find out what a downloaded data set actually calls things. Always look before you type.
 :::
-:::
-:::::
+::::
+::::::
 
 # Trim to What We Need
 
-::::: columns
+:::::: columns
 ::: {.column width="55%"}
 ```{r select-cols-12}
 # Keep only the columns we actually use ----------------
@@ -305,7 +301,7 @@ head(dlh_df, 3)
 ```
 :::
 
-::: {.column width="45%"}
+:::: {.column width="45%"}
 - 47 columns is more than anyone needs to look at
 - `select()` keeps the five that answer our question
 - Same `select()` from the Wrangling lecture — just on a much wider real file
@@ -313,8 +309,8 @@ head(dlh_df, 3)
 ::: callout-tip
 Trim early. Every later line is easier to read when the data frame has 5 columns instead of 47.
 :::
-:::
-:::::
+::::
+::::::
 
 # Look at the Raw Daily Data
 
@@ -334,7 +330,7 @@ raw_temp_plot
 
 ::: {.column width="45%"}
 - A solid band about **60 °C tall** — that is summer vs winter, repeated 69 times
-- ~25,000 points on top of each other
+- \~25,000 points on top of each other
 - Any warming trend is in there, but it is a **fraction of a degree** against a 60 °C swing
 
 **So you cannot see it.** That is not a plotting problem — it is a summarizing problem.
@@ -343,7 +339,7 @@ raw_temp_plot
 
 # Summarize to One Mean per Year
 
-::::: columns
+:::::: columns
 ::: {.column width="55%"}
 ```{r yearly-summary-12}
 # Mean temperature per year ----------------------------
@@ -355,7 +351,7 @@ head(dlh_year_df, 3)
 ```
 :::
 
-::: {.column width="45%"}
+:::: {.column width="45%"}
 - `group_by(year)` — one group per year
 - `summarize(temp = mean(temp))` — one number per group
 - **25,000 rows become 69**
@@ -364,8 +360,8 @@ head(dlh_year_df, 3)
 ::: callout-note
 Reusing the name `temp` on the left means every line below keeps working — the same trick from T-Tests II.
 :::
-:::
-:::::
+::::
+::::::
 
 # Plot the Yearly Means
 
@@ -400,8 +396,7 @@ yearly_temp_plot
 ::: {.column width="55%"}
 ```{r yearly-lm-12}
 # Temperature predicted by year ------------------------
-dlh_year_model <- lm(temp ~ year,
-                     data = dlh_year_df)
+dlh_year_model <- lm(temp ~ year, data = dlh_year_df)
 
 summary(dlh_year_model)
 ```
@@ -412,14 +407,14 @@ summary(dlh_year_model)
 - Y on the left, X on the right — same as always
 - The three numbers you want are all in this output:
   - the **slope** (`year` → `Estimate`)
-  - its ***p*-value** (`year` → `Pr(>|t|)`)
+  - its ***p*****-value** (`year` → `Pr(>|t|)`)
   - **R²** (`Multiple R-squared`)
 :::
 :::::
 
 # Reading the Warming Rate
 
-::::: columns
+:::::: columns
 ::: {.column width="50%"}
 **Look at the `year` row of the Coefficients table.**
 
@@ -427,13 +422,13 @@ summary(dlh_year_model)
   - units: **°C per year**
   - positive → Duluth is **warming**
   - ×10 → about **0.27 °C per decade**
-  - over ~77 years → roughly **2 °C**
+  - over \~78 years → roughly **2 °C**
 - **`Pr(>|t|)` is tiny** (far below 0.001)
   - the warming is **real**, not year-to-year luck
 :::
 
-::: {.column width="50%"}
-- **`Multiple R-squared` ≈ 0.32**
+:::: {.column width="50%"}
+- **`Multiple R-squared` ≈ 0.34**
   - year explains about **a third** of the variation in annual temperature
   - the other two thirds is **weather** — some years are just cold
   - a modest R² next to a rock-solid *p* is completely normal in climate data
@@ -445,12 +440,12 @@ summary(dlh_year_model)
 - Year 0 is 2,000 years outside the data
 - The intercept is bookkeeping; the **slope** is the science
 :::
-:::
-:::::
+::::
+::::::
 
 # → ACTIVITY 12 Parts 1–5 now
 
-::: {.activitybanner}
+::: activitybanner
 **🛑 Do Activity Parts 1–5 now**
 
 - Download the Duluth record and `clean_names()` it
@@ -461,15 +456,15 @@ summary(dlh_year_model)
 
 # 🧩 Chunk 3 of 3 · Seasons, and Your Own City
 
-**We will cover:** labelling each day with a season, fitting a separate model for summer and winter, and finding the station ID for a city you choose.
+**We will cover:** labelling each day with a season, fitting a separate model for summer and winter, finding the station ID for a city you choose, and testing its warming rate against Duluth's.
 
-::: {.activitybanner}
+::: activitybanner
 **🛑 After this chunk: Activity Parts 6–10** (seasons, two models, your own city).
 :::
 
 # A Better Question — Which Season Is Warming?
 
-::::: columns
+:::::: columns
 ::: {.column width="55%"}
 - The annual mean says Duluth warmed about **0.27 °C per decade**
 - But an annual mean **hides which part of the year moved**
@@ -485,7 +480,7 @@ summary(dlh_year_model)
 3.  One `lm()` per season
 :::
 
-::: {.column width="45%"}
+:::: {.column width="45%"}
 ::: callout-important
 **⚠️ Seasons are not months — they are hemispheres.**
 
@@ -497,8 +492,8 @@ summary(dlh_year_model)
 - A station's `latitude` column tells you which hemisphere you are in
   - positive → northern
   - negative → southern
-:::
-:::::
+::::
+::::::
 
 # Label Each Day with a Season
 
@@ -508,11 +503,13 @@ summary(dlh_year_model)
 # Northern hemisphere seasons --------------------------
 # SOUTHERN hemisphere: swap summer and winter
 dlh_season_df <- dlh_df %>%
-  mutate(season = case_when(
-    month %in% c(6, 7, 8) ~ "summer",
-    month %in% c(12, 1, 2) ~ "winter",
-    TRUE ~ "shoulder"
-  ))
+  mutate(
+    season = case_when(
+      month %in% c(6, 7, 8) ~ "summer",
+      month %in% c(12, 1, 2) ~ "winter",
+      TRUE ~ "shoulder"
+    )
+  )
 
 # Did it work? -----------------------------------------
 dlh_season_df %>% count(season)
@@ -539,8 +536,7 @@ dlh_season_df %>% count(season)
 season_year_df <- dlh_season_df %>%
   filter(season != "shoulder") %>%
   group_by(year, season) %>%
-  summarize(temp = mean(temp, na.rm = TRUE),
-            .groups = "drop")
+  summarize(temp = mean(temp, na.rm = TRUE), .groups = "drop")
 
 head(season_year_df, 4)
 ```
@@ -551,7 +547,7 @@ head(season_year_df, 4)
   - keeps only the two extremes
 - `group_by(year, season)` — **two** grouping columns
   - one row per year **per season**
-  - 69 years × 2 seasons = 138 rows
+  - 70 years × 2 seasons = 140 rows
 - `.groups = "drop"` tidies up afterwards
 
 This is the same two-column `group_by()` from T-Tests II.
@@ -607,7 +603,7 @@ summary(summer_model)
 
 **Summer slope ≈ 0.022 °C/year**
 
-- ×10 → about **0.22 °C per decade**
+- ×10 → about **0.21 °C per decade**
 - *p* = 0.0002 → real
 
 Now do exactly the same thing for winter.
@@ -631,10 +627,10 @@ summary(winter_model)
 ::: {.column width="45%"}
 **Winter slope ≈ 0.037 °C/year**
 
-- ×10 → about **0.37 °C per decade**
-- *p* = 0.0006 → real
+- ×10 → about **0.34 °C per decade**
+- *p* = 0.001 → real
 
-**Winter is warming about 1.7× as fast as summer.**
+**Winter is warming about 1.6× as fast as summer.**
 
 - This is the expected pattern across the northern continents
 - Fewer extreme-cold nights, shorter ice seasons, earlier thaw
@@ -648,13 +644,11 @@ summary(winter_model)
 ::: {.column width="52%"}
 Both slopes come straight off the `year` row of each `summary()`:
 
-| Model | Slope (°C/yr) | ×10 (°C/decade) | *p* |
-|--------|--------|--------|--------|
-| Annual | 0.027 | 0.27 | 0.0000003 |
-| Summer | 0.022 | 0.22 | 0.0002 |
-| Winter | 0.037 | 0.37 | 0.0006 |
-
-: {tbl-colwidths="[25,25,28,22]"}
+| Model  | Slope (°C/yr) | ×10 (°C/decade) | *p*       |
+|--------|---------------|-----------------|-----------|
+| Annual | 0.027         | 0.27            | 0.0000003 |
+| Summer | 0.021         | 0.21            | 0.0002    |
+| Winter | 0.034         | 0.34            | 0.0012    |
 
 - Winter's slope has a **bigger standard error** too — winters are more variable than summers
 - A bigger *p* with a bigger slope is not a contradiction; it is noisier data
@@ -663,7 +657,7 @@ Both slopes come straight off the `year` row of each `summary()`:
 ::: {.column width="48%"}
 **How to write it up:**
 
-> *Mean annual temperature at Duluth rose significantly from 1948 to 2024 (linear regression: slope = 0.027 °C yr⁻¹, equivalent to 0.27 °C per decade; F(1, 67) = 32.1, p \< 0.001, R² = 0.32). Winter warmed roughly 1.7 times faster than summer (0.37 vs 0.22 °C per decade).*
+> *Mean annual temperature at Duluth rose significantly from 1948 to 2025 (linear regression: slope = 0.027 °C yr⁻¹, equivalent to 0.27 °C per decade; F(1, 68) = 34.3, p \< 0.001, R² = 0.34). Winter warmed roughly 1.6 times faster than summer (0.34 vs 0.21 °C per decade).*
 
 - Give the slope **with units**
 - Convert to **per decade** so a reader can feel it
@@ -671,46 +665,77 @@ Both slopes come straight off the `year` row of each `summary()`:
 :::
 :::::
 
+# What GSOD Has — Any Country
+
+:::::: columns
+::: {.column width="56%"}
+```{r stations-12}
+#| output-location: fragment
+# Every station, and the years it covers ---------------
+load(system.file("extdata", "isd_history.rda",
+                 package = "GSODR"))
+
+stations_df <- isd_history %>%
+  clean_names() %>%
+  filter(country_name == "ICELAND") %>%
+  mutate(begin_year = as.integer(str_sub(begin, 1, 4)),
+         end_year   = as.integer(str_sub(end, 1, 4))) %>%
+  filter(begin_year <= 1970, end_year >= 2025) %>%
+  select(stnid, name, begin_year, end_year)
+
+head(stations_df, 3)
+```
+:::
+
+:::: {.column width="44%"}
+- `GSODR` ships a table of **every station on Earth** with the years each covers
+- Put your country in the filter, **in CAPITALS**
+  - Australia **151** long-record stations, India 138, Brazil 49, Kenya 19
+- **`stnid`** goes into `get_GSOD()`; `begin_year` tells you where to start
+
+::: callout-note
+This is the route with the **longest records** — some reach back to the **1930s**. The cost is gaps, like Duluth's.
+:::
+::::
+::::::
+
 # Now Do It for Your City
 
 ::::: columns
 ::: {.column width="55%"}
-```{r power-12}
-# NASA POWER - lon and lat, no station -----------------
-city_df <- get_power(community = "ag",
-                     lonlat = c(-0.13, 51.51),
-                     pars = "T2M",
-                     dates = c("1981-01-01",
-                               "2024-12-31"),
-                     temporal_api = "daily") %>%
-  clean_names() %>%
-  rename(month = mm, temp = t2m)
+``` r
+# Your city, from the SAME package -------------
+city_df <- get_GSOD(years = 1966:2025,
+                    station = "959360-99999") %>%
+  clean_names()
 
 dim(city_df)
 ```
 :::
 
 ::: {.column width="45%"}
-- **Why switch packages?**
-  - `GSODR` needs a **station ID**
-  - most stations outside the US have **missing years**
-  - Melbourne's nearest long station is missing **48 of 59**
-- **`nasapower` needs only coordinates**
-  - anywhere on Earth, **1981 to now, no gaps**
-  - watch the order: **longitude first**
-- `rename()` makes the columns match Duluth's
+- Take two things out of `stations_df`
+  - the **`stnid`** — that is the station
+  - the **`begin_year`** — where the range starts
+- Same package, same call as Duluth
+  - back come the **same columns**
+  - `year`, `month`, `temp`, already lower case
+  - **nothing to rename**
+- Stations outside the US are **gappier**
+  - far fewer years than you asked for? pick another
+  - a capital or major airport is safest
 :::
 :::::
 
-# Swap Two Numbers, Get a New City
+# Swap the Station, Get a New City
 
-::::: columns
+:::::: columns
 ::: {.column width="55%"}
 ``` r
-# The ONLY numbers that change ------------------
-lonlat = c(-0.13, 51.51)
+# The ONLY thing that changes ------------------
+station = "959360-99999"
 
-# Everything below is identical -----------------
+# Everything below is identical ----------------
 city_year_df <- city_df %>%
   group_by(year) %>%
   summarize(temp = mean(temp, na.rm = TRUE))
@@ -720,13 +745,10 @@ summary(city_model)
 ```
 :::
 
-::: {.column width="45%"}
+:::: {.column width="45%"}
 - That is the whole point of today
-  - **two numbers** name the place
+  - **one station ID** names the place
   - the rest of the analysis never changes
-- Look up lat/long in any search engine
-  - **south** of the equator → negative latitude
-  - **west** of Greenwich → negative longitude
 
 ::: callout-important
 **Southern hemisphere?** Swap the season labels in `case_when()`:
@@ -734,19 +756,86 @@ summary(city_model)
 - `month %in% c(12, 1, 2)` → **summer**
 - `month %in% c(6, 7, 8)` → **winter**
 :::
-:::
-:::::
+::::
+::::::
 
-# Are the Two Slopes Different?
+# Another Source Worth Knowing — NASA POWER
 
 ::::: columns
 ::: {.column width="55%"}
-``` r
-# Stack the two yearly summaries ----------------
-both_df <- bind_rows(duluth_year_df,
-                     city_labeled_df)
+```{r power-12}
+# No station - just lon and lat ----------------
+power_df <- get_power(
+  community = "ag",
+  lonlat = c(-0.13, 51.51),
+  pars = "T2M",
+  dates = c("1981-01-01", "2024-12-31"),
+  temporal_api = "daily"
+) %>%
+  clean_names() %>%
+  rename(month = mm, temp = t2m)
 
-# One slope per station -------------------------
+dim(power_df)
+```
+:::
+
+::: {.column width="45%"}
+- **Not** what you use for the homework — but a station is not the only way
+- **`nasapower` needs only coordinates**
+  - anywhere on Earth, **1981 to now, no gaps**
+  - watch the order: **longitude first**
+  - a modelled **~50 km grid cell**, not a station
+- Columns come back `MM` and `T2M`
+  - `rename()` is needed here
+  - the small translation every new source needs
+- **GSOD for the homework** — the longer record is the point
+:::
+:::::
+
+# Stack the Two Places
+
+:::::: columns
+::: {.column width="55%"}
+``` r
+# The later of the two start years -------------
+start_year <- max(min(dlh_year_df$year),
+                  min(city_year_df$year))
+
+# Label each one BEFORE you stack --------------
+duluth_labeled_df <- dlh_year_df %>%
+  filter(year >= start_year) %>%
+  mutate(station = "duluth")
+
+city_labeled_df <- city_year_df %>%
+  filter(year >= start_year) %>%
+  mutate(station = "my_city")
+
+both_df <- bind_rows(duluth_labeled_df,
+                     city_labeled_df)
+```
+:::
+
+:::: {.column width="45%"}
+- Both places came from **`GSODR`**, so the columns already match
+- `bind_rows()` puts one frame **underneath** the other
+  - it matches columns by **name**
+  - same names in both → no renaming
+- The **`station`** column is the trick
+  - stacking alone loses **where each row came from**
+  - so you label **before** you stack
+
+::: callout-important
+Compare the years they **share** — or a difference in **place** is mixed up with a difference in **years**.
+:::
+::::
+::::::
+
+# Are the Two Slopes Different?
+
+:::::: columns
+::: {.column width="55%"}
+``` r
+# One slope per station ------------------------
 slope_model <- lm(temp ~ year * station,
                   data = both_df)
 summary(slope_model)
@@ -755,30 +844,30 @@ summary(slope_model)
 Your city and Duluth gave different numbers. **Different-looking slopes are not always different slopes.**
 :::
 
-::: {.column width="45%"}
+:::: {.column width="45%"}
 - `year * station` fits a **separate slope** for each place
 - Read the **`year:stationmy_city`** row
   - `Estimate` — how much your slope **differs**
   - `Pr(>|t|)` — is that difference real?
 - This is a **t-test on two slopes**, in the same two columns you have read all class
   - *p* \< 0.05 → rates **really differ**
-  - *p* > 0.05 → **cannot tell them apart**
+  - *p* \> 0.05 → **cannot tell them apart**
 
-::: callout-important
-Pull Duluth from the **same source and years** as your city — or you are comparing place *plus* source *plus* years.
+::: callout-note
+Your city's slope = `year` **+** `year:stationmy_city`
 :::
-:::
-:::::
+::::
+::::::
 
 # → ACTIVITY 12 Parts 6–10 now
 
-::: {.activitybanner}
+::: activitybanner
 **🛑 Do Activity Parts 6–10 now**
 
 - Label the seasons with `case_when()` and summarize by year and season
 - Plot both seasons, then fit a model for each
 - Write the warming rates in °C per decade
-- Get the coordinates for a city you choose — the analysis is your homework
+- Find the GSOD station for a city you choose — the analysis is your homework
 :::
 
 # What We Learned Today
@@ -789,14 +878,15 @@ Pull Duluth from the **same source and years** as your city — or you are compa
 
 - A regression **on time** makes the slope a **rate of change** — ×10 per decade
 - Raw daily data **hides** the trend; `group_by(year) %>% summarize()` is the fix
-- An **annual mean hides which season moved** — Duluth's winter warms ~1.7× faster
+- An **annual mean hides which season moved** — Duluth's winter warms \~1.6× faster
 - Seasons are set by **hemisphere**, not by month number
 - A modest **R² with a tiny *p*** is normal — real trend, weather scatter
 
 **The code:**
 
-- `get_GSOD()` — Duluth, by station ID
-- `get_power()` — anywhere, by coordinates
+- `get_GSOD()` — Duluth and your city, by station ID
+- `isd_history` — find a station in any country
+- `bind_rows()` — stack two places into one frame
 - `clean_names()` — lower-case names, once
 - `group_by()` + `summarize()` — the right level
 - `case_when()` — build the season

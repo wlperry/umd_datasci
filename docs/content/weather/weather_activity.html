@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-10-08">
+<meta name="dcterms.date" content="2026-10-09">
 <meta name="description" content="Hands-on companion to the Weather lecture: download NOAA station data with GSODR, clean the names, summarize to yearly means, and fit lm(temp ~ year) to get a warming rate — for Duluth, for each season, and for a city you pick.">
 
 <title>Activity 12 — Real Climate Data in R – UMD DAta Science Biology</title>
@@ -435,7 +435,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 8, 2026</p>
+      <p class="date">October 9, 2026</p>
     </div>
   </div>
   
@@ -517,17 +517,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># dplyr + ggplot2</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)     <span class="co"># clean_names()</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GSODR)       <span class="co"># NOAA station data - Duluth, in class</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(nasapower)   <span class="co"># NASA data by lat/long - your city, homework</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(nasapower)   <span class="co"># NASA data by lat/long - another source, example only</span></span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Download daily Duluth weather, 1948-2024 -------------</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 1965-1972 are missing for this station, so skip them</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>gap_years <span class="ot">&lt;-</span> <span class="dv">1965</span><span class="sc">:</span><span class="dv">1972</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>duluth_df <span class="ot">&lt;-</span> <span class="fu">get_GSOD</span>(<span class="at">years =</span> <span class="fu">setdiff</span>(<span class="dv">1948</span><span class="sc">:</span><span class="dv">2024</span>, gap_years),</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>                      <span class="at">station =</span> <span class="st">"727450-14913"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>This takes a minute — it is pulling 69 years of daily records from NOAA.</p>
-<p>Duluth International reported under a <strong>different station ID from 1965 to 1972</strong>, so this station has no files for those 8 years. <code>setdiff()</code> takes them out of the year vector. If you leave them in, <code>get_GSOD()</code> does not quietly skip them — the <strong>entire download fails</strong> with <code>The file downloads have failed. Please retry.</code> Retrying will not help; the year vector is the problem.</p>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Download the whole Duluth record, 1948-2025 ----------</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>duluth_df <span class="ot">&lt;-</span> <span class="fu">get_GSOD</span>(<span class="at">years =</span> <span class="dv">1948</span><span class="sc">:</span><span class="dv">2025</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>                      <span class="at">station =</span> <span class="st">"727450-14913"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This takes a minute — it is pulling 70 years of daily records from NOAA.</p>
+<p>You asked for 78 years but you will get <strong>70</strong>. NOAA has no files at all for <strong>1965–1972</strong> — a hole in the GSOD archive itself, not something about Duluth; most long-running US stations are missing exactly those eight years. <code>get_GSOD()</code> skips what isn’t there and carries on.</p>
+<p>That is worth seeing rather than hiding. The gap shows up as a hole in your plots, real archives have holes, and the regression doesn’t care — it just has 70 points instead of 78.</p>
 <p><strong>▶ Run this:</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># How big is it, and what is in it? --------------------</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(duluth_df)</span>
@@ -595,8 +593,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Everything you need is in three places:</p>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 35%">
-<col style="width: 65%">
+<col style="width: 37%">
+<col style="width: 62%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -620,7 +618,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <p>✏️ <strong>Q5a:</strong> Write down the slope <strong>with units</strong>. Is it positive or negative — is Duluth warming or cooling?</p>
-<p>✏️ <strong>Q5b:</strong> Multiply the slope by 10. That is the warming rate in <strong>°C per decade</strong>. Write it down. The record spans 77 years (1948–2024) — roughly how many degrees is that in total?</p>
+<p>✏️ <strong>Q5b:</strong> Multiply the slope by 10. That is the warming rate in <strong>°C per decade</strong>. Write it down. The record spans 78 years (1948–2025) — roughly how many degrees is that in total?</p>
 <p>✏️ <strong>Q5c:</strong> Write down the <em>p</em>-value. Is the trend real, or could it be year-to-year luck?</p>
 <p>✏️ <strong>Q5d:</strong> Write down R². Year explains what fraction of the variation in annual temperature? What is the <em>rest</em> of the variation?</p>
 <blockquote class="blockquote">
@@ -710,33 +708,115 @@ winter</code></pre>
 <p>✏️ <strong>Q9d:</strong> Write a results sentence for the annual trend. Give the slope with units, the per-decade rate, F with both df, <em>p</em>, and R².</p>
 <hr>
 </section>
-<section id="part-10-get-the-coordinates-for-your-city" class="level1">
-<h1>Part 10 · Get the coordinates for your city</h1>
-<p>Duluth is done. For homework you do the same analysis somewhere else — and for that we switch packages.</p>
-<p><code>GSODR</code> needs a <strong>station ID</strong>, and most stations outside the US have missing years. <code>nasapower</code> needs only a <strong>longitude and a latitude</strong>, and gives you 1981 to now for anywhere on Earth with no gaps.</p>
-<p>Look up your city’s lat/long in any search engine.</p>
-<ul>
-<li><strong>south</strong> of the equator → <strong>negative</strong> latitude</li>
-<li><strong>west</strong> of Greenwich → <strong>negative</strong> longitude</li>
-</ul>
-<p><strong>▶ Run this</strong>, with London filled in as an example:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># NASA POWER: lonlat = c(LONGITUDE, LATITUDE) -----------</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>city_df <span class="ot">&lt;-</span> <span class="fu">get_power</span>(<span class="at">community =</span> <span class="st">"ag"</span>,</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>                     <span class="at">lonlat =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.13</span>, <span class="fl">51.51</span>),</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>                     <span class="at">pars =</span> <span class="st">"T2M"</span>,</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">dates =</span> <span class="fu">c</span>(<span class="st">"1981-01-01"</span>, <span class="st">"2024-12-31"</span>),</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">temporal_api =</span> <span class="st">"daily"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">month =</span> mm, <span class="at">temp =</span> t2m)</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(city_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Watch the <strong>order</strong>: longitude first, then latitude. <code>rename()</code> makes the columns match the names you used all class, so every line after this is code you have already written.</p>
-<p>✏️ <strong>Your turn:</strong> replace those two numbers with your own city and run it again. Expect about 16,000 rows.</p>
-<p>✏️ <strong>Q10a:</strong> What city did you pick? Longitude and latitude?</p>
-<p>✏️ <strong>Q10b:</strong> How many rows, and how many years? How does that compare with Duluth’s 69?</p>
+<section id="part-10-pick-a-place-of-your-own" class="level1">
+<h1>Part 10 · Pick a place of your own</h1>
+<p>Duluth is done. For homework you run the same analysis somewhere else — with the <strong>same <code>GSODR</code> package</strong> you just used, so you get a long station record to compare against Duluth’s.</p>
+<section id="what-gsod-actually-has-any-country" class="level2">
+<h2 class="anchored" data-anchor-id="what-gsod-actually-has-any-country">What GSOD actually has — any country</h2>
+<p><code>GSODR</code> ships a table of <strong>every station in the world</strong> and the years each one covers. This is how you find out what exists before you ask for it.</p>
+<p><strong>▶ Run this</strong>, with Australia as the example:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Every GSOD station and the years it covers ------------</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">system.file</span>(<span class="st">"extdata"</span>, <span class="st">"isd_history.rda"</span>, <span class="at">package =</span> <span class="st">"GSODR"</span>))</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>stations_df <span class="ot">&lt;-</span> isd_history <span class="sc">%&gt;%</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(country_name <span class="sc">==</span> <span class="st">"AUSTRALIA"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">begin_year =</span> <span class="fu">as.integer</span>(<span class="fu">str_sub</span>(begin, <span class="dv">1</span>, <span class="dv">4</span>)),</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">end_year   =</span> <span class="fu">as.integer</span>(<span class="fu">str_sub</span>(end, <span class="dv">1</span>, <span class="dv">4</span>))) <span class="sc">%&gt;%</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(begin_year <span class="sc">&lt;=</span> <span class="dv">1970</span>,</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>         end_year <span class="sc">&gt;=</span> <span class="dv">2025</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(stnid, name, begin_year, end_year) <span class="sc">%&gt;%</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(begin_year)</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>stations_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Put <strong>your</strong> country in <code>filter(country_name == )</code>, in CAPITALS. Australia has 151 stations starting in 1970 or earlier and still reporting; Kenya has 19, India 138, Brazil 49.</p>
+<p>Scan the <code>name</code> column for a city you want, and note two things: its <strong><code>stnid</code></strong> and its <strong><code>begin_year</code></strong>.</p>
+</section>
+<section id="download-it" class="level2">
+<h2 class="anchored" data-anchor-id="download-it">Download it</h2>
+<p><code>stnid</code> goes into <code>get_GSOD()</code>, and <code>begin_year</code> tells you what to put at the start of the year range:</p>
+<p><strong>▶ Run this</strong>, with Melbourne filled in as an example:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Your city's whole station record ----------------------</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>city_df <span class="ot">&lt;-</span> <span class="fu">get_GSOD</span>(<span class="at">years =</span> <span class="dv">1966</span><span class="sc">:</span><span class="dv">2025</span>,</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">station =</span> <span class="st">"959360-99999"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(city_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Replace <strong>both</strong> the years and the <code>stnid</code> with your own before you go any further.</p>
+<blockquote class="blockquote">
+<p>💡 <strong>Key idea:</strong> <code>get_GSOD()</code> hands back the <strong>same columns</strong> as Duluth — <code>year</code>, <code>month</code>, <code>temp</code>, already lower-case from <code>clean_names()</code>. Nothing to rename. Every line of the homework is code you have already run, with <code>city_df</code> in place of <code>dlh_df</code>.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p>⚠️ <strong>Watch out!</strong> Stations outside the US are <strong>gappier</strong> than Duluth. If <code>get_GSOD()</code> returns far fewer years than you asked for, or errors, go back to <code>stations_df</code> and pick another station in the same country — a capital city or a major airport is usually the safest bet.</p>
+</blockquote>
+</section>
+<section id="another-source-worth-knowing-nasa-power" class="level2">
+<h2 class="anchored" data-anchor-id="another-source-worth-knowing-nasa-power">Another source worth knowing — NASA POWER</h2>
+<p>You are not using this for the homework, but it is worth seeing that a station is not the only way to get climate data.</p>
+<p><code>nasapower</code> needs no station at all — just a <strong>longitude and a latitude</strong> — and gives you 1981 to now for anywhere on Earth with <strong>no gaps</strong>.</p>
+<p><strong>▶ Run this once</strong>, with London filled in, just to see it work:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># NASA POWER: lonlat = c(LONGITUDE, LATITUDE) -----------</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>power_df <span class="ot">&lt;-</span> <span class="fu">get_power</span>(<span class="at">community =</span> <span class="st">"ag"</span>,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>                      <span class="at">lonlat =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.13</span>, <span class="fl">51.51</span>),</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>                      <span class="at">pars =</span> <span class="st">"T2M"</span>,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>                      <span class="at">dates =</span> <span class="fu">c</span>(<span class="st">"1981-01-01"</span>, <span class="st">"2024-12-31"</span>),</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>                      <span class="at">temporal_api =</span> <span class="st">"daily"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">month =</span> mm, <span class="at">temp =</span> t2m)</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(power_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Watch the <strong>order</strong>: longitude first, then latitude. The columns come back as <code>MM</code> and <code>T2M</code>, so <code>rename()</code> is needed here to make them match the names you used all class — that is the kind of small translation every new data source needs.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The two sources side by side
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>GSOD station</th>
+<th>NASA POWER</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>find it by</td>
+<td>country + <code>stnid</code></td>
+<td>longitude, latitude</td>
+</tr>
+<tr class="even">
+<td>record</td>
+<td>1930s–2025, <strong>with gaps</strong></td>
+<td>1981–now, no gaps</td>
+</tr>
+<tr class="odd">
+<td>what it is</td>
+<td>a real weather station</td>
+<td>a modelled grid cell (~50 km)</td>
+</tr>
+<tr class="even">
+<td>columns</td>
+<td><code>year</code>, <code>month</code>, <code>temp</code> already</td>
+<td>need <code>rename()</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Use GSOD for the homework.</strong> The longer record is the point — more years means a trend you can actually detect, and it lets you compare your city against the Duluth data you already have in <code>dlh_year_df</code>.</p>
+</div>
+</div>
+<p>✏️ <strong>Your turn:</strong> find a station and download it.</p>
+<p>✏️ <strong>Q10a:</strong> What country, <code>stnid</code>, and <code>begin_year</code> did you use? What city is it?</p>
+<p>✏️ <strong>Q10b:</strong> How many rows, and how many years? How does that compare with Duluth’s 70?</p>
 <p>✏️ <strong>Q10c:</strong> Northern or southern hemisphere? Will you need to swap the season labels?</p>
 <p><strong>Save your script.</strong> The rest is homework.</p>
 <hr>
+</section>
 </section>
 <section id="homework-out-of-class" class="level1">
 <h1>Homework — out of class</h1>
@@ -744,77 +824,88 @@ winter</code></pre>
 <section id="h1-your-citys-warming-rate" class="level2">
 <h2 class="anchored" data-anchor-id="h1-your-citys-warming-rate">H1 · Your city’s warming rate</h2>
 <p>Parts 4 and 5 again, on <code>city_df</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>city_year_df <span class="ot">&lt;-</span> city_df <span class="sc">%&gt;%</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">temp =</span> <span class="fu">mean</span>(temp, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>city_year_df <span class="sc">%&gt;%</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> temp)) <span class="sc">+</span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>city_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(temp <span class="sc">~</span> year, <span class="at">data =</span> city_year_df)</span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(city_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>city_year_df <span class="ot">&lt;-</span> city_df <span class="sc">%&gt;%</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">temp =</span> <span class="fu">mean</span>(temp, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>city_year_df <span class="sc">%&gt;%</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> temp)) <span class="sc">+</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>city_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(temp <span class="sc">~</span> year, <span class="at">data =</span> city_year_df)</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(city_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>H1:</strong> Slope in °C per year and per decade, <em>p</em>, and R². Is your city warming?</p>
 </section>
 <section id="h2-your-citys-seasons" class="level2">
 <h2 class="anchored" data-anchor-id="h2-your-citys-seasons">H2 · Your city’s seasons</h2>
 <p>Parts 6–9 again. The labels below are <strong>northern</strong> hemisphere — if your city is south of the equator, swap <code>summer</code> and <code>winter</code>.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>city_season_df <span class="ot">&lt;-</span> city_df <span class="sc">%&gt;%</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">season =</span> <span class="fu">case_when</span>(</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    month <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>) <span class="sc">~</span> <span class="st">"summer"</span>,</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    month <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">12</span>, <span class="dv">1</span>, <span class="dv">2</span>) <span class="sc">~</span> <span class="st">"winter"</span>,</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"shoulder"</span></span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(season <span class="sc">!=</span> <span class="st">"shoulder"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, season) <span class="sc">%&gt;%</span></span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">temp =</span> <span class="fu">mean</span>(temp, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>city_season_df <span class="sc">%&gt;%</span></span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> temp, <span class="at">color =</span> season)) <span class="sc">+</span></span>
-<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>city_season_df <span class="ot">&lt;-</span> city_df <span class="sc">%&gt;%</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">season =</span> <span class="fu">case_when</span>(</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    month <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>) <span class="sc">~</span> <span class="st">"summer"</span>,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    month <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">12</span>, <span class="dv">1</span>, <span class="dv">2</span>) <span class="sc">~</span> <span class="st">"winter"</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"shoulder"</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(season <span class="sc">!=</span> <span class="st">"shoulder"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, season) <span class="sc">%&gt;%</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">temp =</span> <span class="fu">mean</span>(temp, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>city_season_df <span class="sc">%&gt;%</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> temp, <span class="at">color =</span> season)) <span class="sc">+</span></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Then fit a model for each season, exactly as in Part 9.</p>
 <p>✏️ <strong>H2:</strong> Both seasonal rates in °C per decade. Does winter warm faster in your city too?</p>
 </section>
 <section id="h3-is-your-slope-different-from-duluths" class="level2">
 <h2 class="anchored" data-anchor-id="h3-is-your-slope-different-from-duluths">H3 · Is your slope different from Duluth’s?</h2>
 <p>Your city and Duluth almost certainly gave you different numbers. That does <strong>not</strong> mean the two rates are really different — the difference might be within the scatter. This tests it.</p>
-<p>First get Duluth from the <strong>same source and the same years</strong> as your city. Otherwise a difference in <em>place</em> is mixed up with a difference in source and years.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>duluth_power_df <span class="ot">&lt;-</span> <span class="fu">get_power</span>(<span class="at">community =</span> <span class="st">"ag"</span>,</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>                             <span class="at">lonlat =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">92.19</span>, <span class="fl">46.84</span>),</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>                             <span class="at">pars =</span> <span class="st">"T2M"</span>,</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>                             <span class="at">dates =</span> <span class="fu">c</span>(<span class="st">"1981-01-01"</span>, <span class="st">"2024-12-31"</span>),</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>                             <span class="at">temporal_api =</span> <span class="st">"daily"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">month =</span> mm, <span class="at">temp =</span> t2m)</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>duluth_year_df <span class="ot">&lt;-</span> duluth_power_df <span class="sc">%&gt;%</span></span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">temp =</span> <span class="fu">mean</span>(temp, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">station =</span> <span class="st">"duluth"</span>)</span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>city_labeled_df <span class="ot">&lt;-</span> city_year_df <span class="sc">%&gt;%</span></span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">station =</span> <span class="st">"my_city"</span>)</span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>both_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(duluth_year_df, city_labeled_df)</span>
-<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>both_df <span class="sc">%&gt;%</span></span>
-<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> temp, <span class="at">color =</span> station)) <span class="sc">+</span></span>
-<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span>
-<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>slope_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(temp <span class="sc">~</span> year <span class="sc">*</span> station, <span class="at">data =</span> both_df)</span>
-<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(slope_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Both records came from the <strong>same source</strong>, <code>GSODR</code>, so you already have everything you need: <code>dlh_year_df</code> from Part 4 and <code>city_year_df</code> from H1.</p>
+<section id="step-1-match-the-years" class="level3">
+<h3 class="anchored" data-anchor-id="step-1-match-the-years">Step 1 · Match the years</h3>
+<p>The two stations do not start in the same year. Compare them over the span they <strong>share</strong>, or a difference in <em>place</em> gets mixed up with a difference in <em>years</em>.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The later of the two start years ----------------------</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>start_year <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="fu">min</span>(dlh_year_df<span class="sc">$</span>year), <span class="fu">min</span>(city_year_df<span class="sc">$</span>year))</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>start_year</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="step-2-label-each-one-and-stack-them" class="level3">
+<h3 class="anchored" data-anchor-id="step-2-label-each-one-and-stack-them">Step 2 · Label each one and stack them</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># A column saying which place each row came from --------</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>duluth_labeled_df <span class="ot">&lt;-</span> dlh_year_df <span class="sc">%&gt;%</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">&gt;=</span> start_year) <span class="sc">%&gt;%</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">station =</span> <span class="st">"duluth"</span>)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>city_labeled_df <span class="ot">&lt;-</span> city_year_df <span class="sc">%&gt;%</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">&gt;=</span> start_year) <span class="sc">%&gt;%</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">station =</span> <span class="st">"my_city"</span>)</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Stack them into one data frame ------------------------</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>both_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(duluth_labeled_df, city_labeled_df)</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Did it work? -----------------------------------------</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>both_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(station)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>bind_rows()</code> puts one data frame <strong>underneath</strong> the other. It matches up columns by <strong>name</strong>, which is why both frames having <code>year</code>, <code>temp</code>, and <code>station</code> matters — and why using <code>GSODR</code> for both places saved you a <code>rename()</code>.</p>
+<p>The <code>station</code> column is the whole trick: stacking alone would throw away which rows came from where, so you add the label <strong>before</strong> you stack.</p>
+</section>
+<section id="step-3-plot-both-places" class="level3">
+<h3 class="anchored" data-anchor-id="step-3-plot-both-places">Step 3 · Plot both places</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># One line per place -----------------------------------</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>both_df <span class="sc">%&gt;%</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> temp, <span class="at">color =</span> station)) <span class="sc">+</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="step-4-test-the-two-slopes" class="level3">
+<h3 class="anchored" data-anchor-id="step-4-test-the-two-slopes">Step 4 · Test the two slopes</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># A separate slope for each station --------------------</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>slope_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(temp <span class="sc">~</span> year <span class="sc">*</span> station, <span class="at">data =</span> both_df)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(slope_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><code>temp ~ year * station</code> fits a <strong>separate slope for each station</strong>. In the Coefficients table:</p>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 40%">
-<col style="width: 60%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>Row</th>
@@ -838,17 +929,19 @@ winter</code></pre>
 <li><em>p</em> &gt; 0.05 → you <strong>cannot tell the two rates apart</strong>, even if the numbers look different</li>
 </ul>
 <blockquote class="blockquote">
-<p>⚠️ If that row is exactly 0 with <em>p</em> = 1, you are comparing Duluth with Duluth — go back to Part 10 and put in your own coordinates.</p>
+<p>⚠️ If that row is exactly 0 with <em>p</em> = 1, you are comparing Duluth with Duluth — go back to Part 10 and put in your own <code>stnid</code>.</p>
 </blockquote>
-<p>✏️ <strong>H3a:</strong> Both slopes in °C per decade, and the difference.</p>
-<p>✏️ <strong>H3b:</strong> The <em>p</em>-value on the <code>year:stationmy_city</code> row. Can you tell the two rates apart?</p>
-<p>✏️ <strong>H3c:</strong> One sentence reporting the comparison — both rates, the difference, and <em>p</em>.</p>
+<p>✏️ <strong>H3a:</strong> What is <code>start_year</code>, and how many years does the comparison use?</p>
+<p>✏️ <strong>H3b:</strong> Both slopes in °C per decade, and the difference.</p>
+<p>✏️ <strong>H3c:</strong> The <em>p</em>-value on the <code>year:stationmy_city</code> row. Can you tell the two rates apart?</p>
+<p>✏️ <strong>H3d:</strong> One sentence reporting the comparison — both rates, the difference, and <em>p</em>.</p>
+</section>
 </section>
 <section id="h4-explain-your-numbers" class="level2">
 <h2 class="anchored" data-anchor-id="h4-explain-your-numbers">H4 · Explain your numbers</h2>
 <p>✏️ <strong>H4a:</strong> Using your R² from H1, what fraction of the year-to-year variation does year alone explain? What is the rest?</p>
 <p>✏️ <strong>H4b:</strong> How can a low R² sit next to a <em>p</em>-value below 0.001? What is each telling you?</p>
-<p>✏️ <strong>H4c:</strong> Duluth used 69 years, your city 44. Why does a longer record make a trend easier to detect?</p>
+<p>✏️ <strong>H4c:</strong> Duluth used 70 years. How many did your city’s station give you, and how many did the H3 comparison use once you matched the years? Why does a longer record make a trend easier to detect?</p>
 <p>✏️ <strong>H4d:</strong> A significant trend at one place does not prove <em>why</em> it is warming. Name one thing that could inflate a single location’s trend with nothing to do with global climate — and how you would check for it.</p>
 <hr>
 <p><em>End of Activity 12. Next: the final project — the same pipeline, on data you choose.</em></p>
