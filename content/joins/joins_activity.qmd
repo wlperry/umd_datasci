@@ -1,17 +1,17 @@
 ---
-order: 21
-week: 11
-title: "Worksheet — Joins: Combining Two Fisher Monitoring Tables"
+order: 16
+week: 8
+title: "Activity 16 — Joins: Combining Two Fisher Monitoring Tables"
 subtitle: "Keys, mutating joins, and filtering joins on a fisher reintroduction dataset"
 author: "Bill Perry"
 date: today
 
 type: activity
 description: >
-  Hands-on companion to the joins lecture. Over two days students combine a
-  table of released fishers (fisher_individuals.csv) with a table of field
-  capture/collar events (fisher_captures.csv) using left/inner/full joins and
-  semi/anti joins, and build one analysis-ready table.
+  Hands-on companion to the joins lecture. Students combine a table of released
+  fishers (fisher_individuals.csv) with a table of field capture/collar events
+  (fisher_captures.csv) using left/inner/full joins and semi/anti joins, and
+  build one analysis-ready table. Students hand in the finished script.
 categories: [joins, tidyverse, wrangling, mustelids]
 
 format:
@@ -23,7 +23,7 @@ execute:
   message: false
 ---
 
-# Joins — Two Fisher Monitoring Tables into One
+# In-class Activity 16: Two Fisher Tables into One
 
 ::: callout-note
 ## About the data (constructed for teaching)
@@ -32,473 +32,242 @@ Fishers (*Pekania pennanti*) — a large forest weasel — have been reintroduce
 several US states from Canadian source populations. Monitoring produces exactly
 the shape of data joins are for: one table of the **animals released**, and a
 separate table of every **field capture / collar event**. The two files here are
-**simulated** — patterned on real programs (e.g. the Washington Cascades
-translocations), but the numbers are invented. Use them to learn joins.
+**simulated** — patterned on real programs such as the Washington Cascades
+translocations, but the numbers are invented. Use them to learn joins.
 :::
 
-### Before you start — the data
+### Today's Objectives
 
-Two files live in your `data/` folder:
+1.  Find the **key** that links two tables, and clean it before joining
+2.  Join with `left_join()` when the key columns are named differently
+3.  Compare `inner_join()`, `left_join()`, and `full_join()`
+4.  Use `semi_join()` and `anti_join()` to **filter** instead of add columns
+5.  Recognize the accidental-key join — the bug that runs without an error
+6.  Build one analysis-ready table
+7.  Join in a table of your own, for homework
 
-- **`fisher_individuals.csv`** — one row per released fisher: `sex`, `age_class`, `source`, `site` (release site), `release_date`. Keyed by `fisher_id`.
-- **`fisher_captures.csv`** — one row per field capture event: `capture_date`, `site` (capture site), `mass_kg`, `collar_id`. Keyed by `animal_id`.
+::: callout-tip
+## 📂 Files for today
 
-### Today's Objectives (a 2-day worksheet)
+- **Skeleton script:** [`16_joins_skeleton.R`](scripts/16_joins_skeleton.R) → save it as `scripts/16_joins.R`.
+- **Two data files**, both in your `data/` folder:
+  - [`fisher_individuals.csv`](data/fisher_individuals.csv) — one row per **released** fisher: `sex`, `age_class`, `source`, `site` (release site), `release_date`. Keyed by `fisher_id`.
+  - [`fisher_captures.csv`](data/fisher_captures.csv) — one row per **capture event**: `capture_date`, `site` (capture site), `mass_kg`, `collar_id`. Keyed by `animal_id`.
+:::
 
-1.  Find the key that links the two tables
-2.  Join them with `left_join()` when the key columns are named differently
-3.  Compare `inner`, `left`, and `full` joins
-4.  Use `semi_join()` / `anti_join()` to filter, and build one analysis-ready table
+::: callout-important
+## What you hand in
 
-> # **How to use this worksheet**
->
-> - Work through the parts in order. Type the code into a new R script and run it line by line.
-> - Blocks marked **▶ Run this** should be executed as written.
-> - Blocks marked **✏️ Your turn** ask you to write, modify, or interpret.
-> - **Day 1 = Parts 1–6. Day 2 = Parts 7–12.**
+- **You type most of the code.** The skeleton pre-fills the libraries and the two `read_csv()` lines. Every other chunk is a `# YOUR CODE:` blank — the code is on the lecture slides, so read it there and type it in.
+- You answer the **Q** boxes as `#` comments in the script.
+- The **homework** at the bottom of the skeleton brings in a small table of your own — that part you write yourself.
+- Hand in `scripts/16_joins.R`. Run it top to bottom (**Ctrl/Cmd + Shift + Enter**) first — it must run with no errors.
+:::
 
 ::: callout-note
-## 🔮 Predict before you run — and type, don't paste
+## 🔮 Predict before you run
 
-Before every join, write down the row count you expect. `fisher_captures.csv`
-has more rows than `fisher_individuals.csv` (a fisher can be recaptured many
-times), and a few capture events are of **unmarked** animals with no matching
-individual — a wrong guess almost always means you misjudged the matching, not
-that R did something strange.
+Before **every** join, write down the row count you expect. `fisher_captures.csv` has more rows than `fisher_individuals.csv` — a fisher can be recaptured many times — and a few capture events are of **unmarked** animals with no matching individual. A wrong guess almost always means you misjudged the matching, not that R did something strange.
+:::
+
+::: callout-tip
+## The `invisible(NULL)` lines in the skeleton
+
+Every chunk ends with `invisible(NULL)`. It is a **bumper**. Press Ctrl/Cmd + Enter on a chunk's last real line and your cursor jumps to the next line *that has code on it* — without the bumper, that is the next chunk, way down past the answer box. With it, the cursor stops right there and you keep your place. It does nothing and prints nothing.
 :::
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 1 — Two tables & a key *(Day 1, after lecture Chunk 1)*
+> ## 🧩 Chunk 1 — Two tables & a key *(after lecture Chunk 1)*
 >
 > Parts 1–3: load both tables and clean the key.
 
 # Part 1 · Load both tables
 
-**▶ Run this:**
+This chunk is **pre-filled** in the skeleton — the libraries and the two `read_csv()` calls. Run it, then write the two lines that report each table's shape.
 
-``` r
-library(tidyverse)
-
-individuals_df <- read_csv("data/fisher_individuals.csv")
-captures_df    <- read_csv("data/fisher_captures.csv")
-
-dim(individuals_df)
-dim(captures_df)
-```
-
-✏️ **Your turn:**
-
-```
-individuals_df: rows =        cols =
-captures_df:    rows =        cols =
-Which table has more rows? Why might that be?
-```
+✏️ **Q1:** Rows and columns in each table. Which has more rows, and why might that be?
 
 ------------------------------------------------------------------------
 
 # Part 2 · Find the key
 
-**▶ Run this:**
+Print the first few rows of the identifying columns of each table and compare them.
 
-``` r
-individuals_df %>% select(fisher_id, sex, site, release_date) %>%
-  head(3)
-captures_df    %>%
-  select(animal_id, capture_date, site, mass_kg) %>% head(3)
-```
+✏️ **Q2:** What column links the two tables, and what is it called in each? Are the names the same?
 
-✏️ **Your turn:** What column links the two tables, and what is it called in each?
-
-```
-Key in individuals_df:
-Key in captures_df:
-Are the names the same?  Y / N
-Both tables ALSO have a `site` column — do
-those mean the same thing? (look again)
-```
+✏️ **Q3:** Both tables **also** have a `site` column. Do the two mean the same thing? Look again at what each table is a row of.
 
 ------------------------------------------------------------------------
 
 # Part 3 · Clean the key
 
-**▶ Run this:**
+`count()` the capture key and look at the values. Then write the `mutate()` that fixes its case, and check how many distinct keys each table has.
 
-``` r
-# The capture key is lowercase ("f07");
-# the individual key is "F07" ----
-captures_df %>% count(animal_id) %>% head()
+✏️ **Q4:** `animal_id` is stored as `f07` but `fisher_id` is `F07`. Why must you fix the case **before** joining? What would a join have produced if you had not?
 
-captures_df <- captures_df %>%
-  mutate(animal_id = str_to_upper(animal_id))
+✏️ **Q5:** One value of `animal_id` is not a fisher ID at all. What is it, and what does it mean about those capture events?
 
-n_distinct(individuals_df$fisher_id)
-n_distinct(captures_df$animal_id)
-```
-
-✏️ **Your turn:** `animal_id` was stored as `f07` but `fisher_id` is `F07`. Why must we fix the case before joining? What is the `UNK` value, and why is it not a real fisher?
-
-```
-Your answer:
-```
+> 💡 **Key idea:** a key has to be **unique** in the lookup table and the **same type and format** in both. Almost every failed join is one of those two things.
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 2 — Your first join *(Day 1, after lecture Chunk 2)*
+> ## 🧩 Chunk 2 — Your first join *(after lecture Chunk 2)*
 >
 > Parts 4–6: the left join and the accidental-key trap.
 
 # Part 4 · The left join
 
-> 🔮 **Predict first:** You will keep **every capture event** and attach who the
-> animal is. How many rows will the result have, and roughly how many will have a
-> missing `sex` (because the animal was unmarked)?
+> 🔮 **Predict first:** you want to keep **every capture event** and attach who the animal is. How many rows will the result have, and roughly how many will have a missing `sex`?
 
-**▶ Run this:**
+Type the `left_join()` of `captures_df` onto `individuals_df`. The key columns have different names, so you need `by = c("animal_id" = "fisher_id")`. Call the result `captures_joined`, then report its row count and how many rows have an `NA` `sex`.
 
-``` r
-captures_joined <- captures_df %>%
-  left_join(individuals_df, by = c("animal_id" = "fisher_id"))
+✏️ **Q6:** Total rows, rows with an identified individual, and rows with `NA` individual info. Was your prediction close?
 
-nrow(captures_joined)                # rows kept
-sum(is.na(captures_joined$sex))      # capture events we
-                                     # can't attribute
-```
-
-✏️ **Your turn:**
-
-```
-Total rows after left_join:
-Rows WITH an identified individual:
-Rows with NA individual info:
-```
-
-> Note the join gives you two `site` columns — `site.x` (capture site) and
-> `site.y` (release site). Real fishers move; those are genuinely different.
+> Note that the join hands you **two** `site` columns — `site.x` (capture site) and `site.y` (release site). Real fishers move; those are genuinely different things, and dplyr is right to keep both.
 
 ------------------------------------------------------------------------
 
 # Part 5 · The accidental-key trap
 
-**▶ Run this (on purpose — watch the message):**
+Run the same join again, on purpose, with **no** `by =` argument at all. Watch the message dplyr prints.
 
-``` r
-# Forget by = ... and see what dplyr does ----------------
-captures_df %>% left_join(individuals_df)
-```
+✏️ **Q7:** What column did dplyr announce it was joining on? Why is joining on `site` completely wrong here — what does it match a capture event to?
 
-✏️ **Your turn:** What column did dplyr announce it was joining on? Why is joining on `site` completely wrong here? (What does it match — a capture event to the *right animal*, or to *every animal released at that site*?)
+✏️ **Q8:** Row count of this accidental join versus the correct join in Part 4. Where did all those extra rows come from?
 
-```
-dplyr joined on:
-Why that's wrong:
-Row count of this accidental join vs. Part 4's correct join:
-```
-
-> ⚠️ **Watch out!** When dplyr prints *"Joining with `by = join_by(site)`"* and you didn't choose that column, stop and name your real key.
+> ⚠️ **Watch out!** This is the join bug that bites hardest, because **nothing throws an error**. When dplyr prints *"Joining with `by = join_by(site)`"* and you did not choose that column, treat it as a bug report, not a status update.
 
 ------------------------------------------------------------------------
 
 # Part 6 · Name the key every time
 
-**▶ Run this (the correct join):**
+Redo the correct join and `select()` down to `capture_event`, `animal_id`, `capture_date`, `sex`, and `age_class` so you can read it.
 
-``` r
-captures_joined <- captures_df %>%
-  left_join(individuals_df, by = c("animal_id" = "fisher_id"))
-
-captures_joined %>%
-  select(capture_event, animal_id, capture_date, sex,
-         age_class) %>%
-  head()
-```
-
-✏️ **Your turn:** Look at the first rows — do any already show `NA` for `sex`? What does that mean about that capture event?
-
-```
-Your answer:
-```
-
-> 🛑 **End of Day 1.** You can join two tables on a named key. Day 2: the rest of the join family.
+✏️ **Q9:** Do any of the first rows already show `NA` for `sex`? What does that mean about that particular capture event?
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 3 — The join family *(Day 2, after lecture Chunk 3)*
+> ## 🧩 Chunk 3 — The join family *(after lecture Chunk 3)*
 >
-> Parts 7–9: inner vs left vs full.
+> Parts 7–9: inner vs. left vs. full.
 
 # Part 7 · Run all three joins
 
-> 🔮 **Predict first:** Rank these three by row count, most to fewest: `inner_join`, `left_join`, `full_join`.
+> 🔮 **Predict first:** rank these three by row count, most to fewest: `inner_join`, `left_join`, `full_join`.
 
-**▶ Run this:**
+Store the key once in a variable, then run all three joins and report the three row counts side by side with `c()`.
 
-``` r
-key <- c("animal_id" = "fisher_id")
-
-inner <- inner_join(captures_df, individuals_df, by = key)
-left  <- left_join (captures_df, individuals_df, by = key)
-full  <- full_join (captures_df, individuals_df, by = key)
-
-c(inner = nrow(inner), left = nrow(left), full = nrow(full))
-```
-
-✏️ **Your turn:**
-
-```
-inner rows =        left rows =        full rows =
-Was your ranking right?  Y / N
-Why does full have MORE rows than left?
-(which fishers does it add back?)
-```
+✏️ **Q10:** The three row counts. Was your ranking right? Why does `full` have **more** rows than `left` — which fishers does it add back?
 
 ------------------------------------------------------------------------
 
 # Part 8 · What each join dropped or kept
 
-✏️ **Your turn:** Fill in what each join does, in your own words.
+✏️ **Q11:** In your own words, what does each of `inner_join`, `left_join`, and `full_join` keep?
 
-```
-inner_join keeps:
-left_join keeps:
-full_join keeps:
-Which capture events does inner_join DROP that left_join keeps?
-Which fishers does full_join ADD that
-neither inner nor left includes?
-```
+✏️ **Q12:** Which capture events does `inner_join` **drop** that `left_join` keeps? Which fishers does `full_join` **add** that neither of the others includes?
 
 ------------------------------------------------------------------------
 
 # Part 9 · Pick the right join
 
-✏️ **Your turn:** You want a table of **every capture event** for a survival
-analysis, keeping the event even if the animal was unmarked. Which join do you
-use, and why?
+✏️ **Q13:** You want a table of **every capture event** for a survival analysis, keeping the event even when the animal was unmarked. Which join, and why?
 
-```
-Join:
-Why:
-```
-
-> 💡 **Key idea:** decide which rows you can't afford to drop first — an
-> unmarked-animal capture is still a capture, so an event-level analysis calls
-> for `left_join` (captures on the left), not `inner_join`.
+> 💡 **Key idea:** decide which rows you cannot afford to lose **first**, then pick the join. An unmarked-animal capture is still a capture, so an event-level analysis calls for `left_join` with captures on the left — not `inner_join`.
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 4 — Filtering joins & the payoff *(Day 2, after lecture Chunk 4)*
+> ## 🧩 Chunk 4 — Filtering joins & the payoff *(after lecture Chunk 4)*
 >
 > Parts 10–12: anti/semi joins and the analysis-ready table.
 
 # Part 10 · `anti_join()` — what's missing
 
-> 🔮 **Predict first (two ways):**
+> 🔮 **Predict first, two ways:**
 > (a) how many **capture events** have no matching individual?
 > (b) how many **released fishers** were never recaptured?
 
-**▶ Run this:**
+Write both `anti_join()`s. Note that (b) runs in the **other direction** — individuals on the left — and that the `by =` flips with it.
 
-``` r
-# (a) capture events of unmarked animals
-unmarked <- captures_df %>%
-  anti_join(individuals_df, by = c("animal_id" = "fisher_id"))
-nrow(unmarked)
+✏️ **Q14:** Capture events with no individual, and released fishers never recaptured. Were your predictions close?
 
-# (b) released fishers with no capture
-# record — anti_join the OTHER direction
-never_seen <- individuals_df %>%
-  anti_join(captures_df, by = c("fisher_id" = "animal_id"))
-never_seen %>% select(fisher_id, sex, site, release_date)
-```
-
-✏️ **Your turn:**
-
-```
-Capture events with no individual:
-Released fishers never recaptured:
-Did anti_join ADD any columns, or just filter rows?
-```
+✏️ **Q15:** Did `anti_join()` **add** any columns, or only filter rows? Check the column names against the table you started from.
 
 ------------------------------------------------------------------------
 
 # Part 11 · `semi_join()` — keep only matches
 
-**▶ Run this:**
+Write the `semi_join()` that keeps the released fishers that **were** recaptured at least once, and count them.
 
-``` r
-# Released fishers that WERE recaptured at least once
-recaptured <- individuals_df %>%
-  semi_join(captures_df, by = c("fisher_id" = "animal_id"))
+✏️ **Q16:** How is `semi_join()` different from `inner_join()`? Look at the **columns**, not just the rows.
 
-nrow(recaptured)
-```
-
-✏️ **Your turn:** How is `semi_join` different from `inner_join`? (Hint: look at the *columns*, not just the rows.)
-
-```
-Your answer:
-recaptured rows + never_seen rows should
-equal nrow(individuals_df) — does it?
-```
+✏️ **Q17:** `recaptured` rows + `never_seen` rows should equal `nrow(individuals_df)`. Does it? What would it mean if it did not?
 
 ------------------------------------------------------------------------
 
 # Part 12 · Build one analysis-ready table
 
-**▶ Run this:**
+Write the pipe that `inner_join()`s the two tables, `mutate()`s a `days_since_release` column from the two dates, and `select()`s down to the columns worth keeping — renaming `site.x` to `capture_site` and `site.y` to `release_site` as you go. Then `write_csv()` it to `data/fisher_joined.csv`.
 
-``` r
-# Every KNOWN-individual capture, with
-# the fisher's attributes attached ---
-fisher_analysis <- captures_df %>%
-  inner_join(individuals_df,
-             by = c("animal_id" = "fisher_id")) %>%
-  mutate(
-    days_since_release = as.numeric(
-      capture_date - release_date)) %>%
-  select(animal_id, sex, age_class, capture_date,
-         days_since_release,
-         capture_site = site.x, release_site = site.y, mass_kg)
+✏️ **Q18:** Rows in your analysis table. Why is it smaller than `captures_df`?
 
-fisher_analysis %>% head()
-```
+✏️ **Q19:** Why `inner_join()` here, when Part 9 argued for `left_join()`? What is different about **this** table's job?
 
-``` r
-# Save it for later ------------------------------------
-write_csv(fisher_analysis, "data/fisher_joined.csv")
-```
-
-✏️ **Your turn:** How many rows are in your analysis table? Why is it smaller
-than `captures_df`, and why did we use `inner_join` here instead of `left_join`?
-
-```
-Analysis-table rows:
-Difference from captures_df, and why:
-Why inner_join and not left_join for THIS table:
-```
+✏️ **Q20:** Check the range of `days_since_release`. Are all the values positive? What would a **negative** value have told you about the data?
 
 ------------------------------------------------------------------------
 
-# Part 13 · Review and checkpoint
+# Homework — summarize it, then join your own table
 
-You should now be able to:
+*Write it at the bottom of the same script. Hand it in with your answers as `#` comments.*
 
-- [ ] Explain what a key is and why it must be unique and same-type
-- [ ] Join two tables whose key columns are named differently (`by = c("a" = "b")`)
-- [ ] Use `left_join`, `inner_join`, `full_join` and predict their row counts
+## H1 · Summarize the joined table
+
+Using `fisher_analysis`, write **two** summaries of your own:
+
+1.  Mean `mass_kg` by `sex`, with the sample size for each.
+2.  Capture-event count by `release_site` and `sex`.
+
+✏️ **H-Q1:** Mean mass of females and of males, with both sample sizes. Fishers are strongly sexually dimorphic — does your answer match that?
+
+✏️ **H-Q2:** Which release-site-and-sex combination has the most capture events? Does that tell you about the **animals**, or about where the **crews** spent their time? Say which, and how you would tell the two apart.
+
+## H2 · Recaptures per fisher
+
+Count how many times each **identified** fisher was caught. Use a filtering join, not a mutating one — you do not need any new columns to do this.
+
+✏️ **H-Q3:** The most-recaptured fisher and its count, and how many fishers were caught exactly once.
+
+## H3 · Join in a table of your own
+
+Build a small table with `tibble()` — four or five rows is plenty — keyed by `fisher_id`, holding something you invent: a home-range size in km², a collar battery status, a field crew name. Then join it onto the fisher data on the key.
+
+✏️ **H-Q4:** Paste your `tibble()` and say which join you chose and why.
+
+✏️ **H-Q5:** Your table covers only some of the fishers. How many rows came back with `NA` from your new column, and is that a problem or exactly what you asked for?
+
+## H4 · The thing that surprised you
+
+✏️ **H-Q6:** Across everything in this activity, **what surprised you most** about joining these two tables? Be specific — name the numbers or the rows that surprised you, and say what you expected instead. "Nothing surprised me" is not an answer; if the joins went smoothly, the surprise might be how many capture events could not be tied to a known animal, or how many released fishers were never seen again.
+
+------------------------------------------------------------------------
+
+# Review and checkpoint
+
+At this point you should be able to:
+
+- [ ] Explain what a key is and why it must be unique and the same type and case
+- [ ] Join two tables whose key columns are named differently with `by = c("a" = "b")`
+- [ ] Use `left_join`, `inner_join`, and `full_join`, and predict their row counts
 - [ ] Use `anti_join` to find unmatched rows and `semi_join` to keep matched rows
-- [ ] Recognize the accidental-`site`-join bug
+- [ ] Say why a filtering join adds no columns and a mutating join does
+- [ ] Recognize the accidental-`site`-join bug from the message dplyr prints
 
-✏️ **Your turn — before you move on:** Run your whole script top to bottom. Does it run cleanly?
+Run your whole script top to bottom with **Ctrl/Cmd + Shift + Enter**. It must run clean.
 
-```
-Ran cleanly?  Y / N
-If not, what error appeared:
-```
+> 💡 **Key idea:** `fisher_individuals.csv` and `fisher_captures.csv` were each incomplete on their own — one had no field history, the other had no animal attributes. `fisher_joined.csv` is what you get once a shared key ties them together. Your own project data will almost certainly arrive the same way.
 
 ------------------------------------------------------------------------
 
-# Part 14 · Going further
-
-> Optional — do this if you finish early.
-
-### Capture effort by site and sex
-
-**▶ Try this:** join, then count capture events per release site per sex.
-
-``` r
-captures_df %>%
-  inner_join(individuals_df,
-             by = c("animal_id" = "fisher_id")) %>%
-  count(site.y, sex) %>%        # site.y = release site
-  arrange(desc(n))
-```
-
-✏️ **Your turn:** Which release site + sex combination has the most capture events? Does that tell you about the animals, or about where crews spent time?
-
-```
-Your answer:
-```
-
-### Recapture count per fisher
-
-**▶ Try this:** how many times was each *identified* fisher caught?
-
-``` r
-captures_df %>%
-  semi_join(individuals_df,
-            by = c("animal_id" = "fisher_id")) %>%
-  count(animal_id, sort = TRUE)
-```
-
-```
-Most-recaptured fisher and its count:
-Number of fishers caught exactly once:
-```
-
-------------------------------------------------------------------------
-
-# Extension — out of class (~30–40 min)
-
-*Turn this in with your worksheet. In class you joined two tables that were each
-incomplete on their own. Now you check **how complete** the join really is — and
-then tell me the **one thing that surprised you most**.*
-
-::: callout-important
-**Only E3 (the "most surprising thing") is graded.** E1 and E2 are the work that
-gets you there — do them, but the grade is on the write-up. E3 must be
-**handwritten**, photographed, and embedded (`![caption](my_photo.jpg)`).
-:::
-
-## E1 · How complete is the join? (not graded — do it anyway)
-
-``` r
-# Capture events with NO matching individual (unmarked animals)
-no_id <- anti_join(captures_df, individuals_df,
-                   by = c("animal_id" = "fisher_id"))
-# % of events we can attribute
-100 * (1 - nrow(no_id) / nrow(captures_df))
-
-# Released fishers never recaptured
-anti_join(individuals_df, captures_df,
-          by = c("fisher_id" = "animal_id"))
-
-# The wrong join: no `by =` at all
-# what does dplyr say it joined on?
-left_join(captures_df, individuals_df)
-```
-
-Note the attributable percentage, how many fishers were never seen again, and
-what column dplyr picks when you leave `by =` out (and why that answer is wrong).
-
-## E2 · One more join, your choice (not graded — do it anyway)
-
-Either: summarize the joined table a new way (mean `mass_kg` by sex; capture
-count by month), **or** bring in a small table of your own (even 3–4 rows you
-type with `tibble()` — e.g. a home-range size per `fisher_id`) and join it on
-the key. Keep it small.
-
-## E3 · The most surprising thing — ✍️ by hand (graded)
-
-In a short paragraph, hand-written: across everything you did in this worksheet
-and E1–E2, **what surprised you most about joining these two tables?** Be specific —
-name the numbers or the rows that surprised you, and say why you expected
-something different. "Nothing surprised me" is not an answer; if the joins went smoothly, the
-surprise might be how many capture events could not be tied to a known animal,
-or how many released fishers were never seen again.
-
-------------------------------------------------------------------------
-
-# Getting unstuck
-
-1.  **`by` must be supplied / weird match** → the key columns are named differently; use `by = c("animal_id" = "fisher_id")`.
-2.  **Zero matches** → check the key **case** (`str_to_upper()` on `animal_id`) — `"f07"` won't match `"F07"`.
-3.  **Way too many rows after a join** → you joined on `site` by accident; a shared key that isn't unique fans the rows out. Always name the real key.
-4.  **dplyr announced `by = join_by(site)`** → you forgot to name your key; both tables share a `site` column that means different things.
-5.  **Cheat sheet** — <https://dplyr.tidyverse.org/reference/mutate-joins.html>
-
-> 💡 **Key idea:** `fisher_individuals.csv` and `fisher_captures.csv` were each incomplete on their own — one had no field history, the other had no animal attributes. `fisher_joined.csv` is what you get once a shared key ties them together.
-
-------------------------------------------------------------------------
-
-*End of the Joins worksheet.*
+*End of Activity 16. Next: a week off, then one-way ANOVA.*

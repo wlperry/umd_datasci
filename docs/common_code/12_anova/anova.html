@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-10-09">
+<meta name="dcterms.date" content="2026-10-19">
 <meta name="description" content="A one way ANOVA in R with assumptions and post F tests">
 
 <title>Common Code 12 — One-Way ANOVA – UMD DAta Science Biology</title>
@@ -464,7 +464,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 9, 2026</p>
+      <p class="date">October 19, 2026</p>
     </div>
   </div>
   
@@ -622,10 +622,10 @@ window.Quarto = {
 </section>
 <section id="fit-the-model" class="level1">
 <h1>4 · Fit the model</h1>
-<p>Fit ANOVA as a <strong>linear model</strong> using <code>lm()</code>. This is the modern R approach — it is equivalent to <code>aov()</code> but gives you access to more diagnostic and post-hoc tools. Use <code>car::Anova()</code> with <code>type = "III"</code> for the ANOVA table.</p>
+<p>Fit ANOVA as a <strong>linear model</strong> using <code>lm()</code>. This is the modern R approach — it is equivalent to <code>aov()</code> but gives you access to more diagnostic and post-hoc tools. <code>car::Anova()</code> gives you the table; with no <code>type</code> argument it uses <strong>Type II</strong>, which is the default to reach for.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>penguin_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_anova)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(penguin_model, <span class="at">type =</span> <span class="st">"III"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(penguin_model)          <span class="co"># Type II — the default</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -636,10 +636,12 @@ window.Quarto = {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<pre><code>              Sum Sq  Df  F value     Pr(&gt;F)
-(Intercept) 2.03e+09   1  5765.0   &lt; 2e-16 ***
-species     1.46e+08   2   207.3   &lt; 2e-16 ***
-Residuals   5.96e+07 339</code></pre>
+<pre><code>Anova Table (Type II tests)
+
+Response: body_mass_g
+             Sum Sq  Df F value    Pr(&gt;F)
+species   146864214   2  343.63 &lt; 2.2e-16 ***
+Residuals  72443483 339</code></pre>
 <p>The row you care about is <strong>species</strong>:</p>
 <ul>
 <li><strong>Sum Sq</strong> — variation explained by species differences</li>
@@ -660,7 +662,31 @@ Residuals   5.96e+07 339</code></pre>
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Always use <code>car::Anova(model, type = "III")</code>, not base R <code>anova()</code>. The base function uses Type I sums of squares, which depend on the order you list variables. Type III tests each effect while accounting for all others — it is the standard for publications and the only safe choice for unbalanced designs.</p>
+<p>Prefer <code>car::Anova(model)</code> over base R <code>anova(model)</code>. The base function uses <strong>Type I</strong> sums of squares, which are sequential and therefore depend on the order you list variables. <code>Anova()</code> defaults to <strong>Type II</strong>, which does not, and is the safe choice for unbalanced designs.</p>
+<p>Lowercase <code>anova()</code> and capital <code>Anova()</code> are different functions from different packages. Without <code>library(car)</code> you get <code>could not find function "Anova"</code>.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Type III needs a different contrast coding
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>Anova(model, type = 3)</code> is only a genuine Type III test when the factors are coded against the <strong>grand mean</strong> (<code>contr.sum</code>) rather than against a baseline group (<code>contr.treatment</code>, which is R’s default). Ask for Type III on a treatment-coded model and <code>car</code> still prints a table — the <code>(Intercept)</code> row just is not testing what you think.</p>
+<p>The four-line pattern — <strong>set, refit, test, set back</strong>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">contrasts =</span> <span class="fu">c</span>(<span class="st">"contr.sum"</span>, <span class="st">"contr.poly"</span>))</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>penguin_model_sum <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_anova)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(penguin_model_sum, <span class="at">type =</span> <span class="dv">3</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">contrasts =</span> <span class="fu">c</span>(<span class="st">"contr.treatment"</span>, <span class="st">"contr.poly"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The <strong>refit</strong> is not optional: a model stores the coding it was fitted with, so changing the option and reusing the old model does nothing. And <code>options()</code> is global and sticky — set it back, or every model you fit later in the session is coded differently too.</p>
+<p>With a <strong>single</strong> factor, all of Type I, II and III give the same F for that factor; only the intercept row moves. The type genuinely changes the answer once you have two or more unbalanced predictors.</p>
 </div>
 </div>
 <hr>
@@ -714,41 +740,41 @@ Residuals   5.96e+07 339</code></pre>
 </div>
 <section id="residuals-vs-fitted-check-equal-variance" class="level3">
 <h3 class="anchored" data-anchor-id="residuals-vs-fitted-check-equal-variance">Residuals vs Fitted — check equal variance</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>diag_df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">fitted    =</span> <span class="fu">fitted</span>(penguin_model),</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">residuals =</span> <span class="fu">residuals</span>(penguin_model),</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">std_resid =</span> <span class="fu">rstandard</span>(penguin_model)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(diag_df, <span class="fu">aes</span>(<span class="at">x =</span> fitted, <span class="at">y =</span> residuals)) <span class="sc">+</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">color =</span> <span class="st">"darkblue"</span>) <span class="sc">+</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>,</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>             <span class="at">color =</span> <span class="st">"tomato"</span>) <span class="sc">+</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"loess"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">"grey40"</span>,</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Residuals vs Fitted"</span>,</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Fitted values"</span>, <span class="at">y =</span> <span class="st">"Residuals"</span>) <span class="sc">+</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_regular</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>diag_df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">fitted    =</span> <span class="fu">fitted</span>(penguin_model),</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">residuals =</span> <span class="fu">residuals</span>(penguin_model),</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">std_resid =</span> <span class="fu">rstandard</span>(penguin_model)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(diag_df, <span class="fu">aes</span>(<span class="at">x =</span> fitted, <span class="at">y =</span> residuals)) <span class="sc">+</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">color =</span> <span class="st">"darkblue"</span>) <span class="sc">+</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>             <span class="at">color =</span> <span class="st">"tomato"</span>) <span class="sc">+</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"loess"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">"grey40"</span>,</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Residuals vs Fitted"</span>,</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Fitted values"</span>, <span class="at">y =</span> <span class="st">"Residuals"</span>) <span class="sc">+</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_regular</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>What you want:</strong> Points scattered randomly above and below zero with similar spread at all fitted values. A fan shape (spread increases left to right) means unequal variance.</p>
 </section>
 <section id="q-q-plot-check-normality-of-residuals" class="level3">
 <h3 class="anchored" data-anchor-id="q-q-plot-check-normality-of-residuals">Q-Q plot — check normality of residuals</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(diag_df, <span class="fu">aes</span>(<span class="at">sample =</span> std_resid)) <span class="sc">+</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">color =</span> <span class="st">"darkblue"</span>) <span class="sc">+</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq_line</span>(<span class="at">color =</span> <span class="st">"tomato"</span>) <span class="sc">+</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Normal Q-Q plot of residuals"</span>,</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Theoretical quantiles"</span>,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Standardised residuals"</span>) <span class="sc">+</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_regular</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(diag_df, <span class="fu">aes</span>(<span class="at">sample =</span> std_resid)) <span class="sc">+</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">color =</span> <span class="st">"darkblue"</span>) <span class="sc">+</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_qq_line</span>(<span class="at">color =</span> <span class="st">"tomato"</span>) <span class="sc">+</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Normal Q-Q plot of residuals"</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Theoretical quantiles"</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Standardised residuals"</span>) <span class="sc">+</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_regular</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>What you want:</strong> Points close to the diagonal line. Curved patterns or strong deviations at the tails indicate non-normality.</p>
 </section>
 <section id="levenes-test-equal-variance" class="level3">
 <h3 class="anchored" data-anchor-id="levenes-test-equal-variance">Levene’s test — equal variance</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_anova)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_anova)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="shapiro-wilk-normality-of-residuals" class="level3">
 <h3 class="anchored" data-anchor-id="shapiro-wilk-normality-of-residuals">Shapiro-Wilk — normality of residuals</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(penguin_model))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(penguin_model))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -764,6 +790,10 @@ Residuals   5.96e+07 339</code></pre>
 <li><strong>Shapiro-Wilk p &gt; 0.05</strong> → residuals are consistent with normality → assumption met</li>
 <li>With n &gt; 30 per group, ANOVA is fairly robust to moderate non-normality (Central Limit Theorem). Trust the Q-Q plot over the Shapiro-Wilk p-value in larger samples.</li>
 </ul>
+<p><strong>On this data set:</strong> Shapiro-Wilk gives <em>W</em> = 0.992, <em>p</em> = 0.051 (fine — the Q-Q plot tracks the line), but Levene’s test gives F(2, 339) = 5.12, <strong>p = 0.006</strong> — the variances are <strong>not</strong> equal. The group sds are 459, 384 and 504 g with unbalanced n (151 / 68 / 123), which is exactly the case where that matters. The honest test to report is then Welch’s:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">oneway.test</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_anova, <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; F = 317.57, num df = 2.00, denom df = 189.48, p-value &lt; 2.2e-16</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The conclusion does not change here — but you only know that after you look.</p>
 </div>
 </div>
 <div class="callout callout-style-default callout-warning callout-titled">
@@ -791,13 +821,13 @@ Residuals   5.96e+07 339</code></pre>
 <p>The F-test told us at least one species differs. <code>emmeans</code> tells us <strong>which ones</strong>.</p>
 <section id="estimated-marginal-means" class="level3">
 <h3 class="anchored" data-anchor-id="estimated-marginal-means">Estimated marginal means</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>penguin_emm <span class="ot">&lt;-</span> <span class="fu">emmeans</span>(penguin_model, <span class="sc">~</span> species)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>penguin_emm</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>penguin_emm <span class="ot">&lt;-</span> <span class="fu">emmeans</span>(penguin_model, <span class="sc">~</span> species)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>penguin_emm</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>This gives the estimated mean body mass for each species with its SE and 95% CI.</p>
 </section>
 <section id="all-pairwise-contrasts-tukey-adjustment" class="level3">
 <h3 class="anchored" data-anchor-id="all-pairwise-contrasts-tukey-adjustment">All pairwise contrasts — Tukey adjustment</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pairs</span>(penguin_emm, <span class="at">adjust =</span> <span class="st">"tukey"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pairs</span>(penguin_emm, <span class="at">adjust =</span> <span class="st">"tukey"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -825,9 +855,9 @@ Chinstrap - Gentoo         -1343   74.0 339  -18.15   &lt;.0001</code></pre>
 <section id="compact-letter-display-a-b-c-labels" class="level3">
 <h3 class="anchored" data-anchor-id="compact-letter-display-a-b-c-labels">Compact letter display (a, b, c labels)</h3>
 <p>The compact letter display gives every group a letter. <strong>Groups sharing a letter are NOT significantly different.</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>penguin_cld <span class="ot">&lt;-</span> <span class="fu">cld</span>(penguin_emm, <span class="at">adjust =</span> <span class="st">"tukey"</span>,</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">Letters =</span> letters, <span class="at">sort =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>penguin_cld</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>penguin_cld <span class="ot">&lt;-</span> <span class="fu">cld</span>(penguin_emm, <span class="at">adjust =</span> <span class="st">"tukey"</span>,</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">Letters =</span> letters, <span class="at">sort =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>penguin_cld</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre><code> species    emmean   SE   df lower.CL upper.CL .group
  Adelie       3701   48  339     3607     3795  a
  Chinstrap    3733   73  339     3589     3877  a
@@ -878,12 +908,12 @@ Chinstrap - Gentoo         -1343   74.0 339  -18.15   &lt;.0001</code></pre>
 <section id="effect-size-eta-squared-η²" class="level1">
 <h1>7 · Effect size — eta-squared (η²)</h1>
 <p>A significant p-value tells you the effect is real. η² tells you how <strong>large</strong> it is.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>ss_between <span class="ot">&lt;-</span> <span class="fu">sum</span>((<span class="fu">fitted</span>(penguin_model) <span class="sc">-</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">mean</span>(penguins_anova<span class="sc">$</span>body_mass_g))<span class="sc">^</span><span class="dv">2</span>)</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>ss_total   <span class="ot">&lt;-</span> <span class="fu">sum</span>((penguins_anova<span class="sc">$</span>body_mass_g <span class="sc">-</span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">mean</span>(penguins_anova<span class="sc">$</span>body_mass_g))<span class="sc">^</span><span class="dv">2</span>)</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>eta_sq     <span class="ot">&lt;-</span> <span class="fu">round</span>(ss_between <span class="sc">/</span> ss_total, <span class="dv">3</span>)</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>eta_sq</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>ss_between <span class="ot">&lt;-</span> <span class="fu">sum</span>((<span class="fu">fitted</span>(penguin_model) <span class="sc">-</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">mean</span>(penguins_anova<span class="sc">$</span>body_mass_g))<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>ss_total   <span class="ot">&lt;-</span> <span class="fu">sum</span>((penguins_anova<span class="sc">$</span>body_mass_g <span class="sc">-</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">mean</span>(penguins_anova<span class="sc">$</span>body_mass_g))<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>eta_sq     <span class="ot">&lt;-</span> <span class="fu">round</span>(ss_between <span class="sc">/</span> ss_total, <span class="dv">3</span>)</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>eta_sq</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -924,31 +954,31 @@ Chinstrap - Gentoo         -1343   74.0 339  -18.15   &lt;.0001</code></pre>
 </section>
 <section id="publication-figure-with-significance-letters" class="level1">
 <h1>8 · Publication figure with significance letters</h1>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>cld_df <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(penguin_cld) <span class="sc">|&gt;</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">.group =</span> <span class="fu">str_trim</span>(.group))</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>pub_plot <span class="ot">&lt;-</span> penguins_anova <span class="sc">|&gt;</span></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>, <span class="at">width =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.12</span>, <span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">1.5</span>) <span class="sc">+</span></span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> cld_df,</span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>            <span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> <span class="dv">6400</span>, <span class="at">label =</span> .group),</span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">size =</span> <span class="dv">5</span>, <span class="at">fontface =</span> <span class="st">"bold"</span>, <span class="at">inherit.aes =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">x       =</span> <span class="st">"Species"</span>,</span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">y       =</span> <span class="st">"Body mass (g)"</span>,</span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">title   =</span> <span class="st">"Penguin body mass by species"</span>,</span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="fu">paste0</span>(</span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>      <span class="st">"One-way ANOVA; letters indicate Tukey HSD groups"</span>,</span>
-<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>      <span class="st">" (α = 0.05); η² = "</span>, eta_sq)</span>
-<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_regular</span>() <span class="sc">+</span></span>
-<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
-<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>pub_plot</span>
-<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figures/penguin_anova.pdf"</span>,</span>
-<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot =</span> pub_plot, <span class="at">width =</span> <span class="dv">6</span>, <span class="at">height =</span> <span class="dv">5</span>, <span class="at">units =</span> <span class="st">"in"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>cld_df <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(penguin_cld) <span class="sc">|&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">.group =</span> <span class="fu">str_trim</span>(.group))</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>pub_plot <span class="ot">&lt;-</span> penguins_anova <span class="sc">|&gt;</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>, <span class="at">width =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.12</span>, <span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">1.5</span>) <span class="sc">+</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> cld_df,</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>            <span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> <span class="dv">6400</span>, <span class="at">label =</span> .group),</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">size =</span> <span class="dv">5</span>, <span class="at">fontface =</span> <span class="st">"bold"</span>, <span class="at">inherit.aes =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">x       =</span> <span class="st">"Species"</span>,</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">y       =</span> <span class="st">"Body mass (g)"</span>,</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">title   =</span> <span class="st">"Penguin body mass by species"</span>,</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="fu">paste0</span>(</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>      <span class="st">"One-way ANOVA; letters indicate Tukey HSD groups"</span>,</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>      <span class="st">" (α = 0.05); η² = "</span>, eta_sq)</span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_regular</span>() <span class="sc">+</span></span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>pub_plot</span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figures/penguin_anova.pdf"</span>,</span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot =</span> pub_plot, <span class="at">width =</span> <span class="dv">6</span>, <span class="at">height =</span> <span class="dv">5</span>, <span class="at">units =</span> <span class="st">"in"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -960,7 +990,7 @@ Chinstrap - Gentoo         -1343   74.0 339  -18.15   &lt;.0001</code></pre>
 </div>
 <div class="callout-body-container callout-body">
 <blockquote class="blockquote">
-<p><strong>Figure 1.</strong> Body mass (g) of three penguin species from the Palmer Archipelago. Boxplots show median and IQR; points show individual penguins. Letters above boxes indicate Tukey HSD groupings — species sharing a letter are not significantly different (α = 0.05). Gentoo penguins were significantly heavier than both Adelie and Chinstrap penguins (one-way ANOVA: F₂,₃₃₉ = 207.3, p &lt; 0.001, η² = 0.55); Adelie and Chinstrap did not differ.</p>
+<p><strong>Figure 1.</strong> Body mass (g) of three penguin species from the Palmer Archipelago. Boxplots show median and IQR; points show individual penguins. Letters above boxes indicate Tukey HSD groupings — species sharing a letter are not significantly different (α = 0.05). Gentoo penguins were significantly heavier than both Adelie and Chinstrap penguins (one-way ANOVA: F₂,₃₃₉ = 343.6, p &lt; 0.001, η² = 0.67); Adelie and Chinstrap did not differ.</p>
 </blockquote>
 </div>
 </div>
@@ -979,7 +1009,7 @@ Chinstrap - Gentoo         -1343   74.0 339  -18.15   &lt;.0001</code></pre>
 </div>
 <div class="callout-body-container callout-body">
 <blockquote class="blockquote">
-<p>“Body mass differed significantly among penguin species (one-way ANOVA: F₂,₃₃₉ = 207.3, p &lt; 0.001, η² = 0.55). Gentoo penguins (mean ± SE: 5076 ± 55 g) were significantly heavier than both Adelie (3701 ± 48 g; Tukey HSD: p &lt; 0.001) and Chinstrap (3733 ± 73 g; p &lt; 0.001) penguins. Adelie and Chinstrap did not differ significantly from each other (p = 0.878).”</p>
+<p>“Body mass differed significantly among penguin species (one-way ANOVA: F₂,₃₃₉ = 343.6, p &lt; 0.001, η² = 0.67). Gentoo penguins (mean ± SE: 5076 ± 42 g) were significantly heavier than both Adelie (3701 ± 38 g; Tukey HSD: p &lt; 0.001) and Chinstrap (3733 ± 56 g; p &lt; 0.001) penguins. Adelie and Chinstrap did not differ significantly from each other (p = 0.881).”</p>
 </blockquote>
 <p>Structure: overall test → effect size → pairwise follow-up. Never lead with p — lead with the biology and use p as support.</p>
 </div>
@@ -1005,50 +1035,54 @@ Chinstrap - Gentoo         -1343   74.0 339  -18.15   &lt;.0001</code></pre>
 <td><code>lm(y ~ group, data = df)</code></td>
 </tr>
 <tr class="even">
-<td>ANOVA table (Type III)</td>
-<td><code>car::Anova(model, type = "III")</code></td>
+<td>ANOVA table (Type II, the default)</td>
+<td><code>car::Anova(model)</code></td>
 </tr>
 <tr class="odd">
-<td>Tidy output</td>
-<td><code>broom::tidy(Anova(model, type = "III"))</code></td>
+<td>ANOVA table (Type III)</td>
+<td><code>options(contrasts = c("contr.sum", "contr.poly"))</code>, <strong>refit</strong>, then <code>car::Anova(model, type = 3)</code>, then set contrasts back</td>
 </tr>
 <tr class="even">
+<td>Tidy output</td>
+<td><code>broom::tidy(Anova(model))</code></td>
+</tr>
+<tr class="odd">
 <td>Residuals vs Fitted</td>
 <td><code>tibble(fitted = fitted(m), resid = residuals(m))</code> → ggplot</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Q-Q plot of residuals</td>
 <td><code>ggplot(aes(sample = rstandard(m))) + stat_qq() + stat_qq_line()</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Levene’s test</td>
 <td><code>car::leveneTest(y ~ group, data = df)</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Shapiro-Wilk on residuals</td>
 <td><code>shapiro.test(residuals(model))</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Estimated marginal means</td>
 <td><code>emmeans(model, ~ group)</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Pairwise contrasts</td>
 <td><code>pairs(emm, adjust = "tukey")</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Compact letters (a,b,c)</td>
 <td><code>cld(emm, adjust = "tukey", Letters = letters)</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Eta-squared</td>
 <td><code>SS_between / SS_total</code> from <code>fitted()</code> and raw y</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Welch one-way (unequal var)</td>
 <td><code>oneway.test(y ~ group, data = df, var.equal = FALSE)</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Add letters to plot</td>
 <td><code>geom_text(data = cld_df, aes(x=group, y=ymax+offset, label=.group))</code></td>
 </tr>

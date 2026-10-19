@@ -1,7 +1,7 @@
 ---
-order: 17
-week: 9
-title: "Worksheet 15 — Wide, Long, and Wild: Pivoting Real Data"
+order: 15
+week: 8
+title: "Activity 15 — Wide, Long, and Wild: Pivoting Real Data"
 subtitle: "Reshaping Lake Superior ice cover with pivot_longer() and pivot_wider()"
 author: "Bill Perry"
 date: today
@@ -9,10 +9,10 @@ date: today
 type: activity
 description: >
   Hands-on companion to the pivoting lecture. Students read NOAA's messy wide
-  ice-cover file straight from the web, pivot it long, fix winters that cross the
-  new year, summarize, pivot back wider, rebuild NOAA's spaghetti plot, and model
-  the trend in maximum ice cover.
-categories: [r-basics, project-setup]
+  ice-cover file straight from the web, pivot it long, fix winters that cross
+  the new year, summarize, pivot back wider, rebuild NOAA's spaghetti plot, and
+  model the trend in maximum ice cover. Students hand in the finished script.
+categories: [tidyverse, wrangling, pivoting]
 
 format:
   html: default
@@ -23,35 +23,47 @@ execute:
   message: false
 ---
 
-# Wide, Long, and Wild — Pivoting Lake Superior Ice Data
-
-### Recap from Worksheet 14
-
-- Claimed a final-project topic and a candidate dataset
-- Sized it up in R with `read_csv()`, `glimpse()`, `dim()`, `head()`
-- Wrote H₀ and Hₐ for your own question
+# In-class Activity 15: Pivoting Lake Superior Ice Data
 
 ### Today's Objectives
 
 1.  Read a messy, **wide** government text file directly from the web
-2.  Understand why wide data breaks `ggplot()` and `group_by()`
+2.  Say why wide data breaks `ggplot()` and `group_by()`
 3.  Use `pivot_longer()` to make it tidy — and `pivot_wider()` to make a summary table
 4.  Fix a real-world date wrinkle: winters that cross the new year
 5.  Rebuild NOAA's "spaghetti plot" of every ice season
 6.  Use `slice_max()` to pull each winter's peak ice cover
 7.  Fit `lm()` to ask whether maximum ice cover is declining
+8.  Repeat the whole thing on a different Great Lake, for homework
 
-> # **How to use this worksheet**
->
-> - Work through the parts in order — each builds on the last. Type the code into a new R script in Positron and run it line by line.
-> - Blocks marked **▶ Run this** should be executed as written.
-> - Blocks marked **✏️ Your turn** ask you to write, modify, or interpret.
-> - The **Going further** section is optional.
+::: callout-tip
+## 📂 Files for today
+
+- **Skeleton script:** [`15_ice_pivot_skeleton.R`](scripts/15_ice_pivot_skeleton.R) → save it as `scripts/15_ice_pivot.R`.
+- **No data file.** The skeleton reads a live NOAA text file off the web — you need an internet connection.
+:::
+
+::: callout-important
+## What you hand in
+
+- **You type most of the code.** The skeleton pre-fills the libraries, the file read, and the long spaghetti-plot block. Every other chunk is a `# YOUR CODE:` blank — the code is on the lecture slides, so read it there and type it in.
+- You answer the **Q** boxes as `#` comments in the script.
+- The **homework** at the bottom of the skeleton runs the whole workflow on a different Great Lake — that part you write yourself.
+- Hand in `scripts/15_ice_pivot.R`. Run it top to bottom (**Ctrl/Cmd + Shift + Enter**) first — it must run with no errors.
+:::
 
 ::: callout-note
-## 🔮 Predict before you run — and type, don't paste
+## 🔮 Predict before you run
 
-Pivoting is easy to fake your way through by staring at `dim()` output after the fact. Don't. Before each **▶ Run this** block, cover the output and write down what shape you expect — how many rows, how many columns — then type the pivot call yourself rather than pasting it in. If your prediction is wrong, that gap is exactly where you'll find which argument (`cols`, `names_to`, `values_to`) you misunderstood; typing it out is also what makes you notice the small stuff, like the stray `X` glued onto every year, before R does.
+Pivoting is easy to fake your way through by staring at `dim()` after the fact. Before each pivot, write down the shape you expect — how many rows, how many columns — then run it. A wrong prediction points straight at the argument you misunderstood: `cols`, `names_to`, or `values_to`.
+:::
+
+Keep the plots plain today — no labels, colors, or themes except where the skeleton already has them. The goal is to **read** them.
+
+::: callout-tip
+## The `invisible(NULL)` lines in the skeleton
+
+Every chunk ends with `invisible(NULL)`. It is a **bumper**. Press Ctrl/Cmd + Enter on a chunk's last real line and your cursor jumps to the next line *that has code on it* — without the bumper, that is the next chunk, way down past the answer box. With it, the cursor stops right there and you keep your place. It does nothing and prints nothing.
 :::
 
 ------------------------------------------------------------------------
@@ -62,64 +74,32 @@ Pivoting is easy to fake your way through by staring at `dim()` output after the
 
 # Part 1 · Load libraries and read the raw file
 
-### Libraries
-
-**▶ Run this at the top of your script:**
+This chunk is **pre-filled** in the skeleton. Run it and read it.
 
 ``` r
-# Load packages at the top — always ----------------------
-library(tidyverse)   # data manipulation + ggplot2
-library(janitor)     # clean_names() and friends
-```
-
-### Read the messy text file straight from the web
-
-**▶ Run this (it reads a live NOAA text file — you need internet):**
-
-``` r
-# Read NOAA's plain-text ice file — NOT a tidy CSV -------
 url <- "https://www.glerl.noaa.gov/data/ice/glicd/daily/sup.txt"
 
-ice_raw <- read.table(
-  url,
-  header    = TRUE,
-  na.strings = c("-999", "-99.00", "NA")
-) %>%
+ice_raw <- read.table(url, header = TRUE,
+                      na.strings = c("-999", "-99.00", "NA")) %>%
   rownames_to_column(var = "date") %>%
   as_tibble()
-
-head(ice_raw)
 ```
 
-> ⚠️ **Watch out!** This file is space-separated, not comma-separated — that's why we use `read.table()` and not `read_csv()`. The day labels (`Nov-10`…) start life as **row names**, so `rownames_to_column()` turns them into a real `date` column.
+> ⚠️ **Watch out!** This file is space-separated, not comma-separated — that is why it needs `read.table()` and not `read_csv()`. The day labels (`Nov-10`…) arrive as **row names**, so `rownames_to_column()` turns them into a real `date` column.
+
+✏️ **Q1:** Why can't `read_csv()` open this file?
 
 ------------------------------------------------------------------------
 
 # Part 2 · Inspect the wide shape
 
-**▶ Run this:**
+Write the two lines that report the shape of `ice_raw` and its column names.
 
-``` r
-dim(ice_raw)      # rows x columns
-names(ice_raw)    # the column names
-```
+✏️ **Q2:** Rows, columns, what **one row** represents (a day? a year? a day-of-winter?), and what the **column names** look like.
 
-✏️ **Your turn:** Look at the output and fill in the blanks.
+✏️ **Q3:** R glued an `X` onto the front of every year column — `X1973`. Why? (What rule do R column names have to follow?)
 
-```         
-Rows:
-Columns:
-What does ONE row represent (a day? a year? a day-of-winter?):
-What do the COLUMN names look like (e.g. X1973, X1974 ...):
-```
-
-✏️ **Your turn:** R added an `X` to the front of every year column (`X1973`). Why? (Hint: what rule do R column names have to follow?)
-
-```         
-Your answer:
-```
-
-> 💡 **Key idea:** "Year" is hiding as 53 separate **column names**, not as values in a column. That is exactly why `ggplot(aes(x = year))` and `group_by(year)` are impossible right now — there is no `year` column to point at.
+✏️ **Q4:** "Year" is hiding as 50-odd **column names**, not as values in a column. Explain why that makes `ggplot(aes(x = year))` and `group_by(year)` impossible right now.
 
 ------------------------------------------------------------------------
 
@@ -129,39 +109,13 @@ Your answer:
 
 # Part 3 · Pivot from wide to long
 
-> 🔮 **Predict first:** `ice_raw` is about 190 rows × 53 columns. After `pivot_longer()` collapses every year column, how many **columns** will the result have, and roughly how many **rows**? Write your guess.
+> 🔮 **Predict first:** `ice_raw` is about 209 rows × 55 columns. After `pivot_longer()` collapses every year column, how many **columns** will the result have, and roughly how many **rows**? Write your guess in the skeleton before you run it.
 
-**▶ Run this:**
+Type the `pivot_longer()` call. It needs four arguments: `cols`, `names_to`, `names_prefix`, and `values_to`. Call the result `ice_long`, then `arrange()` it by `year` and `date` and check its shape.
 
-``` r
-# Collapse all year columns into year + ice_cover --------
-ice_long <- ice_raw %>%
-  pivot_longer(
-    cols         = -date,
-    names_to     = "year",
-    names_prefix = "X",
-    values_to    = "ice_cover"
-  )
+✏️ **Q5:** Rows and columns in `ice_long`. Was your prediction close?
 
-ice_long <- ice_long %>% arrange(year, date)
-
-head(ice_long)
-dim(ice_long)
-```
-
-✏️ **Your turn:** Check your prediction.
-
-```         
-Columns in ice_long:
-Rows in ice_long:
-Was your prediction close?  Y / N
-```
-
-✏️ **Your turn:** What does `names_prefix = "X"` do? What would the `year` column look like if you left it out?
-
-```         
-Your answer:
-```
+✏️ **Q6:** What does `names_prefix = "X"` do? What would the `year` column hold if you left it out?
 
 ------------------------------------------------------------------------
 
@@ -169,30 +123,13 @@ Your answer:
 
 An ice season runs Nov → May, but NOAA labels the whole season by the year it **ends** in. So `Nov-10` under column `1974` really happened in **November 1973**.
 
-**▶ Run this:**
+Type the `mutate()` that turns `year` numeric, builds `calendar_year` with `if_else()`, pastes a real `full_date` together with `ymd()`, and pulls `month` out of it — then drops rows with no ice value or no date. Call the result `ice_clean`.
 
-``` r
-# Assign Nov/Dec to the PREVIOUS calendar year -----------
-ice_clean <- ice_long %>%
-  mutate(
-    year          = as.numeric(year),
-    calendar_year = if_else(str_starts(date, "Nov|Dec"),
-                            year - 1, year),
-    full_date     = ymd(paste(calendar_year, date, sep = "-")),
-    month         = month(full_date, label = TRUE)
-  ) %>%
-  drop_na(ice_cover, full_date)
+> ⚠️ **Watch out!** `ymd()` will warn that about 40 dates "failed to parse". Those are `Feb-29` in years that had no February 29th. `drop_na()` removes them, which is exactly right — there was no such day.
 
-head(ice_clean)
-```
+✏️ **Q7:** Explain the `if_else()` in plain English: the condition tested, what happens when it is TRUE, and why we subtract 1 from `year`.
 
-✏️ **Your turn:** Explain the `if_else()` in plain English. What condition is being tested, and what happens when it is TRUE?
-
-```         
-Condition tested:
-What happens when TRUE:
-Why we subtract 1 from year:
-```
+✏️ **Q8:** How many rows did `drop_na()` remove, and what were they? (Compare `nrow(ice_long)` and `nrow(ice_clean)`.)
 
 ------------------------------------------------------------------------
 
@@ -202,51 +139,23 @@ Why we subtract 1 from year:
 
 # Part 5 · Summarize now that we're long
 
-**▶ Run this:**
+Type the `group_by()` / `summarize()` that gives the mean ice cover for every year–month combination. Call it `monthly_avg`.
 
-``` r
-# Mean ice cover per year-month --------------------------
-monthly_avg <- ice_clean %>%
-  group_by(year, month) %>%
-  summarize(mean_ice = mean(ice_cover, na.rm = TRUE),
-            .groups = "drop")
-
-head(monthly_avg)
-```
-
-✏️ **Your turn:** This is the **same** `group_by() %>% summarize()` pattern from Worksheet 12. Why was it impossible to run on `ice_raw` (the wide data)?
-
-```         
-Your answer:
-```
+✏️ **Q9:** This is the **same** pattern you used in Summary Statistics. Why was it impossible to run on `ice_raw`?
 
 ------------------------------------------------------------------------
 
 # Part 6 · Pivot back to a wide summary table
 
-> 🔮 **Predict first:** `pivot_wider()` will make one row per year and one column per month. Roughly how many **rows** (years) and **columns** (months + 1) will the table have? Predict before running.
+> 🔮 **Predict first:** `pivot_wider()` will make one row per year and one column per month. Roughly how many **rows** (years) and **columns** (months + 1)?
 
-**▶ Run this:**
+Type the `pivot_wider()` call on `ice_clean`, using `id_cols`, `names_from`, `values_from`, and `values_fn = mean`. `arrange()` the result by `year` so it reads top to bottom, and print it.
 
-``` r
-# Turn long data into a year-by-month summary table ------
-ice_pivot_table <- ice_clean %>%
-  pivot_wider(
-    id_cols    = year,
-    names_from = month,
-    values_from = ice_cover,
-    values_fn  = mean
-  )
+✏️ **Q10:** Rows and columns in the table. Was your prediction close? Why is a `Jun` column there, and why is it almost all `NA`?
 
-print(ice_pivot_table)
-```
+✏️ **Q11:** When would you reach for `pivot_longer()`, and when for `pivot_wider()`? One sentence each.
 
-✏️ **Your turn:** Compare `pivot_longer()` and `pivot_wider()`. When would you reach for each?
-
-```         
-Use pivot_longer() when:
-Use pivot_wider() when:
-```
+> 💡 **Key idea:** long is for **computing** — `group_by`, `summarize`, `ggplot`. Wide is for **reading** — a table a human scans. The same data, shaped for two different audiences.
 
 ------------------------------------------------------------------------
 
@@ -256,127 +165,97 @@ Use pivot_wider() when:
 
 # Part 7 · Rebuild NOAA's spaghetti plot
 
-**▶ Run this (put every winter on one shared axis):**
+This is the long one, so it is **pre-filled** in the skeleton — the prep that maps every winter onto one shared axis, and the three-layer plot. Run it and read it; you are not expected to type this from scratch.
 
-``` r
-# Relabel every date onto one fake shared year -----------
-ice_plot_data <- ice_clean %>%
-  mutate(
-    plot_date = if_else(
-      month(full_date) >= 10,
-      update(full_date, year = 1999),
-      update(full_date, year = 2000)
-    )
-  )
+The one idea worth carrying away: to overlay 50 winters on one axis, every date is forced onto a single **fake** year — October onward becomes 1999, January onward becomes 2000 — so the x-axis runs November → June once.
 
-historical_avg <- ice_plot_data %>%
-  group_by(plot_date) %>%
-  summarize(avg_ice = mean(ice_cover, na.rm = TRUE))
+✏️ **Q12:** Open NOAA's published plot at <https://www.glerl.noaa.gov/data/ice/spaghetti/sup_ice_compare.png>. Did you recreate it? What does the **red** line represent, and why is the current year drawn **last**?
 
-current_yr        <- max(ice_plot_data$year)
-past_years        <- ice_plot_data %>% filter(year < current_yr)
-current_year_data <- ice_plot_data %>% filter(year == current_yr)
-```
-
-**▶ Run this (three layers, three `geom_line()` calls):**
-
-``` r
-ice_spaghetti_plot <- ggplot() +
-  geom_line(data = past_years,
-            aes(x = plot_date, y = ice_cover, group = year),
-            color = "blue", alpha = 0.15) +
-  geom_line(data = historical_avg,
-            aes(x = plot_date, y = avg_ice),
-            color = "red", linewidth = 1.2) +
-  geom_line(data = current_year_data,
-            aes(x = plot_date, y = ice_cover),
-            color = "black", linewidth = 1.2) +
-  scale_x_date(date_labels = "%b", date_breaks = "1 month") +
-  labs(title = "Lake Superior Average Ice Cover",
-       subtitle = paste("Comparing", current_yr,
-                        "to Historical Data"),
-       x = NULL, y = "Ice Cover (%)") +
-  theme_bw()
-
-ice_spaghetti_plot
-```
-
-✏️ **Your turn:** Open NOAA's published plot (`glerl.noaa.gov/data/ice/spaghetti/sup_ice_compare.png`). Did you recreate it? What does the red line represent, and why is the current year drawn last?
-
-```         
-Red line represents:
-Why current year is drawn last:
-```
+✏️ **Q13:** The thin blue lines use `group = year` inside `aes()`. Take it out in your head — what would the plot look like instead, and why?
 
 ------------------------------------------------------------------------
 
 # Part 8 · Pull each winter's peak ice with `slice_max()`
 
-> 🔮 **Predict first:** `slice_max()` keeps the single highest ice-cover day per year. How many **rows** will the result have? (Hint: how many winters are in the data?)
+> 🔮 **Predict first:** `slice_max()` keeps the single highest ice-cover day per year. How many **rows** will the result have?
 
-**▶ Run this:**
+Type the `group_by()` + `slice_max()` that keeps one row — the highest `ice_cover` — per year. Call it `max_ice_per_year`, and use `with_ties = FALSE` so you get exactly one row even when two days tie.
 
-``` r
-# Keep the single highest ice-cover day each year --------
-max_ice_per_year <- ice_clean %>%
-  group_by(year) %>%
-  slice_max(order_by = ice_cover, n = 1, with_ties = FALSE)
+✏️ **Q14:** Rows in the result. Find the lowest-peak and the highest-peak winters: which year, and what value, for each?
 
-head(max_ice_per_year %>% arrange(ice_cover))
-```
-
-✏️ **Your turn:** Find the lowest-peak and highest-peak winters in the output.
-
-```         
-Lowest maximum ice cover:  year = _____   value = _____ %
-Highest maximum ice cover: year = _____   value = _____ %
-What does the DATE of each year's peak
-tell you (early vs. late season)?
-```
+✏️ **Q15:** Look at the **date** of each year's peak. Early season or late? Does that date move around much from winter to winter?
 
 ------------------------------------------------------------------------
 
 # Part 9 · Model the trend in maximum ice cover
 
-> 🔮 **Predict first:** Over 50+ years, is the maximum ice cover **declining, flat, or rising**? And given the huge year-to-year scatter, will the slope be significant (p \< 0.05)? Commit to both before running.
+> 🔮 **Predict first:** over 50+ years, is maximum ice cover **declining, flat, or rising**? And given the huge year-to-year scatter, will the slope come out significant at α = 0.05? Commit to both before you run it.
 
-**▶ Run this:**
+Type the `lm()` of `ice_cover` on `year` using `max_ice_per_year`, and `summary()` it. Then plot the yearly peaks with `geom_point()` and a `geom_smooth(method = "lm")` trend line.
 
-``` r
-# Fit a regression: max ice cover by year ----------------
-max_ice_model <- lm(ice_cover ~ year, data = max_ice_per_year)
-summary(max_ice_model)
+✏️ **Q16:** Report the model honestly.
+
 ```
-
-``` r
-# Plot the yearly peaks with a trend line ----------------
-max_ice_plot <- max_ice_per_year %>%
-  ggplot(aes(x = year, y = ice_cover)) +
-  geom_point(size = 2) +
-  geom_smooth(method = "lm", color = "firebrick") +
-  labs(title = "Lake Superior — Annual Maximum Ice Cover",
-       x = "Year", y = "Max Ice Cover (%)") +
-  theme_minimal()
-
-max_ice_plot
-```
-
-✏️ **Your turn:** Report the model and interpret it honestly.
-
-```         
-Slope (per year) =
+Slope (% per year) =
 p-value for the slope =
 R-squared =
-Is the trend significant at α = 0.05?  Y / N
-In one sentence — is Lake Superior's peak ice cover
-changing? How confident are you, given the scatter?
+Significant at alpha = 0.05?  Y / N
 ```
 
-> 💡 **Key idea:** Real environmental data is *messy and honest*. A non-significant or weak trend, with lots of scatter driven by ENSO and the polar vortex, is a perfectly valid — and realistic — finding.
+✏️ **Q17:** The slope is significant, and the R² is small — around 0.13. Say what each of those two numbers is telling you, and why they are **not** in conflict.
+
+✏️ **Q18:** One sentence: is Lake Superior's peak ice cover changing, and how confident are you given the scatter?
+
+> 💡 **Key idea:** a real trend can be significant and still explain only a slice of the variation. Ice cover swings wildly with ENSO and the polar vortex; the long-term decline is a quiet signal underneath a very loud year-to-year noise. Reporting the slope without the R² — or the R² without the slope — tells only half of that.
 
 ------------------------------------------------------------------------
 
-# Part 10 · Review and checkpoint
+# Homework — a different Great Lake
+
+*Write it at the bottom of the same script. Hand it in with your answers as `#` comments.*
+
+You built the workflow on Lake Superior. Now run it end to end on a **different** Great Lake and compare. Pick one:
+
+| File | Lake |
+|------|------|
+| `mic.txt` | Michigan |
+| `hur.txt` | Huron |
+| `eri.txt` | Erie |
+| `ont.txt` | Ontario |
+
+: {tbl-colwidths="[30,70]"}
+
+Change only the file name in the URL, then repeat Parts 1 → 9. Nothing is filled in — copy your own chunks from above and change what needs changing; for most chunks that is nothing at all.
+
+## H1 · Read and pivot your lake
+
+Read it, `pivot_longer()` it, fix the Nov/Dec dates, and drop the `NA`s.
+
+✏️ **H-Q1:** Your lake, and the rows × columns before and after the pivot.
+
+## H2 · Peak ice per winter
+
+`slice_max()` one row per year.
+
+✏️ **H-Q2:** How many winters are in your lake's record? Lowest-peak and highest-peak winters?
+
+## H3 · Model the trend
+
+`lm(ice_cover ~ year)`, then plot it with a trend line.
+
+✏️ **H-Q3:** Slope (% per year), *p*, R². Significant at α = 0.05?
+
+✏️ **H-Q4:** Lake Superior's slope is about **−0.7 %/year**. Is your lake losing maximum ice **faster or slower** than Superior, and by how much?
+
+## H4 · Explain it
+
+✏️ **H-Q5:** Using **your** slope, say in plain language how fast your lake is losing (or gaining) maximum ice cover, and how much total change that adds up to across the whole record.
+
+✏️ **H-Q6:** Your lake is shallower than Superior. Shallower water holds less heat. Explain in your own words how depth could make one lake's ice respond faster to the same warming than another's — and say whether your slope actually came out the way that reasoning predicts.
+
+------------------------------------------------------------------------
+
+# Review and checkpoint
 
 At this point you should be able to:
 
@@ -385,73 +264,13 @@ At this point you should be able to:
 - [ ] Use `pivot_longer()` to make wide data tidy
 - [ ] Use `pivot_wider()` to build a human-readable summary table
 - [ ] Fix seasonal dates that cross the new year with `if_else()` + `ymd()`
-- [ ] Rebuild a multi-layer spaghetti plot with three `geom_line()` calls
 - [ ] Use `slice_max()` to pull one extreme row per group
-- [ ] Fit and interpret `lm(ice_cover ~ year)` on the yearly maximum
+- [ ] Fit and interpret `lm(ice_cover ~ year)`, reading the slope **and** the R²
 
-✏️ **Your turn — before you move on:** Run your whole script top to bottom with **Ctrl/Cmd + Shift + Enter**. Does it run cleanly?
+Run your whole script top to bottom with **Ctrl/Cmd + Shift + Enter**. It must run clean.
 
-```         
-Ran cleanly?  Y / N
-If not, what error appeared:
-```
+> 💡 **Key idea:** whatever data you pick for your final project, there is a good chance it arrives shaped like `sup.txt` — one column per year, site, or category. Recognizing that shape, and knowing `pivot_longer()` fixes it, will save you real time.
 
 ------------------------------------------------------------------------
 
-# Extension — out of class (~30–40 min)
-
-*Turn this in with your worksheet. You built the ice workflow on Lake Superior.
-Now run it end-to-end on a **different Great Lake you pick** and compare trends.*
-
-::: callout-important
-**E2 and E3 must be handwritten** on paper, photographed, and embedded
-(`![caption](my_photo.jpg)`). Typed answers get **at most half credit, even if
-correct** — I want your own prediction and reasoning about *your own* lake.
-:::
-
-## E1 · Pivot a different lake (4 pts)
-
-Pick one: `mic.txt` (Michigan), `hur.txt` (Huron), `eri.txt` (Erie), `ont.txt`
-(Ontario). Change only the file name in the URL and re-run the whole workflow:
-
-``` r
-# <- your lake
-url <- "https://www.glerl.noaa.gov/data/ice/glicd/daily/eri.txt"
-# read + rownames_to_column -> pivot_longer (names_prefix = "X")
-#   -> year to numeric, drop NA ice -> slice_max() per year
-#   -> lm(ice_cover ~ year), report the slope (% per year)
-```
-
-Report your lake, its yearly-maximum ice **slope**, and — Lake Superior's is
-about **−0.3 %/year** — whether your lake is losing ice **faster or slower**.
-
-## E2 · Predict, then check — ✍️ by hand (3 pts)
-
-**Before running E1:** your lake is shallower or deeper than Superior. Predict,
-by hand, whether its max-ice trend will be steeper or shallower than Superior's,
-and why. Then run E1 and write whether you were right.
-
-## E3 · Explain it — ✍️ by hand, with YOUR slope (3 pts)
-
-1.  Using your actual slope, explain in plain language how fast your lake is
-    losing (or gaining) maximum ice cover, and over the record how much total
-    change that adds up to.
-2.  Shallower lakes hold less heat. Explain, in your own words, how depth could
-    make one lake's ice respond faster to the same warming than another's.
-
-------------------------------------------------------------------------
-
-# Getting unstuck
-
-1.  **`read.table()` fails / times out:** it reads a live web file — check your internet. If it keeps failing, ask for the saved backup file.
-2.  **`Column 'date' doesn't exist`:** you skipped `rownames_to_column()` — the day labels are still row names, not a column.
-3.  **`year` column full of `X1973`:** you left out `names_prefix = "X"` in `pivot_longer()`.
-4.  **`ymd()` returns `NA`:** check the pieces you pasted together — the date text must be something `ymd()` can parse (year first).
-5.  **Spaghetti plot lines look wrong:** confirm `group = year` is inside `aes()` for the past-years layer, or every point connects into one giant scribble.
-6.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/>
-
-> 💡 **Key idea:** Whatever data you pick for your final project, there's a good chance it'll arrive shaped like `sup.txt` — one column per year, site, or category. Recognizing that shape, and knowing `pivot_longer()` fixes it, will save you real time.
-
-------------------------------------------------------------------------
-
-*End of the Lake Superior Ice worksheet.*
+*End of Activity 15. Next: two tables that each have half the story, and the joins that put them back together.*

@@ -7,10 +7,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-10-09">
-<meta name="description" content="Hands-on companion to One-Way ANOVA II. Students run the ANOVA with aov() and car::Anova(), use emmeans to find which penguin species differ, and write a complete results sentence.">
+<meta name="dcterms.date" content="2026-10-19">
+<meta name="description" content="Hands-on companion to One-Way ANOVA II. Set 2 — check the penguin model’s assumptions with plot(model), Shapiro-Wilk on the residuals and Levene’s test, and switch to Welch’s ANOVA when equal variance fails. Set 3 — find which species differ with emmeans, read a compact letter display, plot the means and write the full results paragraph. Hand-in: the same three sets on one sex only.">
 
-<title>Worksheet — One-Way ANOVA II: Running, Reporting &amp; Extension – UMD DAta Science Biology</title>
+<title>Activity 20 — One-Way ANOVA II: Assumptions, then Follow-Up Tests – UMD DAta Science Biology</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -119,8 +119,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <link rel="stylesheet" href="../../css/main.css">
-<meta property="og:title" content="Worksheet — One-Way ANOVA II: Running, Reporting &amp; Extension – UMD DAta Science Biology">
-<meta property="og:description" content="Hands-on companion to One-Way ANOVA II. Students run the ANOVA with aov() and car::Anova(), use emmeans to find which penguin species differ, and write a complete results sentence.">
+<meta property="og:title" content="Activity 20 — One-Way ANOVA II: Assumptions, then Follow-Up Tests – UMD DAta Science Biology">
+<meta property="og:description" content="Hands-on companion to One-Way ANOVA II. Set 2 — check the penguin model’s assumptions with plot(model), Shapiro-Wilk on the residuals and Levene’s test, and switch to Welch’s ANOVA when equal variance fails. Set 3 — find which species differ with emmeans, read a compact letter display, plot the means and write the full results paragraph. Hand-in: the same three sets on one sex only.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 
@@ -295,7 +295,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Worksheet — One-Way ANOVA II: Running, Reporting &amp; Extension</li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Activity 20 — One-Way ANOVA II: Assumptions, then Follow-Up Tests</li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -408,18 +408,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Worksheet — One-Way ANOVA II: Running, Reporting &amp; Extension</h1>
-<p class="subtitle lead">Reading the F table, finding which species differ, and writing it up</p>
+<h1 class="title">Activity 20 — One-Way ANOVA II: Assumptions, then Follow-Up Tests</h1>
+<p class="subtitle lead">Earn the p-value, then find out which species actually differ</p>
   <div class="quarto-categories">
     <div class="quarto-category">anova</div>
+    <div class="quarto-category">tidyverse</div>
     <div class="quarto-category">statistics</div>
-    <div class="quarto-category">project-setup</div>
   </div>
   </div>
 
 <div>
   <div class="description">
-    <p>Hands-on companion to One-Way ANOVA II. Students run the ANOVA with aov() and car::Anova(), use emmeans to find which penguin species differ, and write a complete results sentence.</p>
+    <p>Hands-on companion to One-Way ANOVA II. Set 2 — check the penguin model’s assumptions with plot(model), Shapiro-Wilk on the residuals and Levene’s test, and switch to Welch’s ANOVA when equal variance fails. Set 3 — find which species differ with emmeans, read a compact letter display, plot the means and write the full results paragraph. Hand-in: the same three sets on one sex only.</p>
   </div>
 </div>
 
@@ -436,7 +436,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 9, 2026</p>
+      <p class="date">October 19, 2026</p>
     </div>
   </div>
   
@@ -448,177 +448,182 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="one-way-anova-ii-which-species-differ-and-how-do-we-report-it" class="level1">
-<h1>One-Way ANOVA II — Which Species Differ, and How Do We Report It?</h1>
-<section id="recap-from-the-anova-i-worksheet" class="level3">
-<h3 class="anchored" data-anchor-id="recap-from-the-anova-i-worksheet">Recap from the ANOVA I worksheet</h3>
-<ul>
-<li>Fit <code>mass_model &lt;- lm(body_mass_g ~ species, data = penguins_df)</code></li>
-<li>Checked normality of the residuals (<code>plot(model)</code>, Shapiro-Wilk)</li>
-<li>Checked equal variance (<code>leveneTest()</code>)</li>
-<li>Decision: assumptions look fine — proceed with classic ANOVA</li>
-</ul>
-</section>
+<section id="in-class-activity-20-assumptions-then-follow-up-tests" class="level1">
+<h1>In-class Activity 20: Assumptions, then Follow-Up Tests</h1>
 <section id="todays-objectives" class="level3">
-<h3 class="anchored">Today’s Objectives</h3>
+<h3 class="anchored" data-anchor-id="todays-objectives">Today’s Objectives</h3>
 <ol type="1">
-<li>Read the F table from <code>aov()</code> and <code>car::Anova()</code></li>
-<li>Use <code>emmeans</code> to find <strong>which</strong> species differ</li>
-<li>Read a compact letter display</li>
-<li>Plot the estimated means ± CI</li>
-<li>Write a complete results sentence</li>
+<li>Check normality on the <strong>residuals</strong> — <code>plot(model)</code> and Shapiro-Wilk</li>
+<li>Check <strong>equal variance</strong> — group sds and Levene’s test</li>
+<li>Decide what to run when an assumption fails → <strong>Welch’s ANOVA</strong></li>
+<li>Find <strong>which</strong> groups differ with <code>emmeans</code>, Tukey-adjusted</li>
+<li>Read a compact letter display and plot the means ± CI</li>
+<li>Write the full results paragraph</li>
+<li>Do Sets 2 and 3 again, on a different measurement, for homework</li>
 </ol>
-<blockquote class="blockquote">
-<h1 id="how-to-use-this-worksheet"><strong>How to use this worksheet</strong></h1>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>📂 Files for today
+</div>
+</div>
+<div class="callout-body-container callout-body">
 <ul>
-<li>Work through the parts in order. Type the code into a new R script in Positron and run it line by line.</li>
-<li>Blocks marked <strong>▶ Run this</strong> should be executed as written.</li>
-<li>Blocks marked <strong>✏️ Your turn</strong> ask you to write, modify, or interpret.</li>
-<li>The <strong>Extension</strong> at the end is done out of class (~30–40 min) and turned in with the worksheet.</li>
+<li><strong>Skeleton script:</strong> <a href="scripts/20_anova_2_skeleton.R"><code>20_anova_2_skeleton.R</code></a> → save it as <code>scripts/20_anova_2.R</code>.</li>
+<li><strong>No data file</strong> — the penguins come from <code>palmerpenguins</code>.</li>
+<li>You need two more packages: <code>install.packages("emmeans")</code> and <code>install.packages("multcomp")</code>.</li>
 </ul>
-</blockquote>
+</div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>What you hand in
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Part A — in class.</strong> The code is already in your skeleton. Run it chunk by chunk as you work through Parts A1–A12 below, and answer the <strong>QA</strong> boxes.</li>
+<li><strong>Part B — homework.</strong> Sets 2 and 3 again on a <strong>different measurement</strong> of your choosing — <strong>you write the code</strong> by copying the matching Part A chunk and changing what needs changing. Answer the <strong>QB</strong> boxes. See <a href="#part-b-homework-a-different-measurement">Part B</a>.</li>
+<li>Hand in <code>scripts/20_anova_2.R</code>, and run it top to bottom first — it must run with no errors.</li>
+</ul>
+</div>
+</div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>🔮 Predict before you run — and type, don’t paste
+<span class="screen-reader-only">Note</span>🔮 Predict before you run
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Before each <strong>▶ Run this</strong> block, cover the output and <em>predict</em> what R will print — the F, the <em>p</em>-value, which species differ. Then type the code yourself.</p>
+<p>Before each <strong>▶ Run this</strong> block, cover the output and <em>predict</em> what R will print. Today two predictions matter most: whether Levene’s test passes, and whether all three species differ.</p>
 </div>
 </div>
+<p>Keep the plots plain — no labels, colors, or themes.</p>
 <hr>
-<blockquote class="blockquote">
-<h2 id="chunk-1-run-the-anova-after-lecture-chunk-1" class="anchored" data-anchor-id="todays-objectives">🧩 Chunk 1 — Run the ANOVA <em>(after lecture Chunk 1)</em></h2>
-<p>Parts 7–8: read the F table two ways.</p>
-</blockquote>
 </section>
 </section>
-<section id="setup-reload-libraries-and-refit-the-model" class="level1">
-<h1>Setup · Reload libraries and refit the model</h1>
+<section id="part-a1-same-data-same-model" class="level1">
+<h1>Part A1 · Same data, same model</h1>
 <p><strong>▶ Run this at the top of your script:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load packages at the top — always ----------------------</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)      <span class="co"># wrangling + ggplot2</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(palmerpenguins) <span class="co"># the penguins data</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car)            <span class="co"># Anova()</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(emmeans)        <span class="co"># post-hoc pairwise tests</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><strong>▶ Run this</strong> (same model as the end of the ANOVA I worksheet):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)      <span class="co"># dplyr + ggplot2</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(palmerpenguins) <span class="co"># the penguins data</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car)            <span class="co"># leveneTest(), Anova()</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(emmeans)        <span class="co"># pairwise follow-up tests</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Run this:</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>penguins_df <span class="ot">&lt;-</span> penguins <span class="sc">%&gt;%</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(body_mass_g, species)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>mass_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<hr>
-</section>
-<section id="part-7-run-the-anova" class="level1">
-<h1>Part 7 · Run the ANOVA</h1>
-<blockquote class="blockquote">
-<p>🔮 <strong>Predict first:</strong> The boxplot looked very separated. Predict the <em>p</em>-value — near 0.5, near 0.05, or far below 0.001?</p>
-</blockquote>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Classic ANOVA table ------------------------------------</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>mass_aov <span class="ot">&lt;-</span> <span class="fu">aov</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mass_aov)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Read the F table.</p>
-<pre><code>Df (between, within) =        ,
-F value =
-p-value =
-Reject H₀ at α = 0.05?  Y / N</code></pre>
-<hr>
-</section>
-<section id="part-8-the-same-table-with-caranova" class="level1">
-<h1>Part 8 · The same table with <code>car::Anova()</code></h1>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Type II sums of squares (the habit to build) ----------</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(mass_model, <span class="at">type =</span> <span class="st">"II"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<blockquote class="blockquote">
-<p>⚠️ <strong>Watch out!</strong> Lowercase <code>anova()</code> (base R) and capital <code>Anova()</code> (car) are different functions. If R says <code>could not find function "Anova"</code>, you forgot <code>library(car)</code>.</p>
-</blockquote>
-<p>✏️ <strong>Your turn:</strong> Does <code>Anova()</code> give the same F and p as <code>summary(mass_aov)</code>? (For one predictor it should.)</p>
-<pre><code>Match?  Y / N
-Why do we prefer Anova(type = "II") as a
-habit? (hint: unbalanced / two-way later)</code></pre>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>mass_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(mass_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>That is the F(2, 339) = 343.6, <em>p</em> &lt; 0.001 we reported last time — <strong>without checking whether we were allowed to</strong>.</p>
+<p>Every script starts from the raw data. Nothing today depends on objects left in last lecture’s session.</p>
 <hr>
 <blockquote class="blockquote">
-<h2 id="chunk-2-which-groups-differ-after-lecture-chunk-2" class="anchored" data-anchor-id="part-8-the-same-table-with-caranova">🧩 Chunk 2 — Which groups differ? <em>(after lecture Chunk 2)</em></h2>
-<p>Parts 9–11: post-hoc comparisons, letters, plot, and the write-up.</p>
+<h2 id="set-2-the-assumptions" class="anchored" data-anchor-id="part-a1-same-data-same-model">🧩 Set 2 — The assumptions</h2>
+<p>A one-way ANOVA assumes (1) the observations are <strong>independent</strong> — a design question, no R function can rescue it; (2) the <strong>residuals</strong> are normally distributed; (3) the groups have <strong>equal variance</strong>.</p>
 </blockquote>
 </section>
-<section id="part-9-post-hoc-which-species-differ" class="level1">
-<h1>Part 9 · Post-hoc — which species differ?</h1>
+<section id="part-a2-normality-is-about-the-residuals" class="level1">
+<h1>Part A2 · Normality is about the residuals</h1>
+<p>A <strong>residual</strong> is one bird’s miss: its mass minus its species’ mean.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">residuals</span>(mass_model), <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>ANOVA does <strong>not</strong> need the raw masses to be normal — pooled across three species with different means they are not even supposed to be. It needs the <strong>misses</strong> to be normal.</p>
+<hr>
+</section>
+<section id="part-a3-plotmodel-the-same-four-panels" class="level1">
+<h1>Part A3 · <code>plot(model)</code> — the same four panels</h1>
 <blockquote class="blockquote">
-<p>🔮 <strong>Predict first:</strong> Will <strong>all three</strong> species differ from each other, or will two be statistically tied? Commit before you run it.</p>
+<p>🔮 <strong>Predict first:</strong> with ~340 penguins, will the Normal Q-Q panel track the line tightly?</p>
 </blockquote>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimated marginal means + Tukey-adjusted pairs -------</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>mass_emm <span class="ot">&lt;-</span> <span class="fu">emmeans</span>(mass_model, pairwise <span class="sc">~</span> species)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>mass_emm<span class="sc">$</span>contrasts</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Record each pairwise comparison.</p>
-<pre><code>Adelie  vs Chinstrap:  p =        different?  Y / N
-Adelie  vs Gentoo:     p =        different?  Y / N
-Chinstrap vs Gentoo:   p =        different?  Y / N</code></pre>
-<p><strong>▶ Run this (compact letter display):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Groups sharing a letter are NOT different -------------</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(mass_emm<span class="sc">$</span>emmeans, <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Write the letter for each species. Do any share a letter?</p>
-<pre><code>Adelie:      Chinstrap:      Gentoo:
-Any species share a letter (i.e. not different)?  Y / N</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(mass_model)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 25%">
+<col style="width: 65%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Panel</th>
+<th>Name</th>
+<th>What it checks</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Residuals vs Fitted</td>
+<td><strong>three vertical stripes</strong> — with a categorical X there are only three fitted values. Normal, not a problem</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Normal Q-Q</td>
+<td>the normality check — points on the line</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Scale-Location</td>
+<td>are the stripe heights equal? (assumption 3 by eye)</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Residuals vs Leverage</td>
+<td>is one point in charge?</td>
+</tr>
+</tbody>
+</table>
+<p>✏️ <strong>QA1:</strong> Do the points in panel 2 track the dashed line? Do the three stripes in panels 1 and 3 look like they have the same height?</p>
 <hr>
 </section>
-<section id="part-10-plot-the-result" class="level1">
-<h1>Part 10 · Plot the result</h1>
+<section id="part-a4-shapiro-wilk-as-the-backup" class="level1">
+<h1>Part A4 · Shapiro-Wilk, as the backup</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimated means with 95% CI ---------------------------</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>mass_emm_plot <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(mass_emm<span class="sc">$</span>emmeans) <span class="sc">%&gt;%</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> emmean, <span class="at">color =</span> species)) <span class="sc">+</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lower.CL, <span class="at">ymax =</span> upper.CL),</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>                <span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">linewidth =</span> <span class="fl">0.9</span>) <span class="sc">+</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species"</span>, <span class="at">y =</span> <span class="st">"Estimated mean mass (g)"</span>) <span class="sc">+</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>mass_emm_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save it to the figures folder -------------------------</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figures/penguin_mass_emmeans.png"</span>,</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">plot =</span> mass_emm_plot,</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">width =</span> <span class="dv">5</span>, <span class="at">height =</span> <span class="dv">5</span>, <span class="at">units =</span> <span class="st">"in"</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Your turn:</strong> Do any of the confidence intervals overlap? What does that suggest?</p>
-<pre><code>Your answer:</code></pre>
-<hr>
-</section>
-<section id="part-11-write-a-results-sentence" class="level1">
-<h1>Part 11 · Write a results sentence</h1>
-<p>✏️ <strong>Your turn:</strong> Write a complete results sentence. Include the test, F, both df, the <em>p</em>-value, the post-hoc outcome, and the direction (which is heaviest).</p>
-<pre><code>Template:
-"Body mass differed significantly among the three penguin species
-(one-way ANOVA: F(__, __) = ____, p
-____). Tukey-adjusted comparisons
-showed that ____________________, with __________ heaviest."
-
-Your sentence:</code></pre>
-<hr>
-</section>
-<section id="part-12-review-and-checkpoint" class="level1">
-<h1>Part 12 · Review and checkpoint</h1>
-<p>At this point you should be able to:</p>
-<ul class="task-list">
-<li><label><input type="checkbox">Read the F table from <code>aov()</code> and <code>car::Anova(type = "II")</code></label></li>
-<li><label><input type="checkbox">Run <code>emmeans(model, pairwise ~ group)</code> and read the pairwise p-values</label></li>
-<li><label><input type="checkbox">Interpret a compact letter display</label></li>
-<li><label><input type="checkbox">Write a complete ANOVA results sentence</label></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(mass_model))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><strong>H₀:</strong> the residuals are normal. <em>p</em> &gt; 0.05 → no evidence against normality.</li>
+<li>Note <code>residuals(mass_model)</code>, <strong>not</strong> <code>penguins_df$body_mass_g</code>. Shapiro on the raw masses is a different, wrong test.</li>
 </ul>
-<p>✏️ <strong>Your turn — before you move on:</strong> Run your whole script top to bottom with <strong>Ctrl/Cmd + Shift + Enter</strong>. Does it run cleanly?</p>
-<pre><code>Ran cleanly?  Y / N
-If not, what error appeared:</code></pre>
+<blockquote class="blockquote">
+<p>⚠️ <strong>Watch out!</strong> At n = 342, Shapiro-Wilk flags <em>tiny</em> departures. A <em>p</em> just above 0.05 is not “barely passed” — it is a very sensitive test nearly flagging a QQ plot that looks fine. Trust the plot; use the test as a second opinion.</p>
+</blockquote>
+<p>✏️ <strong>QA2:</strong> Shapiro-Wilk W and <em>p</em>. Does that agree with what you saw in panel 2?</p>
 <hr>
 </section>
-<section id="extension-out-of-class-3040-min" class="level1">
-<h1>Extension — out of class (~30–40 min)</h1>
-<p><em>Turn this in with your worksheet. It runs the <strong>exact</strong> analysis you just did — but on <strong>one half</strong> of the data that only you chose, so your F, </em>p<em>, and letters will be your own.</em></p>
+<section id="part-a5-equal-variance-by-eye-first" class="level1">
+<h1>Part A5 · Equal variance, by eye first</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(species) <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">n    =</span> <span class="fu">n</span>(),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">mean =</span> <span class="fu">mean</span>(body_mass_g),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">sd   =</span> <span class="fu">sd</span>(body_mass_g))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>QA3:</strong> Write the three sds down. How many times bigger is the largest than the smallest? Rule of thumb: equal n makes ANOVA forgiving about unequal variance, unequal n does not — which case are we in?</p>
+<hr>
+</section>
+<section id="part-a6-levenes-test" class="level1">
+<h1>Part A6 · Levene’s test</h1>
+<blockquote class="blockquote">
+<p>🔮 <strong>Predict first:</strong> given those sds, will Levene call the variances equal (<em>p</em> &gt; 0.05) or unequal?</p>
+</blockquote>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>H₀:</strong> all groups have equal variance.</p>
+<p>✏️ <strong>QA4:</strong> Levene’s F and <em>p</em>. Equal variances, Y / N? So is the classic ANOVA from A1 allowed, Y / N?</p>
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -629,65 +634,191 @@ Important
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The prediction and explanation in <strong>E2 and E3 must be handwritten</strong> on paper, photographed, and embedded in your submission (<code>![caption](my_photo.jpg)</code>). Typed answers to E2/E3 receive <strong>at most half credit, even if correct</strong> — I want to see your own reasoning develop on the page.</p>
+<p>This is not a mistake in the activity. It is what this data set does. Real data does this constantly.</p>
 </div>
 </div>
-<section id="e1-refit-on-one-sex-only-3-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e1-refit-on-one-sex-only-3-pts">E1 · Refit on one sex only (3 pts)</h2>
-<p>Everyone above ran the identical analysis on the full dataset, so everyone’s numbers match. Not anymore. <strong>Pick one sex — <code>"male"</code> or <code>"female"</code></strong> — and re-run the whole ANOVA on only that half. Write down which you picked <em>before</em> you start.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Replace ___ with "male" or "female"</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>penguins_sex <span class="ot">&lt;-</span> penguins <span class="sc">%&gt;%</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(body_mass_g, species, sex) <span class="sc">%&gt;%</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(sex <span class="sc">==</span> <span class="st">"___"</span>)</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>sex_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_sex)</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(sex_model, <span class="at">type =</span> <span class="st">"II"</span>)                     <span class="co"># new F, df, p</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="co"># which pairs differ now</span></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="fu">emmeans</span>(sex_model, pairwise <span class="sc">~</span> species)<span class="sc">$</span>contrasts</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>✏️ <strong>Record:</strong></p>
-<pre><code>Sex chosen:
-n (nrow(penguins_sex)):
-F(__, __) =            p =
-Pairs that differ now (Adelie–Chinstrap
-/ Adelie–Gentoo / Chinstrap–Gentoo):</code></pre>
+<hr>
 </section>
-<section id="e2-predict-then-check-by-hand-3-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e2-predict-then-check-by-hand-3-pts">E2 · Predict, then check — ✍️ by hand (3 pts)</h2>
-<p><strong>Before running E1</strong>, on paper, write:</p>
-<ol type="1">
-<li>Will restricting to one sex change <strong>which</strong> species pairs differ, compared with your full-data result in Part 9?</li>
-<li>Will the F-statistic get <strong>bigger or smaller</strong>, and why? Think about what happens to (a) sample size and (b) within-group spread when you drop half the penguins.</li>
-</ol>
-<p>Then run E1 and, still by hand, write your <strong>actual</strong> F and <em>p</em> and whether your prediction held.</p>
-</section>
-<section id="e3-explain-it-by-hand-with-your-numbers-3-pts" class="level2">
-<h2 class="anchored" data-anchor-id="e3-explain-it-by-hand-with-your-numbers-3-pts">E3 · Explain it — ✍️ by hand, with YOUR numbers (3 pts)</h2>
-<p>Using your real output from E1 (not the class example):</p>
-<ol type="1">
-<li>State H₀ and Hₐ for your one-sex test.</li>
-<li>In plain language, say which species differ and which don’t — and why a significant overall F <em>by itself</em> would not have told you that.</li>
-<li>Compare your E1 F and <em>p</em> to the full-data F and <em>p</em> from Part 7. Explain why they differ (or are surprisingly similar) even though you cut <em>n</em> roughly in half.</li>
-</ol>
+<section id="part-a7-welchs-anova-when-variances-are-unequal" class="level1">
+<h1>Part A7 · Welch’s ANOVA — when variances are unequal</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">oneway.test</span>(body_mass_g <span class="sc">~</span> species,</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> penguins_df,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The fractional denominator df is Welch’s signature — it is the same correction as Welch’s <em>t</em>-test, which is already what <code>t.test()</code> does by default.</p>
+<hr>
+<p>✏️ <strong>QA5:</strong> Fill in both tests — the classic <code>Anova()</code> F and <em>p</em>, and the Welch <code>oneway.test()</code> F and <em>p</em>. Which one do you <strong>report</strong>, and why that one?</p>
+<p>✏️ <strong>QA6:</strong> Both agree here, so the violated assumption cost us nothing. Is that a reason to skip the check next time? Explain.</p>
 <blockquote class="blockquote">
-<p>Optional, no points: rerun E1 for <code>flipper_length_mm</code> instead of <code>body_mass_g</code> and see whether the species separate the same way.</p>
+<p>💡 <strong>Key idea:</strong> check → decide → test → report <em>the test you decided on</em>. Not “run everything and report the smallest <em>p</em>.”</p>
+</blockquote>
+<hr>
+<blockquote class="blockquote">
+<h2 id="set-3-the-follow-up-tests" class="anchored" data-anchor-id="part-a7-welchs-anova-when-variances-are-unequal">🧩 Set 3 — The follow-up tests</h2>
+<p>The F-test said “at least one species differs.” It cannot tell you <strong>which</strong> — and on the boxplot two of the three species looked almost identical.</p>
+</blockquote>
+</section>
+<section id="part-a8-pairwise-comparisons-with-emmeans" class="level1">
+<h1>Part A8 · Pairwise comparisons with <code>emmeans</code></h1>
+<blockquote class="blockquote">
+<p>🔮 <strong>Predict first:</strong> will all three species differ from each other, or will two be tied? Commit before you run it.</p>
+</blockquote>
+<p><code>emmeans</code> does the three comparisons <strong>and</strong> adjusts the <em>p</em>-values so the family-wise error rate stays at 0.05. The adjustment for all-pairs comparisons is <strong>Tukey’s HSD</strong>. The <em>p</em>-values printed are <strong>already</strong> adjusted — compare them with 0.05 directly, do not divide anything.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>mass_emm <span class="ot">&lt;-</span> <span class="fu">emmeans</span>(mass_model, pairwise <span class="sc">~</span> species)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>mass_emm<span class="sc">$</span>contrasts</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>emmeans(model, pairwise ~ species)</code> returns a <strong>list</strong> of two things. Here is the other half — the group means:</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>mass_emm<span class="sc">$</span>emmeans</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>QA7:</strong> Record each comparison — Adelie vs Chinstrap, Adelie vs Gentoo, Chinstrap vs Gentoo. <em>p</em>, and different Y / N.</p>
+<p>✏️ <strong>QA8:</strong> The overall ANOVA <em>p</em> was below 0.001. Explain, in your own words, how that is consistent with two of the three species not differing at all.</p>
+<hr>
+</section>
+<section id="part-a9-compact-letter-display" class="level1">
+<h1>Part A9 · Compact letter display</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(mass_emm<span class="sc">$</span>emmeans, <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li>Same letter → <strong>not shown to be</strong> different</li>
+<li>Different letters → significantly different</li>
+</ul>
+<p>This is the notation you see over the bars in published figures.</p>
+<blockquote class="blockquote">
+<p>⚠️ <strong>Watch out!</strong> Read the <code>NOTE</code> that <code>cld()</code> prints. “Not shown to be different” is not the same claim as “shown to be the same.”</p>
+</blockquote>
+<p>✏️ <strong>QA9:</strong> Write the letter for each species. Which species share a letter?</p>
+<hr>
+</section>
+<section id="part-a10-the-backup-that-matches-welch" class="level1">
+<h1>Part A10 · The backup that matches Welch</h1>
+<p>Tukey through <code>emmeans</code> uses the model’s <strong>pooled</strong> error — the thing Levene warned us about in A6. The unequal-variance version of the same comparisons:</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pairwise.t.test</span>(penguins_df<span class="sc">$</span>body_mass_g,</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>                penguins_df<span class="sc">$</span>species,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">pool.sd =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>QA10:</strong> Does this table tell the same story as A9’s letters? When the robust version agrees with the standard one, what do you report?</p>
+<hr>
+</section>
+<section id="part-a11-plot-the-result" class="level1">
+<h1>Part A11 · Plot the result</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>mass_emm_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(mass_emm<span class="sc">$</span>emmeans)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>mass_emm_df</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>mass_emm_plot <span class="ot">&lt;-</span> mass_emm_df <span class="sc">%&gt;%</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> emmean)) <span class="sc">+</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lower.CL, <span class="at">ymax =</span> upper.CL),</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>                <span class="at">width =</span> <span class="fl">0.15</span>)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>mass_emm_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<blockquote class="blockquote">
+<p>💡 <strong>Key idea:</strong> overlapping confidence intervals are a <strong>hint</strong>, not a test. The <em>p</em>-value is the test; the plot is how a reader sees it.</p>
+</blockquote>
+<p>✏️ <strong>QA11:</strong> Which intervals overlap, and does that match the pairwise <em>p</em>-values from QA7?</p>
+<hr>
+</section>
+<section id="part-a12-report-the-whole-thing" class="level1">
+<h1>Part A12 · Report the whole thing</h1>
+<p>A complete write-up names:</p>
+<ul>
+<li>the assumption you checked and what you did about it</li>
+<li>the test, <strong>F</strong>, <strong>both df</strong>, and <strong><em>p</em></strong></li>
+<li>the follow-up, named as adjusted</li>
+<li>the <strong>means</strong>, so a reader can see the size of the effect</li>
+<li>the pair that did <strong>not</strong> differ — that is a finding, not a failure</li>
+</ul>
+<p>✏️ <strong>QA12:</strong> Write the full results paragraph with your numbers.</p>
+<pre><code>"Body mass differed among the three penguin species. Variances were
+ unequal (Levene's test: F(__, __) = ____, p = ____), so we report
+ Welch's ANOVA: F(__, __) = ____, p ____. Tukey-adjusted comparisons
+ showed that ______ was heavier than both ______ (p ____) and ______
+ (p ____), while ______ and ______ did not differ (p = ____)."</code></pre>
+<hr>
+</section>
+<section id="part-b-homework-a-different-measurement" class="level1">
+<h1>Part B · Homework — a different measurement</h1>
+<p>Mass is not the only thing that was measured on these birds. <strong>Pick one</strong> of these three columns and run <strong>Sets 2 and 3</strong> on it — the assumptions, then the follow-up tests:</p>
+<ul>
+<li><code>flipper_length_mm</code></li>
+<li><code>bill_length_mm</code></li>
+<li><code>bill_depth_mm</code></li>
+</ul>
+<p>Write down which one you picked <strong>before</strong> you start. Use the <strong>same</strong> <code>species</code> as the grouping variable — you are changing the response (the Y), not the design.</p>
+<p>Nothing is filled in. Copy the matching Part A chunk and change what needs changing; for most chunks that is one column name.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The three columns do <strong>not</strong> behave the same. One passes Levene’s test cleanly, one puts all three species in <strong>different</strong> groups, and one puts <strong>Gentoo at the bottom</strong> instead of the top. Find out which one you have — do not assume it will look like the body mass result.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Keep the column you pick. If you did the Activity 19 homework on one of these columns, use <strong>the same one</strong> here, and you finish with one complete analysis of one measurement — basic test, assumptions, follow-up.</p>
+</div>
+</div>
+<section id="b1-your-data-and-your-plot" class="level2">
+<h2 class="anchored" data-anchor-id="b1-your-data-and-your-plot">B1 · Your data and your plot</h2>
+<p>Build <code>penguins_hw</code> by dropping <code>NA</code> from <code>species</code> and the column you picked, <code>count(species)</code> on it, and make a boxplot of your column by species.</p>
+<p>✏️ <strong>QB1:</strong> Column chosen, total n, n for each species. From the boxplot: which species looks highest, and do any two look the same?</p>
+<p>✏️ <strong>QB2:</strong> H₀ and Hₐ for <strong>your</strong> test, in words. Remember the response is no longer body mass.</p>
+</section>
+<section id="b2-fit-it-and-read-the-table" class="level2">
+<h2 class="anchored" data-anchor-id="b2-fit-it-and-read-the-table">B2 · Fit it and read the table</h2>
+<p><code>lm(&lt;your column&gt; ~ species, data = penguins_hw)</code>, called <code>hw_model</code>, then <code>Anova(hw_model)</code>.</p>
+<p>✏️ <strong>QB3:</strong> F, both df, <em>p</em>. Reject H₀?</p>
+</section>
+<section id="b3-set-2-the-assumptions" class="level2">
+<h2 class="anchored" data-anchor-id="b3-set-2-the-assumptions">B3 · Set 2 — the assumptions</h2>
+<p><code>plot(hw_model)</code> in a 2×2 grid (and put <code>par</code> back), <code>shapiro.test()</code> on the <strong>residuals</strong>, group sds, <code>leveneTest()</code>.</p>
+<p>✏️ <strong>QB4:</strong> Shapiro <em>p</em> — residuals normal? Levene <em>p</em> — variances equal? Say what you <strong>see</strong> in the Q-Q panel too, not just the <em>p</em>-value.</p>
+<p>✏️ <strong>QB5:</strong> Based on QB4, which test do you report — the classic <code>Anova()</code> F, or the Welch <code>oneway.test()</code> F? Say <strong>why</strong>, then run the one you chose and give its F, df and <em>p</em>.</p>
+<blockquote class="blockquote">
+<p>💡 Your answer here may well be different from the body mass answer in QA5. That is the point.</p>
+</blockquote>
+</section>
+<section id="b4-set-3-the-follow-up-tests" class="level2">
+<h2 class="anchored" data-anchor-id="b4-set-3-the-follow-up-tests">B4 · Set 3 — the follow-up tests</h2>
+<p><code>emmeans(hw_model, pairwise ~ species)</code> — keep both <code>$contrasts</code> and <code>$emmeans</code> — then <code>multcomp::cld()</code> for the letters, then the means ± CI plot.</p>
+<p>✏️ <strong>QB6:</strong> The three pairwise <em>p</em>-values, and the letter for each species.</p>
+<p>✏️ <strong>QB7:</strong> Compare your letters with the body mass result in A9 (Adelie <strong>a</strong>, Chinstrap <strong>a</strong>, Gentoo <strong>b</strong>). Did the same species end up tied? Did the <strong>order</strong> of the species change? A Gentoo is the heaviest of the three — is it also the biggest on <strong>your</strong> measurement? If not, what does that tell you about using one measurement as a stand-in for overall body size?</p>
+<p>✏️ <strong>QB8:</strong> Write the full results paragraph for your column — same shape as QA12, your numbers, your units.</p>
+<blockquote class="blockquote">
+<p>Optional, no points: run one of the other two columns as well and see whether the species line up the same way twice.</p>
 </blockquote>
 <hr>
 </section>
 </section>
-<section id="getting-unstuck" class="level1">
-<h1>Getting unstuck</h1>
-<ol type="1">
-<li><strong><code>could not find function "Anova"</code></strong> → <code>library(car)</code>, and mind the capital <strong>A</strong> (base <code>anova()</code> is different).</li>
-<li><strong><code>could not find function "emmeans"</code></strong> → <code>library(emmeans)</code>.</li>
-<li><strong><code>cld</code> not found</strong> → <code>install.packages("multcomp")</code>, then <code>multcomp::cld(...)</code>.</li>
-<li><strong>Cheat sheets</strong> — <a href="https://posit.co/resources/cheatsheets/" class="uri">https://posit.co/resources/cheatsheets/</a></li>
-</ol>
-<blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> Nothing about <code>aov()</code>, <code>Anova()</code>, or <code>emmeans()</code> here was specific to penguins or to having exactly three species — swap in four treatments or five sites and the same three function calls, in the same order, give you the same kind of answer.</p>
-</blockquote>
+<section id="review-and-checkpoint" class="level1">
+<h1>Review and checkpoint</h1>
+<p>At this point you should be able to:</p>
+<ul class="task-list">
+<li><label><input type="checkbox">Say why normality is checked on the residuals, not the raw data</label></li>
+<li><label><input type="checkbox">Run <code>leveneTest()</code> and act on the answer</label></li>
+<li><label><input type="checkbox">Choose between the classic F and Welch’s F, and justify the choice</label></li>
+<li><label><input type="checkbox">Run <code>emmeans(model, pairwise ~ group)</code> and read Tukey-adjusted <em>p</em>-values</label></li>
+<li><label><input type="checkbox">Interpret a compact letter display, including what a shared letter does <strong>not</strong> mean</label></li>
+<li><label><input type="checkbox">Write a results paragraph that reports the assumption check as well as the test</label></li>
+</ul>
 <hr>
-<p><em>End of the ANOVA II worksheet. Next: kicking off the final project.</em></p>
+<p><em>End of Activity 20. Next: the final project — wrangle → plot → check → test → follow up → report, on data you chose.</em></p>
 
 
 </section>

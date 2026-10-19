@@ -11,8 +11,8 @@
   <meta name="generator" content="quarto-1.10.18">
 
   <meta name="author" content="Bill Perry">
-  <meta name="dcterms.date" content="2026-10-09">
-  <title>UMD DAta Science Biology – Lecture 14 — One-Way ANOVA II: Running &amp; Reporting the Test</title>
+  <meta name="dcterms.date" content="2026-10-19">
+  <title>UMD DAta Science Biology – Lecture 20 — One-Way ANOVA II: Assumptions, then Follow-Up Tests</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -197,8 +197,8 @@
       margin-right: 0; 
     }
   </style>
-<meta property="og:title" content="Lecture 14 — One-Way ANOVA II: Running &amp; Reporting the Test – UMD DAta Science Biology">
-<meta property="og:description" content="Running the one-way ANOVA with aov() and car::Anova(), finding WHICH penguin species differ with emmeans post-hoc tests, and writing a complete results sentence.">
+<meta property="og:title" content="Lecture 20 — One-Way ANOVA II: Assumptions, then Follow-Up Tests – UMD DAta Science Biology">
+<meta property="og:description" content="Set 2 — checking the one-way ANOVA’s assumptions on the penguin model with plot(model), a residual QQ plot, Shapiro-Wilk and Levene’s test, and what to do when equal variance fails (Welch’s ANOVA). Set 3 — the follow-up tests: emmeans pairwise comparisons, Tukey adjustment, a compact letter display, a means plot, and the finished results sentence.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 <body class="quarto-light">
@@ -206,8 +206,8 @@
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h1 class="title">Lecture 14 — One-Way ANOVA II: Running &amp; Reporting the Test</h1>
-  <p class="subtitle">Reading the F table, finding which groups differ, and writing it up</p>
+  <h1 class="title">Lecture 20 — One-Way ANOVA II: Assumptions, then Follow-Up Tests</h1>
+  <p class="subtitle">Earning the p-value, and finding out which species actually differ</p>
 
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
@@ -217,27 +217,27 @@ Bill Perry
 </div>
 </div>
 
-  <p class="date">2026-10-09</p>
+  <p class="date">2026-10-19</p>
 </section>
-<section id="where-we-left-off-lecture-13-one-way-anova-i" class="title-slide slide level1 center">
-<h1>Where we left off (Lecture 13 — One-Way ANOVA I)</h1>
+<section id="where-we-left-off-lecture-19" class="title-slide slide level1 center">
+<h1>Where we left off — Lecture 19</h1>
 <ul>
-<li><code>mass_model &lt;- lm(body_mass_g ~ species, data = penguins_df)</code> — fit</li>
-<li><strong>Normality checked</strong> — Q-Q panel + Shapiro-Wilk on the residuals</li>
-<li><strong>Equal variance checked</strong> — Levene’s test</li>
-<li><strong>Decision:</strong> assumptions look fine, proceed with classic ANOVA</li>
+<li>Plotted body mass by species; Gentoo high, Adelie and Chinstrap nearly level</li>
+<li><code>mass_model &lt;- lm(body_mass_g ~ species, data = penguins_df)</code></li>
+<li><code>Anova(mass_model)</code> → <strong>F(2, 339) = 343.6, <em>p</em> &lt; 0.001</strong></li>
+<li>Reported: <em>“Body mass differed significantly among the three species.”</em></li>
 </ul>
-<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout callout-important callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
-<p><strong>Note</strong></p>
+<p><strong>Important</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>✅ Transition</strong></p>
-<p>The model is fit and its assumptions are checked. Today we actually read the F table, find <strong>which</strong> species differ, and turn the result into a sentence a reader can trust.</p>
+<p><strong>We skipped a step on purpose.</strong></p>
+<p>We read that <em>p</em>-value without checking whether the model was allowed to give it to us, and we never found out <strong>which</strong> species differ. Those are today’s two sets.</p>
 </div>
 </div>
 </div>
@@ -247,165 +247,54 @@ Bill Perry
 <h1>Goals for today</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
+<p><strong>Set 2 — the assumptions</strong></p>
 <ul>
-<li>Run the ANOVA two ways: <code>aov()</code> and <strong><code>car::Anova()</code></strong></li>
-<li>Understand why <strong>Type II</strong> sums of squares matter for unbalanced data</li>
-<li>Find <strong>which</strong> groups differ with <strong><code>emmeans</code></strong> post-hoc tests</li>
-<li>Read a compact letter display (CLD)</li>
+<li>Normality of the <strong>residuals</strong> — <code>plot(model)</code>, QQ, Shapiro-Wilk</li>
+<li><strong>Equal variance</strong> — Levene’s test</li>
+<li>What to do when one fails → <strong>Welch’s ANOVA</strong></li>
+</ul>
+<p><strong>Set 3 — the follow-up tests</strong></p>
+<ul>
+<li><em>Which</em> groups differ — <code>emmeans</code> pairwise, Tukey-adjusted</li>
+<li>Read a <strong>compact letter display</strong></li>
 <li>Plot the estimated means ± CI</li>
-<li>Write a complete, reportable results sentence</li>
+<li>Write the finished results sentence</li>
 </ul>
 </div><div class="column" style="width:40%;">
 <p><strong>Tools today:</strong></p>
 <ul>
-<li><code>car</code> — <code>Anova()</code></li>
-<li><code>emmeans</code>, <code>multcomp</code> — post-hoc, CLD</li>
+<li><code>car</code> — <code>leveneTest()</code>, <code>Anova()</code></li>
+<li><code>emmeans</code>, <code>multcomp</code> — pairwise tests, letters</li>
 </ul>
 <p><strong>Textbook:</strong></p>
 <ul>
-<li>📖 Whitlock &amp; Schluter, <strong>Ch. 15 — ANOVA</strong></li>
+<li>📖 W&amp;S <strong>Ch. 15 — ANOVA</strong></li>
 <li>📖 <a href="https://cran.r-project.org/package=emmeans">emmeans vignettes</a></li>
 </ul>
 <p><strong>Naming:</strong> models → <code>_model</code>, plots → <code>_plot</code></p>
 </div></div>
 </section>
 
-<section id="how-to-use-these-slides-predict-type-run" class="title-slide slide level1 center scrollable">
-<h1>How to Use These Slides — Predict · Type · Run</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p>This lecture runs in <strong>two short chunks</strong>. After each chunk you switch to the <strong>activity</strong> and type the code yourself.</p>
-<p><strong>For every code block, do three things:</strong></p>
-<ol type="1">
-<li><strong>Predict</strong> — before it runs, say what you think the output will be</li>
-<li><strong>Type</strong> it out by hand — do not copy-paste</li>
-<li><strong>Run</strong> it and compare to your prediction</li>
-</ol>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-note callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Note</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>✅ Why bother? (the evidence)</strong></p>
-<ul>
-<li>Predicting the <em>p</em>-value before you see it forces you to reason from the boxplot’s separation, not just read a number off a screen.</li>
-<li>Typing <code>type = "II"</code> yourself in <code>Anova()</code> is what makes you notice it’s there — paste the line and you’ll never ask why it matters for unbalanced groups.</li>
-<li>Letters in a compact letter display only mean something if you’ve watched them get built from the pairwise table above them.</li>
-</ul>
-</div>
-</div>
-</div>
-</div></div>
-</section>
-
-<section id="chunk-1-of-2-run-the-anova-read-the-f-table" class="title-slide slide level1 center">
-<h1>🧩 Chunk 1 of 2 · Run the ANOVA &amp; Read the F Table</h1>
-<p><strong>We will cover:</strong> the ANOVA table two ways — base <code>aov()</code> and <code>car::Anova()</code> — and why the difference matters for unbalanced data.</p>
-<div class="callout callout-tip callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Tip</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>🖐 After this chunk: Activity Parts 7–8</strong> (run both, read F / df / p).</p>
-</div>
-</div>
-</div>
-</section>
-
-<section id="run-the-anova-aov-and-summary" class="title-slide slide level1 center">
-<h1>Run the ANOVA — <code>aov()</code> and <code>summary()</code></h1>
-<div class="callout callout-note callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Note</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>🔮 Predict first:</strong> The boxplot from Lecture 13 looked very separated. Predict the <em>p</em>-value — closer to 0.5, 0.05, or far below 0.001?</p>
-</div>
-</div>
-</div>
+<section id="set-up-again-same-four-lines" class="title-slide slide level1 center">
+<h1>Set Up Again — Same Four Lines</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a aria-label="1"></a><span class="co"># Load packages at the top — always -------------------</span></span>
 <span id="cb1-2"><a aria-label="2"></a><span class="fu">library</span>(tidyverse)      <span class="co"># wrangling + ggplot2</span></span>
 <span id="cb1-3"><a aria-label="3"></a><span class="fu">library</span>(palmerpenguins) <span class="co"># the penguins data</span></span>
-<span id="cb1-4"><a aria-label="4"></a><span class="fu">library</span>(car)            <span class="co"># Anova()</span></span>
-<span id="cb1-5"><a aria-label="5"></a><span class="fu">library</span>(emmeans)        <span class="co"># post-hoc pairwise tests</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-4"><a aria-label="4"></a><span class="fu">library</span>(car)            <span class="co"># leveneTest(), Anova()</span></span>
+<span id="cb1-5"><a aria-label="5"></a><span class="fu">library</span>(emmeans)        <span class="co"># pairwise follow-up tests</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a aria-label="1"></a><span class="co"># Same model fit at the end of Lecture 13 --------------</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a aria-label="1"></a><span class="co"># The same data and model as Lecture 19 ---------------</span></span>
 <span id="cb2-2"><a aria-label="2"></a>penguins_df <span class="ot">&lt;-</span> penguins <span class="sc">%&gt;%</span></span>
 <span id="cb2-3"><a aria-label="3"></a>  <span class="fu">drop_na</span>(body_mass_g, species)</span>
 <span id="cb2-4"><a aria-label="4"></a></span>
 <span id="cb2-5"><a aria-label="5"></a>mass_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a aria-label="1"></a><span class="co"># Classic ANOVA table (Type I sums of squares) --------</span></span>
-<span id="cb3-2"><a aria-label="2"></a>mass_aov <span class="ot">&lt;-</span> <span class="fu">aov</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span>
-<span id="cb3-3"><a aria-label="3"></a><span class="fu">summary</span>(mass_aov)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>             Df    Sum Sq  Mean Sq F value Pr(&gt;F)    
-species       2 146864214 73432107   343.6 &lt;2e-16 ***
-Residuals   339  72443483   213698                   
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
-</div>
-</div>
 </div><div class="column" style="width:40%;">
-<p><strong>Reading the table:</strong></p>
-<table class="caption-top">
-<thead>
-<tr class="header">
-<th>Column</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>Df</code></td>
-<td>groups − 1, and residual df</td>
-</tr>
-<tr class="even">
-<td><code>F value</code></td>
-<td>between ÷ within variance</td>
-</tr>
-<tr class="odd">
-<td><code>Pr(&gt;F)</code></td>
-<td>the <em>p</em>-value for H₀</td>
-</tr>
-</tbody>
-</table>
-<p><em>p</em> &lt; 0.05 → <strong>reject H₀</strong> → at least one species differs. But <strong>which</strong>? Chunk 2.</p>
-</div></div>
-</section>
-
-<section id="live-demo-watch-it-break-on-purpose" class="title-slide slide level1 center">
-<h1>Live Demo — Watch It Break (on purpose)</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p>For <strong>unbalanced</strong> data we prefer <code>car::Anova()</code>. I’ll reach for it but type lowercase, and forget the package:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="fu">anova</span>(mass_model)        <span class="co"># base R — Type I, one model at a time</span></span>
-<span id="cb5-2"><a aria-label="2"></a><span class="fu">Anova</span>(mass_model)        <span class="co"># capital A — but car isn't loaded!</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>R stops:</p>
-<pre><code>Error in Anova(mass_model) :
-  could not find function "Anova"</code></pre>
-<p>The fix — load <code>car</code>, and mind the capital <strong>A</strong>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a><span class="fu">library</span>(car)</span>
-<span id="cb7-2"><a aria-label="2"></a><span class="fu">Anova</span>(mass_model, <span class="at">type =</span> <span class="st">"II"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div><div class="column" style="width:40%;">
+<p>Every script starts from the raw data. Nothing today depends on objects left over in last lecture’s session.</p>
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -415,37 +304,169 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <p><strong>Tip</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>✅ Why show a broken run?</strong></p>
-<p><code>anova()</code> and <code>Anova()</code> are two entirely different functions that happen to differ by one capital letter — R will not guess which one you meant. Watching the exact error message land here means you’ll recognize it instantly instead of re-checking your spelling three times when it happens mid-assignment.</p>
+<p><code>library(palmerpenguins)</code> again — base R has its own <code>penguins</code> with <code>body_mass</code> instead of <code>body_mass_g</code>.</p>
 </div>
 </div>
 </div>
 </div></div>
 </section>
 
-<section id="caranova-type-ii-for-unbalanced-data" class="title-slide slide level1 center">
-<h1><code>car::Anova()</code> — Type II for Unbalanced Data</h1>
+<section id="set-2-the-assumptions" class="title-slide slide level1 center scrollable">
+<h1>🧩 Set 2 · The Assumptions</h1>
+<p><strong>What a one-way ANOVA assumes:</strong></p>
+<ol type="1">
+<li><strong>Independent</strong> observations — a design question, not a test</li>
+<li>The <strong>residuals</strong> are normally distributed</li>
+<li>The groups have <strong>equal variance</strong> (homoscedasticity)</li>
+</ol>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>Assumption 1 is about how the data were collected — no R function can rescue it. 2 and 3 we can look at directly, and that is what the next few slides do.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="normality-is-about-the-residuals" class="title-slide slide level1 center">
+<h1>Normality Is About the <em>Residuals</em></h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p>A <strong>residual</strong> is one bird’s miss: its mass minus its species’ mean.</p>
+<p><span class="math display">\[\text{residual} = y_i - \bar{y}_{\text{group}}\]</span></p>
+<p>ANOVA does <strong>not</strong> require the raw masses to be normal — pooled across three species with different means they are not even supposed to be. It requires the <strong>misses</strong> to be normal.</p>
+</div><div class="column" style="width:40%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a aria-label="1"></a><span class="co"># What the residuals look like ------------------------</span></span>
+<span id="cb3-2"><a aria-label="2"></a><span class="fu">head</span>(<span class="fu">residuals</span>(mass_model), <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         1          2          3          4 
+  49.33775   99.33775 -450.66225 -250.66225 </code></pre>
+</div>
+</div>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p>Shapiro on the raw <code>body_mass_g</code> is a different, wrong test. Always <code>residuals(model)</code>.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="assumption-2-plotmodel-the-same-four-panels" class="title-slide slide level1 center">
+<h1>Assumption 2 — <code>plot(model)</code>, the Same Four Panels</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
+<span id="cb5-2"><a aria-label="2"></a><span class="fu">plot</span>(mass_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="one_way_anova_2_lecture_files/figure-revealjs/diagnostic-plots-16-1.png" alt="Four base R diagnostic plots for the body mass by species linear model in a two by two grid: residuals versus fitted values showing three vertical stripes, a normal Q-Q plot whose points track the line closely, a scale-location plot, and residuals versus leverage."></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a aria-label="1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div><div class="column" style="width:45%;">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>🔮 Predict first:</strong> with ~340 penguins, will the Q-Q panel track the line?</p>
+</div>
+</div>
+</div>
+<ul>
+<li><strong>Three vertical stripes</strong> in panels 1 and 3 — a categorical X has only three fitted values. Normal, not a problem</li>
+<li><strong>Panel 2 (Normal Q-Q)</strong> is the normality check</li>
+<li>Panels 1 &amp; 3 show whether the <strong>stripe heights</strong> match — assumption 3 by eye</li>
+</ul>
+</div></div>
+</section>
+
+<section id="normality-shapiro-wilk-as-the-backup" class="title-slide slide level1 center">
+<h1>Normality — Shapiro-Wilk as the Backup</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a><span class="co"># Shapiro-Wilk on the RESIDUALS -----------------------</span></span>
+<span id="cb7-2"><a aria-label="2"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(mass_model))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Shapiro-Wilk normality test
+
+data:  residuals(mass_model)
+W = 0.99166, p-value = 0.05118</code></pre>
+</div>
+</div>
+<p><strong>W = 0.992, <em>p</em> = 0.051</strong> — just above 0.05.</p>
+</div><div class="column" style="width:45%;">
+<ul>
+<li><strong>H₀:</strong> the residuals are normal</li>
+<li><em>p</em> &gt; 0.05 → no evidence against normality</li>
+</ul>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Large-sample caution</strong></p>
+<p>With ~340 birds Shapiro-Wilk flags <em>tiny</em> departures. A <em>p</em> of 0.051 is not “barely passed” — it is “the test is so sensitive at this n that it is nearly flagging a QQ plot that looks fine.” Trust the <strong>plot</strong>, use the test as a second opinion.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="assumption-3-equal-variance-by-eye-first" class="title-slide slide level1 center">
+<h1>Assumption 3 — Equal Variance by Eye First</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a aria-label="1"></a><span class="co"># Type II sums of squares — the right call here -------</span></span>
-<span id="cb8-2"><a aria-label="2"></a><span class="fu">Anova</span>(mass_model, <span class="at">type =</span> <span class="st">"II"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># The spread of each group ----------------------------</span></span>
+<span id="cb9-2"><a aria-label="2"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(species) <span class="sc">%&gt;%</span></span>
+<span id="cb9-4"><a aria-label="4"></a>  <span class="fu">summarize</span>(<span class="at">n    =</span> <span class="fu">n</span>(),</span>
+<span id="cb9-5"><a aria-label="5"></a>            <span class="at">mean =</span> <span class="fu">mean</span>(body_mass_g),</span>
+<span id="cb9-6"><a aria-label="6"></a>            <span class="at">sd   =</span> <span class="fu">sd</span>(body_mass_g))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Anova Table (Type II tests)
-
-Response: body_mass_g
-             Sum Sq  Df F value    Pr(&gt;F)    
-species   146864214   2  343.63 &lt; 2.2e-16 ***
-Residuals  72443483 339                      
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<pre><code># A tibble: 3 × 4
+  species       n  mean    sd
+  &lt;fct&gt;     &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 Adelie      151 3701.  459.
+2 Chinstrap    68 3733.  384.
+3 Gentoo      123 5076.  504.</code></pre>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
-<p><strong>Why Type II?</strong></p>
 <ul>
-<li>Our groups have <strong>different n</strong> (unbalanced)</li>
-<li>With one predictor the F is the same, but Type II is the <strong>habit</strong> you want before you meet two-way ANOVA, where the type genuinely changes the answer</li>
+<li>Adelie <strong>459</strong>, Chinstrap <strong>384</strong>, Gentoo <strong>504</strong></li>
+<li>The biggest sd is about <strong>1.3×</strong> the smallest</li>
+<li>Combined with <strong>unbalanced</strong> n (151 / 68 / 123), that is the situation where unequal variance actually matters</li>
 </ul>
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
@@ -456,38 +477,15 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><code>anova()</code> = Type I (order-dependent). <code>Anova(type = "II")</code> = order-independent.</p>
+<p>Rule of thumb: equal n makes ANOVA forgiving about unequal variance. Unequal n does not.</p>
 </div>
 </div>
 </div>
 </div></div>
 </section>
 
-<section id="pause-do-activity-parts-78-now" class="title-slide slide level1 center">
-<h1>🛑 Pause — Do Activity Parts 7–8 Now</h1>
-<p>Run <code>aov()</code> + <code>summary()</code>, then <code>car::Anova(type = "II")</code>. Predict the F and <em>p</em> before you read them, and confirm both tables agree.</p>
-</section>
-
-<section id="chunk-2-of-2-which-groups-differ-post-hoc-with-emmeans" class="title-slide slide level1 center">
-<h1>🧩 Chunk 2 of 2 · Which Groups Differ? Post-Hoc with emmeans</h1>
-<p><strong>We will cover:</strong> ANOVA says “some differ” — <code>emmeans</code> says <em>which</em>, with the comparisons properly adjusted.</p>
-<div class="callout callout-tip callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Tip</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>🖐 After this chunk: Activity Parts 9–11</strong> (pairwise tests, letters, plot, report).</p>
-</div>
-</div>
-</div>
-</section>
-
-<section id="post-hoc-pairwise-comparisons-with-emmeans" class="title-slide slide level1 center">
-<h1>Post-Hoc — Pairwise Comparisons with emmeans</h1>
+<section id="equal-variance-levenes-test" class="title-slide slide level1 center">
+<h1>Equal Variance — Levene’s Test</h1>
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -497,17 +495,234 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🔮 Predict first:</strong> From the boxplot, predict — will <strong>all three</strong> species differ from each other, or will two be statistically tied?</p>
+<p><strong>🔮 Predict first:</strong> given those sds, will Levene’s test call the variances <strong>equal</strong> (<em>p</em> &gt; 0.05) or <strong>unequal</strong>?</p>
 </div>
 </div>
 </div>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a aria-label="1"></a><span class="co"># Estimated marginal means + Tukey-adjusted pairs -----</span></span>
-<span id="cb10-2"><a aria-label="2"></a>mass_emm <span class="ot">&lt;-</span> <span class="fu">emmeans</span>(mass_model, pairwise <span class="sc">~</span> species)</span>
-<span id="cb10-3"><a aria-label="3"></a></span>
-<span id="cb10-4"><a aria-label="4"></a>mass_emm<span class="sc">$</span>contrasts</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="co"># H0: all groups have equal variance ------------------</span></span>
+<span id="cb11-2"><a aria-label="2"></a><span class="fu">leveneTest</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Levene's Test for Homogeneity of Variance (center = median)
+       Df F value   Pr(&gt;F)   
+group   2  5.1203 0.006445 **
+      339                    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>F = 5.12, <em>p</em> = 0.0064</strong></p>
+<p><em>p</em> &lt; 0.05 → <strong>reject H₀</strong> → the variances are <strong>not</strong> equal.</p>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p>So the classic ANOVA we ran last lecture has a <strong>violated assumption</strong>. This is not a mistake in the slides — it is what this data set does. Real data does this constantly.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="when-equal-variance-fails-welchs-anova" class="title-slide slide level1 center">
+<h1>When Equal Variance Fails — Welch’s ANOVA</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># Does not assume equal variances ---------------------</span></span>
+<span id="cb13-2"><a aria-label="2"></a><span class="fu">oneway.test</span>(body_mass_g <span class="sc">~</span> species,</span>
+<span id="cb13-3"><a aria-label="3"></a>            <span class="at">data =</span> penguins_df,</span>
+<span id="cb13-4"><a aria-label="4"></a>            <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    One-way analysis of means (not assuming equal variances)
+
+data:  body_mass_g and species
+F = 317.57, num df = 2.00, denom df = 189.48, p-value &lt;
+2.2e-16</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<ul>
+<li><strong>F = 317.6</strong>, num df 2, <strong>denom df 189.5</strong>, <em>p</em> &lt; 0.001</li>
+<li>Fractional denominator df is Welch’s signature — it is the same correction as Welch’s <em>t</em>-test, which is R’s default <code>t.test()</code></li>
+</ul>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>✅ The decision</strong></p>
+<p>Levene says unequal → <strong>report the Welch F</strong>. The conclusion does not change (both <em>p</em> are far below 0.001) but the <em>honest</em> test is the Welch one.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="a-decision-table-you-can-keep" class="title-slide slide level1 center">
+<h1>A Decision Table You Can Keep</h1>
+<table class="caption-top">
+<colgroup>
+<col style="width: 18%">
+<col style="width: 22%">
+<col style="width: 30%">
+<col style="width: 30%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Check</th>
+<th>Result here</th>
+<th>What it means</th>
+<th>What to run</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>QQ + Shapiro</td>
+<td><em>p</em> = 0.051, plot fine</td>
+<td>residuals ~normal</td>
+<td>fine either way</td>
+</tr>
+<tr class="even">
+<td>Levene</td>
+<td><em>p</em> = 0.0064</td>
+<td>variances <strong>unequal</strong></td>
+<td><code>oneway.test(var.equal = FALSE)</code></td>
+</tr>
+<tr class="odd">
+<td>Both fail badly</td>
+<td>—</td>
+<td>normality <strong>and</strong> variance gone</td>
+<td>Kruskal-Wallis (rank-based)</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>For reference only — you do not run this today.</strong> The rank-based backup is <code>kruskal.test(body_mass_g ~ species, data = penguins_df)</code> → χ² = 217.6, df = 2, <em>p</em> &lt; 0.001. Same answer again. When three different tests agree, you can stop worrying about which one you picked.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="what-would-change-the-answer" class="title-slide slide level1 center">
+<h1>What <em>Would</em> Change the Answer?</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p>Here all three tests say <em>p</em> &lt; 0.001, so the violated assumption cost us nothing.</p>
+<p>That is <strong>not</strong> a reason to skip the check. Unequal variance with unequal n can push a <em>p</em>-value across 0.05 in either direction — you only know which case you are in <strong>after</strong> you look.</p>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>The rule for this course</strong></p>
+<p>Check → decide → test → report <em>the test you decided on</em>. Not “run everything and report the smallest <em>p</em>.”</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="set-3-follow-up-tests-which-groups-differ" class="title-slide slide level1 center">
+<h1>🧩 Set 3 · Follow-Up Tests — <em>Which</em> Groups Differ?</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p>The F-test said “at least one species differs.” Look back at the boxplot:</p>
+<ul>
+<li><strong>Gentoo</strong> is obviously above the others</li>
+<li><strong>Adelie and Chinstrap</strong> sit almost on top of each other</li>
+</ul>
+<p>A single <em>p</em> &lt; 0.001 is perfectly consistent with <em>Gentoo differs, the other two do not.</em> The F-test cannot tell those stories apart.</p>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>✅ Key idea</strong></p>
+<p>A significant F licenses you to go looking. It does <strong>not</strong> tell you what you will find.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="why-not-just-run-the-three-t-tests-now" class="title-slide slide level1 center">
+<h1>Why Not Just Run the Three t-Tests Now?</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p>Because that is the problem we opened Lecture 19 with — three tests at α = 0.05 gives ~14% chance of a false positive.</p>
+<p>A <strong>post-hoc</strong> (after-the-fact) test does the three comparisons <strong>and</strong> adjusts the <em>p</em>-values so the family-wise error rate stays at 0.05.</p>
+<p>The standard adjustment for all-pairs comparisons is <strong>Tukey’s HSD</strong>.</p>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p>“Tukey-adjusted” means the <em>p</em>-values printed have <strong>already</strong> been corrected. You compare them with 0.05 directly — you do <strong>not</strong> divide anything.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="pairwise-comparisons-with-emmeans" class="title-slide slide level1 center">
+<h1>Pairwise Comparisons with <code>emmeans</code></h1>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>🔮 Predict first:</strong> will <strong>all three</strong> species differ from each other, or will two be statistically tied?</p>
+</div>
+</div>
+</div>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a aria-label="1"></a><span class="co"># Estimated means + every pairwise comparison ---------</span></span>
+<span id="cb15-2"><a aria-label="2"></a>mass_emm <span class="ot">&lt;-</span> <span class="fu">emmeans</span>(mass_model, pairwise <span class="sc">~</span> species)</span>
+<span id="cb15-3"><a aria-label="3"></a></span>
+<span id="cb15-4"><a aria-label="4"></a>mass_emm<span class="sc">$</span>contrasts</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> contrast           estimate   SE  df t.ratio p.value
  Adelie - Chinstrap    -32.4 67.5 339  -0.480  0.8807
@@ -518,12 +733,63 @@ P value adjustment: tukey method for comparing a family of 3 estimates </code></
 </div>
 </div>
 </div><div class="column" style="width:40%;">
-<p><strong>Reading it:</strong></p>
+<p><strong>The answer:</strong></p>
 <ul>
-<li><code>emmeans(..., pairwise ~ species)</code> gives each group’s mean <strong>and</strong> every pairwise comparison</li>
-<li>The <em>p</em>-values are <strong>Tukey-adjusted</strong> — they already correct for multiple comparisons, so the family-wise error stays at 0.05</li>
+<li>Adelie – Chinstrap: 32 g, <em>p</em> = <strong>0.88</strong> → <strong>not</strong> different</li>
+<li>Adelie – Gentoo: −1375 g, <em>p</em> &lt; 0.0001</li>
+<li>Chinstrap – Gentoo: −1343 g, <em>p</em> &lt; 0.0001</li>
 </ul>
-<p>📖 W&amp;S §15.4 — planned vs.&nbsp;unplanned comparisons</p>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p>Two of the three species are <strong>statistically indistinguishable</strong> in mass. “Significant ANOVA” never meant “everything differs.”</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="what-emmeans-gives-you" class="title-slide slide level1 center">
+<h1>What <code>emmeans</code> Gives You</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a aria-label="1"></a><span class="co"># The group means, with CIs ---------------------------</span></span>
+<span id="cb17-2"><a aria-label="2"></a>mass_emm<span class="sc">$</span>emmeans</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> species   emmean   SE  df lower.CL upper.CL
+ Adelie      3701 37.6 339     3627     3775
+ Chinstrap   3733 56.1 339     3623     3843
+ Gentoo      5076 41.7 339     4994     5158
+
+Confidence level used: 0.95 </code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<ul>
+<li><code>emmean</code> — the model’s estimate of each group mean</li>
+<li><code>SE</code>, <code>df</code>, and a 95% <strong>confidence interval</strong></li>
+<li><code>emmeans(model, pairwise ~ species)</code> returns a <strong>list</strong> of two things: <code>$emmeans</code> (the means) and <code>$contrasts</code> (the comparisons)</li>
+</ul>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><code>emmeans(model, ~ species)</code> with no <code>pairwise</code> gives just the means.</p>
+</div>
+</div>
+</div>
 </div></div>
 </section>
 
@@ -532,8 +798,8 @@ P value adjustment: tukey method for comparing a family of 3 estimates </code></
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="co"># Groups that SHARE a letter are NOT different --------</span></span>
-<span id="cb12-2"><a aria-label="2"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(mass_emm<span class="sc">$</span>emmeans, <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a aria-label="1"></a><span class="co"># Groups sharing a letter are NOT different -----------</span></span>
+<span id="cb19-2"><a aria-label="2"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(mass_emm<span class="sc">$</span>emmeans, <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> species   emmean   SE  df lower.CL upper.CL .group
  Adelie      3701 37.6 339     3627     3775  a    
@@ -554,7 +820,7 @@ NOTE: If two or more means share the same grouping symbol,
 <li>Same letter → <strong>not</strong> significantly different</li>
 <li>Different letters → significantly different</li>
 </ul>
-<p>This is the compact summary you see in published figures — one letter above each bar.</p>
+<p>Adelie <strong>a</strong>, Chinstrap <strong>a</strong>, Gentoo <strong>b</strong> — the pairwise table in one glance. This is the notation you see over the bars in published figures.</p>
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -571,78 +837,132 @@ NOTE: If two or more means share the same grouping symbol,
 </div></div>
 </section>
 
+<section id="the-backup-that-matches-welch" class="title-slide slide level1 center">
+<h1>The Backup That Matches Welch</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p>Tukey through <code>emmeans</code> uses the model’s <strong>pooled</strong> error — the thing Levene told us to be careful about. The matching unequal-variance version:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a aria-label="1"></a><span class="co"># Non-pooled SD, Holm-adjusted ------------------------</span></span>
+<span id="cb21-2"><a aria-label="2"></a><span class="fu">pairwise.t.test</span>(penguins_df<span class="sc">$</span>body_mass_g,</span>
+<span id="cb21-3"><a aria-label="3"></a>                penguins_df<span class="sc">$</span>species,</span>
+<span id="cb21-4"><a aria-label="4"></a>                <span class="at">pool.sd =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Pairwise comparisons using t tests with non-pooled SD 
+
+data:  penguins_df$body_mass_g and penguins_df$species 
+
+          Adelie Chinstrap
+Chinstrap 0.59   -        
+Gentoo    &lt;2e-16 &lt;2e-16   
+
+P value adjustment method: holm </code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<ul>
+<li>Adelie vs Chinstrap: <em>p</em> = <strong>0.59</strong> → still not different</li>
+<li>Everything else: <em>p</em> &lt; 2e-16</li>
+</ul>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>✅ Same story.</strong> The letters stand. When the robust version agrees with the standard one, report the standard one and say you checked.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
 <section id="plot-the-result-means-ci" class="title-slide slide level1 center">
 <h1>Plot the Result — Means ± CI</h1>
 <div class="columns">
-<div class="column" style="width:60%;">
+<div class="column" style="width:55%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a aria-label="1"></a>mass_emm_plot <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(mass_emm<span class="sc">$</span>emmeans) <span class="sc">%&gt;%</span></span>
-<span id="cb14-2"><a aria-label="2"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> emmean, <span class="at">color =</span> species)) <span class="sc">+</span></span>
-<span id="cb14-3"><a aria-label="3"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
-<span id="cb14-4"><a aria-label="4"></a>  <span class="fu">geom_errorbar</span>(</span>
-<span id="cb14-5"><a aria-label="5"></a>    <span class="fu">aes</span>(<span class="at">ymin =</span> lower.CL, <span class="at">ymax =</span> upper.CL),</span>
-<span id="cb14-6"><a aria-label="6"></a>    <span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">linewidth =</span> <span class="fl">0.9</span></span>
-<span id="cb14-7"><a aria-label="7"></a>  ) <span class="sc">+</span></span>
-<span id="cb14-8"><a aria-label="8"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species"</span>, <span class="at">y =</span> <span class="st">"Estimated mean mass (g)"</span>) <span class="sc">+</span></span>
-<span id="cb14-9"><a aria-label="9"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb14-10"><a aria-label="10"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
-<span id="cb14-11"><a aria-label="11"></a></span>
-<span id="cb14-12"><a aria-label="12"></a>mass_emm_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a aria-label="1"></a>mass_emm_plot <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(mass_emm<span class="sc">$</span>emmeans) <span class="sc">%&gt;%</span></span>
+<span id="cb23-2"><a aria-label="2"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> emmean, <span class="at">color =</span> species)) <span class="sc">+</span></span>
+<span id="cb23-3"><a aria-label="3"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb23-4"><a aria-label="4"></a>  <span class="fu">geom_errorbar</span>(</span>
+<span id="cb23-5"><a aria-label="5"></a>    <span class="fu">aes</span>(<span class="at">ymin =</span> lower.CL, <span class="at">ymax =</span> upper.CL),</span>
+<span id="cb23-6"><a aria-label="6"></a>    <span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">linewidth =</span> <span class="fl">0.9</span></span>
+<span id="cb23-7"><a aria-label="7"></a>  ) <span class="sc">+</span></span>
+<span id="cb23-8"><a aria-label="8"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species"</span>, <span class="at">y =</span> <span class="st">"Estimated mean mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb23-9"><a aria-label="9"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb23-10"><a aria-label="10"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb23-11"><a aria-label="11"></a></span>
+<span id="cb23-12"><a aria-label="12"></a>mass_emm_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="one_way_anova_2_lecture_files/figure-html/emmeans-plot-11-1.png" alt="Estimated marginal mean body mass with 95 percent confidence interval error bars for each penguin species, showing Gentoo highest, Chinstrap and Adelie lower with non-overlapping intervals." width="480"></p>
+<p><img data-src="one_way_anova_2_lecture_files/figure-revealjs/emmeans-plot-16-1.png" alt="Estimated marginal mean body mass with 95 percent confidence interval error bars for each penguin species. Adelie and Chinstrap sit at about 3700 grams with overlapping intervals, while Gentoo is far above at about 5080 grams with no overlap."></p>
 </figure>
 </div>
 </div>
 </div>
-</div><div class="column" style="width:40%;">
-<p><strong>Estimated marginal means</strong> with 95% confidence intervals.</p>
+</div><div class="column" style="width:45%;">
 <ul>
-<li>Non-overlapping intervals hint at real differences</li>
-<li>Pair this plot with the letters for a publication-ready figure</li>
+<li>Adelie and Chinstrap intervals <strong>overlap</strong> — consistent with <em>p</em> = 0.88</li>
+<li>Gentoo’s interval is nowhere near the other two</li>
 </ul>
-<p>The emmeans plot is the ANOVA cousin of Lecture 03’s mean ± SE plot.</p>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p>Overlapping CIs are a <strong>hint</strong>, not a test. The <em>p</em>-value is the test; the plot is how your reader sees it.</p>
+</div>
+</div>
+</div>
+<p>This is the ANOVA cousin of the mean ± SE plot from the summary-stats lecture.</p>
 </div></div>
 </section>
 
-<section id="how-to-report-an-anova" class="title-slide slide level1 center">
-<h1>How to Report an ANOVA</h1>
+<section id="how-to-report-the-whole-thing" class="title-slide slide level1 center">
+<h1>How to Report the Whole Thing</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a aria-label="1"></a><span class="co"># Pull the F table values for reporting ---------------</span></span>
-<span id="cb15-2"><a aria-label="2"></a>mass_tab <span class="ot">&lt;-</span> <span class="fu">Anova</span>(mass_model, <span class="at">type =</span> <span class="st">"II"</span>)</span>
-<span id="cb15-3"><a aria-label="3"></a>mass_tab</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Anova Table (Type II tests)
-
-Response: body_mass_g
-             Sum Sq  Df F value    Pr(&gt;F)    
-species   146864214   2  343.63 &lt; 2.2e-16 ***
-Residuals  72443483 339                      
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
-</div>
-</div>
 <blockquote>
-<p><em>“Body mass differed significantly among the three penguin species (one-way ANOVA: F(2, 339) = 343.6, p &lt; 0.001). Tukey-adjusted comparisons showed all three species differed, with Gentoo heaviest and Adelie lightest.”</em></p>
+<p><em>“Body mass differed among the three penguin species. Variances were unequal (Levene’s test: F(2, 339) = 5.12, p = 0.006), so we report Welch’s ANOVA: F(2, 189.5) = 317.6, p &lt; 0.001. Tukey-adjusted pairwise comparisons showed that Gentoo penguins (5076 ± 42 g) were heavier than both Adelie (3701 ± 38 g, p &lt; 0.001) and Chinstrap (3733 ± 56 g, p &lt; 0.001), while Adelie and Chinstrap did not differ (p = 0.88).”</em></p>
 </blockquote>
 </div><div class="column" style="width:40%;">
-<p><strong>Always include:</strong></p>
+<p><strong>Every piece earns its place:</strong></p>
 <ul>
-<li>Test type (one-way ANOVA)</li>
-<li><strong>F</strong>, both <strong>df</strong>, and the <strong>p-value</strong></li>
-<li>The post-hoc result (which groups differ)</li>
-<li>Group means ± SE or CI</li>
+<li>the assumption you checked, and what you did about it</li>
+<li>the test, <strong>F</strong>, <strong>both df</strong>, <strong><em>p</em></strong></li>
+<li>the follow-up, named as adjusted</li>
+<li>the <strong>means ± SE</strong>, so a reader can see the size of the effect</li>
+<li>the pair that did <strong>not</strong> differ — reporting that is not a failure, it is the finding</li>
 </ul>
-<p><strong>Never</strong> write “p = 0.000” — use “p &lt; 0.001”.</p>
 </div></div>
 </section>
 
-<section id="pause-do-activity-parts-911-now" class="title-slide slide level1 center">
-<h1>🛑 Pause — Do Activity Parts 9–11 Now</h1>
-<p>Run the emmeans pairwise test, get the letters, plot the means ± CI, and write your results sentence. Predict which species differ before you run the comparisons.</p>
+<section id="now-go-run-it" class="title-slide slide level1 center">
+<h1>🛑 Now Go Run It</h1>
+<p>Open <code>scripts/20_anova_2_skeleton.R</code>. Part A is pre-filled — run it chunk by chunk and answer the <strong>QA</strong> boxes. Part B is the homework: Sets 2 and 3 again on a <strong>different measurement</strong> — <code>flipper_length_mm</code>, <code>bill_length_mm</code> or <code>bill_depth_mm</code> — and you write that code yourself.</p>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p>Your Part B numbers will not match your neighbour’s. One of the three columns passes Levene’s test cleanly, one gives <strong>three different letters</strong>, and one puts <strong>Gentoo at the bottom</strong>. Do not assume it will look like body mass.</p>
+</div>
+</div>
+</div>
 </section>
 
 <section id="what-we-learned-today" class="title-slide slide level1 center">
@@ -651,15 +971,19 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <div class="column" style="width:60%;">
 <p><strong>Concepts:</strong></p>
 <ul>
-<li>ANOVA rejects H₀ for the <em>group</em>, but <strong>post-hoc</strong> finds <em>which</em> pairs differ</li>
-<li><strong>Tukey adjustment</strong> keeps the family-wise error at 0.05</li>
-<li>A compact letter display turns a pairwise table into one glance</li>
+<li>Normality is about the <strong>residuals</strong>, not the raw data</li>
+<li>Unequal variance + unequal n is the case that actually matters → <strong>Welch’s ANOVA</strong></li>
+<li>A significant F licenses a <strong>follow-up</strong>; it does not name the groups</li>
+<li><strong>Tukey adjustment</strong> keeps family-wise error at 0.05</li>
+<li>A shared letter means <em>not shown to be different</em> — not <em>proven the same</em></li>
 </ul>
 <p><strong>R skills:</strong></p>
 <ul>
-<li><code>aov()</code> + <code>summary()</code></li>
-<li><code>car::Anova(model, type = "II")</code></li>
-<li><code>emmeans(model, pairwise ~ group)</code> + <code>multcomp::cld()</code></li>
+<li><code>plot(model)</code>, <code>shapiro.test(residuals(model))</code></li>
+<li><code>leveneTest()</code>, <code>oneway.test(var.equal = FALSE)</code></li>
+<li><code>kruskal.test()</code> — know it exists; we do not run it today</li>
+<li><code>emmeans(model, pairwise ~ group)</code>, <code>multcomp::cld()</code></li>
+<li><code>pairwise.t.test(pool.sd = FALSE)</code></li>
 </ul>
 </div><div class="column" style="width:40%;">
 <p><strong>References:</strong></p>
@@ -667,10 +991,10 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <li>📖 W&amp;S Ch. 15 — ANOVA</li>
 <li>📖 <a href="https://cran.r-project.org/package=emmeans">emmeans vignettes</a></li>
 </ul>
-<p><strong>Up next — Lecture 15:</strong></p>
+<p><strong>Up next — Lecture 21:</strong></p>
 <ul>
-<li>Kicking off the <strong>final project</strong></li>
-<li>Applying this whole toolkit — wrangling, plotting, and a test — to a dataset you choose</li>
+<li>The <strong>final project</strong></li>
+<li>You now have the full toolkit: wrangle → plot → check → test → follow up → report. The project is you doing that on data you chose.</li>
 </ul>
 </div></div>
 
@@ -896,6 +1220,44 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
         ]
       });
     </script>
+    
+    <script>
+      // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+      // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+      // slide changes (different for each slide format).
+      (function () {
+        // dispatch for htmlwidgets
+        function fireSlideEnter() {
+          const event = window.document.createEvent("Event");
+          event.initEvent("slideenter", true, true);
+          window.document.dispatchEvent(event);
+        }
+
+        function fireSlideChanged(previousSlide, currentSlide) {
+          fireSlideEnter();
+
+          // dispatch for shiny
+          if (window.jQuery) {
+            if (previousSlide) {
+              window.jQuery(previousSlide).trigger("hidden");
+            }
+            if (currentSlide) {
+              window.jQuery(currentSlide).trigger("shown");
+            }
+          }
+        }
+
+        // hookup for slidy
+        if (window.w3c_slidy) {
+          window.w3c_slidy.add_observer(function (slide_num) {
+            // slide_num starts at position 1
+            fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+          });
+        }
+
+      })();
+    </script>
+
     <script id="quarto-html-after-body" type="application/javascript">
       window.document.addEventListener("DOMContentLoaded", function (event) {
         const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")

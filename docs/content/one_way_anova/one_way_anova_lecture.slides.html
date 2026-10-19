@@ -11,8 +11,8 @@
   <meta name="generator" content="quarto-1.10.18">
 
   <meta name="author" content="Bill Perry">
-  <meta name="dcterms.date" content="2026-10-09">
-  <title>UMD DAta Science Biology – Lecture — One-Way ANOVA I: Setting Up the Test</title>
+  <meta name="dcterms.date" content="2026-10-19">
+  <title>UMD DAta Science Biology – Lecture 19 — One-Way ANOVA I: Start to Finish</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -197,8 +197,8 @@
       margin-right: 0; 
     }
   </style>
-<meta property="og:title" content="Lecture — One-Way ANOVA I: Setting Up the Test – UMD DAta Science Biology">
-<meta property="og:description" content="From two groups to many: why we don’t run many t-tests, how the F-statistic partitions variance, using factors to order groups for a readable plot and to set the ANOVA reference level, fitting a one-way ANOVA as a linear model, and checking its assumptions — normality of residuals and equal variance — on the Palmer penguins data.">
+<meta property="og:title" content="Lecture 19 — One-Way ANOVA I: Start to Finish – UMD DAta Science Biology">
+<meta property="og:description" content="The complete basic one-way ANOVA, beginning to end: why one test instead of many t-tests, what the F-statistic is, ordering groups with factors, fitting lm(), reading the table with aov(), car::Anova(type = 2) and car::Anova(type = 3) — including the contrasts option Type III needs — and writing the result up. Assumptions and follow-up tests are Lecture 20.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 <body class="quarto-light">
@@ -206,8 +206,8 @@
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h1 class="title">Lecture — One-Way ANOVA I: Setting Up the Test</h1>
-  <p class="subtitle">Why not many t-tests, the F-statistic, ordering groups with factors, fitting the model, and checking assumptions</p>
+  <h1 class="title">Lecture 19 — One-Way ANOVA I: Start to Finish</h1>
+  <p class="subtitle">From the question to a reported F — the whole basic ANOVA in one pass</p>
 
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
@@ -217,14 +217,15 @@ Bill Perry
 </div>
 </div>
 
-  <p class="date">2026-10-09</p>
+  <p class="date">2026-10-19</p>
 </section>
-<section id="where-we-left-off-lectures-0911" class="title-slide slide level1 center">
-<h1>Where we left off (Lectures 09–11)</h1>
+<section id="where-we-left-off" class="title-slide slide level1 center">
+<h1>Where we left off</h1>
 <ul>
 <li><strong>T-Tests I &amp; II</strong> — comparing the means of <strong>two</strong> groups with Welch’s t-test</li>
-<li><strong>Regression (Lecture 11)</strong> — <code>lm(Y ~ X)</code> with a <strong>numeric</strong> predictor, checked with <code>plot(model)</code></li>
-<li>Both of those are, underneath, the same tool: a <strong>linear model</strong></li>
+<li><strong>Regression (Lecture 11)</strong> — <code>lm(Y ~ X)</code> with a <strong>numeric</strong> predictor</li>
+<li><strong>Weather (Lecture 12)</strong> — the same <code>lm()</code>, with a slope read as a rate</li>
+<li><strong>Pivoting &amp; Joins (Lectures 15–16)</strong> — getting messy data into one tidy table so a model can be fitted to it at all</li>
 </ul>
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
@@ -236,7 +237,7 @@ Bill Perry
 </div>
 <div class="callout-content">
 <p><strong>✅ Transition</strong></p>
-<p>The t-test compared <strong>two</strong> groups. But biology is full of <strong>three-or-more</strong> group questions — three species, four sites, five treatments. Today’s twist: it’s still <code>lm(Y ~ X)</code> — just with a <strong>categorical</strong> X instead of a numeric one. That’s <strong>one-way ANOVA.</strong></p>
+<p>The t-test compared <strong>two</strong> groups. Biology is full of <strong>three-or-more</strong> group questions — three species, four sites, five treatments. Today’s twist: it is still <code>lm(Y ~ X)</code>, just with a <strong>categorical</strong> X. That is <strong>one-way ANOVA</strong>.</p>
 </div>
 </div>
 </div>
@@ -246,35 +247,84 @@ Bill Perry
 <h1>Goals for today</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
+<p>Today is the <strong>whole basic ANOVA, start to finish</strong>:</p>
 <ul>
-<li>Understand <strong>why</strong> we don’t just run many t-tests</li>
-<li>See how the <strong>F-statistic</strong> compares <em>between-</em> vs <em>within-</em>group variance</li>
-<li>State ANOVA <strong>hypotheses</strong> (H₀: all means equal)</li>
-<li>Use <strong>factors</strong> to order groups for a readable plot and set the reference level</li>
-<li>Fit the model with <code>lm()</code></li>
-<li><strong>Check assumptions</strong> — normality of residuals, equal variance</li>
+<li>Why we do <strong>not</strong> run many t-tests</li>
+<li>What the <strong>F-statistic</strong> is</li>
+<li>State the <strong>hypotheses</strong></li>
+<li>Use <strong>factors</strong> to order the groups on the plot</li>
+<li>Fit it with <code>lm()</code></li>
+<li>Read the table — <code>aov()</code>, <code>Anova(type = 2)</code>, <code>Anova(type = 3)</code></li>
+<li><strong>Report</strong> the result in a sentence</li>
 </ul>
 </div><div class="column" style="width:40%;">
 <p><strong>Tools today:</strong></p>
 <ul>
 <li><code>palmerpenguins</code>, <code>tidyverse</code> (includes <code>forcats</code>)</li>
-<li><code>car</code> — Levene’s test</li>
+<li><code>car</code> — <code>Anova()</code></li>
 </ul>
 <p><strong>Textbook:</strong></p>
 <ul>
 <li>📖 Whitlock &amp; Schluter, <strong>Ch. 15 — ANOVA</strong></li>
 <li>📖 <a href="https://r4ds.hadley.nz/factors">R4DS Ch. 16 — Factors</a></li>
-<li>📖 <a href="https://r4ds.hadley.nz/layers">R4DS Ch. 9 — Layers</a></li>
 </ul>
 <p><strong>Naming:</strong> models → <code>_model</code>, plots → <code>_plot</code></p>
 </div></div>
+</section>
+
+<section id="three-sets-of-material-three-days" class="title-slide slide level1 center">
+<h1>Three Sets of Material, Three Days</h1>
+<table class="caption-top">
+<colgroup>
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 56%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Set</th>
+<th>Where</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>1 — The basic ANOVA</strong></td>
+<td><strong>today</strong>, Lecture 19</td>
+<td>question → plot → <code>lm()</code> → F table → report</td>
+</tr>
+<tr class="even">
+<td><strong>2 — The assumptions</strong></td>
+<td>Lecture 20</td>
+<td>residual normality, equal variance, what to do when they fail</td>
+</tr>
+<tr class="odd">
+<td><strong>3 — The follow-up tests</strong></td>
+<td>Lecture 20</td>
+<td><em>which</em> groups differ — <code>emmeans</code>, Tukey, letters</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p>We do Set 1 <strong>all the way through first</strong> — including a reported result — so you see the shape of the whole analysis before we start poking at it. A real write-up would check the assumptions <strong>before</strong> trusting that <em>p</em>-value, and that is exactly what Lecture 20 does.</p>
+</div>
+</div>
+</div>
 </section>
 
 <section id="how-to-use-these-slides-predict-type-run" class="title-slide slide level1 center scrollable">
 <h1>How to Use These Slides — Predict · Type · Run</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
-<p>This lecture runs in <strong>two short chunks</strong>. After each chunk you switch to the <strong>activity</strong> and type the code yourself.</p>
+<p>I lecture through the material, then you open the skeleton script and run the code yourself.</p>
 <p><strong>For every code block, do three things:</strong></p>
 <ol type="1">
 <li><strong>Predict</strong> — before it runs, say what you think the output will be</li>
@@ -293,9 +343,9 @@ Bill Perry
 <div class="callout-content">
 <p><strong>✅ Why bother? (the evidence)</strong></p>
 <ul>
-<li>With three groups it is tempting to just read off the tallest box. Predicting the F-statistic first makes you reason about between- vs.&nbsp;within-group variance.</li>
-<li>Typing <code>type = "II"</code> yourself in <code>Anova()</code> is what makes you notice it is there.</li>
-<li>Checking each assumption right after it is introduced keeps it tied to <em>this</em> penguin model, not two more rules to memorize.</li>
+<li>With three groups it is tempting to just read off the tallest box. Predicting the F first makes you reason about between- vs.&nbsp;within-group variance.</li>
+<li>Typing <code>type = 2</code> yourself in <code>Anova()</code> is what makes you notice it is there.</li>
+<li>You will meet <code>anova()</code>, <code>aov()</code> and <code>Anova()</code> in one lecture. Typing each one is how they stop blurring together.</li>
 </ul>
 </div>
 </div>
@@ -303,29 +353,11 @@ Bill Perry
 </div></div>
 </section>
 
-<section id="chunk-1-of-2-why-anova-the-f-statistic" class="title-slide slide level1 center">
-<h1>🧩 Chunk 1 of 2 · Why ANOVA &amp; the F-Statistic</h1>
-<p><strong>We will cover:</strong> why not many t-tests, what ANOVA asks, how F partitions variance, and a first look at the penguin data.</p>
-<div class="callout callout-tip callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Tip</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>🖐 After this chunk: Activity Parts 1–3</strong> (load the penguins, explore, state hypotheses).</p>
-</div>
-</div>
-</div>
-</section>
-
 <section id="why-not-just-run-many-t-tests" class="title-slide slide level1 center">
 <h1>Why Not Just Run Many t-Tests?</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
-<p>With <strong>3 groups</strong> you’d need <strong>3</strong> t-tests (A–B, A–C, B–C). With 4 groups, <strong>6</strong> tests.</p>
+<p>With <strong>3 groups</strong> you would need <strong>3</strong> t-tests (A–B, A–C, B–C). With 4 groups, <strong>6</strong> tests.</p>
 <p>Every test at α = 0.05 has a <strong>5% chance of a false positive</strong>. Run several and those risks <strong>stack up</strong>:</p>
 <ul>
 <li>3 tests → ~<strong>14%</strong> chance of at least one false positive</li>
@@ -357,6 +389,10 @@ Bill Perry
 <div class="column" style="width:60%;">
 <p>One <strong>numeric response (Y)</strong> across the levels of one <strong>categorical predictor (X)</strong>.</p>
 <table class="caption-top">
+<colgroup>
+<col style="width: 30%">
+<col style="width: 70%">
+</colgroup>
 <thead>
 <tr class="header">
 <th></th>
@@ -374,7 +410,7 @@ Bill Perry
 </tr>
 </tbody>
 </table>
-<p>Note what Hₐ does <em>not</em> say: it does <strong>not</strong> tell you <em>which</em> group differs — that comes later, from the post-hoc test.</p>
+<p>Note what Hₐ does <em>not</em> say: it does <strong>not</strong> tell you <em>which</em> group differs — that is Set 3, next lecture.</p>
 </div><div class="column" style="width:40%;">
 <p><strong>Our question today:</strong></p>
 <p>Do the three penguin <strong>species</strong> differ in <strong>body mass</strong>?</p>
@@ -407,7 +443,7 @@ Bill Perry
 </div>
 <div class="callout-content">
 <p><strong>✅ Key idea</strong></p>
-<p>ANOVA is a <strong>signal-to-noise ratio</strong>. The “signal” is the gap between group means; the “noise” is the within-group scatter.</p>
+<p>ANOVA is a <strong>signal-to-noise ratio</strong> — the same shape as <em>t</em>. The “signal” is the gap between group means; the “noise” is the within-group scatter.</p>
 </div>
 </div>
 </div>
@@ -423,8 +459,7 @@ Bill Perry
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a aria-label="1"></a><span class="co"># Load packages at the top — always -------------------</span></span>
 <span id="cb1-2"><a aria-label="2"></a><span class="fu">library</span>(tidyverse)      <span class="co"># wrangling + ggplot2</span></span>
 <span id="cb1-3"><a aria-label="3"></a><span class="fu">library</span>(palmerpenguins) <span class="co"># the penguins data</span></span>
-<span id="cb1-4"><a aria-label="4"></a><span class="fu">library</span>(car)            <span class="co"># Levene's test, Anova()</span></span>
-<span id="cb1-5"><a aria-label="5"></a><span class="fu">library</span>(emmeans)        <span class="co"># post-hoc pairwise tests</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-4"><a aria-label="4"></a><span class="fu">library</span>(car)            <span class="co"># Anova()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a aria-label="1"></a><span class="co"># Drop rows missing mass or species -------------------</span></span>
@@ -442,10 +477,10 @@ Bill Perry
 </div>
 </div>
 </div><div class="column" style="width:40%;">
-<p><strong>Three species, one lab:</strong> body mass (g) of penguins at Palmer Station, Antarctica.</p>
+<p><strong>Three species, one field station:</strong> body mass (g) of penguins at Palmer Station, Antarctica.</p>
 <ul>
 <li><code>drop_na()</code> removes rows with missing mass</li>
-<li><code>count(species)</code> shows the sample size per group</li>
+<li><code>count(species)</code> gives the sample size per group</li>
 </ul>
 <div class="callout callout-important callout-titled callout-style-default">
 <div class="callout-body">
@@ -456,7 +491,57 @@ Bill Perry
 <p><strong>Important</strong></p>
 </div>
 <div class="callout-content">
-<p>The groups are <strong>unbalanced</strong> (different n per species) — that matters when we pick our ANOVA type later.</p>
+<p>The groups are <strong>unbalanced</strong> — 151, 68 and 123 birds. That is why we care which sums of squares <code>Anova()</code> uses.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="two-different-penguins-data-sets" class="title-slide slide level1 center">
+<h1>⚠️ Two Different <code>penguins</code> Data Sets</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p>R 4.5 added its <strong>own</strong> <code>penguins</code> to base R, with <strong>shorter column names</strong>:</p>
+<table class="caption-top">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Source</th>
+<th>Mass column</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>palmerpenguins::penguins</code></td>
+<td><code>body_mass_g</code></td>
+</tr>
+<tr class="even">
+<td>base R <code>datasets::penguins</code></td>
+<td><code>body_mass</code></td>
+</tr>
+</tbody>
+</table>
+<p>If you forget <code>library(palmerpenguins)</code>, <code>penguins</code> still exists — so there is no “object not found” error. You get a column-name error later instead.</p>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>The error you would see</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a aria-label="1"></a>penguins <span class="sc">%&gt;%</span> <span class="fu">drop_na</span>(body_mass_g)</span>
+<span id="cb4-2"><a aria-label="2"></a><span class="co">#&gt; Error in `drop_na()`:</span></span>
+<span id="cb4-3"><a aria-label="3"></a><span class="co">#&gt; ! Can't select columns that don't exist.</span></span>
+<span id="cb4-4"><a aria-label="4"></a><span class="co">#&gt; ✖ Column `body_mass_g` doesn't exist.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>The fix:</strong> <code>library(palmerpenguins)</code> at the top. We use the <code>_g</code> names all lecture.</p>
 </div>
 </div>
 </div>
@@ -465,6 +550,27 @@ Bill Perry
 
 <section id="explore-first-boxplot-by-species" class="title-slide slide level1 center">
 <h1>Explore First — Boxplot by Species</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a>mass_box_plot <span class="ot">&lt;-</span> penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb5-2"><a aria-label="2"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
+<span id="cb5-3"><a aria-label="3"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb5-4"><a aria-label="4"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">1.5</span>) <span class="sc">+</span></span>
+<span id="cb5-5"><a aria-label="5"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species"</span>, <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb5-6"><a aria-label="6"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb5-7"><a aria-label="7"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb5-8"><a aria-label="8"></a></span>
+<span id="cb5-9"><a aria-label="9"></a>mass_box_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="one_way_anova_lecture_files/figure-revealjs/boxplot-15-1.png" alt="Boxplot of penguin body mass in grams by species (Adelie, Chinstrap, Gentoo) with jittered individual points overlaid, showing Gentoo penguins noticeably heavier than the other two species, which sit at about the same level."></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -474,41 +580,17 @@ Bill Perry
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🔮 Predict first:</strong> Do you expect all three species to differ, or just one? Which is heaviest?</p>
+<p><strong>🔮 Predict first:</strong> all three species, or just one? Which is heaviest?</p>
 </div>
 </div>
 </div>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a aria-label="1"></a>mass_box_plot <span class="ot">&lt;-</span> penguins_df <span class="sc">%&gt;%</span></span>
-<span id="cb4-2"><a aria-label="2"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
-<span id="cb4-3"><a aria-label="3"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb4-4"><a aria-label="4"></a>  <span class="fu">geom_point</span>(</span>
-<span id="cb4-5"><a aria-label="5"></a>    <span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">seed =</span> <span class="dv">42</span>),</span>
-<span id="cb4-6"><a aria-label="6"></a>    <span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">1.5</span></span>
-<span id="cb4-7"><a aria-label="7"></a>  ) <span class="sc">+</span></span>
-<span id="cb4-8"><a aria-label="8"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species"</span>, <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>) <span class="sc">+</span></span>
-<span id="cb4-9"><a aria-label="9"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb4-10"><a aria-label="10"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
-<span id="cb4-11"><a aria-label="11"></a></span>
-<span id="cb4-12"><a aria-label="12"></a>mass_box_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure>
-<p><img data-src="one_way_anova_lecture_files/figure-html/boxplot-10-1.png" alt="Boxplot of penguin body mass in grams by species (Adelie, Chinstrap, Gentoo) with jittered individual points overlaid, showing Gentoo penguins noticeably heavier than the other two species." width="480"></p>
-</figure>
-</div>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
 <p><strong>Always plot before you test.</strong></p>
 <ul>
-<li>The picture usually tells the story before the <em>p</em>-value confirms it</li>
-<li>Look for separation between boxes and roughly similar spread</li>
-<li>But notice the <strong>order</strong>: Adelie, Chinstrap, Gentoo — that’s alphabetical, not by mass</li>
+<li>Gentoo sits well above the other two</li>
+<li>Adelie and Chinstrap are <strong>almost on top of each other</strong> — hold that thought</li>
+<li>The box heights are <strong>not</strong> all equal — hold that one too (Set 2)</li>
+<li>The order is <strong>alphabetical</strong>, not by mass</li>
 </ul>
-<p>📖 R4DS §9 — Layers</p>
 </div></div>
 </section>
 
@@ -517,19 +599,19 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="fu">class</span>(penguins_df<span class="sc">$</span>species)   <span class="co"># "factor"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a aria-label="1"></a><span class="fu">class</span>(penguins_df<span class="sc">$</span>species)   <span class="co"># "factor"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "factor"</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a><span class="fu">levels</span>(penguins_df<span class="sc">$</span>species)  <span class="co"># the stored order</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a aria-label="1"></a><span class="fu">levels</span>(penguins_df<span class="sc">$</span>species)  <span class="co"># the stored order</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "Adelie"    "Chinstrap" "Gentoo"   </code></pre>
 </div>
 </div>
 <ul>
 <li>A <strong>factor</strong> is a categorical column with a fixed, <em>ordered</em> set of <strong>levels</strong></li>
-<li><code>ggplot</code> (and <code>lm</code>) draw groups in <strong>level order</strong></li>
-<li>The default level order is <strong>alphabetical</strong> — almost never the order you want</li>
+<li><code>ggplot</code> (and <code>lm</code>) draw and model groups in <strong>level order</strong></li>
+<li>The default level order is <strong>alphabetical</strong> — almost never what you want</li>
 </ul>
 </div><div class="column" style="width:40%;">
 <div class="callout callout-note callout-titled callout-style-default">
@@ -555,19 +637,19 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a>penguins_df <span class="sc">%&gt;%</span></span>
-<span id="cb9-2"><a aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_reorder</span>(species, body_mass_g,</span>
-<span id="cb9-3"><a aria-label="3"></a>                               <span class="at">.fun =</span> median)) <span class="sc">%&gt;%</span></span>
-<span id="cb9-4"><a aria-label="4"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
-<span id="cb9-5"><a aria-label="5"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb9-6"><a aria-label="6"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species (ordered by median mass)"</span>,</span>
-<span id="cb9-7"><a aria-label="7"></a>       <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>) <span class="sc">+</span></span>
-<span id="cb9-8"><a aria-label="8"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb9-9"><a aria-label="9"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a aria-label="1"></a>penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb10-2"><a aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_reorder</span>(species, body_mass_g,</span>
+<span id="cb10-3"><a aria-label="3"></a>                               <span class="at">.fun =</span> median)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-4"><a aria-label="4"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> species, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species)) <span class="sc">+</span></span>
+<span id="cb10-5"><a aria-label="5"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb10-6"><a aria-label="6"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species (ordered by median mass)"</span>,</span>
+<span id="cb10-7"><a aria-label="7"></a>       <span class="at">y =</span> <span class="st">"Body Mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb10-8"><a aria-label="8"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb10-9"><a aria-label="9"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="one_way_anova_lecture_files/figure-html/fct-reorder-10-1.png" alt="The same penguin body-mass boxplot, now with species ordered from lightest to heaviest median mass: Adelie, Chinstrap, Gentoo happen to already be in that order here, but the reordering is now explicit and data-driven." width="480"></p>
+<p><img data-src="one_way_anova_lecture_files/figure-revealjs/fct-reorder-15-1.png" alt="The same penguin body-mass boxplot with species reordered by median mass from lightest to heaviest: Adelie, Chinstrap, Gentoo. The order is now data-driven rather than alphabetical."></p>
 </figure>
 </div>
 </div>
@@ -576,7 +658,7 @@ Bill Perry
 <ul>
 <li><code>fct_reorder(f, x, .fun = median)</code> — reorder factor <code>f</code> by a summary of <code>x</code></li>
 <li>Do it <strong>inside <code>mutate()</code></strong>, then plot the result</li>
-<li>One line; the plot now reads lightest → heaviest</li>
+<li>Here the alphabetical order happens to already be the mass order — but now it is that way <strong>on purpose</strong>, and it will hold for data where it does not</li>
 </ul>
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
@@ -587,48 +669,50 @@ Bill Perry
 <p><strong>Tip</strong></p>
 </div>
 <div class="callout-content">
-<p>The full <code>forcats</code> family — rename levels, merge them, lump rare ones — is in <strong>Common Code 15 · Factors</strong>. Today we only need <em>ordering</em> and, next, the <em>reference level</em>.</p>
+<p>The full <code>forcats</code> family — rename levels, merge them, lump rare ones — is in <strong>Common Code 15 · Factors</strong>. Today we need <em>ordering</em>, and <code>fct_relevel()</code> for the baseline in a moment.</p>
 </div>
 </div>
 </div>
 </div></div>
 </section>
 
-<section id="pause-do-activity-parts-14-now" class="title-slide slide level1 center">
-<h1>🛑 Pause — Do Activity Parts 1–4 Now</h1>
-<p>Load the penguins, plot body mass by species, reorder the boxplot with <code>fct_reorder()</code>, and write your hypotheses. Predict which species differ before you run anything.</p>
-</section>
-
-<section id="chunk-2-of-2-fit-the-model-check-assumptions" class="title-slide slide level1 center">
-<h1>🧩 Chunk 2 of 2 · Fit the Model &amp; Check Assumptions</h1>
-<p><strong>We will cover:</strong> fitting the model, then checking normality of the residuals and equal variance across groups.</p>
-<div class="callout callout-tip callout-titled callout-style-default">
+<section id="state-the-hypotheses-before-any-code" class="title-slide slide level1 center">
+<h1>State the Hypotheses — Before Any Code</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>H₀:</strong> <span class="math inline">\(\mu_{\text{Adelie}} = \mu_{\text{Chinstrap}} = \mu_{\text{Gentoo}}\)</span></p>
+<p><strong>Hₐ:</strong> at least one species mean differs from the others</p>
+<p><strong>α = 0.05</strong></p>
+<p>That is the whole hypothesis set. There is <strong>one</strong> test and <strong>one</strong> <em>p</em>-value, no matter how many groups you have.</p>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-important callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
-<p><strong>Tip</strong></p>
+<p><strong>Important</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🖐 After this chunk: Activity Parts 5–8</strong> (fit, set the reference level, QQ + Shapiro on residuals, Levene’s test).</p>
+<p>Hₐ is deliberately vague. “At least one differs” is all the F-test can tell you. If you want to name the species, you need the follow-up tests — Set 3.</p>
 </div>
 </div>
 </div>
+</div></div>
 </section>
 
-<section id="fit-the-model" class="title-slide slide level1 center">
-<h1>Fit the Model</h1>
+<section id="fit-the-model-lm" class="title-slide slide level1 center">
+<h1>Fit the Model — <code>lm()</code></h1>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a aria-label="1"></a><span class="co"># ANOVA is a linear model with a categorical X ---------</span></span>
-<span id="cb10-2"><a aria-label="2"></a>mass_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="co"># ANOVA is a linear model with a categorical X --------</span></span>
+<span id="cb11-2"><a aria-label="2"></a>mass_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <ul>
-<li><code>lm(Y ~ X)</code> — the <em>same</em> syntax as regression (Lecture 11)</li>
-<li>When <code>X</code> is <strong>categorical</strong>, that linear model <em>is</em> a one-way ANOVA</li>
-<li>We check assumptions on this model <strong>before</strong> reading any <em>p</em>-value</li>
+<li><code>lm(Y ~ X)</code> — the <em>same</em> function call as regression</li>
+<li>When <code>X</code> is <strong>categorical</strong>, that linear model <strong>is</strong> a one-way ANOVA</li>
+<li>Fitting the model and <strong>reading a table from it</strong> are two separate steps</li>
 </ul>
 </div><div class="column" style="width:40%;">
 <div class="callout callout-note callout-titled callout-style-default">
@@ -641,7 +725,7 @@ Bill Perry
 </div>
 <div class="callout-content">
 <p><strong>✅ Key idea</strong></p>
-<p><code>lm(body_mass_g ~ species)</code> is the exact same function call you used for a numeric predictor in Lecture 11 — only <code>species</code> is categorical this time. R handles the encoding automatically; you don’t write anything differently to get an ANOVA instead of a regression.</p>
+<p>You do not write anything different to get an ANOVA instead of a regression. <code>lm()</code> looks at the class of <code>X</code> and codes it for you. One function, two tests.</p>
 </div>
 </div>
 </div>
@@ -649,22 +733,52 @@ Bill Perry
 </div></div>
 </section>
 
-<section id="which-group-is-the-baseline-fct_relevel" class="title-slide slide level1 center">
-<h1>Which Group Is the Baseline? — <code>fct_relevel()</code></h1>
+<section id="what-lm-did-with-a-factor-the-baseline" class="title-slide slide level1 center">
+<h1>What <code>lm()</code> Did With a Factor — the Baseline</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="co"># The (Intercept) is the FIRST level = Adelie ---------</span></span>
-<span id="cb11-2"><a aria-label="2"></a><span class="fu">coef</span>(mass_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="fu">coef</span>(mass_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     (Intercept) speciesChinstrap    speciesGentoo 
       3700.66225         32.42598       1375.35401 </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># Make Gentoo the reference instead --------------------</span></span>
-<span id="cb13-2"><a aria-label="2"></a>penguins_relevel <span class="ot">&lt;-</span> penguins_df <span class="sc">%&gt;%</span></span>
-<span id="cb13-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_relevel</span>(species, <span class="st">"Gentoo"</span>))</span>
-<span id="cb13-4"><a aria-label="4"></a></span>
-<span id="cb13-5"><a aria-label="5"></a><span class="fu">coef</span>(<span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_relevel))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<ul>
+<li><code>(Intercept)</code> is the mean of the <strong>first level</strong> — Adelie</li>
+<li>The other coefficients are <strong>differences from Adelie</strong></li>
+<li>Chinstrap is +32 g; Gentoo is +1375 g</li>
+</ul>
+</div><div class="column" style="width:40%;">
+<p>This is <strong>treatment coding</strong> (<code>contr.treatment</code>) — R’s default. Each group is compared with a baseline group.</p>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>Remember this phrase: <em>treatment coding compares every group with the first level.</em> It comes back in two slides when we ask <code>Anova()</code> for Type III.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="change-the-baseline-fct_relevel" class="title-slide slide level1 center">
+<h1>Change the Baseline — <code>fct_relevel()</code></h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a aria-label="1"></a><span class="co"># Make Gentoo the reference instead -------------------</span></span>
+<span id="cb14-2"><a aria-label="2"></a>penguins_relevel <span class="ot">&lt;-</span> penguins_df <span class="sc">%&gt;%</span></span>
+<span id="cb14-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">species =</span> <span class="fu">fct_relevel</span>(species, <span class="st">"Gentoo"</span>))</span>
+<span id="cb14-4"><a aria-label="4"></a></span>
+<span id="cb14-5"><a aria-label="5"></a>mass_model_gentoo <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species,</span>
+<span id="cb14-6"><a aria-label="6"></a>                        <span class="at">data =</span> penguins_relevel)</span>
+<span id="cb14-7"><a aria-label="7"></a><span class="fu">coef</span>(mass_model_gentoo)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     (Intercept)    speciesAdelie speciesChinstrap 
         5076.016        -1375.354        -1342.928 </code></pre>
@@ -672,8 +786,7 @@ Bill Perry
 </div>
 </div><div class="column" style="width:40%;">
 <ul>
-<li><code>lm</code> picks the <strong>first factor level</strong> as the baseline; every coefficient is a difference <em>from that group</em></li>
-<li><code>fct_relevel(species, "Gentoo")</code> moves Gentoo to the front → coefficients are now differences from Gentoo</li>
+<li><code>fct_relevel(species, "Gentoo")</code> moves Gentoo to the front → the coefficients are now differences <strong>from Gentoo</strong></li>
 </ul>
 <div class="callout callout-important callout-titled callout-style-default">
 <div class="callout-body">
@@ -684,15 +797,16 @@ Bill Perry
 <p><strong>Important</strong></p>
 </div>
 <div class="callout-content">
-<p>Releveling changes <strong>which comparisons the coefficients show</strong>. It does <strong>not</strong> change the overall <strong>F</strong> or <em>p</em>-value — the ANOVA question (“do any means differ?”) is the same no matter which group you call the baseline.</p>
+<p>Releveling changes <strong>which comparisons the coefficients show</strong>. It does <strong>not</strong> change the overall <strong>F</strong> or <em>p</em>-value — “do any means differ?” is the same question whichever group you call the baseline.</p>
 </div>
 </div>
 </div>
+<p>Use it to make the baseline a group your reader cares about — a control, a reference site.</p>
 </div></div>
 </section>
 
-<section id="assumption-1-normality-of-the-residuals" class="title-slide slide level1 center">
-<h1>Assumption 1 — Normality of the Residuals</h1>
+<section id="read-the-table-aov-and-summary" class="title-slide slide level1 center">
+<h1>Read the Table — <code>aov()</code> and <code>summary()</code></h1>
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -702,113 +816,411 @@ Bill Perry
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🔮 Predict first:</strong> <code>plot(mass_model)</code> gives the same four panels as the regression lecture. With ~340 penguins, will the Normal Q-Q panel track the line as tightly?</p>
-</div>
-</div>
-</div>
-<div class="columns">
-<div class="column" style="width:55%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a aria-label="1"></a><span class="co"># Same plot(model) diagnostics as the regression lecture</span></span>
-<span id="cb15-2"><a aria-label="2"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
-<span id="cb15-3"><a aria-label="3"></a><span class="fu">plot</span>(mass_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure>
-<p><img data-src="one_way_anova_lecture_files/figure-html/diagnostic-plots-10-1.png" alt="Four base R diagnostic plots for the body mass by species linear model, arranged in a two by two grid: residuals versus fitted values, a normal Q-Q plot of the residuals, a scale-location plot, and a residuals versus leverage plot." width="528"></p>
-</figure>
-</div>
-</div>
-</div>
-</div><div class="column" style="width:45%;">
-<ul>
-<li>Check normality of the <strong>residuals</strong>, not the raw masses</li>
-<li><strong>Panel 2 (Normal Q-Q)</strong> is the main visual tool</li>
-<li>Panels 1 &amp; 3 double-check equal variance — the same job Levene’s does next, from a different angle</li>
-</ul>
-</div></div>
-</section>
-
-<section id="normality-shapiro-wilk-as-a-companion" class="title-slide slide level1 center">
-<h1>Normality — Shapiro-Wilk as a Companion</h1>
-<div class="columns">
-<div class="column" style="width:55%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a aria-label="1"></a><span class="co"># Shapiro-Wilk on the RESIDUALS, not the raw masses ----</span></span>
-<span id="cb16-2"><a aria-label="2"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(mass_model))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-    Shapiro-Wilk normality test
-
-data:  residuals(mass_model)
-W = 0.99166, p-value = 0.05118</code></pre>
-</div>
-</div>
-</div><div class="column" style="width:45%;">
-<ul>
-<li><strong>H₀:</strong> the residuals are normal</li>
-<li><em>p</em> &gt; 0.05 → no evidence against normality</li>
-</ul>
-<div class="callout callout-important callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Important</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>Large-sample caution:</strong> with ~340 birds, Shapiro-Wilk flags <em>tiny</em> departures as “significant.” Trust the <strong>Q-Q panel</strong> — if the points track the line, you’re fine.</p>
-</div>
-</div>
-</div>
-</div></div>
-</section>
-
-<section id="assumption-2-equal-variance-levenes-test" class="title-slide slide level1 center">
-<h1>Assumption 2 — Equal Variance (Levene’s Test)</h1>
-<div class="callout callout-note callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Note</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>🔮 Predict first:</strong> Look back at the boxplot spreads. Predict — will Levene’s test call the variances <strong>equal</strong> (<em>p</em> &gt; 0.05) or <strong>unequal</strong>?</p>
+<p><strong>🔮 Predict first:</strong> The boxplot was very separated. Predict the <em>p</em>-value — nearer 0.5, 0.05, or far below 0.001?</p>
 </div>
 </div>
 </div>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a aria-label="1"></a><span class="co"># Levene's test — H0: all groups have equal variance --</span></span>
-<span id="cb18-2"><a aria-label="2"></a><span class="fu">leveneTest</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a aria-label="1"></a><span class="co"># The classic ANOVA table -----------------------------</span></span>
+<span id="cb16-2"><a aria-label="2"></a>mass_aov <span class="ot">&lt;-</span> <span class="fu">aov</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> penguins_df)</span>
+<span id="cb16-3"><a aria-label="3"></a><span class="fu">summary</span>(mass_aov)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Levene's Test for Homogeneity of Variance (center = median)
-       Df F value   Pr(&gt;F)   
-group   2  5.1203 0.006445 **
-      339                    
+<pre><code>             Df    Sum Sq  Mean Sq F value Pr(&gt;F)    
+species       2 146864214 73432107   343.6 &lt;2e-16 ***
+Residuals   339  72443483   213698                   
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
-<ul>
-<li><em>p</em> &gt; 0.05 → variances similar → classic ANOVA is fine</li>
-<li><em>p</em> &lt; 0.05 → variances differ → use <strong>Welch’s ANOVA</strong>:</li>
-</ul>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a aria-label="1"></a><span class="fu">oneway.test</span>(body_mass_g <span class="sc">~</span> species,</span>
-<span id="cb20-2"><a aria-label="2"></a>            <span class="at">data =</span> penguins_df,</span>
-<span id="cb20-3"><a aria-label="3"></a>            <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Same spirit as Welch’s <strong>t</strong>-test — robust when spreads differ.</p>
+<p><strong>Reading the table:</strong></p>
+<table class="caption-top">
+<colgroup>
+<col style="width: 30%">
+<col style="width: 70%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Df</code></td>
+<td>groups − 1, then residual df</td>
+</tr>
+<tr class="even">
+<td><code>Sum Sq</code></td>
+<td>variation explained / left over</td>
+</tr>
+<tr class="odd">
+<td><code>F value</code></td>
+<td>between ÷ within</td>
+</tr>
+<tr class="even">
+<td><code>Pr(&gt;F)</code></td>
+<td>the <em>p</em>-value for H₀</td>
+</tr>
+</tbody>
+</table>
+<p><em>p</em> &lt; 0.05 → <strong>reject H₀</strong> → at least one species differs.</p>
 </div></div>
 </section>
 
-<section id="pause-do-activity-parts-58-now" class="title-slide slide level1 center">
-<h1>🛑 Pause — Do Activity Parts 5–8 Now</h1>
-<p>Fit <code>lm(body_mass_g ~ species)</code>, set the reference level with <code>fct_relevel()</code>, check the residual QQ plot + Shapiro, and run Levene’s test. Predict each result before you run it.</p>
+<section id="three-function-names-one-idea" class="title-slide slide level1 center">
+<h1>Three Function Names, One Idea</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<table class="caption-top">
+<colgroup>
+<col style="width: 34%">
+<col style="width: 16%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Call</th>
+<th>Package</th>
+<th>Gives you</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>aov(y ~ x)</code> + <code>summary()</code></td>
+<td>base R</td>
+<td>the classic ANOVA table</td>
+</tr>
+<tr class="even">
+<td><code>anova(model)</code></td>
+<td>base R</td>
+<td><strong>Type I</strong> (sequential) table</td>
+</tr>
+<tr class="odd">
+<td><code>Anova(model)</code></td>
+<td><strong>car</strong></td>
+<td><strong>Type II</strong> table (the default)</td>
+</tr>
+<tr class="even">
+<td><code>Anova(model, type = 3)</code></td>
+<td><strong>car</strong></td>
+<td><strong>Type III</strong> table</td>
+</tr>
+</tbody>
+</table>
+<p>Lowercase <code>anova()</code> and capital <code>Anova()</code> are <strong>different functions from different packages</strong>. R will not guess which you meant.</p>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><code>Anova()</code> lives in <strong>car</strong>. Without <code>library(car)</code> you get</p>
+<pre><code>could not find function "Anova"</code></pre>
+<p>With one predictor all four of these give the <strong>same F for <code>species</code></strong>. The differences only bite once you have two or more predictors — which is exactly why we build the habit now.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="caranova-type-ii-is-the-default" class="title-slide slide level1 center">
+<h1><code>car::Anova()</code> — Type II Is the Default</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a aria-label="1"></a><span class="co"># No type argument = Type II --------------------------</span></span>
+<span id="cb19-2"><a aria-label="2"></a><span class="fu">Anova</span>(mass_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Anova Table (Type II tests)
+
+Response: body_mass_g
+             Sum Sq  Df F value    Pr(&gt;F)    
+species   146864214   2  343.63 &lt; 2.2e-16 ***
+Residuals  72443483 339                      
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p><strong>Why Type II?</strong></p>
+<ul>
+<li>Our groups have <strong>different n</strong> (unbalanced)</li>
+<li>Type I is <strong>order-dependent</strong> — swap the predictors and the table changes</li>
+<li>Type II is <strong>order-independent</strong>, and it is the habit you want before two-way ANOVA, where the type genuinely changes the answer</li>
+</ul>
+<p><code>Anova(mass_model, type = 2)</code> is the same thing, written out.</p>
+</div></div>
+</section>
+
+<section id="type-iii-needs-a-different-contrast-coding" class="title-slide slide level1 center">
+<h1>Type III Needs a Different Contrast Coding</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p>Type III sums of squares are only meaningful when the factors are coded so each group is compared with the <strong>grand mean</strong> — <code>contr.sum</code> — not with a baseline group (<code>contr.treatment</code>).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a aria-label="1"></a><span class="co"># What is R using right now? --------------------------</span></span>
+<span id="cb21-2"><a aria-label="2"></a><span class="fu">getOption</span>(<span class="st">"contrasts"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        unordered           ordered 
+"contr.treatment"      "contr.poly" </code></pre>
+</div>
+</div>
+<p>That is R’s default: <strong>treatment</strong> coding for unordered factors, <strong>polynomial</strong> for ordered ones.</p>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>The rule</strong></p>
+<p><code>Anova(model, type = 3)</code> wants</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a aria-label="1"></a><span class="fu">c</span>(<span class="st">"contr.sum"</span>, <span class="st">"contr.poly"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Ask for Type III on a treatment-coded model and <code>car</code> will still print a table — it just will not be the Type III test you think it is.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="switch-to-contr.sum-and-refit" class="title-slide slide level1 center">
+<h1>Switch to <code>contr.sum</code> — and Refit</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a aria-label="1"></a><span class="co"># 1. change the option -------------------------------</span></span>
+<span id="cb24-2"><a aria-label="2"></a><span class="fu">options</span>(<span class="at">contrasts =</span> <span class="fu">c</span>(<span class="st">"contr.sum"</span>, <span class="st">"contr.poly"</span>))</span>
+<span id="cb24-3"><a aria-label="3"></a></span>
+<span id="cb24-4"><a aria-label="4"></a><span class="co"># 2. REFIT the model under the new coding ------------</span></span>
+<span id="cb24-5"><a aria-label="5"></a>mass_model_sum <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species,</span>
+<span id="cb24-6"><a aria-label="6"></a>                     <span class="at">data =</span> penguins_df)</span>
+<span id="cb24-7"><a aria-label="7"></a></span>
+<span id="cb24-8"><a aria-label="8"></a><span class="co"># 3. now Type III means what it says -----------------</span></span>
+<span id="cb24-9"><a aria-label="9"></a><span class="fu">Anova</span>(mass_model_sum, <span class="at">type =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Anova Table (Type III tests)
+
+Response: body_mass_g
+                Sum Sq  Df  F value    Pr(&gt;F)    
+(Intercept) 5312367201   1 24859.28 &lt; 2.2e-16 ***
+species      146864214   2   343.63 &lt; 2.2e-16 ***
+Residuals     72443483 339                       
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Step 2 is not optional</strong></p>
+<p>A model stores the coding it was <strong>fitted</strong> with. Change the option and reuse the old model and nothing happens:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a aria-label="1"></a>mass_model<span class="sc">$</span>contrasts</span>
+<span id="cb26-2"><a aria-label="2"></a><span class="co">#&gt; $species</span></span>
+<span id="cb26-3"><a aria-label="3"></a><span class="co">#&gt; [1] "contr.treatment"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Set the option, <strong>then</strong> <code>lm()</code> again.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="and-switch-back-always" class="title-slide slide level1 center">
+<h1>And Switch Back — Always</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a aria-label="1"></a><span class="co"># Put R back the way you found it ---------------------</span></span>
+<span id="cb27-2"><a aria-label="2"></a><span class="fu">options</span>(<span class="at">contrasts =</span> <span class="fu">c</span>(<span class="st">"contr.treatment"</span>, <span class="st">"contr.poly"</span>))</span>
+<span id="cb27-3"><a aria-label="3"></a></span>
+<span id="cb27-4"><a aria-label="4"></a><span class="fu">getOption</span>(<span class="st">"contrasts"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "contr.treatment" "contr.poly"     </code></pre>
+</div>
+</div>
+<p><code>options()</code> is <strong>global and sticky</strong> — it stays changed for the rest of your session and affects every model you fit afterwards, including ones in code you wrote weeks ago.</p>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>The pattern to memorize</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a aria-label="1"></a><span class="fu">options</span>(<span class="at">contrasts =</span></span>
+<span id="cb29-2"><a aria-label="2"></a>  <span class="fu">c</span>(<span class="st">"contr.sum"</span>, <span class="st">"contr.poly"</span>))</span>
+<span id="cb29-3"><a aria-label="3"></a>m <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> x, <span class="at">data =</span> df)</span>
+<span id="cb29-4"><a aria-label="4"></a><span class="fu">Anova</span>(m, <span class="at">type =</span> <span class="dv">3</span>)</span>
+<span id="cb29-5"><a aria-label="5"></a><span class="fu">options</span>(<span class="at">contrasts =</span></span>
+<span id="cb29-6"><a aria-label="6"></a>  <span class="fu">c</span>(<span class="st">"contr.treatment"</span>, <span class="st">"contr.poly"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Set → refit → test → set back. Four lines, in that order, every time.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="what-actually-changed-only-the-intercept-row" class="title-slide slide level1 center">
+<h1>What Actually Changed? Only the Intercept Row</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<p><strong>Treatment coding, <code>type = 3</code>:</strong></p>
+<pre><code>            Sum Sq  Df F value
+(Intercept) 2.07e9   1  9676.9
+species     1.47e8   2   343.6
+Residuals   7.24e7 339</code></pre>
+<p><strong>Sum coding, <code>type = 3</code>:</strong></p>
+<pre><code>            Sum Sq  Df F value
+(Intercept) 5.31e9   1 24859.3
+species     1.47e8   2   343.6
+Residuals   7.24e7 339</code></pre>
+</div><div class="column" style="width:45%;">
+<p>The <code>species</code> row is <strong>identical</strong> — 343.6 either way. Only <code>(Intercept)</code> moved, because the intercept means something different under each coding (Adelie’s mean vs.&nbsp;the grand mean).</p>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>✅ So why bother?</strong></p>
+<p>With <strong>one</strong> factor, you cannot see the difference in the row you care about. With <strong>two</strong> factors and an interaction, you can — the predictor rows change too. Learn the four-line pattern on the easy case, so it is automatic on the hard one.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="which-table-should-you-report" class="title-slide slide level1 center">
+<h1>Which Table Should You Report?</h1>
+<table class="caption-top">
+<colgroup>
+<col style="width: 42%">
+<col style="width: 57%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Situation</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>One factor, any design</td>
+<td>any of them — they agree. <code>Anova(model)</code> is a fine habit</td>
+</tr>
+<tr class="even">
+<td>Two+ factors, <strong>balanced</strong></td>
+<td>all three types agree</td>
+</tr>
+<tr class="odd">
+<td>Two+ factors, <strong>unbalanced</strong></td>
+<td><strong>Type II</strong> for main effects with no interaction</td>
+</tr>
+<tr class="even">
+<td>Interaction you want to keep in</td>
+<td><strong>Type III</strong>, with <code>contr.sum</code></td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p>In this course: report <strong><code>Anova(model)</code></strong> (Type II) unless you have a specific reason. Know the Type III recipe because reviewers, SPSS and SAS users ask for it by name.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="report-the-result" class="title-slide slide level1 center">
+<h1>Report the Result</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a aria-label="1"></a><span class="co"># The numbers you need, in one table ------------------</span></span>
+<span id="cb32-2"><a aria-label="2"></a><span class="fu">Anova</span>(mass_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Anova Table (Type II tests)
+
+Response: body_mass_g
+             Sum Sq  Df F value    Pr(&gt;F)    
+species   146864214   2  343.63 &lt; 2.2e-16 ***
+Residuals  72443483 339                      
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<blockquote>
+<p><em>“Body mass differed significantly among the three penguin species (one-way ANOVA: F(2, 339) = 343.6, p &lt; 0.001).”</em></p>
+</blockquote>
+</div><div class="column" style="width:40%;">
+<p><strong>Always include:</strong></p>
+<ul>
+<li>the test (one-way ANOVA)</li>
+<li><strong>F</strong>, <strong>both df</strong>, the <strong><em>p</em>-value</strong></li>
+<li>the direction, once you know it</li>
+</ul>
+<p><strong>Never</strong> write “p = 0.000” — write “p &lt; 0.001”.</p>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p>Notice what the sentence does <strong>not</strong> say: <em>which</em> species differ. It cannot — and neither can you, yet.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="now-go-run-it-the-whole-activity" class="title-slide slide level1 center">
+<h1>🛑 Now Go Run It — The Whole Activity</h1>
+<p>Open <code>scripts/19_anova_1_skeleton.R</code> and work through Parts 1–10. Everything on these slides is in there, in order. Predict each output before you run it.</p>
+<p>The <strong>homework</strong> is at the bottom of the same script: the same analysis, start to finish, on a measurement you choose — <code>flipper_length_mm</code>, <code>bill_length_mm</code> or <code>bill_depth_mm</code>. Keep that column; Lecture 20’s homework checks the assumptions and runs the follow-up tests on the same one.</p>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p>The skeleton has a <code>invisible(NULL)</code> line after every chunk. It is a <strong>bumper</strong>: when you press Ctrl/Cmd + Enter on the last line of a chunk, your cursor lands on the bumper instead of jumping to the next real code, far down the file.</p>
+</div>
+</div>
+</div>
 </section>
 
 <section id="what-we-learned-today" class="title-slide slide level1 center">
@@ -818,18 +1230,17 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <p><strong>Concepts:</strong></p>
 <ul>
 <li>Many t-tests inflate the false-positive rate — <strong>ANOVA asks once</strong></li>
-<li><strong>F</strong> = between-group ÷ within-group variance (signal ÷ noise)</li>
+<li><strong>F</strong> = between-group ÷ within-group variance</li>
 <li>A <strong>factor</strong>’s level order sets the plot order and the model baseline</li>
-<li>ANOVA is a linear model with a categorical predictor — same <code>lm()</code> as regression</li>
-<li>Assumptions: <strong>normal residuals</strong>, <strong>equal variance</strong> (Levene)</li>
+<li>ANOVA is a linear model with a categorical predictor</li>
+<li>Type I / II / III differ in how they allocate sums of squares; <strong>Type III needs <code>contr.sum</code></strong>, and the model must be <strong>refit</strong></li>
 </ul>
 <p><strong>R skills:</strong></p>
 <ul>
-<li><code>fct_reorder()</code> to order groups by the response; <code>fct_relevel()</code> to set the baseline</li>
-<li><code>lm(Y ~ group)</code></li>
-<li><code>plot(model)</code> diagnostics, <code>shapiro.test(residuals())</code></li>
-<li><code>leveneTest()</code></li>
-<li>rest of the <code>fct_*</code> family → <strong>Common Code 15 · Factors</strong></li>
+<li><code>fct_reorder()</code>, <code>fct_relevel()</code></li>
+<li><code>lm(Y ~ group)</code>, <code>coef()</code></li>
+<li><code>aov()</code> + <code>summary()</code>, <code>anova()</code>, <code>car::Anova()</code></li>
+<li><code>options(contrasts = ...)</code> — set, refit, test, set back</li>
 </ul>
 </div><div class="column" style="width:40%;">
 <p><strong>References:</strong></p>
@@ -837,10 +1248,10 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <li>📖 W&amp;S Ch. 15 — ANOVA</li>
 <li>📖 <a href="https://r4ds.hadley.nz/factors">R4DS Ch. 16 — Factors</a></li>
 </ul>
-<p><strong>Up next — Lecture 14:</strong></p>
+<p><strong>Up next — Lecture 20:</strong></p>
 <ul>
-<li>Assumptions are checked — now we <strong>run</strong> the test</li>
-<li><code>aov()</code> and <code>car::Anova()</code>, then <code>emmeans</code> post-hoc to find <strong>which</strong> species differ, and how to report it</li>
+<li><strong>Set 2 — the assumptions.</strong> We reported <em>p</em> &lt; 0.001 today without earning it. Are the residuals normal? Are the variances equal? One of those answers is going to be <strong>no</strong>.</li>
+<li><strong>Set 3 — the follow-up tests.</strong> Adelie and Chinstrap looked identical on the boxplot. We find out whether they are.</li>
 </ul>
 </div></div>
 
@@ -1066,6 +1477,44 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
         ]
       });
     </script>
+    
+    <script>
+      // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+      // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+      // slide changes (different for each slide format).
+      (function () {
+        // dispatch for htmlwidgets
+        function fireSlideEnter() {
+          const event = window.document.createEvent("Event");
+          event.initEvent("slideenter", true, true);
+          window.document.dispatchEvent(event);
+        }
+
+        function fireSlideChanged(previousSlide, currentSlide) {
+          fireSlideEnter();
+
+          // dispatch for shiny
+          if (window.jQuery) {
+            if (previousSlide) {
+              window.jQuery(previousSlide).trigger("hidden");
+            }
+            if (currentSlide) {
+              window.jQuery(currentSlide).trigger("shown");
+            }
+          }
+        }
+
+        // hookup for slidy
+        if (window.w3c_slidy) {
+          window.w3c_slidy.add_observer(function (slide_num) {
+            // slide_num starts at position 1
+            fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+          });
+        }
+
+      })();
+    </script>
+
     <script id="quarto-html-after-body" type="application/javascript">
       window.document.addEventListener("DOMContentLoaded", function (event) {
         const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")

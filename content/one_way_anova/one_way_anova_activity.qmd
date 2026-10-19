@@ -1,17 +1,19 @@
 ---
-order: 15
-week: 8
-title: "Worksheet — One-Way ANOVA I: Setting Up the Test (with Factors)"
-subtitle: "Exploring the penguins, ordering groups with factors, fitting the model, and checking assumptions"
+order: 19
+week: 10
+title: "Activity 19 — One-Way ANOVA I: Start to Finish"
+subtitle: "Plot it, order the groups, fit it, read the F table, report it"
 author: "Bill Perry"
 date: today
 
 type: activity
 description: >
-  Hands-on companion to One-Way ANOVA I. Students explore the Palmer
-  penguins data, fit a one-way ANOVA, and check its assumptions —
-  normality of residuals and equal variance.
-categories: [anova, statistics, project-setup]
+  Hands-on companion to One-Way ANOVA I. The complete basic one-way ANOVA on
+  the Palmer penguins: explore, order groups with a factor, state the
+  hypotheses, fit lm(), read the table with aov(), anova(), car::Anova() and
+  car::Anova(type = 3) — including the contrasts option Type III needs — and
+  write the results sentence. Students hand in the finished script.
+categories: [anova, factors, tidyverse, statistics]
 
 format:
   html: default
@@ -22,270 +24,381 @@ execute:
   message: false
 ---
 
-# One-Way ANOVA I — Do Penguin Species Differ in Body Mass?
-
-### Recap from Worksheets 09–11
-
-- Compared **two** groups with Welch's t-test
-- Fit `lm(Y ~ X)` with a **numeric** predictor in the regression worksheet
-- Checked assumptions with `plot(model)` and Shapiro-Wilk
+# In-class Activity 19: One-Way ANOVA, Beginning to End
 
 ### Today's Objectives
 
-1.  Load and explore the Palmer penguins data
-2.  Order the groups with a **factor** (`fct_reorder`) for a readable boxplot
-3.  State the ANOVA null and alternate hypotheses
-4.  Fit a one-way ANOVA, set its reference level (`fct_relevel`), and check its assumptions
+1.  Explore three groups with a boxplot before testing anything
+2.  Use `fct_reorder()` and `fct_relevel()` on a factor, and say what each one changed
+3.  State the ANOVA hypotheses
+4.  Fit `lm(Y ~ group)` and read what it did with the factor
+5.  Read the ANOVA table from `aov()`, `anova()` and `car::Anova()`
+6.  Run `Anova(type = 3)` **properly** — set the contrasts, refit, test, set back
+7.  Write a complete results sentence
+8.  Repeat the whole thing on a different measurement, for homework
 
-> # **How to use this worksheet**
->
-> - Work through the parts in order. Type the code into a new R script in Positron and run it line by line.
-> - Blocks marked **▶ Run this** should be executed as written.
-> - Blocks marked **✏️ Your turn** ask you to write, modify, or interpret.
-> - There's no separate homework — the out-of-class **Extension** is on the ANOVA II worksheet.
+::: callout-tip
+## 📂 Files for today
+
+- **Skeleton script:** [`19_anova_1_skeleton.R`](scripts/19_anova_1_skeleton.R) → save it as `scripts/19_anova_1.R`.
+- **No data file.** The penguins come from a package: `install.packages("palmerpenguins")` once, from the Console.
+- You also need `car`: `install.packages("car")`.
+:::
+
+::: callout-important
+## What you hand in
+
+- **All the code is written for you** in the skeleton. Run it chunk by chunk and watch what comes out.
+- You answer the **Q** boxes as `#` comments in the script.
+- The **homework** at the bottom of the skeleton repeats the whole analysis on a measurement of your choosing — that part you write yourself.
+- Hand in `scripts/19_anova_1.R`. Run it top to bottom (**Ctrl/Cmd + Shift + Enter**) first — it must run with no errors.
+:::
 
 ::: callout-note
 ## 🔮 Predict before you run — and type, don't paste
 
-Before each **▶ Run this** block, cover the output and *predict* what R will print — the F, the *p*-value, which species differ. Then type the code yourself. Predicting first is what turns a test from a black box into something you understand; typing trains your eye for the small errors (`anova` vs `Anova`, a missing `library()`) that eat real time.
+Before each **▶ Run this** block, cover the output and *predict* what R will print — the F, the *p*-value, which species differ. Then type the code yourself. Predicting first is what turns a test from a black box into something you understand.
+:::
+
+Keep the plots plain today — no labels, colors, or themes. The goal is to **read** them.
+
+::: callout-tip
+## The `invisible(NULL)` lines in the skeleton
+
+Every chunk ends with `invisible(NULL)`. It is a **bumper**. Press Ctrl/Cmd + Enter on a chunk's last real line and your cursor jumps to the next line *that has code on it* — without the bumper, that is the next chunk, way down past the answer box. With it, the cursor stops right there and you keep your place. It does nothing and prints nothing.
 :::
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 1 — Explore, order, hypothesize *(after lecture Chunk 1)*
->
-> Parts 1–4: load the penguins, plot body mass by species, reorder the boxplot with a factor, and write your hypotheses.
+# Part 1 · The question
 
-# Part 1 · Load libraries and data
+Do the three penguin species differ in body mass?
+
+- Y = `body_mass_g` — numeric response
+- X = `species` — categorical predictor, 3 levels
+
+One numeric response across the levels of one categorical predictor. That is a **one-way ANOVA**.
+
+✏️ **Q1:** Why is this an ANOVA and not a *t*-test? One sentence.
+
+✏️ **Q2:** If you ran *t*-tests on all three **pairs** of species instead, what would be wrong with that?
+
+------------------------------------------------------------------------
+
+# Part 2 · Load the libraries and the data
 
 **▶ Run this at the top of your script:**
 
 ``` r
-# Load packages at the top — always ----------------------
-library(tidyverse)      # wrangling + ggplot2
+library(tidyverse)      # dplyr + ggplot2 + forcats
 library(palmerpenguins) # the penguins data
-library(car)            # Levene's test, Anova()
-library(emmeans)        # post-hoc pairwise tests
+library(car)            # Anova()
 ```
 
 **▶ Run this:**
 
 ``` r
-# Drop rows missing mass or species ----------------------
 penguins_df <- penguins %>%
   drop_na(body_mass_g, species)
 
 penguins_df %>% count(species)
 ```
 
-✏️ **Your turn:** Record the sample sizes.
+> ⚠️ **Watch out!** R 4.5 ships **its own** `penguins` data set, and its mass column is called `body_mass`, **not** `body_mass_g`. If you forget `library(palmerpenguins)` you will not get a missing-object error — you get
+>
+> ```
+> Error in `drop_na()`: Column `body_mass_g` doesn't exist
+> ```
+>
+> The fix is the `library()` call.
 
-```
-n Adelie:
-n Chinstrap:
-n Gentoo:
-Are the groups balanced (equal n)?  Y / N
-```
-
-> ⚠️ **Watch out!** If R says `could not find function "penguins"`, you forgot `library(palmerpenguins)`. Install it once with `install.packages("palmerpenguins")`.
+✏️ **Q3:** Write down the sample size of each species. Are the groups **balanced** (equal n)?
 
 ------------------------------------------------------------------------
 
-# Part 2 · Explore with a boxplot
+# Part 3 · Plot it before you test it
 
-> 🔮 **Predict first:** Before you plot — which species do you think is heaviest? Do you expect all three to differ, or just one?
+> 🔮 **Predict first:** which species is heaviest? Do you think all three differ, or only one?
 
 **▶ Run this:**
 
 ``` r
-# Body mass by species -----------------------------------
-mass_box_plot <- penguins_df %>%
-  ggplot(aes(x = species, y = body_mass_g, fill = species)) +
-  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
-  geom_point(position = position_jitter(width = 0.15, seed = 42),
-             alpha = 0.3, size = 1.5) +
-  labs(x = "Species", y = "Body Mass (g)") +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-mass_box_plot
+penguins_df %>%
+  ggplot(aes(x = species, y = body_mass_g)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.15)
 ```
 
-✏️ **Your turn:** Describe what you see.
-
-```
-Heaviest species:
-Lightest species:
-Do the spreads (box heights) look similar across species?  Y / N
-What order are the species in on the x-axis, and why?
-```
+✏️ **Q4:** Describe what you **see** — the heaviest species, the lightest, whether any two look almost the same, and whether the boxes look like they have the same **spread**.
 
 ------------------------------------------------------------------------
 
-# Part 3 · Order the boxplot with a factor
+# Part 4 · `species` is a factor, and factors have an order
 
-> 🔮 **Predict first:** `species` is a **factor**. Run `levels(penguins_df$species)` — what order are the levels in? Is that the order you want on the plot?
+A **factor** is a categorical column with a fixed, *ordered* set of **levels**. `ggplot` and `lm` both use that order.
 
 **▶ Run this:**
 
 ``` r
-# What order does R store the species levels in? --------
 class(penguins_df$species)
-levels(penguins_df$species)
 
-# Reorder species by MEDIAN body mass, then plot --------
+levels(penguins_df$species)
+```
+
+The stored order is **alphabetical** — R's default, not a decision anyone made about penguins. `fct_reorder()` puts the groups in order of the thing you are testing, and it has to go **inside `mutate()`**.
+
+**▶ Run this:**
+
+``` r
 penguins_df %>%
   mutate(species = fct_reorder(species, body_mass_g,
                                .fun = median)) %>%
-  ggplot(aes(x = species, y = body_mass_g, fill = species)) +
-  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
-  labs(x = "Species (ordered by median mass)",
-       y = "Body Mass (g)") +
-  theme_minimal() +
-  theme(legend.position = "none")
+  ggplot(aes(x = species, y = body_mass_g)) +
+  geom_boxplot()
 ```
 
-✏️ **Your turn:** Answer.
+✏️ **Q5:** What order were the levels stored in, and what order are they in after `fct_reorder()`? Here they come out the same — why is it still worth doing?
 
-```
-Stored level order:
-Order after fct_reorder():
-Does the reordered plot read more clearly?  Y / N
-```
-
-✏️ **Your turn:** `fct_reorder()` has to go **inside `mutate()`**. What happens if you just call `fct_reorder()` on its own and then plot `penguins_df`?
-
-```
-Your answer:
-```
-
-> 💡 **Key idea:** the whole `fct_*` family (rename, merge, lump levels) lives in **Common Code 15 · Factors**. Today you only need `fct_reorder()` here and `fct_relevel()` in Part 6.
+> 💡 **Key idea:** the rest of the `fct_*` family — rename levels, merge them, lump rare ones — is in **Common Code 15 · Factors**. Today you need ordering, and the baseline in Part 7.
 
 ------------------------------------------------------------------------
 
-# Part 4 · State your hypotheses
+# Part 5 · State the hypotheses
 
-✏️ **Your turn:** Write the ANOVA hypotheses in words and symbols.
+Do this **before** you fit anything.
 
-```
-H₀ (null) in words:
+✏️ **Q6:** Write the hypotheses — H₀ in words, Hₐ in words, H₀ in symbols, and your α.
 
-Hₐ (alternate) in words:
-
-In symbols:  H₀: μ_Adelie = μ_Chinstrap = μ_Gentoo
-             Hₐ:
-
-Significance level α:
-```
-
-> 💡 **Key idea:** Hₐ only says "at least one differs" — it does **not** say which. Finding which is the job of the post-hoc test in *ANOVA II*.
+> 💡 **Key idea:** Hₐ only says "at least one differs". It does **not** say which. Naming the species is the job of the follow-up tests, next lecture.
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 2 — Fit & check assumptions *(after lecture Chunk 2)*
->
-> Parts 5–8: fit the model, set the reference level, check residual normality, check equal variance.
-
-# Part 5 · Fit the model
+# Part 6 · Fit the model
 
 **▶ Run this:**
 
 ``` r
-# ANOVA is a linear model with a categorical X ----------
 mass_model <- lm(body_mass_g ~ species, data = penguins_df)
 ```
 
-✏️ **Your turn:** This is the same `lm()` syntax as the regression worksheet. What is different about the X variable this time?
+Exactly the same `lm()` call as the regression activity. The only difference is that X is categorical.
 
-```
-Your answer:
-```
-
-------------------------------------------------------------------------
-
-# Part 6 · Set the reference level with `fct_relevel()`
-
-> 🔮 **Predict first:** `lm()` uses the **first** factor level as the baseline. If you move Gentoo to the front, will the overall F-test / p-value change, or only the coefficients?
+Fitting the model and **reading a table from it** are two separate steps. First look at what `lm()` did with the factor.
 
 **▶ Run this:**
 
 ``` r
-# Coefficients are differences FROM the first level -----
 coef(mass_model)
+```
 
-# Make Gentoo the reference, refit, compare ------------
+`(Intercept)` is the mean of the **first level** — Adelie. The other two numbers are **differences from Adelie**. That is **treatment coding**, R's default.
+
+✏️ **Q7:** From `coef()`, what is the mean mass of an Adelie? How much heavier is a Gentoo than an Adelie?
+
+------------------------------------------------------------------------
+
+# Part 7 · Change the baseline with `fct_relevel()`
+
+> 🔮 **Predict first:** if Gentoo becomes the first level, does the overall F / *p* change, or only the coefficients?
+
+**▶ Run this:**
+
+``` r
 penguins_relevel <- penguins_df %>%
   mutate(species = fct_relevel(species, "Gentoo"))
 
 mass_model_gentoo <- lm(body_mass_g ~ species,
                         data = penguins_relevel)
+
 coef(mass_model_gentoo)
 ```
 
-✏️ **Your turn:** Compare the two coefficient sets.
+✏️ **Q8:** What does `(Intercept)` mean in each of the two models? Did the overall ANOVA question change?
 
-```
-What (Intercept) represents in mass_model:
-What (Intercept) represents in mass_model_gentoo:
-Did the coefficient values change?  Y / N
-Would the overall F-statistic / p-value change?  Y / N
-```
-
-> 💡 **Key idea:** releveling changes *which comparison the coefficients show*, not *whether any means differ*. Use it to make the baseline a group your reader cares about (a control, a reference site).
+> 💡 **Key idea:** releveling changes *which comparison the coefficients show*, not *whether any means differ*. Use it to make the baseline a group your reader cares about — a control, a reference site.
 
 ------------------------------------------------------------------------
 
-# Part 7 · Assumption 1 — normality of residuals
+# Part 8 · Read the ANOVA table — three ways
 
-> 🔮 **Predict first:** `plot(mass_model)` gives the same four panels as the regression worksheet. Which panel checks normality?
+> 🔮 **Predict first:** is *p* nearer 0.5, 0.05, or far below 0.001?
+
+**▶ Run this — the classic table:**
+
+``` r
+mass_aov <- aov(body_mass_g ~ species, data = penguins_df)
+
+summary(mass_aov)
+```
+
+**▶ Run this — base R `anova()` on the `lm`:**
+
+``` r
+anova(mass_model)
+```
+
+That is **Type I**, which is **sequential** and therefore order-dependent. With one predictor there is no order to depend on.
+
+**▶ Run this — `car::Anova()`:**
+
+``` r
+Anova(mass_model)
+```
+
+That is **Type II** — the default, and order-independent. This is the one to make a habit of. `Anova(mass_model, type = 2)` is the same thing spelled out.
+
+| Call | Package | Gives you |
+|-------------------------|---------|----------------------------|
+| `aov()` + `summary()` | base R | the classic ANOVA table |
+| `anova(model)` | base R | **Type I** (sequential) |
+| `Anova(model)` | **car** | **Type II** (the default) |
+| `Anova(model, type = 3)` | **car** | **Type III** |
+
+: {tbl-colwidths="[34,16,50]"}
+
+> ⚠️ **Watch out!** Lowercase `anova()` and capital `Anova()` are **different functions from different packages**. If you see `could not find function "Anova"`, you forgot `library(car)`.
+
+✏️ **Q9:** From the table — F, both df, and *p*. Reject H₀ at α = 0.05? Do all three tables agree on F?
+
+------------------------------------------------------------------------
+
+# Part 9 · Type III, and the contrasts option it needs
+
+Type III sums of squares are only meaningful when the factor is coded against the **grand mean** (`contr.sum`), not against a baseline group (`contr.treatment`). Ask for `type = 3` on a treatment-coded model and `car` will still print a table — it just will not be the test you think it is.
+
+**▶ Run this — what is R using right now?**
+
+``` r
+getOption("contrasts")
+```
+
+That is R's default: **treatment** coding for unordered factors, **polynomial** for ordered ones.
+
+**▶ Run this — Type III on the treatment-coded model (not right):**
+
+``` r
+Anova(mass_model, type = 3)
+```
+
+**▶ Run this — the four-line pattern: set → refit → test → set back:**
+
+``` r
+options(contrasts = c("contr.sum", "contr.poly"))
+
+mass_model_sum <- lm(body_mass_g ~ species, data = penguins_df)
+
+Anova(mass_model_sum, type = 3)
+
+options(contrasts = c("contr.treatment", "contr.poly"))
+```
+
+::: callout-important
+## The refit is not optional
+
+A model remembers the coding it was **fitted** with. Change the option, reuse the old model, and nothing happens at all.
+:::
+
+**▶ Run this — prove the switch back worked, and that each model carries its own coding:**
+
+``` r
+getOption("contrasts")
+
+mass_model$contrasts
+
+mass_model_sum$contrasts
+```
+
+::: callout-important
+## Why you set it back
+
+`options()` is **global and sticky**. It stays changed for the rest of your R session and silently affects every model you fit afterwards — including code you wrote weeks ago.
+:::
+
+✏️ **Q10:** Compare the two `type = 3` tables. Which **row** changed, and which row stayed the same? Given that, why does the contrast coding matter at all here? (Hint: it does not — *yet*. What changes once you have two factors and an interaction?)
+
+------------------------------------------------------------------------
+
+# Part 10 · Report it
+
+For this course, report **`Anova(model)`** — Type II — unless you have a specific reason not to.
 
 **▶ Run this:**
 
 ``` r
-# plot() on an lm object gives all four diagnostics -------
-par(mfrow = c(2, 2))
-plot(mass_model)
+Anova(mass_model)
 ```
 
-``` r
-# Formal test on the residuals ---------------------------
-shapiro.test(residuals(mass_model))
-```
-
-✏️ **Your turn:** Record and interpret.
+✏️ **Q11:** Write the results sentence with your numbers in it.
 
 ```
-Do the Normal Q-Q points (panel 2)
-track the dashed line?  Y / mostly / no
-Shapiro-Wilk p-value =
+Template:
+"Body mass differed significantly among the three penguin species
+ (one-way ANOVA: F(__, __) = ____, p ____)."
 ```
 
-✏️ **Your turn:** With ~340 penguins, Shapiro-Wilk is very sensitive and may flag tiny departures. Which should you trust more here — the Q-Q panel or the Shapiro p-value? Why?
+Never write `p = 0.000`. Write `p < 0.001`.
 
-```
-Your answer:
-```
+✏️ **Q12:** That sentence does not say **which** species differ, and it does not say whether the model was **allowed** to give us that *p*-value. Which of those two gaps worries you more, and why?
 
 ------------------------------------------------------------------------
 
-# Part 8 · Assumption 2 — equal variance
+# Homework — a different measurement
 
-> 🔮 **Predict first:** From the box heights in Part 2, predict — will Levene's test say the variances are equal (*p* > 0.05) or unequal?
+*Write it at the bottom of the same script. Hand it in with your answers as `#` comments.*
 
-**▶ Run this:**
+Mass is not the only thing that was measured on these birds. **Pick one** of these three columns and run the basic ANOVA on it, start to finish, exactly as you did above:
 
-``` r
-# Levene's test — H0: all groups have equal variance ----
-leveneTest(body_mass_g ~ species, data = penguins_df)
-```
+- `flipper_length_mm`
+- `bill_length_mm`
+- `bill_depth_mm`
 
-✏️ **Your turn:** Record and decide.
+Use the **same** `species` as the grouping variable. You are changing the response (the Y), not the design. Nothing is filled in — copy the matching chunk from above and change what needs changing; for most chunks that is one column name.
 
-```
-Levene's F =            p =
-Variances equal?  Y / N
-If NOT equal, which test would you use instead? (hint: Welch)
-```
+::: callout-important
+**Keep the column you pick.** You run the **assumptions** and the **follow-up tests** on the same column for the Activity 20 homework, so you end up with one complete analysis of one measurement.
+:::
+
+## H1 · Read it and plot it
+
+Build `penguins_hw` by dropping `NA` from `species` and your column, `count(species)`, then a boxplot with the points jittered over it.
+
+✏️ **H-Q1:** Column chosen, its **units**, total n, and n for each species.
+
+✏️ **H-Q2:** From the boxplot — which species looks highest, which lowest, do any two look the same, and do the boxes look like they have the same spread?
+
+## H2 · Order the groups
+
+`fct_reorder()` the species by the **median** of your column, inside `mutate()`, then plot it again.
+
+✏️ **H-Q3:** Did the order change from alphabetical this time? Write the new order.
+
+## H3 · Hypotheses
+
+✏️ **H-Q4:** H₀ and Hₐ for **your** test, in words and in symbols. Remember the response is no longer body mass.
+
+## H4 · Fit it, and look at the coefficients
+
+`lm(<your column> ~ species, data = penguins_hw)`, called `hw_model`, then `coef(hw_model)`.
+
+✏️ **H-Q5:** What is the mean of your column for Adelie? How much higher or lower is Gentoo than Adelie, and in what units?
+
+## H5 · Read the table
+
+`Anova(hw_model)`.
+
+✏️ **H-Q6:** F, both df, *p*. Reject H₀ at α = 0.05?
+
+## H6 · Type III on your model
+
+The four-line pattern from Part 9 — set the contrasts to `contr.sum`, **refit**, `Anova(type = 3)`, then set the contrasts back.
+
+✏️ **H-Q7:** Is the F for `species` the same as in H-Q6? Which row of the table is different? What is the **last** line of this section, and why does it have to be there?
+
+## H7 · Report it
+
+✏️ **H-Q8:** Write the results sentence for your column, with your numbers and your units.
+
+✏️ **H-Q9:** You still cannot say **which** species differ, and you have not checked a single assumption. List the two checks you would want to run before you would believe your own sentence in H-Q8.
 
 ------------------------------------------------------------------------
 
@@ -293,28 +406,15 @@ If NOT equal, which test would you use instead? (hint: Welch)
 
 At this point you should be able to:
 
-- [ ] Explain why many t-tests inflate the false-positive rate
-- [ ] Order groups with `fct_reorder()` and set a model baseline with `fct_relevel()`
+- [ ] Explain why many *t*-tests inflate the false-positive rate
+- [ ] Order groups with `fct_reorder()` and set a baseline with `fct_relevel()`
 - [ ] State ANOVA hypotheses with μ notation
-- [ ] Fit `lm(Y ~ group)` and check residual normality + equal variance
+- [ ] Fit `lm(Y ~ group)` and read `coef()` as differences from a baseline
+- [ ] Read an ANOVA table from `aov()`, `anova()` and `car::Anova()`
+- [ ] Run Type III correctly: set contrasts, **refit**, test, set back
 
-✏️ **Your turn — before you move on:** Run your whole script top to bottom with **Ctrl/Cmd + Shift + Enter**. Does it run cleanly?
-
-```
-Ran cleanly?  Y / N
-If not, what error appeared:
-```
+Run your whole script top to bottom with **Ctrl/Cmd + Shift + Enter**. Check that the last thing it does is set the contrasts option back to the default.
 
 ------------------------------------------------------------------------
 
-# Getting unstuck
-
-1.  **`could not find function "penguins"`** → `library(palmerpenguins)`.
-2.  **`could not find function "fct_reorder"`** → `library(tidyverse)` (forcats is inside it).
-3.  **Reordering "did nothing"** → you must reorder **inside `mutate()`** and plot the result; reordering a copy doesn't change the original.
-4.  **Levene says unequal variance** → use `oneway.test(y ~ group, var.equal = FALSE)` (Welch's ANOVA).
-5.  **Cheat sheets** — <https://posit.co/resources/cheatsheets/> · Factors: <https://rstudio.github.io/cheatsheets/factors.pdf>
-
-------------------------------------------------------------------------
-
-*End of the ANOVA I worksheet. Next: One-Way ANOVA II — running the test, post-hoc comparisons, and the out-of-class Extension.*
+*End of Activity 19. Next: the assumptions — one of them fails on this data — and the follow-up tests that tell you which species actually differ.*

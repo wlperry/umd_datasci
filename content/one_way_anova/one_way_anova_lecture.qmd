@@ -1,20 +1,20 @@
 ---
-title: "Lecture — One-Way ANOVA I: Setting Up the Test"
-subtitle: "Why not many t-tests, the F-statistic, ordering groups with factors, fitting the model, and checking assumptions"
+title: "Lecture 19 — One-Way ANOVA I: Start to Finish"
+subtitle: "From the question to a reported F — the whole basic ANOVA in one pass"
 author: "Bill Perry"
 date: today
 
 # --- Fields the SITE reads for ordering / listings / homepage ---
 # order/week are auto-stamped from _schedule.yml by sync_order_from_schedule.R
-order: 15
-week: 8
+order: 19
+week: 10
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
-  From two groups to many: why we don't run many t-tests, how the F-statistic
-  partitions variance, using factors to order groups for a readable plot and to
-  set the ANOVA reference level, fitting a one-way ANOVA as a linear model, and
-  checking its assumptions — normality of residuals and equal variance — on the
-  Palmer penguins data.
+  The complete basic one-way ANOVA, beginning to end: why one test instead of
+  many t-tests, what the F-statistic is, ordering groups with factors, fitting
+  lm(), reading the table with aov(), car::Anova(type = 2) and
+  car::Anova(type = 3) — including the contrasts option Type III needs — and
+  writing the result up. Assumptions and follow-up tests are Lecture 20.
 categories: [anova, factors, tidyverse, statistics]
 
 format:
@@ -56,51 +56,75 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 options(width = 65)   # printed R output wraps at 65 too
 ```
 
-# Where we left off (Lectures 09–11)
+# Where we left off
 
 - **T-Tests I & II** — comparing the means of **two** groups with Welch's t-test
-- **Regression (Lecture 11)** — `lm(Y ~ X)` with a **numeric** predictor, checked with `plot(model)`
-- Both of those are, underneath, the same tool: a **linear model**
+- **Regression (Lecture 11)** — `lm(Y ~ X)` with a **numeric** predictor
+- **Weather (Lecture 12)** — the same `lm()`, with a slope read as a rate
+- **Pivoting & Joins (Lectures 15–16)** — getting messy data into one tidy table
+  so a model can be fitted to it at all
 
 ::: callout-note
 **✅ Transition**
 
-The t-test compared **two** groups. But biology is full of **three-or-more** group questions — three species, four sites, five treatments. Today's twist: it's still `lm(Y ~ X)` — just with a **categorical** X instead of a numeric one. That's **one-way ANOVA.**
+The t-test compared **two** groups. Biology is full of **three-or-more** group
+questions — three species, four sites, five treatments. Today's twist: it is
+still `lm(Y ~ X)`, just with a **categorical** X. That is **one-way ANOVA**.
 :::
 
 # Goals for today
 
 ::::: columns
 :::: {.column width="60%"}
-- Understand **why** we don't just run many t-tests
-- See how the **F-statistic** compares *between-* vs *within-*group variance
-- State ANOVA **hypotheses** (H₀: all means equal)
-- Use **factors** to order groups for a readable plot and set the reference level
-- Fit the model with `lm()`
-- **Check assumptions** — normality of residuals, equal variance
+Today is the **whole basic ANOVA, start to finish**:
+
+- Why we do **not** run many t-tests
+- What the **F-statistic** is
+- State the **hypotheses**
+- Use **factors** to order the groups on the plot
+- Fit it with `lm()`
+- Read the table — `aov()`, `Anova(type = 2)`, `Anova(type = 3)`
+- **Report** the result in a sentence
 ::::
 
 :::: {.column width="40%"}
 **Tools today:**
 
 - `palmerpenguins`, `tidyverse` (includes `forcats`)
-- `car` — Levene's test
+- `car` — `Anova()`
 
 **Textbook:**
 
 - 📖 Whitlock & Schluter, **Ch. 15 — ANOVA**
 - 📖 [R4DS Ch. 16 — Factors](https://r4ds.hadley.nz/factors)
-- 📖 [R4DS Ch. 9 — Layers](https://r4ds.hadley.nz/layers)
 
 **Naming:** models → `_model`, plots → `_plot`
 ::::
 :::::
 
+# Three Sets of Material, Three Days
+
+| Set | Where | What |
+|-----|-------|------|
+| **1 — The basic ANOVA** | **today**, Lecture 19 | question → plot → `lm()` → F table → report |
+| **2 — The assumptions** | Lecture 20 | residual normality, equal variance, what to do when they fail |
+| **3 — The follow-up tests** | Lecture 20 | *which* groups differ — `emmeans`, Tukey, letters |
+
+: {tbl-colwidths="[22,22,56]"}
+
+::: callout-important
+We do Set 1 **all the way through first** — including a reported result — so you
+see the shape of the whole analysis before we start poking at it. A real
+write-up would check the assumptions **before** trusting that *p*-value, and
+that is exactly what Lecture 20 does.
+:::
+
 # How to Use These Slides — Predict · Type · Run
 
 ::::: columns
 :::: {.column width="60%"}
-This lecture runs in **two short chunks**. After each chunk you switch to the **activity** and type the code yourself.
+I lecture through the material, then you open the skeleton script and run the
+code yourself.
 
 **For every code block, do three things:**
 
@@ -113,28 +137,24 @@ This lecture runs in **two short chunks**. After each chunk you switch to the **
 ::: callout-note
 **✅ Why bother? (the evidence)**
 
-- With three groups it is tempting to just read off the tallest box. Predicting the F-statistic first makes you reason about between- vs. within-group variance.
-- Typing `type = "II"` yourself in `Anova()` is what makes you notice it is there.
-- Checking each assumption right after it is introduced keeps it tied to *this* penguin model, not two more rules to memorize.
+- With three groups it is tempting to just read off the tallest box. Predicting
+  the F first makes you reason about between- vs. within-group variance.
+- Typing `type = 2` yourself in `Anova()` is what makes you notice it is there.
+- You will meet `anova()`, `aov()` and `Anova()` in one lecture. Typing each
+  one is how they stop blurring together.
 :::
 ::::
 :::::
-
-# 🧩 Chunk 1 of 2 · Why ANOVA & the F-Statistic
-
-**We will cover:** why not many t-tests, what ANOVA asks, how F partitions variance, and a first look at the penguin data.
-
-::: callout-tip
-**🖐 After this chunk: Activity Parts 1–3** (load the penguins, explore, state hypotheses).
-:::
 
 # Why Not Just Run Many t-Tests?
 
 ::::: columns
 :::: {.column width="60%"}
-With **3 groups** you'd need **3** t-tests (A–B, A–C, B–C). With 4 groups, **6** tests.
+With **3 groups** you would need **3** t-tests (A–B, A–C, B–C). With 4 groups,
+**6** tests.
 
-Every test at α = 0.05 has a **5% chance of a false positive**. Run several and those risks **stack up**:
+Every test at α = 0.05 has a **5% chance of a false positive**. Run several and
+those risks **stack up**:
 
 - 3 tests → ~**14%** chance of at least one false positive
 - 6 tests → ~**26%**
@@ -146,7 +166,8 @@ ANOVA asks the question **once**, holding the overall error rate at 0.05.
 ::: callout-important
 **The multiple-comparisons problem**
 
-More tests = more chances to be fooled by noise. ANOVA is the single, honest test for "do *any* of these groups differ?"
+More tests = more chances to be fooled by noise. ANOVA is the single, honest
+test for "do *any* of these groups differ?"
 :::
 
 📖 W&S §15.1 — why a single test
@@ -164,7 +185,10 @@ One **numeric response (Y)** across the levels of one **categorical predictor (X
 | **H₀ — null** | all group means are equal ($\mu_1 = \mu_2 = \mu_3$) |
 | **Hₐ — alternate** | **at least one** group mean differs |
 
-Note what Hₐ does *not* say: it does **not** tell you *which* group differs — that comes later, from the post-hoc test.
+: {tbl-colwidths="[30,70]"}
+
+Note what Hₐ does *not* say: it does **not** tell you *which* group differs —
+that is Set 3, next lecture.
 ::::
 
 :::: {.column width="40%"}
@@ -186,16 +210,19 @@ $$F = \frac{\text{variance BETWEEN groups}}{\text{variance WITHIN groups}}$$
 - **Between** — how far apart the group means are
 - **Within** — how much the individuals scatter inside each group
 
-**Big F** → the groups are far apart *relative to* their internal noise → small *p*-value.
+**Big F** → the groups are far apart *relative to* their internal noise → small
+*p*-value.
 
-**F ≈ 1** → the spread between groups is no bigger than the spread within them → no real difference.
+**F ≈ 1** → the spread between groups is no bigger than the spread within them
+→ no real difference.
 ::::
 
 :::: {.column width="40%"}
 ::: callout-note
 **✅ Key idea**
 
-ANOVA is a **signal-to-noise ratio**. The "signal" is the gap between group means; the "noise" is the within-group scatter.
+ANOVA is a **signal-to-noise ratio** — the same shape as *t*. The "signal" is
+the gap between group means; the "noise" is the within-group scatter.
 :::
 
 📖 W&S §15.1–15.2
@@ -206,15 +233,14 @@ ANOVA is a **signal-to-noise ratio**. The "signal" is the gap between group mean
 
 ::::: columns
 :::: {.column width="60%"}
-```{r load-libs-10}
+```{r load-libs-15}
 # Load packages at the top — always -------------------
 library(tidyverse)      # wrangling + ggplot2
 library(palmerpenguins) # the penguins data
-library(car)            # Levene's test, Anova()
-library(emmeans)        # post-hoc pairwise tests
+library(car)            # Anova()
 ```
 
-```{r load-data-10}
+```{r load-data-15}
 # Drop rows missing mass or species -------------------
 penguins_df <- penguins %>%
   drop_na(body_mass_g, species)
@@ -224,36 +250,65 @@ penguins_df %>% count(species)
 ::::
 
 :::: {.column width="40%"}
-**Three species, one lab:** body mass (g) of penguins at Palmer Station, Antarctica.
+**Three species, one field station:** body mass (g) of penguins at Palmer
+Station, Antarctica.
 
 - `drop_na()` removes rows with missing mass
-- `count(species)` shows the sample size per group
+- `count(species)` gives the sample size per group
 
 ::: callout-important
-The groups are **unbalanced** (different n per species) — that matters when we pick our ANOVA type later.
+The groups are **unbalanced** — 151, 68 and 123 birds. That is why we care
+which sums of squares `Anova()` uses.
+:::
+::::
+:::::
+
+# ⚠️ Two Different `penguins` Data Sets
+
+::::: columns
+:::: {.column width="60%"}
+R 4.5 added its **own** `penguins` to base R, with **shorter column names**:
+
+| Source | Mass column |
+|--------|-------------|
+| `palmerpenguins::penguins` | `body_mass_g` |
+| base R `datasets::penguins` | `body_mass` |
+
+: {tbl-colwidths="[50,50]"}
+
+If you forget `library(palmerpenguins)`, `penguins` still exists — so there is
+no "object not found" error. You get a column-name error later instead.
+::::
+
+:::: {.column width="40%"}
+::: callout-important
+**The error you would see**
+
+``` r
+penguins %>% drop_na(body_mass_g)
+#> Error in `drop_na()`:
+#> ! Can't select columns that don't exist.
+#> ✖ Column `body_mass_g` doesn't exist.
+```
+
+**The fix:** `library(palmerpenguins)` at the top. We use the `_g` names all
+lecture.
 :::
 ::::
 :::::
 
 # Explore First — Boxplot by Species
 
-::: callout-note
-**🔮 Predict first:** Do you expect all three species to differ, or just one? Which is heaviest?
-:::
-
 ::::: columns
 :::: {.column width="60%"}
-```{r boxplot-10}
+```{r boxplot-15}
 #| fig-format: png
-#| fig-height: 2.5
-#| fig-alt: "Boxplot of penguin body mass in grams by species (Adelie, Chinstrap, Gentoo) with jittered individual points overlaid, showing Gentoo penguins noticeably heavier than the other two species."
+#| fig-height: 2.4
+#| fig-alt: "Boxplot of penguin body mass in grams by species (Adelie, Chinstrap, Gentoo) with jittered individual points overlaid, showing Gentoo penguins noticeably heavier than the other two species, which sit at about the same level."
 mass_box_plot <- penguins_df %>%
   ggplot(aes(x = species, y = body_mass_g, fill = species)) +
   geom_boxplot(alpha = 0.5, outlier.shape = NA) +
-  geom_point(
-    position = position_jitter(width = 0.15, seed = 42),
-    alpha = 0.3, size = 1.5
-  ) +
+  geom_jitter(width = 0.15, alpha = 0.3, size = 1.5) +
   labs(x = "Species", y = "Body Mass (g)") +
   theme_minimal() +
   theme(legend.position = "none")
@@ -263,13 +318,16 @@ mass_box_plot
 ::::
 
 :::: {.column width="40%"}
+::: callout-note
+**🔮 Predict first:** all three species, or just one? Which is heaviest?
+:::
+
 **Always plot before you test.**
 
-- The picture usually tells the story before the *p*-value confirms it
-- Look for separation between boxes and roughly similar spread
-- But notice the **order**: Adelie, Chinstrap, Gentoo — that's alphabetical, not by mass
-
-📖 R4DS §9 — Layers
+- Gentoo sits well above the other two
+- Adelie and Chinstrap are **almost on top of each other** — hold that thought
+- The box heights are **not** all equal — hold that one too (Set 2)
+- The order is **alphabetical**, not by mass
 ::::
 :::::
 
@@ -277,14 +335,14 @@ mass_box_plot
 
 ::::: columns
 :::: {.column width="60%"}
-```{r factor-inspect-10}
+```{r factor-inspect-15}
 class(penguins_df$species)   # "factor"
 levels(penguins_df$species)  # the stored order
 ```
 
 - A **factor** is a categorical column with a fixed, *ordered* set of **levels**
-- `ggplot` (and `lm`) draw groups in **level order**
-- The default level order is **alphabetical** — almost never the order you want
+- `ggplot` (and `lm`) draw and model groups in **level order**
+- The default level order is **alphabetical** — almost never what you want
 ::::
 
 :::: {.column width="40%"}
@@ -303,9 +361,10 @@ testing — here, body mass — makes the boxplot tell the story at a glance.
 
 ::::: columns
 :::: {.column width="60%"}
-```{r fct-reorder-10}
+```{r fct-reorder-15}
 #| fig-format: png
-#| fig-alt: "The same penguin body-mass boxplot, now with species ordered from lightest to heaviest median mass: Adelie, Chinstrap, Gentoo happen to already be in that order here, but the reordering is now explicit and data-driven."
+#| fig-height: 2.5
+#| fig-alt: "The same penguin body-mass boxplot with species reordered by median mass from lightest to heaviest: Adelie, Chinstrap, Gentoo. The order is now data-driven rather than alphabetical."
 penguins_df %>%
   mutate(species = fct_reorder(species, body_mass_g,
                                .fun = median)) %>%
@@ -321,164 +380,408 @@ penguins_df %>%
 :::: {.column width="40%"}
 - `fct_reorder(f, x, .fun = median)` — reorder factor `f` by a summary of `x`
 - Do it **inside `mutate()`**, then plot the result
-- One line; the plot now reads lightest → heaviest
+- Here the alphabetical order happens to already be the mass order — but now it
+  is that way **on purpose**, and it will hold for data where it does not
 
 ::: callout-tip
 The full `forcats` family — rename levels, merge them, lump rare ones — is in
-**Common Code 15 · Factors**. Today we only need *ordering* and, next, the
-*reference level*.
+**Common Code 15 · Factors**. Today we need *ordering*, and `fct_relevel()` for
+the baseline in a moment.
 :::
 ::::
 :::::
 
-# 🛑 Pause — Do Activity Parts 1–4 Now
-
-Load the penguins, plot body mass by species, reorder the boxplot with
-`fct_reorder()`, and write your hypotheses. Predict which species differ before
-you run anything.
-
-# 🧩 Chunk 2 of 2 · Fit the Model & Check Assumptions
-
-**We will cover:** fitting the model, then checking normality of the residuals and equal variance across groups.
-
-::: callout-tip
-**🖐 After this chunk: Activity Parts 5–8** (fit, set the reference level, QQ + Shapiro on residuals, Levene's test).
-:::
-
-# Fit the Model
+# State the Hypotheses — Before Any Code
 
 ::::: columns
 :::: {.column width="60%"}
-```{r fit-10}
-# ANOVA is a linear model with a categorical X ---------
+**H₀:** $\mu_{\text{Adelie}} = \mu_{\text{Chinstrap}} = \mu_{\text{Gentoo}}$
+
+**Hₐ:** at least one species mean differs from the others
+
+**α = 0.05**
+
+That is the whole hypothesis set. There is **one** test and **one** *p*-value,
+no matter how many groups you have.
+::::
+
+:::: {.column width="40%"}
+::: callout-important
+Hₐ is deliberately vague. "At least one differs" is all the F-test can tell
+you. If you want to name the species, you need the follow-up tests — Set 3.
+:::
+::::
+:::::
+
+# Fit the Model — `lm()`
+
+::::: columns
+:::: {.column width="60%"}
+```{r fit-15}
+# ANOVA is a linear model with a categorical X --------
 mass_model <- lm(body_mass_g ~ species, data = penguins_df)
 ```
 
-- `lm(Y ~ X)` — the *same* syntax as regression (Lecture 11)
-- When `X` is **categorical**, that linear model *is* a one-way ANOVA
-- We check assumptions on this model **before** reading any *p*-value
+- `lm(Y ~ X)` — the *same* function call as regression
+- When `X` is **categorical**, that linear model **is** a one-way ANOVA
+- Fitting the model and **reading a table from it** are two separate steps
 ::::
 
 :::: {.column width="40%"}
 ::: callout-note
 **✅ Key idea**
 
-`lm(body_mass_g ~ species)` is the exact same function call you used for a numeric predictor in Lecture 11 — only `species` is categorical this time. R handles the encoding automatically; you don't write anything differently to get an ANOVA instead of a regression.
+You do not write anything different to get an ANOVA instead of a regression.
+`lm()` looks at the class of `X` and codes it for you. One function, two tests.
 :::
 
 📖 W&S §15.2
 ::::
 :::::
 
-# Which Group Is the Baseline? — `fct_relevel()`
+# What `lm()` Did With a Factor — the Baseline
 
 ::::: columns
 :::: {.column width="60%"}
-```{r fct-relevel-10}
-# The (Intercept) is the FIRST level = Adelie ---------
+```{r coef-15}
 coef(mass_model)
+```
 
-# Make Gentoo the reference instead --------------------
+- `(Intercept)` is the mean of the **first level** — Adelie
+- The other coefficients are **differences from Adelie**
+- Chinstrap is +32 g; Gentoo is +1375 g
+::::
+
+:::: {.column width="40%"}
+This is **treatment coding** (`contr.treatment`) — R's default. Each group is
+compared with a baseline group.
+
+::: callout-note
+Remember this phrase: *treatment coding compares every group with the first
+level.* It comes back in two slides when we ask `Anova()` for Type III.
+:::
+::::
+:::::
+
+# Change the Baseline — `fct_relevel()`
+
+::::: columns
+:::: {.column width="60%"}
+```{r fct-relevel-15}
+# Make Gentoo the reference instead -------------------
 penguins_relevel <- penguins_df %>%
   mutate(species = fct_relevel(species, "Gentoo"))
 
-coef(lm(body_mass_g ~ species, data = penguins_relevel))
+mass_model_gentoo <- lm(body_mass_g ~ species,
+                        data = penguins_relevel)
+coef(mass_model_gentoo)
 ```
 ::::
 
 :::: {.column width="40%"}
-- `lm` picks the **first factor level** as the baseline; every coefficient is a
-  difference *from that group*
-- `fct_relevel(species, "Gentoo")` moves Gentoo to the front → coefficients are
-  now differences from Gentoo
+- `fct_relevel(species, "Gentoo")` moves Gentoo to the front → the coefficients
+  are now differences **from Gentoo**
 
 ::: callout-important
 Releveling changes **which comparisons the coefficients show**. It does **not**
-change the overall **F** or *p*-value — the ANOVA question ("do any means
-differ?") is the same no matter which group you call the baseline.
+change the overall **F** or *p*-value — "do any means differ?" is the same
+question whichever group you call the baseline.
 :::
+
+Use it to make the baseline a group your reader cares about — a control, a
+reference site.
 ::::
 :::::
 
-# Assumption 1 — Normality of the Residuals
+# Read the Table — `aov()` and `summary()`
 
 ::: callout-note
-**🔮 Predict first:** `plot(mass_model)` gives the same four panels as the regression lecture. With ~340 penguins, will the Normal Q-Q panel track the line as tightly?
-:::
-
-::::: columns
-:::: {.column width="55%"}
-```{r diagnostic-plots-10}
-#| fig-format: png
-#| fig-width: 5.5
-#| fig-height: 4.2
-#| fig-alt: "Four base R diagnostic plots for the body mass by species linear model, arranged in a two by two grid: residuals versus fitted values, a normal Q-Q plot of the residuals, a scale-location plot, and a residuals versus leverage plot."
-# Same plot(model) diagnostics as the regression lecture
-par(mfrow = c(2, 2))
-plot(mass_model)
-```
-::::
-
-:::: {.column width="45%"}
-- Check normality of the **residuals**, not the raw masses
-- **Panel 2 (Normal Q-Q)** is the main visual tool
-- Panels 1 & 3 double-check equal variance — the same job Levene's does next, from a different angle
-::::
-:::::
-
-# Normality — Shapiro-Wilk as a Companion
-
-::::: columns
-:::: {.column width="55%"}
-```{r shapiro-10}
-# Shapiro-Wilk on the RESIDUALS, not the raw masses ----
-shapiro.test(residuals(mass_model))
-```
-::::
-
-:::: {.column width="45%"}
-- **H₀:** the residuals are normal
-- *p* > 0.05 → no evidence against normality
-
-::: callout-important
-**Large-sample caution:** with ~340 birds, Shapiro-Wilk flags *tiny* departures as "significant." Trust the **Q-Q panel** — if the points track the line, you're fine.
-:::
-::::
-:::::
-
-# Assumption 2 — Equal Variance (Levene's Test)
-
-::: callout-note
-**🔮 Predict first:** Look back at the boxplot spreads. Predict — will Levene's test call the variances **equal** (*p* > 0.05) or **unequal**?
+**🔮 Predict first:** The boxplot was very separated. Predict the *p*-value —
+nearer 0.5, 0.05, or far below 0.001?
 :::
 
 ::::: columns
 :::: {.column width="60%"}
-```{r levene-10}
-# Levene's test — H0: all groups have equal variance --
-leveneTest(body_mass_g ~ species, data = penguins_df)
+```{r aov-15}
+# The classic ANOVA table -----------------------------
+mass_aov <- aov(body_mass_g ~ species, data = penguins_df)
+summary(mass_aov)
 ```
 ::::
 
 :::: {.column width="40%"}
-- *p* > 0.05 → variances similar → classic ANOVA is fine
-- *p* < 0.05 → variances differ → use **Welch's ANOVA**:
+**Reading the table:**
 
-``` r
-oneway.test(body_mass_g ~ species,
-            data = penguins_df,
-            var.equal = FALSE)
-```
+| Column | Meaning |
+|-----------|-------------------------------|
+| `Df` | groups − 1, then residual df |
+| `Sum Sq` | variation explained / left over |
+| `F value` | between ÷ within |
+| `Pr(>F)` | the *p*-value for H₀ |
 
-Same spirit as Welch's **t**-test — robust when spreads differ.
+: {tbl-colwidths="[30,70]"}
+
+*p* < 0.05 → **reject H₀** → at least one species differs.
 ::::
 :::::
 
-# 🛑 Pause — Do Activity Parts 5–8 Now
+# Three Function Names, One Idea
 
-Fit `lm(body_mass_g ~ species)`, set the reference level with `fct_relevel()`,
-check the residual QQ plot + Shapiro, and run Levene's test. Predict each result
-before you run it.
+::::: columns
+:::: {.column width="60%"}
+| Call | Package | Gives you |
+|-------------------------|---------|----------------------------|
+| `aov(y ~ x)` + `summary()` | base R | the classic ANOVA table |
+| `anova(model)` | base R | **Type I** (sequential) table |
+| `Anova(model)` | **car** | **Type II** table (the default) |
+| `Anova(model, type = 3)` | **car** | **Type III** table |
+
+: {tbl-colwidths="[34,16,50]"}
+
+Lowercase `anova()` and capital `Anova()` are **different functions from
+different packages**. R will not guess which you meant.
+::::
+
+:::: {.column width="40%"}
+::: callout-important
+`Anova()` lives in **car**. Without `library(car)` you get
+
+```
+could not find function "Anova"
+```
+
+With one predictor all four of these give the **same F for `species`**. The
+differences only bite once you have two or more predictors — which is exactly
+why we build the habit now.
+:::
+::::
+:::::
+
+# `car::Anova()` — Type II Is the Default
+
+::::: columns
+:::: {.column width="60%"}
+```{r carAnova-15}
+# No type argument = Type II --------------------------
+Anova(mass_model)
+```
+::::
+
+:::: {.column width="40%"}
+**Why Type II?**
+
+- Our groups have **different n** (unbalanced)
+- Type I is **order-dependent** — swap the predictors and the table changes
+- Type II is **order-independent**, and it is the habit you want before two-way
+  ANOVA, where the type genuinely changes the answer
+
+`Anova(mass_model, type = 2)` is the same thing, written out.
+::::
+:::::
+
+# Type III Needs a Different Contrast Coding
+
+::::: columns
+:::: {.column width="60%"}
+Type III sums of squares are only meaningful when the factors are coded so each
+group is compared with the **grand mean** — `contr.sum` — not with a baseline
+group (`contr.treatment`).
+
+```{r contrasts-check-15}
+# What is R using right now? --------------------------
+getOption("contrasts")
+```
+
+That is R's default: **treatment** coding for unordered factors, **polynomial**
+for ordered ones.
+::::
+
+:::: {.column width="40%"}
+::: callout-important
+**The rule**
+
+`Anova(model, type = 3)` wants
+
+``` r
+c("contr.sum", "contr.poly")
+```
+
+Ask for Type III on a treatment-coded model and `car` will still print a table
+— it just will not be the Type III test you think it is.
+:::
+::::
+:::::
+
+# Switch to `contr.sum` — and Refit
+
+::::: columns
+:::: {.column width="60%"}
+```{r contrasts-sum-15}
+# 1. change the option -------------------------------
+options(contrasts = c("contr.sum", "contr.poly"))
+
+# 2. REFIT the model under the new coding ------------
+mass_model_sum <- lm(body_mass_g ~ species,
+                     data = penguins_df)
+
+# 3. now Type III means what it says -----------------
+Anova(mass_model_sum, type = 3)
+```
+::::
+
+:::: {.column width="40%"}
+::: callout-important
+**Step 2 is not optional**
+
+A model stores the coding it was **fitted** with. Change the option and reuse
+the old model and nothing happens:
+
+``` r
+mass_model$contrasts
+#> $species
+#> [1] "contr.treatment"
+```
+
+Set the option, **then** `lm()` again.
+:::
+::::
+:::::
+
+# And Switch Back — Always
+
+::::: columns
+:::: {.column width="60%"}
+```{r contrasts-back-15}
+# Put R back the way you found it ---------------------
+options(contrasts = c("contr.treatment", "contr.poly"))
+
+getOption("contrasts")
+```
+
+`options()` is **global and sticky** — it stays changed for the rest of your
+session and affects every model you fit afterwards, including ones in code you
+wrote weeks ago.
+::::
+
+:::: {.column width="40%"}
+::: callout-tip
+**The pattern to memorize**
+
+``` r
+options(contrasts =
+  c("contr.sum", "contr.poly"))
+m <- lm(y ~ x, data = df)
+Anova(m, type = 3)
+options(contrasts =
+  c("contr.treatment", "contr.poly"))
+```
+
+Set → refit → test → set back. Four lines, in that order, every time.
+:::
+::::
+:::::
+
+# What Actually Changed? Only the Intercept Row
+
+::::: columns
+:::: {.column width="55%"}
+**Treatment coding, `type = 3`:**
+
+```
+            Sum Sq  Df F value
+(Intercept) 2.07e9   1  9676.9
+species     1.47e8   2   343.6
+Residuals   7.24e7 339
+```
+
+**Sum coding, `type = 3`:**
+
+```
+            Sum Sq  Df F value
+(Intercept) 5.31e9   1 24859.3
+species     1.47e8   2   343.6
+Residuals   7.24e7 339
+```
+::::
+
+:::: {.column width="45%"}
+The `species` row is **identical** — 343.6 either way. Only `(Intercept)`
+moved, because the intercept means something different under each coding
+(Adelie's mean vs. the grand mean).
+
+::: callout-note
+**✅ So why bother?**
+
+With **one** factor, you cannot see the difference in the row you care about.
+With **two** factors and an interaction, you can — the predictor rows change
+too. Learn the four-line pattern on the easy case, so it is automatic on the
+hard one.
+:::
+::::
+:::::
+
+# Which Table Should You Report?
+
+| Situation | Use |
+|---------------------------------|-------------------------------|
+| One factor, any design | any of them — they agree. `Anova(model)` is a fine habit |
+| Two+ factors, **balanced** | all three types agree |
+| Two+ factors, **unbalanced** | **Type II** for main effects with no interaction |
+| Interaction you want to keep in | **Type III**, with `contr.sum` |
+
+: {tbl-colwidths="[42,58]"}
+
+::: callout-tip
+In this course: report **`Anova(model)`** (Type II) unless you have a specific
+reason. Know the Type III recipe because reviewers, SPSS and SAS users ask for
+it by name.
+:::
+
+# Report the Result
+
+::::: columns
+:::: {.column width="60%"}
+```{r report-15}
+# The numbers you need, in one table ------------------
+Anova(mass_model)
+```
+
+> *"Body mass differed significantly among the three penguin species (one-way
+> ANOVA: F(2, 339) = 343.6, p < 0.001)."*
+::::
+
+:::: {.column width="40%"}
+**Always include:**
+
+- the test (one-way ANOVA)
+- **F**, **both df**, the ***p*-value**
+- the direction, once you know it
+
+**Never** write "p = 0.000" — write "p < 0.001".
+
+::: callout-important
+Notice what the sentence does **not** say: *which* species differ. It cannot —
+and neither can you, yet.
+:::
+::::
+:::::
+
+# 🛑 Now Go Run It — The Whole Activity
+
+Open `scripts/19_anova_1_skeleton.R` and work through Parts 1–10. Everything on
+these slides is in there, in order. Predict each output before you run it.
+
+The **homework** is at the bottom of the same script: the same analysis, start
+to finish, on a measurement you choose — `flipper_length_mm`,
+`bill_length_mm` or `bill_depth_mm`. Keep that column; Lecture 20's homework
+checks the assumptions and runs the follow-up tests on the same one.
+
+::: callout-tip
+The skeleton has a `invisible(NULL)` line after every chunk. It is a
+**bumper**: when you press Ctrl/Cmd + Enter on the last line of a chunk, your
+cursor lands on the bumper instead of jumping to the next real code, far down
+the file.
+:::
 
 # What We Learned Today
 
@@ -487,18 +790,18 @@ before you run it.
 **Concepts:**
 
 - Many t-tests inflate the false-positive rate — **ANOVA asks once**
-- **F** = between-group ÷ within-group variance (signal ÷ noise)
+- **F** = between-group ÷ within-group variance
 - A **factor**'s level order sets the plot order and the model baseline
-- ANOVA is a linear model with a categorical predictor — same `lm()` as regression
-- Assumptions: **normal residuals**, **equal variance** (Levene)
+- ANOVA is a linear model with a categorical predictor
+- Type I / II / III differ in how they allocate sums of squares; **Type III
+  needs `contr.sum`**, and the model must be **refit**
 
 **R skills:**
 
-- `fct_reorder()` to order groups by the response; `fct_relevel()` to set the baseline
-- `lm(Y ~ group)`
-- `plot(model)` diagnostics, `shapiro.test(residuals())`
-- `leveneTest()`
-- rest of the `fct_*` family → **Common Code 15 · Factors**
+- `fct_reorder()`, `fct_relevel()`
+- `lm(Y ~ group)`, `coef()`
+- `aov()` + `summary()`, `anova()`, `car::Anova()`
+- `options(contrasts = ...)` — set, refit, test, set back
 ::::
 
 :::: {.column width="40%"}
@@ -507,9 +810,12 @@ before you run it.
 - 📖 W&S Ch. 15 — ANOVA
 - 📖 [R4DS Ch. 16 — Factors](https://r4ds.hadley.nz/factors)
 
-**Up next — Lecture 14:**
+**Up next — Lecture 20:**
 
-- Assumptions are checked — now we **run** the test
-- `aov()` and `car::Anova()`, then `emmeans` post-hoc to find **which** species differ, and how to report it
+- **Set 2 — the assumptions.** We reported *p* < 0.001 today without earning
+  it. Are the residuals normal? Are the variances equal? One of those answers
+  is going to be **no**.
+- **Set 3 — the follow-up tests.** Adelie and Chinstrap looked identical on the
+  boxplot. We find out whether they are.
 ::::
 :::::

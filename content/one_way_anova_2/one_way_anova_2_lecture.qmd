@@ -1,18 +1,20 @@
 ---
-title: "Lecture 14 — One-Way ANOVA II: Running & Reporting the Test"
-subtitle: "Reading the F table, finding which groups differ, and writing it up"
+title: "Lecture 20 — One-Way ANOVA II: Assumptions, then Follow-Up Tests"
+subtitle: "Earning the p-value, and finding out which species actually differ"
 author: "Bill Perry"
 date: today
 
 # --- Fields the SITE reads for ordering / listings / homepage ---
 # order/week are auto-stamped from _schedule.yml by sync_order_from_schedule.R
-order: 16
-week: 8
+order: 20
+week: 10
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
-  Running the one-way ANOVA with aov() and car::Anova(), finding WHICH
-  penguin species differ with emmeans post-hoc tests, and writing a
-  complete results sentence.
+  Set 2 — checking the one-way ANOVA's assumptions on the penguin model with
+  plot(model), a residual QQ plot, Shapiro-Wilk and Levene's test, and what to
+  do when equal variance fails (Welch's ANOVA). Set 3 — the follow-up tests:
+  emmeans pairwise comparisons, Tukey adjustment, a compact letter display, a
+  means plot, and the finished results sentence.
 categories: [anova, tidyverse, statistics]
 
 format:
@@ -54,201 +56,354 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 options(width = 65)   # printed R output wraps at 65 too
 ```
 
-# Where we left off (Lecture 13 — One-Way ANOVA I)
+# Where we left off — Lecture 19
 
-- `mass_model <- lm(body_mass_g ~ species, data = penguins_df)` — fit
-- **Normality checked** — Q-Q panel + Shapiro-Wilk on the residuals
-- **Equal variance checked** — Levene's test
-- **Decision:** assumptions look fine, proceed with classic ANOVA
+- Plotted body mass by species; Gentoo high, Adelie and Chinstrap nearly level
+- `mass_model <- lm(body_mass_g ~ species, data = penguins_df)`
+- `Anova(mass_model)` → **F(2, 339) = 343.6, *p* < 0.001**
+- Reported: *"Body mass differed significantly among the three species."*
 
-::: callout-note
-**✅ Transition**
+::: callout-important
+**We skipped a step on purpose.**
 
-The model is fit and its assumptions are checked. Today we actually read the F table, find **which** species differ, and turn the result into a sentence a reader can trust.
+We read that *p*-value without checking whether the model was allowed to give
+it to us, and we never found out **which** species differ. Those are today's
+two sets.
 :::
 
 # Goals for today
 
 ::::: columns
 :::: {.column width="60%"}
-- Run the ANOVA two ways: `aov()` and **`car::Anova()`**
-- Understand why **Type II** sums of squares matter for unbalanced data
-- Find **which** groups differ with **`emmeans`** post-hoc tests
-- Read a compact letter display (CLD)
+**Set 2 — the assumptions**
+
+- Normality of the **residuals** — `plot(model)`, QQ, Shapiro-Wilk
+- **Equal variance** — Levene's test
+- What to do when one fails → **Welch's ANOVA**
+
+**Set 3 — the follow-up tests**
+
+- *Which* groups differ — `emmeans` pairwise, Tukey-adjusted
+- Read a **compact letter display**
 - Plot the estimated means ± CI
-- Write a complete, reportable results sentence
+- Write the finished results sentence
 ::::
 
 :::: {.column width="40%"}
 **Tools today:**
 
-- `car` — `Anova()`
-- `emmeans`, `multcomp` — post-hoc, CLD
+- `car` — `leveneTest()`, `Anova()`
+- `emmeans`, `multcomp` — pairwise tests, letters
 
 **Textbook:**
 
-- 📖 Whitlock & Schluter, **Ch. 15 — ANOVA**
+- 📖 W&S **Ch. 15 — ANOVA**
 - 📖 [emmeans vignettes](https://cran.r-project.org/package=emmeans)
 
 **Naming:** models → `_model`, plots → `_plot`
 ::::
 :::::
 
-# How to Use These Slides — Predict · Type · Run
+# Set Up Again — Same Four Lines
 
 ::::: columns
 :::: {.column width="60%"}
-This lecture runs in **two short chunks**. After each chunk you switch to the **activity** and type the code yourself.
-
-**For every code block, do three things:**
-
-1.  **Predict** — before it runs, say what you think the output will be
-2.  **Type** it out by hand — do not copy-paste
-3.  **Run** it and compare to your prediction
-::::
-
-:::: {.column width="40%"}
-::: callout-note
-**✅ Why bother? (the evidence)**
-
--   Predicting the *p*-value before you see it forces you to reason from the boxplot's separation, not just read a number off a screen.
--   Typing `type = "II"` yourself in `Anova()` is what makes you notice it's there — paste the line and you'll never ask why it matters for unbalanced groups.
--   Letters in a compact letter display only mean something if you've watched them get built from the pairwise table above them.
-:::
-::::
-:::::
-
-# 🧩 Chunk 1 of 2 · Run the ANOVA & Read the F Table
-
-**We will cover:** the ANOVA table two ways — base `aov()` and `car::Anova()` — and why the difference matters for unbalanced data.
-
-::: callout-tip
-**🖐 After this chunk: Activity Parts 7–8** (run both, read F / df / p).
-:::
-
-# Run the ANOVA — `aov()` and `summary()`
-
-::: callout-note
-**🔮 Predict first:** The boxplot from Lecture 13 looked very separated. Predict the *p*-value — closer to 0.5, 0.05, or far below 0.001?
-:::
-
-::::: columns
-:::: {.column width="60%"}
-```{r load-libs-11}
+```{r load-libs-16}
 # Load packages at the top — always -------------------
 library(tidyverse)      # wrangling + ggplot2
 library(palmerpenguins) # the penguins data
-library(car)            # Anova()
-library(emmeans)        # post-hoc pairwise tests
+library(car)            # leveneTest(), Anova()
+library(emmeans)        # pairwise follow-up tests
 ```
 
-```{r refit-11}
-# Same model fit at the end of Lecture 13 --------------
+```{r refit-16}
+# The same data and model as Lecture 19 ---------------
 penguins_df <- penguins %>%
   drop_na(body_mass_g, species)
 
 mass_model <- lm(body_mass_g ~ species, data = penguins_df)
 ```
-
-```{r aov-11}
-# Classic ANOVA table (Type I sums of squares) --------
-mass_aov <- aov(body_mass_g ~ species, data = penguins_df)
-summary(mass_aov)
-```
 ::::
 
 :::: {.column width="40%"}
-**Reading the table:**
-
-| Column | Meaning |
-|-----------|-------------------------------|
-| `Df` | groups − 1, and residual df |
-| `F value` | between ÷ within variance |
-| `Pr(>F)` | the *p*-value for H₀ |
-
-*p* < 0.05 → **reject H₀** → at least one species differs. But **which**? Chunk 2.
-::::
-:::::
-
-# Live Demo — Watch It Break (on purpose)
-
-::::: columns
-:::: {.column width="60%"}
-For **unbalanced** data we prefer `car::Anova()`. I'll reach for it but type lowercase, and forget the package:
-
-``` r
-anova(mass_model)        # base R — Type I, one model at a time
-Anova(mass_model)        # capital A — but car isn't loaded!
-```
-
-R stops:
-
-```
-Error in Anova(mass_model) :
-  could not find function "Anova"
-```
-
-The fix — load `car`, and mind the capital **A**:
-
-``` r
-library(car)
-Anova(mass_model, type = "II")
-```
-::::
-
-:::: {.column width="40%"}
-::: callout-tip
-**✅ Why show a broken run?**
-
-`anova()` and `Anova()` are two entirely different functions that happen to differ by one capital letter — R will not guess which one you meant. Watching the exact error message land here means you'll recognize it instantly instead of re-checking your spelling three times when it happens mid-assignment.
-:::
-::::
-:::::
-
-# `car::Anova()` — Type II for Unbalanced Data
-
-::::: columns
-:::: {.column width="60%"}
-```{r carAnova-11}
-# Type II sums of squares — the right call here -------
-Anova(mass_model, type = "II")
-```
-::::
-
-:::: {.column width="40%"}
-**Why Type II?**
-
-- Our groups have **different n** (unbalanced)
-- With one predictor the F is the same, but Type II is the **habit** you want before you meet two-way ANOVA, where the type genuinely changes the answer
-
-::: callout-note
-`anova()` = Type I (order-dependent). `Anova(type = "II")` = order-independent.
-:::
-::::
-:::::
-
-# 🛑 Pause — Do Activity Parts 7–8 Now
-
-Run `aov()` + `summary()`, then `car::Anova(type = "II")`. Predict the F and *p* before you read them, and confirm both tables agree.
-
-# 🧩 Chunk 2 of 2 · Which Groups Differ? Post-Hoc with emmeans
-
-**We will cover:** ANOVA says "some differ" — `emmeans` says *which*, with the comparisons properly adjusted.
+Every script starts from the raw data. Nothing today depends on objects left
+over in last lecture's session.
 
 ::: callout-tip
-**🖐 After this chunk: Activity Parts 9–11** (pairwise tests, letters, plot, report).
+`library(palmerpenguins)` again — base R has its own `penguins` with
+`body_mass` instead of `body_mass_g`.
 :::
+::::
+:::::
 
-# Post-Hoc — Pairwise Comparisons with emmeans
+# 🧩 Set 2 · The Assumptions
+
+**What a one-way ANOVA assumes:**
+
+1.  **Independent** observations — a design question, not a test
+2.  The **residuals** are normally distributed
+3.  The groups have **equal variance** (homoscedasticity)
 
 ::: callout-note
-**🔮 Predict first:** From the boxplot, predict — will **all three** species differ from each other, or will two be statistically tied?
+Assumption 1 is about how the data were collected — no R function can rescue
+it. 2 and 3 we can look at directly, and that is what the next few slides do.
+:::
+
+# Normality Is About the *Residuals*
+
+::::: columns
+:::: {.column width="60%"}
+A **residual** is one bird's miss: its mass minus its species' mean.
+
+$$\text{residual} = y_i - \bar{y}_{\text{group}}$$
+
+ANOVA does **not** require the raw masses to be normal — pooled across three
+species with different means they are not even supposed to be. It requires the
+**misses** to be normal.
+::::
+
+:::: {.column width="40%"}
+```{r resid-16}
+# What the residuals look like ------------------------
+head(residuals(mass_model), 4)
+```
+
+::: callout-important
+Shapiro on the raw `body_mass_g` is a different, wrong test. Always
+`residuals(model)`.
+:::
+::::
+:::::
+
+# Assumption 2 — `plot(model)`, the Same Four Panels
+
+::::: columns
+:::: {.column width="55%"}
+```{r diagnostic-plots-16}
+#| fig-format: png
+#| fig-width: 5.5
+#| fig-height: 3.4
+#| fig-alt: "Four base R diagnostic plots for the body mass by species linear model in a two by two grid: residuals versus fitted values showing three vertical stripes, a normal Q-Q plot whose points track the line closely, a scale-location plot, and residuals versus leverage."
+par(mfrow = c(2, 2))
+plot(mass_model)
+par(mfrow = c(1, 1))
+```
+::::
+
+:::: {.column width="45%"}
+::: callout-note
+**🔮 Predict first:** with ~340 penguins, will the Q-Q panel track the line?
+:::
+
+- **Three vertical stripes** in panels 1 and 3 — a categorical X has only three
+  fitted values. Normal, not a problem
+- **Panel 2 (Normal Q-Q)** is the normality check
+- Panels 1 & 3 show whether the **stripe heights** match — assumption 3 by eye
+::::
+:::::
+
+# Normality — Shapiro-Wilk as the Backup
+
+::::: columns
+:::: {.column width="55%"}
+```{r shapiro-16}
+# Shapiro-Wilk on the RESIDUALS -----------------------
+shapiro.test(residuals(mass_model))
+```
+
+**W = 0.992, *p* = 0.051** — just above 0.05.
+::::
+
+:::: {.column width="45%"}
+- **H₀:** the residuals are normal
+- *p* > 0.05 → no evidence against normality
+
+::: callout-important
+**Large-sample caution**
+
+With ~340 birds Shapiro-Wilk flags *tiny* departures. A *p* of 0.051 is not
+"barely passed" — it is "the test is so sensitive at this n that it is nearly
+flagging a QQ plot that looks fine." Trust the **plot**, use the test as a
+second opinion.
+:::
+::::
+:::::
+
+# Assumption 3 — Equal Variance by Eye First
+
+::::: columns
+:::: {.column width="60%"}
+```{r sd-16}
+# The spread of each group ----------------------------
+penguins_df %>%
+  group_by(species) %>%
+  summarize(n    = n(),
+            mean = mean(body_mass_g),
+            sd   = sd(body_mass_g))
+```
+::::
+
+:::: {.column width="40%"}
+- Adelie **459**, Chinstrap **384**, Gentoo **504**
+- The biggest sd is about **1.3×** the smallest
+- Combined with **unbalanced** n (151 / 68 / 123), that is the situation where
+  unequal variance actually matters
+
+::: callout-note
+Rule of thumb: equal n makes ANOVA forgiving about unequal variance. Unequal n
+does not.
+:::
+::::
+:::::
+
+# Equal Variance — Levene's Test
+
+::: callout-note
+**🔮 Predict first:** given those sds, will Levene's test call the variances
+**equal** (*p* > 0.05) or **unequal**?
 :::
 
 ::::: columns
 :::: {.column width="60%"}
-```{r emmeans-11}
-# Estimated marginal means + Tukey-adjusted pairs -----
+```{r levene-16}
+# H0: all groups have equal variance ------------------
+leveneTest(body_mass_g ~ species, data = penguins_df)
+```
+::::
+
+:::: {.column width="40%"}
+**F = 5.12, *p* = 0.0064**
+
+*p* < 0.05 → **reject H₀** → the variances are **not** equal.
+
+::: callout-important
+So the classic ANOVA we ran last lecture has a **violated assumption**. This is
+not a mistake in the slides — it is what this data set does. Real data does
+this constantly.
+:::
+::::
+:::::
+
+# When Equal Variance Fails — Welch's ANOVA
+
+::::: columns
+:::: {.column width="60%"}
+```{r welch-16}
+# Does not assume equal variances ---------------------
+oneway.test(body_mass_g ~ species,
+            data = penguins_df,
+            var.equal = FALSE)
+```
+::::
+
+:::: {.column width="40%"}
+- **F = 317.6**, num df 2, **denom df 189.5**, *p* < 0.001
+- Fractional denominator df is Welch's signature — it is the same correction as
+  Welch's *t*-test, which is R's default `t.test()`
+
+::: callout-note
+**✅ The decision**
+
+Levene says unequal → **report the Welch F**. The conclusion does not change
+(both *p* are far below 0.001) but the *honest* test is the Welch one.
+:::
+::::
+:::::
+
+# A Decision Table You Can Keep
+
+| Check | Result here | What it means | What to run |
+|----------------|--------------|---------------------|---------------|
+| QQ + Shapiro | *p* = 0.051, plot fine | residuals ~normal | fine either way |
+| Levene | *p* = 0.0064 | variances **unequal** | `oneway.test(var.equal = FALSE)` |
+| Both fail badly | — | normality **and** variance gone | Kruskal-Wallis (rank-based) |
+
+: {tbl-colwidths="[18,22,30,30]"}
+
+::: callout-tip
+**For reference only — you do not run this today.** The rank-based backup is
+`kruskal.test(body_mass_g ~ species, data = penguins_df)`
+→ χ² = 217.6, df = 2, *p* < 0.001. Same answer again. When three different
+tests agree, you can stop worrying about which one you picked.
+:::
+
+# What *Would* Change the Answer?
+
+::::: columns
+:::: {.column width="60%"}
+Here all three tests say *p* < 0.001, so the violated assumption cost us
+nothing.
+
+That is **not** a reason to skip the check. Unequal variance with unequal n can
+push a *p*-value across 0.05 in either direction — you only know which case you
+are in **after** you look.
+::::
+
+:::: {.column width="40%"}
+::: callout-important
+**The rule for this course**
+
+Check → decide → test → report *the test you decided on*. Not "run everything
+and report the smallest *p*."
+:::
+::::
+:::::
+
+# 🧩 Set 3 · Follow-Up Tests — *Which* Groups Differ?
+
+::::: columns
+:::: {.column width="60%"}
+The F-test said "at least one species differs." Look back at the boxplot:
+
+- **Gentoo** is obviously above the others
+- **Adelie and Chinstrap** sit almost on top of each other
+
+A single *p* < 0.001 is perfectly consistent with *Gentoo differs, the other
+two do not.* The F-test cannot tell those stories apart.
+::::
+
+:::: {.column width="40%"}
+::: callout-note
+**✅ Key idea**
+
+A significant F licenses you to go looking. It does **not** tell you what you
+will find.
+:::
+::::
+:::::
+
+# Why Not Just Run the Three t-Tests Now?
+
+::::: columns
+:::: {.column width="60%"}
+Because that is the problem we opened Lecture 19 with — three tests at α = 0.05
+gives ~14% chance of a false positive.
+
+A **post-hoc** (after-the-fact) test does the three comparisons **and** adjusts
+the *p*-values so the family-wise error rate stays at 0.05.
+
+The standard adjustment for all-pairs comparisons is **Tukey's HSD**.
+::::
+
+:::: {.column width="40%"}
+::: callout-important
+"Tukey-adjusted" means the *p*-values printed have **already** been corrected.
+You compare them with 0.05 directly — you do **not** divide anything.
+:::
+::::
+:::::
+
+# Pairwise Comparisons with `emmeans`
+
+::: callout-note
+**🔮 Predict first:** will **all three** species differ from each other, or will
+two be statistically tied?
+:::
+
+::::: columns
+:::: {.column width="60%"}
+```{r emmeans-16}
+# Estimated means + every pairwise comparison ---------
 mass_emm <- emmeans(mass_model, pairwise ~ species)
 
 mass_emm$contrasts
@@ -256,12 +411,38 @@ mass_emm$contrasts
 ::::
 
 :::: {.column width="40%"}
-**Reading it:**
+**The answer:**
 
-- `emmeans(..., pairwise ~ species)` gives each group's mean **and** every pairwise comparison
-- The *p*-values are **Tukey-adjusted** — they already correct for multiple comparisons, so the family-wise error stays at 0.05
+- Adelie – Chinstrap: 32 g, *p* = **0.88** → **not** different
+- Adelie – Gentoo: −1375 g, *p* < 0.0001
+- Chinstrap – Gentoo: −1343 g, *p* < 0.0001
 
-📖 W&S §15.4 — planned vs. unplanned comparisons
+::: callout-important
+Two of the three species are **statistically indistinguishable** in mass.
+"Significant ANOVA" never meant "everything differs."
+:::
+::::
+:::::
+
+# What `emmeans` Gives You
+
+::::: columns
+:::: {.column width="60%"}
+```{r emmeans-means-16}
+# The group means, with CIs ---------------------------
+mass_emm$emmeans
+```
+::::
+
+:::: {.column width="40%"}
+- `emmean` — the model's estimate of each group mean
+- `SE`, `df`, and a 95% **confidence interval**
+- `emmeans(model, pairwise ~ species)` returns a **list** of two things:
+  `$emmeans` (the means) and `$contrasts` (the comparisons)
+
+::: callout-tip
+`emmeans(model, ~ species)` with no `pairwise` gives just the means.
+:::
 ::::
 :::::
 
@@ -269,8 +450,8 @@ mass_emm$contrasts
 
 ::::: columns
 :::: {.column width="60%"}
-```{r cld-11}
-# Groups that SHARE a letter are NOT different --------
+```{r cld-16}
+# Groups sharing a letter are NOT different -----------
 multcomp::cld(mass_emm$emmeans, Letters = letters)
 ```
 ::::
@@ -281,7 +462,8 @@ multcomp::cld(mass_emm$emmeans, Letters = letters)
 - Same letter → **not** significantly different
 - Different letters → significantly different
 
-This is the compact summary you see in published figures — one letter above each bar.
+Adelie **a**, Chinstrap **a**, Gentoo **b** — the pairwise table in one glance.
+This is the notation you see over the bars in published figures.
 
 ::: callout-tip
 Install once: `install.packages("multcomp")`
@@ -289,14 +471,40 @@ Install once: `install.packages("multcomp")`
 ::::
 :::::
 
-# Plot the Result — Means ± CI
+# The Backup That Matches Welch
 
 ::::: columns
 :::: {.column width="60%"}
-```{r emmeans-plot-11}
+Tukey through `emmeans` uses the model's **pooled** error — the thing Levene
+told us to be careful about. The matching unequal-variance version:
+
+```{r pairwise-welch-16}
+# Non-pooled SD, Holm-adjusted ------------------------
+pairwise.t.test(penguins_df$body_mass_g,
+                penguins_df$species,
+                pool.sd = FALSE)
+```
+::::
+
+:::: {.column width="40%"}
+- Adelie vs Chinstrap: *p* = **0.59** → still not different
+- Everything else: *p* < 2e-16
+
+::: callout-note
+**✅ Same story.** The letters stand. When the robust version agrees with the
+standard one, report the standard one and say you checked.
+:::
+::::
+:::::
+
+# Plot the Result — Means ± CI
+
+::::: columns
+:::: {.column width="55%"}
+```{r emmeans-plot-16}
 #| fig-format: png
-#| fig-height: 2.9
-#| fig-alt: "Estimated marginal mean body mass with 95 percent confidence interval error bars for each penguin species, showing Gentoo highest, Chinstrap and Adelie lower with non-overlapping intervals."
+#| fig-height: 2.7
+#| fig-alt: "Estimated marginal mean body mass with 95 percent confidence interval error bars for each penguin species. Adelie and Chinstrap sit at about 3700 grams with overlapping intervals, while Gentoo is far above at about 5080 grams with no overlap."
 mass_emm_plot <- as.data.frame(mass_emm$emmeans) %>%
   ggplot(aes(x = species, y = emmean, color = species)) +
   geom_point(size = 3) +
@@ -312,44 +520,55 @@ mass_emm_plot
 ```
 ::::
 
-:::: {.column width="40%"}
-**Estimated marginal means** with 95% confidence intervals.
+:::: {.column width="45%"}
+- Adelie and Chinstrap intervals **overlap** — consistent with *p* = 0.88
+- Gentoo's interval is nowhere near the other two
 
-- Non-overlapping intervals hint at real differences
-- Pair this plot with the letters for a publication-ready figure
+::: callout-important
+Overlapping CIs are a **hint**, not a test. The *p*-value is the test; the plot
+is how your reader sees it.
+:::
 
-The emmeans plot is the ANOVA cousin of Lecture 03's mean ± SE plot.
+This is the ANOVA cousin of the mean ± SE plot from the summary-stats lecture.
 ::::
 :::::
 
-# How to Report an ANOVA
+# How to Report the Whole Thing
 
 ::::: columns
 :::: {.column width="60%"}
-```{r report-11}
-# Pull the F table values for reporting ---------------
-mass_tab <- Anova(mass_model, type = "II")
-mass_tab
-```
-
-> *"Body mass differed significantly among the three penguin species (one-way ANOVA: F(2, 339) = 343.6, p < 0.001). Tukey-adjusted comparisons showed all three species differed, with Gentoo heaviest and Adelie lightest."*
+> *"Body mass differed among the three penguin species. Variances were unequal
+> (Levene's test: F(2, 339) = 5.12, p = 0.006), so we report Welch's ANOVA:
+> F(2, 189.5) = 317.6, p < 0.001. Tukey-adjusted pairwise comparisons showed
+> that Gentoo penguins (5076 ± 42 g) were heavier than both Adelie (3701 ± 38 g,
+> p < 0.001) and Chinstrap (3733 ± 56 g, p < 0.001), while Adelie and Chinstrap
+> did not differ (p = 0.88)."*
 ::::
 
 :::: {.column width="40%"}
-**Always include:**
+**Every piece earns its place:**
 
-- Test type (one-way ANOVA)
-- **F**, both **df**, and the **p-value**
-- The post-hoc result (which groups differ)
-- Group means ± SE or CI
-
-**Never** write "p = 0.000" — use "p < 0.001".
+- the assumption you checked, and what you did about it
+- the test, **F**, **both df**, ***p***
+- the follow-up, named as adjusted
+- the **means ± SE**, so a reader can see the size of the effect
+- the pair that did **not** differ — reporting that is not a failure, it is the
+  finding
 ::::
 :::::
 
-# 🛑 Pause — Do Activity Parts 9–11 Now
+# 🛑 Now Go Run It
 
-Run the emmeans pairwise test, get the letters, plot the means ± CI, and write your results sentence. Predict which species differ before you run the comparisons.
+Open `scripts/20_anova_2_skeleton.R`. Part A is pre-filled — run it chunk by
+chunk and answer the **QA** boxes. Part B is the homework: Sets 2 and 3 again
+on a **different measurement** — `flipper_length_mm`, `bill_length_mm` or
+`bill_depth_mm` — and you write that code yourself.
+
+::: callout-tip
+Your Part B numbers will not match your neighbour's. One of the three columns
+passes Levene's test cleanly, one gives **three different letters**, and one
+puts **Gentoo at the bottom**. Do not assume it will look like body mass.
+:::
 
 # What We Learned Today
 
@@ -357,15 +576,20 @@ Run the emmeans pairwise test, get the letters, plot the means ± CI, and write 
 :::: {.column width="60%"}
 **Concepts:**
 
-- ANOVA rejects H₀ for the *group*, but **post-hoc** finds *which* pairs differ
-- **Tukey adjustment** keeps the family-wise error at 0.05
-- A compact letter display turns a pairwise table into one glance
+- Normality is about the **residuals**, not the raw data
+- Unequal variance + unequal n is the case that actually matters → **Welch's
+  ANOVA**
+- A significant F licenses a **follow-up**; it does not name the groups
+- **Tukey adjustment** keeps family-wise error at 0.05
+- A shared letter means *not shown to be different* — not *proven the same*
 
 **R skills:**
 
-- `aov()` + `summary()`
-- `car::Anova(model, type = "II")`
-- `emmeans(model, pairwise ~ group)` + `multcomp::cld()`
+- `plot(model)`, `shapiro.test(residuals(model))`
+- `leveneTest()`, `oneway.test(var.equal = FALSE)`
+- `kruskal.test()` — know it exists; we do not run it today
+- `emmeans(model, pairwise ~ group)`, `multcomp::cld()`
+- `pairwise.t.test(pool.sd = FALSE)`
 ::::
 
 :::: {.column width="40%"}
@@ -374,9 +598,10 @@ Run the emmeans pairwise test, get the letters, plot the means ± CI, and write 
 - 📖 W&S Ch. 15 — ANOVA
 - 📖 [emmeans vignettes](https://cran.r-project.org/package=emmeans)
 
-**Up next — Lecture 15:**
+**Up next — Lecture 21:**
 
-- Kicking off the **final project**
-- Applying this whole toolkit — wrangling, plotting, and a test — to a dataset you choose
+- The **final project**
+- You now have the full toolkit: wrangle → plot → check → test → follow up →
+  report. The project is you doing that on data you chose.
 ::::
 :::::

@@ -164,22 +164,25 @@ penguins_anova |>
 
 Fit ANOVA as a **linear model** using `lm()`. This is the modern R approach —
 it is equivalent to `aov()` but gives you access to more diagnostic and
-post-hoc tools. Use `car::Anova()` with `type = "III"` for the ANOVA table.
+post-hoc tools. `car::Anova()` gives you the table; with no `type` argument it
+uses **Type II**, which is the default to reach for.
 
 ```r
 penguin_model <- lm(body_mass_g ~ species, data = penguins_anova)
 
-Anova(penguin_model, type = "III")
+Anova(penguin_model)          # Type II — the default
 ```
 
 ::: {.callout-note}
 ## Reading the ANOVA table
 
 ```
-              Sum Sq  Df  F value     Pr(>F)
-(Intercept) 2.03e+09   1  5765.0   < 2e-16 ***
-species     1.46e+08   2   207.3   < 2e-16 ***
-Residuals   5.96e+07 339
+Anova Table (Type II tests)
+
+Response: body_mass_g
+             Sum Sq  Df F value    Pr(>F)
+species   146864214   2  343.63 < 2.2e-16 ***
+Residuals  72443483 339
 ```
 
 The row you care about is **species**:
@@ -195,10 +198,45 @@ The **Residuals** row is the within-group variation — the baseline noise.
 ::: {.callout-note}
 ## `car::Anova()` vs base R `anova()`
 
-Always use `car::Anova(model, type = "III")`, not base R `anova()`. The base
-function uses Type I sums of squares, which depend on the order you list
-variables. Type III tests each effect while accounting for all others — it is
-the standard for publications and the only safe choice for unbalanced designs.
+Prefer `car::Anova(model)` over base R `anova(model)`. The base function uses
+**Type I** sums of squares, which are sequential and therefore depend on the
+order you list variables. `Anova()` defaults to **Type II**, which does not,
+and is the safe choice for unbalanced designs.
+
+Lowercase `anova()` and capital `Anova()` are different functions from
+different packages. Without `library(car)` you get
+`could not find function "Anova"`.
+:::
+
+::: {.callout-important}
+## Type III needs a different contrast coding
+
+`Anova(model, type = 3)` is only a genuine Type III test when the factors are
+coded against the **grand mean** (`contr.sum`) rather than against a baseline
+group (`contr.treatment`, which is R's default). Ask for Type III on a
+treatment-coded model and `car` still prints a table — the `(Intercept)` row
+just is not testing what you think.
+
+The four-line pattern — **set, refit, test, set back**:
+
+```r
+options(contrasts = c("contr.sum", "contr.poly"))
+
+penguin_model_sum <- lm(body_mass_g ~ species, data = penguins_anova)
+
+Anova(penguin_model_sum, type = 3)
+
+options(contrasts = c("contr.treatment", "contr.poly"))
+```
+
+The **refit** is not optional: a model stores the coding it was fitted with, so
+changing the option and reusing the old model does nothing. And `options()` is
+global and sticky — set it back, or every model you fit later in the session is
+coded differently too.
+
+With a **single** factor, all of Type I, II and III give the same F for that
+factor; only the intercept row moves. The type genuinely changes the answer
+once you have two or more unbalanced predictors.
 :::
 
 ---
@@ -277,6 +315,19 @@ shapiro.test(residuals(penguin_model))
 - **Levene's p > 0.05** → variances are not significantly different → assumption met
 - **Shapiro-Wilk p > 0.05** → residuals are consistent with normality → assumption met
 - With n > 30 per group, ANOVA is fairly robust to moderate non-normality (Central Limit Theorem). Trust the Q-Q plot over the Shapiro-Wilk p-value in larger samples.
+
+**On this data set:** Shapiro-Wilk gives *W* = 0.992, *p* = 0.051 (fine — the
+Q-Q plot tracks the line), but Levene's test gives F(2, 339) = 5.12,
+**p = 0.006** — the variances are **not** equal. The group sds are 459, 384 and
+504 g with unbalanced n (151 / 68 / 123), which is exactly the case where that
+matters. The honest test to report is then Welch's:
+
+```r
+oneway.test(body_mass_g ~ species, data = penguins_anova, var.equal = FALSE)
+#> F = 317.57, num df = 2.00, denom df = 189.48, p-value < 2.2e-16
+```
+
+The conclusion does not change here — but you only know that after you look.
 :::
 
 ::: {.callout-warning}
@@ -431,7 +482,7 @@ ggsave("figures/penguin_anova.pdf",
 > Letters above boxes indicate Tukey HSD groupings — species sharing a letter
 > are not significantly different (α = 0.05). Gentoo penguins were
 > significantly heavier than both Adelie and Chinstrap penguins
-> (one-way ANOVA: F₂,₃₃₉ = 207.3, p < 0.001, η² = 0.55);
+> (one-way ANOVA: F₂,₃₃₉ = 343.6, p < 0.001, η² = 0.67);
 > Adelie and Chinstrap did not differ.
 :::
 
@@ -443,11 +494,11 @@ ggsave("figures/penguin_anova.pdf",
 ## In-text reporting format
 
 > "Body mass differed significantly among penguin species
-> (one-way ANOVA: F₂,₃₃₉ = 207.3, p < 0.001, η² = 0.55).
-> Gentoo penguins (mean ± SE: 5076 ± 55 g) were significantly heavier than
-> both Adelie (3701 ± 48 g; Tukey HSD: p < 0.001) and Chinstrap
-> (3733 ± 73 g; p < 0.001) penguins. Adelie and Chinstrap did not differ
-> significantly from each other (p = 0.878)."
+> (one-way ANOVA: F₂,₃₃₉ = 343.6, p < 0.001, η² = 0.67).
+> Gentoo penguins (mean ± SE: 5076 ± 42 g) were significantly heavier than
+> both Adelie (3701 ± 38 g; Tukey HSD: p < 0.001) and Chinstrap
+> (3733 ± 56 g; p < 0.001) penguins. Adelie and Chinstrap did not differ
+> significantly from each other (p = 0.881)."
 
 Structure: overall test → effect size → pairwise follow-up. Never lead with
 p — lead with the biology and use p as support.
@@ -460,8 +511,9 @@ p — lead with the biology and use p as support.
 | Task | Code |
 |---|---|
 | Fit ANOVA | `lm(y ~ group, data = df)` |
-| ANOVA table (Type III) | `car::Anova(model, type = "III")` |
-| Tidy output | `broom::tidy(Anova(model, type = "III"))` |
+| ANOVA table (Type II, the default) | `car::Anova(model)` |
+| ANOVA table (Type III) | `options(contrasts = c("contr.sum", "contr.poly"))`, **refit**, then `car::Anova(model, type = 3)`, then set contrasts back |
+| Tidy output | `broom::tidy(Anova(model))` |
 | Residuals vs Fitted | `tibble(fitted = fitted(m), resid = residuals(m))` → ggplot |
 | Q-Q plot of residuals | `ggplot(aes(sample = rstandard(m))) + stat_qq() + stat_qq_line()` |
 | Levene's test | `car::leveneTest(y ~ group, data = df)` |
