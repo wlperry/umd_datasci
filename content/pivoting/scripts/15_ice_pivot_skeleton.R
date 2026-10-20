@@ -59,7 +59,7 @@ url <- "https://www.glerl.noaa.gov/data/ice/glicd/daily/sup.txt"
 
 ice_raw <- read.table(
   url,
-  header     = TRUE,
+  header = TRUE,
   na.strings = c("-999", "-99.00", "NA")
 ) %>%
   rownames_to_column(var = "date") %>%
@@ -75,13 +75,11 @@ invisible(NULL)
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
 # ---- 2: Inspect the wide shape ---------------------------
 # Write the two lines that report the SHAPE of ice_raw and
 # its COLUMN NAMES.
 
 # YOUR CODE:
-
 
 invisible(NULL)
 
@@ -110,7 +108,6 @@ invisible(NULL)
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
 # ---- 3: Pivot from wide to long --------------------------
 # PREDICT FIRST. ice_raw is about 209 rows x 55 columns.
 # After pivot_longer() collapses every year column:
@@ -124,7 +121,6 @@ invisible(NULL)
 # shape.
 
 # YOUR CODE:
-
 
 invisible(NULL)
 
@@ -141,7 +137,6 @@ invisible(NULL)
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
 
 # ---- 4: Fix winters that cross the new year --------------
 # An ice season runs Nov -> May, but NOAA labels the whole
@@ -165,7 +160,6 @@ invisible(NULL)
 
 # YOUR CODE:
 
-
 invisible(NULL)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -184,14 +178,12 @@ invisible(NULL)
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
 # ---- 5: Summarize now that we are long -------------------
 # Write the group_by() / summarize() that gives the MEAN
 # ice cover for every year-month combination. Call it
 # monthly_avg, and use .groups = "drop".
 
 # YOUR CODE:
-
 
 invisible(NULL)
 
@@ -201,7 +193,6 @@ invisible(NULL)
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
 
 # ---- 6: Pivot back to a wide summary table ---------------
 # PREDICT FIRST. One row per year, one column per month.
@@ -215,7 +206,6 @@ invisible(NULL)
 # ice_pivot_table, and print it.
 
 # YOUR CODE:
-
 
 invisible(NULL)
 
@@ -234,7 +224,6 @@ invisible(NULL)
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
 
 # ---- 7: NOAA's spaghetti plot ---------------------------- [PRE-FILLED]
 # This is the long one, so it is written for you. Run it
@@ -258,31 +247,35 @@ historical_avg <- ice_plot_data %>%
   group_by(plot_date) %>%
   summarize(avg_ice = mean(ice_cover, na.rm = TRUE))
 
-current_yr        <- max(ice_plot_data$year)
-past_years        <- ice_plot_data %>% filter(year < current_yr)
+current_yr <- max(ice_plot_data$year)
+past_years <- ice_plot_data %>% filter(year < current_yr)
 current_year_data <- ice_plot_data %>% filter(year == current_yr)
 
 ice_spaghetti_plot <- ggplot() +
   geom_line(
     data = past_years,
     aes(x = plot_date, y = ice_cover, group = year),
-    color = "blue", alpha = 0.15
+    color = "blue",
+    alpha = 0.15
   ) +
   geom_line(
     data = historical_avg,
     aes(x = plot_date, y = avg_ice),
-    color = "red", linewidth = 1.2
+    color = "red",
+    linewidth = 1.2
   ) +
   geom_line(
     data = current_year_data,
     aes(x = plot_date, y = ice_cover),
-    color = "black", linewidth = 1.2
+    color = "black",
+    linewidth = 1.2
   ) +
   scale_x_date(date_labels = "%b", date_breaks = "1 month") +
   labs(
-    title    = "Lake Superior Average Ice Cover",
+    title = "Lake Superior Average Ice Cover",
     subtitle = paste("Comparing", current_yr, "to Historical Data"),
-    x = NULL, y = "Ice Cover (%)"
+    x = NULL,
+    y = "Ice Cover (%)"
   ) +
   theme_bw()
 
@@ -308,7 +301,6 @@ invisible(NULL)
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
 # ---- 8: Each winter's peak ice with slice_max() ----------
 # PREDICT FIRST. slice_max() keeps the single highest
 # ice-cover day per year.
@@ -322,7 +314,6 @@ invisible(NULL)
 # sorted by ice_cover.
 
 # YOUR CODE:
-
 
 invisible(NULL)
 
@@ -342,7 +333,6 @@ invisible(NULL)
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
 # ---- 9: Model the trend in maximum ice cover -------------
 # PREDICT FIRST.
 #
@@ -355,7 +345,6 @@ invisible(NULL)
 # geom_smooth(method = "lm") trend line.
 
 # YOUR CODE:
-
 
 invisible(NULL)
 
@@ -385,7 +374,6 @@ invisible(NULL)
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
 # ==========================================================
 # HOMEWORK - a different Great Lake
 #
@@ -409,7 +397,6 @@ invisible(NULL)
 
 # YOUR CODE:
 
-
 invisible(NULL)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -420,12 +407,10 @@ invisible(NULL)
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
 # ---- H2: Peak ice per winter -----------------------------
 # slice_max() one row per year.
 
 # YOUR CODE:
-
 
 invisible(NULL)
 
@@ -437,13 +422,11 @@ invisible(NULL)
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
 # ---- H3: Model the trend ---------------------------------
 # lm(ice_cover ~ year), summary() it, and plot it with a
 # geom_smooth(method = "lm") trend line.
 
 # YOUR CODE:
-
 
 invisible(NULL)
 
@@ -482,7 +465,6 @@ invisible(NULL)
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
 
 # ==========================================================
 # Before you hand this in: run the whole script top to

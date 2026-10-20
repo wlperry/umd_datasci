@@ -42,9 +42,8 @@ translocations, but the numbers are invented. Use them to learn joins.
 2.  Join with `left_join()` when the key columns are named differently
 3.  Compare `inner_join()`, `left_join()`, and `full_join()`
 4.  Use `semi_join()` and `anti_join()` to **filter** instead of add columns
-5.  Recognize the accidental-key join — the bug that runs without an error
-6.  Build one analysis-ready table
-7.  Join in a table of your own, for homework
+5.  Build one analysis-ready table
+6.  Join in a table of your own, for homework
 
 ::: callout-tip
 ## 📂 Files for today
@@ -114,7 +113,7 @@ Print the first few rows of the identifying columns of each table and compare th
 
 > ## 🧩 Chunk 2 — Your first join *(after lecture Chunk 2)*
 >
-> Parts 4–6: the left join and the accidental-key trap.
+> Parts 4–5: the left join.
 
 # Part 4 · The left join
 
@@ -128,51 +127,39 @@ Type the `left_join()` of `captures_df` onto `individuals_df`. The key columns h
 
 ------------------------------------------------------------------------
 
-# Part 5 · The accidental-key trap
+# Part 5 · Name the key every time
 
-Run the same join again, on purpose, with **no** `by =` argument at all. Watch the message dplyr prints.
+Redo the Part 4 join and `select()` down to `capture_event`, `animal_id`, `capture_date`, `sex`, and `age_class` so you can read it.
 
-✏️ **Q7:** What column did dplyr announce it was joining on? Why is joining on `site` completely wrong here — what does it match a capture event to?
-
-✏️ **Q8:** Row count of this accidental join versus the correct join in Part 4. Where did all those extra rows come from?
-
-> ⚠️ **Watch out!** This is the join bug that bites hardest, because **nothing throws an error**. When dplyr prints *"Joining with `by = join_by(site)`"* and you did not choose that column, treat it as a bug report, not a status update.
-
-------------------------------------------------------------------------
-
-# Part 6 · Name the key every time
-
-Redo the correct join and `select()` down to `capture_event`, `animal_id`, `capture_date`, `sex`, and `age_class` so you can read it.
-
-✏️ **Q9:** Do any of the first rows already show `NA` for `sex`? What does that mean about that particular capture event?
+✏️ **Q7:** Do any of the first rows already show `NA` for `sex`? What does that mean about that particular capture event?
 
 ------------------------------------------------------------------------
 
 > ## 🧩 Chunk 3 — The join family *(after lecture Chunk 3)*
 >
-> Parts 7–9: inner vs. left vs. full.
+> Parts 6–8: inner vs. left vs. full.
 
-# Part 7 · Run all three joins
+# Part 6 · Run all three joins
 
 > 🔮 **Predict first:** rank these three by row count, most to fewest: `inner_join`, `left_join`, `full_join`.
 
 Store the key once in a variable, then run all three joins and report the three row counts side by side with `c()`.
 
-✏️ **Q10:** The three row counts. Was your ranking right? Why does `full` have **more** rows than `left` — which fishers does it add back?
+✏️ **Q8:** The three row counts. Was your ranking right? Why does `full` have **more** rows than `left` — which fishers does it add back?
 
 ------------------------------------------------------------------------
 
-# Part 8 · What each join dropped or kept
+# Part 7 · What each join dropped or kept
 
-✏️ **Q11:** In your own words, what does each of `inner_join`, `left_join`, and `full_join` keep?
+✏️ **Q9:** In your own words, what does each of `inner_join`, `left_join`, and `full_join` keep?
 
-✏️ **Q12:** Which capture events does `inner_join` **drop** that `left_join` keeps? Which fishers does `full_join` **add** that neither of the others includes?
+✏️ **Q10:** Which capture events does `inner_join` **drop** that `left_join` keeps? Which fishers does `full_join` **add** that neither of the others includes?
 
 ------------------------------------------------------------------------
 
-# Part 9 · Pick the right join
+# Part 8 · Pick the right join
 
-✏️ **Q13:** You want a table of **every capture event** for a survival analysis, keeping the event even when the animal was unmarked. Which join, and why?
+✏️ **Q11:** You want a table of **every capture event** for a survival analysis, keeping the event even when the animal was unmarked. Which join, and why?
 
 > 💡 **Key idea:** decide which rows you cannot afford to lose **first**, then pick the join. An unmarked-animal capture is still a capture, so an event-level analysis calls for `left_join` with captures on the left — not `inner_join`.
 
@@ -180,9 +167,9 @@ Store the key once in a variable, then run all three joins and report the three 
 
 > ## 🧩 Chunk 4 — Filtering joins & the payoff *(after lecture Chunk 4)*
 >
-> Parts 10–12: anti/semi joins and the analysis-ready table.
+> Parts 9–11: anti/semi joins and the analysis-ready table.
 
-# Part 10 · `anti_join()` — what's missing
+# Part 9 · `anti_join()` — what's missing
 
 > 🔮 **Predict first, two ways:**
 > (a) how many **capture events** have no matching individual?
@@ -190,31 +177,31 @@ Store the key once in a variable, then run all three joins and report the three 
 
 Write both `anti_join()`s. Note that (b) runs in the **other direction** — individuals on the left — and that the `by =` flips with it.
 
-✏️ **Q14:** Capture events with no individual, and released fishers never recaptured. Were your predictions close?
+✏️ **Q12:** Capture events with no individual, and released fishers never recaptured. Were your predictions close?
 
-✏️ **Q15:** Did `anti_join()` **add** any columns, or only filter rows? Check the column names against the table you started from.
+✏️ **Q13:** Did `anti_join()` **add** any columns, or only filter rows? Check the column names against the table you started from.
 
 ------------------------------------------------------------------------
 
-# Part 11 · `semi_join()` — keep only matches
+# Part 10 · `semi_join()` — keep only matches
 
 Write the `semi_join()` that keeps the released fishers that **were** recaptured at least once, and count them.
 
-✏️ **Q16:** How is `semi_join()` different from `inner_join()`? Look at the **columns**, not just the rows.
+✏️ **Q14:** How is `semi_join()` different from `inner_join()`? Look at the **columns**, not just the rows.
 
-✏️ **Q17:** `recaptured` rows + `never_seen` rows should equal `nrow(individuals_df)`. Does it? What would it mean if it did not?
+✏️ **Q15:** `recaptured` rows + `never_seen` rows should equal `nrow(individuals_df)`. Does it? What would it mean if it did not?
 
 ------------------------------------------------------------------------
 
-# Part 12 · Build one analysis-ready table
+# Part 11 · Build one analysis-ready table
 
 Write the pipe that `inner_join()`s the two tables, `mutate()`s a `days_since_release` column from the two dates, and `select()`s down to the columns worth keeping — renaming `site.x` to `capture_site` and `site.y` to `release_site` as you go. Then `write_csv()` it to `data/fisher_joined.csv`.
 
-✏️ **Q18:** Rows in your analysis table. Why is it smaller than `captures_df`?
+✏️ **Q16:** Rows in your analysis table. Why is it smaller than `captures_df`?
 
-✏️ **Q19:** Why `inner_join()` here, when Part 9 argued for `left_join()`? What is different about **this** table's job?
+✏️ **Q17:** Why `inner_join()` here, when Part 8 argued for `left_join()`? What is different about **this** table's job?
 
-✏️ **Q20:** Check the range of `days_since_release`. Are all the values positive? What would a **negative** value have told you about the data?
+✏️ **Q18:** Check the range of `days_since_release`. Are all the values positive? What would a **negative** value have told you about the data?
 
 ------------------------------------------------------------------------
 
@@ -262,7 +249,6 @@ At this point you should be able to:
 - [ ] Use `left_join`, `inner_join`, and `full_join`, and predict their row counts
 - [ ] Use `anti_join` to find unmatched rows and `semi_join` to keep matched rows
 - [ ] Say why a filtering join adds no columns and a mutating join does
-- [ ] Recognize the accidental-`site`-join bug from the message dplyr prints
 
 Run your whole script top to bottom with **Ctrl/Cmd + Shift + Enter**. It must run clean.
 

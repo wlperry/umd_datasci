@@ -290,39 +290,6 @@ Bill Perry
 </div></div>
 </section>
 
-<section id="how-to-use-these-slides-predict-type-run" class="title-slide slide level1 center scrollable">
-<h1>How to Use These Slides — Predict · Type · Run</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p>This lecture runs in <strong>four short chunks</strong>. After each chunk you switch to the <strong>activity</strong> and type the code yourself.</p>
-<p><strong>For every code block, do three things:</strong></p>
-<ol type="1">
-<li><strong>Predict</strong> — before it runs, say what you think the output will be</li>
-<li><strong>Type</strong> it out by hand — do not copy-paste</li>
-<li><strong>Run</strong> it and compare to your prediction</li>
-</ol>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-note callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Note</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>✅ Why bother? (the evidence)</strong></p>
-<ul>
-<li>Guessing the shape of <code>ice_long</code> before you pivot forces you to reason about what <code>pivot_longer()</code> actually does, instead of just watching it happen.</li>
-<li>Typing <code>names_prefix</code>, <code>names_to</code>, and <code>values_to</code> yourself is how you notice which argument does which job — copy-pasting lets you skip right past that.</li>
-<li>Reshaping wrong in front of an error message (a missing <code>date</code> column, a stray <code>X</code>) teaches you more about tidy data than reshaping right on the first try.</li>
-</ul>
-</div>
-</div>
-</div>
-</div></div>
-</section>
-
 <section id="chunk-1-of-4-why-wide-data-is-a-problem" class="title-slide slide level1 center">
 <h1>🧩 Chunk 1 of 4 · Why Wide Data Is a Problem</h1>
 <p><strong>We will cover:</strong> where the ice data comes from, why “wide” data breaks tidy tools, and reading the messy text file into R.</p>
@@ -548,37 +515,6 @@ Jan-15   2.1  4.0  1.8      8.2  6.5
 </div></div>
 </section>
 
-<section id="live-demo-watch-it-break-on-purpose" class="title-slide slide level1 center">
-<h1>Live Demo — Watch It Break (on purpose)</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p>Suppose I forgot <code>rownames_to_column()</code>, so there is no <code>date</code> column yet:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># Try to pivot every column except date...</span></span>
-<span id="cb9-2"><a aria-label="2"></a>ice_raw <span class="sc">%&gt;%</span> <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="sc">-</span>date, <span class="at">names_to =</span> <span class="st">"year"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>R stops:</p>
-<pre><code>Error in `pivot_longer()`:
-! Can't select columns that don't exist.
-✖ Column `date` doesn't exist.</code></pre>
-<p>The fix — make the row labels a real column first:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a>ice_raw <span class="ot">&lt;-</span> ice_raw <span class="sc">%&gt;%</span> <span class="fu">rownames_to_column</span>(<span class="at">var =</span> <span class="st">"date"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-tip callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Tip</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>✅ Why show a broken run?</strong></p>
-<p>“Column <code>date</code> doesn’t exist” means you referenced a column R can’t see — here because the day labels were still <strong>row names</strong>, not data. Reading the message points you straight to the fix.</p>
-</div>
-</div>
-</div>
-</div></div>
-</section>
-
 <section id="before-and-after-same-data-different-shape" class="title-slide slide level1 center">
 <h1>Before and After: Same Data, Different Shape</h1>
 <div class="columns">
@@ -664,21 +600,21 @@ Jan-15   2.1  4.0  1.8      8.2  6.5
 <div class="column" style="width:60%;">
 <p><strong>The problem:</strong> a season runs <strong>Nov → May</strong>, but NOAA labels it by the year winter <strong>ends</strong> in — so <code>Nov-10</code> under <code>1974</code> really happened in <strong>November 1973</strong>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="co"># Assign Nov/Dec to the PREVIOUS calendar year ----------</span></span>
-<span id="cb12-2"><a aria-label="2"></a>ice_clean <span class="ot">&lt;-</span> ice_long <span class="sc">%&gt;%</span></span>
-<span id="cb12-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb12-4"><a aria-label="4"></a>    <span class="at">year =</span> <span class="fu">as.numeric</span>(year),</span>
-<span id="cb12-5"><a aria-label="5"></a>    <span class="at">calendar_year =</span> <span class="fu">if_else</span>(</span>
-<span id="cb12-6"><a aria-label="6"></a>      <span class="fu">str_starts</span>(date, <span class="st">"Nov|Dec"</span>),</span>
-<span id="cb12-7"><a aria-label="7"></a>      year <span class="sc">-</span> <span class="dv">1</span>,</span>
-<span id="cb12-8"><a aria-label="8"></a>      year</span>
-<span id="cb12-9"><a aria-label="9"></a>    ),</span>
-<span id="cb12-10"><a aria-label="10"></a>    <span class="at">full_date =</span> <span class="fu">ymd</span>(<span class="fu">paste</span>(calendar_year, date, <span class="at">sep =</span> <span class="st">"-"</span>)),</span>
-<span id="cb12-11"><a aria-label="11"></a>    <span class="at">month =</span> <span class="fu">month</span>(full_date, <span class="at">label =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb12-12"><a aria-label="12"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb12-13"><a aria-label="13"></a>  <span class="fu">drop_na</span>(ice_cover, full_date)</span>
-<span id="cb12-14"><a aria-label="14"></a></span>
-<span id="cb12-15"><a aria-label="15"></a><span class="fu">head</span>(ice_clean)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># Assign Nov/Dec to the PREVIOUS calendar year ----------</span></span>
+<span id="cb9-2"><a aria-label="2"></a>ice_clean <span class="ot">&lt;-</span> ice_long <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb9-4"><a aria-label="4"></a>    <span class="at">year =</span> <span class="fu">as.numeric</span>(year),</span>
+<span id="cb9-5"><a aria-label="5"></a>    <span class="at">calendar_year =</span> <span class="fu">if_else</span>(</span>
+<span id="cb9-6"><a aria-label="6"></a>      <span class="fu">str_starts</span>(date, <span class="st">"Nov|Dec"</span>),</span>
+<span id="cb9-7"><a aria-label="7"></a>      year <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb9-8"><a aria-label="8"></a>      year</span>
+<span id="cb9-9"><a aria-label="9"></a>    ),</span>
+<span id="cb9-10"><a aria-label="10"></a>    <span class="at">full_date =</span> <span class="fu">ymd</span>(<span class="fu">paste</span>(calendar_year, date, <span class="at">sep =</span> <span class="st">"-"</span>)),</span>
+<span id="cb9-11"><a aria-label="11"></a>    <span class="at">month =</span> <span class="fu">month</span>(full_date, <span class="at">label =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-12"><a aria-label="12"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb9-13"><a aria-label="13"></a>  <span class="fu">drop_na</span>(ice_cover, full_date)</span>
+<span id="cb9-14"><a aria-label="14"></a></span>
+<span id="cb9-15"><a aria-label="15"></a><span class="fu">head</span>(ice_clean)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 6
   date    year ice_cover calendar_year full_date  month
@@ -731,18 +667,18 @@ Jan-15   2.1  4.0  1.8      8.2  6.5
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a aria-label="1"></a><span class="co"># Mean ice cover per year-month --------------------------</span></span>
-<span id="cb14-2"><a aria-label="2"></a>monthly_avg <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
-<span id="cb14-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(year, month) <span class="sc">%&gt;%</span></span>
-<span id="cb14-4"><a aria-label="4"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb14-5"><a aria-label="5"></a>    <span class="at">mean_ice =</span> <span class="fu">mean</span>(ice_cover, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb14-6"><a aria-label="6"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
-<span id="cb14-7"><a aria-label="7"></a>  )</span>
-<span id="cb14-8"><a aria-label="8"></a></span>
-<span id="cb14-9"><a aria-label="9"></a>monthly_avg <span class="ot">&lt;-</span> monthly_avg <span class="sc">%&gt;%</span></span>
-<span id="cb14-10"><a aria-label="10"></a>  <span class="fu">mutate</span>(<span class="at">month_date =</span> <span class="fu">ymd</span>(<span class="fu">paste</span>(year, month, <span class="st">"01"</span>, <span class="at">sep =</span> <span class="st">"-"</span>)))</span>
-<span id="cb14-11"><a aria-label="11"></a></span>
-<span id="cb14-12"><a aria-label="12"></a><span class="fu">head</span>(monthly_avg)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="co"># Mean ice cover per year-month --------------------------</span></span>
+<span id="cb11-2"><a aria-label="2"></a>monthly_avg <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(year, month) <span class="sc">%&gt;%</span></span>
+<span id="cb11-4"><a aria-label="4"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb11-5"><a aria-label="5"></a>    <span class="at">mean_ice =</span> <span class="fu">mean</span>(ice_cover, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb11-6"><a aria-label="6"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb11-7"><a aria-label="7"></a>  )</span>
+<span id="cb11-8"><a aria-label="8"></a></span>
+<span id="cb11-9"><a aria-label="9"></a>monthly_avg <span class="ot">&lt;-</span> monthly_avg <span class="sc">%&gt;%</span></span>
+<span id="cb11-10"><a aria-label="10"></a>  <span class="fu">mutate</span>(<span class="at">month_date =</span> <span class="fu">ymd</span>(<span class="fu">paste</span>(year, month, <span class="st">"01"</span>, <span class="at">sep =</span> <span class="st">"-"</span>)))</span>
+<span id="cb11-11"><a aria-label="11"></a></span>
+<span id="cb11-12"><a aria-label="12"></a><span class="fu">head</span>(monthly_avg)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 4
    year month mean_ice month_date
@@ -770,16 +706,16 @@ Jan-15   2.1  4.0  1.8      8.2  6.5
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a aria-label="1"></a><span class="co"># Turn long data into a year-by-month summary table ------</span></span>
-<span id="cb16-2"><a aria-label="2"></a>ice_pivot_table <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
-<span id="cb16-3"><a aria-label="3"></a>  <span class="fu">pivot_wider</span>(</span>
-<span id="cb16-4"><a aria-label="4"></a>    <span class="at">id_cols =</span> year,</span>
-<span id="cb16-5"><a aria-label="5"></a>    <span class="at">names_from =</span> month,</span>
-<span id="cb16-6"><a aria-label="6"></a>    <span class="at">values_from =</span> ice_cover,</span>
-<span id="cb16-7"><a aria-label="7"></a>    <span class="at">values_fn =</span> mean</span>
-<span id="cb16-8"><a aria-label="8"></a>  )</span>
-<span id="cb16-9"><a aria-label="9"></a></span>
-<span id="cb16-10"><a aria-label="10"></a><span class="fu">print</span>(ice_pivot_table)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># Turn long data into a year-by-month summary table ------</span></span>
+<span id="cb13-2"><a aria-label="2"></a>ice_pivot_table <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a aria-label="3"></a>  <span class="fu">pivot_wider</span>(</span>
+<span id="cb13-4"><a aria-label="4"></a>    <span class="at">id_cols =</span> year,</span>
+<span id="cb13-5"><a aria-label="5"></a>    <span class="at">names_from =</span> month,</span>
+<span id="cb13-6"><a aria-label="6"></a>    <span class="at">values_from =</span> ice_cover,</span>
+<span id="cb13-7"><a aria-label="7"></a>    <span class="at">values_fn =</span> mean</span>
+<span id="cb13-8"><a aria-label="8"></a>  )</span>
+<span id="cb13-9"><a aria-label="9"></a></span>
+<span id="cb13-10"><a aria-label="10"></a><span class="fu">print</span>(ice_pivot_table)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 54 × 9
     year   Apr   Dec   Feb   Jan   Mar   May   Nov   Jun
@@ -905,24 +841,24 @@ Jan-15   2.1  4.0  1.8      8.2  6.5
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a aria-label="1"></a><span class="co"># Force every date onto one fake shared year -------------</span></span>
-<span id="cb18-2"><a aria-label="2"></a>ice_plot_data <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
-<span id="cb18-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb18-4"><a aria-label="4"></a>    <span class="at">plot_date =</span> <span class="fu">if_else</span>(</span>
-<span id="cb18-5"><a aria-label="5"></a>      <span class="fu">month</span>(full_date) <span class="sc">&gt;=</span> <span class="dv">10</span>,</span>
-<span id="cb18-6"><a aria-label="6"></a>      <span class="fu">update</span>(full_date, <span class="at">year =</span> <span class="dv">1999</span>),</span>
-<span id="cb18-7"><a aria-label="7"></a>      <span class="fu">update</span>(full_date, <span class="at">year =</span> <span class="dv">2000</span>)</span>
-<span id="cb18-8"><a aria-label="8"></a>    )</span>
-<span id="cb18-9"><a aria-label="9"></a>  )</span>
-<span id="cb18-10"><a aria-label="10"></a></span>
-<span id="cb18-11"><a aria-label="11"></a><span class="co"># Historical average for each day-of-winter ---------------</span></span>
-<span id="cb18-12"><a aria-label="12"></a>historical_avg <span class="ot">&lt;-</span> ice_plot_data <span class="sc">%&gt;%</span></span>
-<span id="cb18-13"><a aria-label="13"></a>  <span class="fu">group_by</span>(plot_date) <span class="sc">%&gt;%</span></span>
-<span id="cb18-14"><a aria-label="14"></a>  <span class="fu">summarize</span>(<span class="at">avg_ice =</span> <span class="fu">mean</span>(ice_cover, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb18-15"><a aria-label="15"></a></span>
-<span id="cb18-16"><a aria-label="16"></a>current_yr <span class="ot">&lt;-</span> <span class="fu">max</span>(ice_plot_data<span class="sc">$</span>year)</span>
-<span id="cb18-17"><a aria-label="17"></a>past_years <span class="ot">&lt;-</span> ice_plot_data <span class="sc">%&gt;%</span> <span class="fu">filter</span>(year <span class="sc">&lt;</span> current_yr)</span>
-<span id="cb18-18"><a aria-label="18"></a>current_year_data <span class="ot">&lt;-</span> ice_plot_data <span class="sc">%&gt;%</span> <span class="fu">filter</span>(year <span class="sc">==</span> current_yr)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a aria-label="1"></a><span class="co"># Force every date onto one fake shared year -------------</span></span>
+<span id="cb15-2"><a aria-label="2"></a>ice_plot_data <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
+<span id="cb15-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb15-4"><a aria-label="4"></a>    <span class="at">plot_date =</span> <span class="fu">if_else</span>(</span>
+<span id="cb15-5"><a aria-label="5"></a>      <span class="fu">month</span>(full_date) <span class="sc">&gt;=</span> <span class="dv">10</span>,</span>
+<span id="cb15-6"><a aria-label="6"></a>      <span class="fu">update</span>(full_date, <span class="at">year =</span> <span class="dv">1999</span>),</span>
+<span id="cb15-7"><a aria-label="7"></a>      <span class="fu">update</span>(full_date, <span class="at">year =</span> <span class="dv">2000</span>)</span>
+<span id="cb15-8"><a aria-label="8"></a>    )</span>
+<span id="cb15-9"><a aria-label="9"></a>  )</span>
+<span id="cb15-10"><a aria-label="10"></a></span>
+<span id="cb15-11"><a aria-label="11"></a><span class="co"># Historical average for each day-of-winter ---------------</span></span>
+<span id="cb15-12"><a aria-label="12"></a>historical_avg <span class="ot">&lt;-</span> ice_plot_data <span class="sc">%&gt;%</span></span>
+<span id="cb15-13"><a aria-label="13"></a>  <span class="fu">group_by</span>(plot_date) <span class="sc">%&gt;%</span></span>
+<span id="cb15-14"><a aria-label="14"></a>  <span class="fu">summarize</span>(<span class="at">avg_ice =</span> <span class="fu">mean</span>(ice_cover, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb15-15"><a aria-label="15"></a></span>
+<span id="cb15-16"><a aria-label="16"></a>current_yr <span class="ot">&lt;-</span> <span class="fu">max</span>(ice_plot_data<span class="sc">$</span>year)</span>
+<span id="cb15-17"><a aria-label="17"></a>past_years <span class="ot">&lt;-</span> ice_plot_data <span class="sc">%&gt;%</span> <span class="fu">filter</span>(year <span class="sc">&lt;</span> current_yr)</span>
+<span id="cb15-18"><a aria-label="18"></a>current_year_data <span class="ot">&lt;-</span> ice_plot_data <span class="sc">%&gt;%</span> <span class="fu">filter</span>(year <span class="sc">==</span> current_yr)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div><div class="column" style="width:40%;">
 <p><strong>The trick:</strong> every winter spans two real calendar years (e.g.&nbsp;Nov 1973–May 1974). To overlay them, we relabel every date onto <strong>one fake shared year</strong> (1999 for fall, 2000 for spring) — only the month/day matters for the x-axis.</p>
@@ -935,36 +871,36 @@ Jan-15   2.1  4.0  1.8      8.2  6.5
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a aria-label="1"></a>ice_spaghetti_plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb19-2"><a aria-label="2"></a>  <span class="fu">geom_line</span>(</span>
-<span id="cb19-3"><a aria-label="3"></a>    <span class="at">data =</span> past_years,</span>
-<span id="cb19-4"><a aria-label="4"></a>    <span class="fu">aes</span>(<span class="at">x =</span> plot_date, <span class="at">y =</span> ice_cover, <span class="at">group =</span> year),</span>
-<span id="cb19-5"><a aria-label="5"></a>    <span class="at">color =</span> <span class="st">"blue"</span>,</span>
-<span id="cb19-6"><a aria-label="6"></a>    <span class="at">alpha =</span> <span class="fl">0.15</span></span>
-<span id="cb19-7"><a aria-label="7"></a>  ) <span class="sc">+</span></span>
-<span id="cb19-8"><a aria-label="8"></a>  <span class="fu">geom_line</span>(</span>
-<span id="cb19-9"><a aria-label="9"></a>    <span class="at">data =</span> historical_avg,</span>
-<span id="cb19-10"><a aria-label="10"></a>    <span class="fu">aes</span>(<span class="at">x =</span> plot_date, <span class="at">y =</span> avg_ice),</span>
-<span id="cb19-11"><a aria-label="11"></a>    <span class="at">color =</span> <span class="st">"red"</span>,</span>
-<span id="cb19-12"><a aria-label="12"></a>    <span class="at">linewidth =</span> <span class="fl">1.2</span></span>
-<span id="cb19-13"><a aria-label="13"></a>  ) <span class="sc">+</span></span>
-<span id="cb19-14"><a aria-label="14"></a>  <span class="fu">geom_line</span>(</span>
-<span id="cb19-15"><a aria-label="15"></a>    <span class="at">data =</span> current_year_data,</span>
-<span id="cb19-16"><a aria-label="16"></a>    <span class="fu">aes</span>(<span class="at">x =</span> plot_date, <span class="at">y =</span> ice_cover),</span>
-<span id="cb19-17"><a aria-label="17"></a>    <span class="at">color =</span> <span class="st">"black"</span>,</span>
-<span id="cb19-18"><a aria-label="18"></a>    <span class="at">linewidth =</span> <span class="fl">1.2</span></span>
-<span id="cb19-19"><a aria-label="19"></a>  ) <span class="sc">+</span></span>
-<span id="cb19-20"><a aria-label="20"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_labels =</span> <span class="st">"%b"</span>, <span class="at">date_breaks =</span> <span class="st">"1 month"</span>) <span class="sc">+</span></span>
-<span id="cb19-21"><a aria-label="21"></a>  <span class="fu">labs</span>(</span>
-<span id="cb19-22"><a aria-label="22"></a>    <span class="at">title =</span> <span class="st">"Lake Superior Average Ice Cover"</span>,</span>
-<span id="cb19-23"><a aria-label="23"></a>    <span class="at">subtitle =</span> <span class="fu">paste</span>(<span class="st">"Comparing"</span>, current_yr,</span>
-<span id="cb19-24"><a aria-label="24"></a>                     <span class="st">"to Historical Data"</span>),</span>
-<span id="cb19-25"><a aria-label="25"></a>    <span class="at">x =</span> <span class="cn">NULL</span>,</span>
-<span id="cb19-26"><a aria-label="26"></a>    <span class="at">y =</span> <span class="st">"Ice Cover (%)"</span></span>
-<span id="cb19-27"><a aria-label="27"></a>  ) <span class="sc">+</span></span>
-<span id="cb19-28"><a aria-label="28"></a>  <span class="fu">theme_bw</span>()</span>
-<span id="cb19-29"><a aria-label="29"></a></span>
-<span id="cb19-30"><a aria-label="30"></a>ice_spaghetti_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a aria-label="1"></a>ice_spaghetti_plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb16-2"><a aria-label="2"></a>  <span class="fu">geom_line</span>(</span>
+<span id="cb16-3"><a aria-label="3"></a>    <span class="at">data =</span> past_years,</span>
+<span id="cb16-4"><a aria-label="4"></a>    <span class="fu">aes</span>(<span class="at">x =</span> plot_date, <span class="at">y =</span> ice_cover, <span class="at">group =</span> year),</span>
+<span id="cb16-5"><a aria-label="5"></a>    <span class="at">color =</span> <span class="st">"blue"</span>,</span>
+<span id="cb16-6"><a aria-label="6"></a>    <span class="at">alpha =</span> <span class="fl">0.15</span></span>
+<span id="cb16-7"><a aria-label="7"></a>  ) <span class="sc">+</span></span>
+<span id="cb16-8"><a aria-label="8"></a>  <span class="fu">geom_line</span>(</span>
+<span id="cb16-9"><a aria-label="9"></a>    <span class="at">data =</span> historical_avg,</span>
+<span id="cb16-10"><a aria-label="10"></a>    <span class="fu">aes</span>(<span class="at">x =</span> plot_date, <span class="at">y =</span> avg_ice),</span>
+<span id="cb16-11"><a aria-label="11"></a>    <span class="at">color =</span> <span class="st">"red"</span>,</span>
+<span id="cb16-12"><a aria-label="12"></a>    <span class="at">linewidth =</span> <span class="fl">1.2</span></span>
+<span id="cb16-13"><a aria-label="13"></a>  ) <span class="sc">+</span></span>
+<span id="cb16-14"><a aria-label="14"></a>  <span class="fu">geom_line</span>(</span>
+<span id="cb16-15"><a aria-label="15"></a>    <span class="at">data =</span> current_year_data,</span>
+<span id="cb16-16"><a aria-label="16"></a>    <span class="fu">aes</span>(<span class="at">x =</span> plot_date, <span class="at">y =</span> ice_cover),</span>
+<span id="cb16-17"><a aria-label="17"></a>    <span class="at">color =</span> <span class="st">"black"</span>,</span>
+<span id="cb16-18"><a aria-label="18"></a>    <span class="at">linewidth =</span> <span class="fl">1.2</span></span>
+<span id="cb16-19"><a aria-label="19"></a>  ) <span class="sc">+</span></span>
+<span id="cb16-20"><a aria-label="20"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_labels =</span> <span class="st">"%b"</span>, <span class="at">date_breaks =</span> <span class="st">"1 month"</span>) <span class="sc">+</span></span>
+<span id="cb16-21"><a aria-label="21"></a>  <span class="fu">labs</span>(</span>
+<span id="cb16-22"><a aria-label="22"></a>    <span class="at">title =</span> <span class="st">"Lake Superior Average Ice Cover"</span>,</span>
+<span id="cb16-23"><a aria-label="23"></a>    <span class="at">subtitle =</span> <span class="fu">paste</span>(<span class="st">"Comparing"</span>, current_yr,</span>
+<span id="cb16-24"><a aria-label="24"></a>                     <span class="st">"to Historical Data"</span>),</span>
+<span id="cb16-25"><a aria-label="25"></a>    <span class="at">x =</span> <span class="cn">NULL</span>,</span>
+<span id="cb16-26"><a aria-label="26"></a>    <span class="at">y =</span> <span class="st">"Ice Cover (%)"</span></span>
+<span id="cb16-27"><a aria-label="27"></a>  ) <span class="sc">+</span></span>
+<span id="cb16-28"><a aria-label="28"></a>  <span class="fu">theme_bw</span>()</span>
+<span id="cb16-29"><a aria-label="29"></a></span>
+<span id="cb16-30"><a aria-label="30"></a>ice_spaghetti_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
@@ -1005,12 +941,12 @@ Jan-15   2.1  4.0  1.8      8.2  6.5
 <li><strong>New question:</strong> has each winter’s <strong>peak</strong> ice cover changed over 50 years?</li>
 </ul>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a aria-label="1"></a><span class="co"># Find the single highest ice-cover day each year --------</span></span>
-<span id="cb20-2"><a aria-label="2"></a>max_ice_per_year <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
-<span id="cb20-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
-<span id="cb20-4"><a aria-label="4"></a>  <span class="fu">slice_max</span>(<span class="at">order_by =</span> ice_cover, <span class="at">n =</span> <span class="dv">1</span>, <span class="at">with_ties =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb20-5"><a aria-label="5"></a></span>
-<span id="cb20-6"><a aria-label="6"></a><span class="fu">head</span>(max_ice_per_year <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(ice_cover))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a aria-label="1"></a><span class="co"># Find the single highest ice-cover day each year --------</span></span>
+<span id="cb17-2"><a aria-label="2"></a>max_ice_per_year <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
+<span id="cb17-3"><a aria-label="3"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
+<span id="cb17-4"><a aria-label="4"></a>  <span class="fu">slice_max</span>(<span class="at">order_by =</span> ice_cover, <span class="at">n =</span> <span class="dv">1</span>, <span class="at">with_ties =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb17-5"><a aria-label="5"></a></span>
+<span id="cb17-6"><a aria-label="6"></a><span class="fu">head</span>(max_ice_per_year <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(ice_cover))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 6
 # Groups:   year [6]
@@ -1053,11 +989,11 @@ Jan-15   2.1  4.0  1.8      8.2  6.5
 <div class="columns">
 <div class="column" style="width:55%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a aria-label="1"></a><span class="co"># Fit a regression: max ice cover by year ---------------</span></span>
-<span id="cb22-2"><a aria-label="2"></a>max_ice_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(ice_cover <span class="sc">~</span> year,</span>
-<span id="cb22-3"><a aria-label="3"></a>                    <span class="at">data =</span> max_ice_per_year)</span>
-<span id="cb22-4"><a aria-label="4"></a></span>
-<span id="cb22-5"><a aria-label="5"></a><span class="fu">summary</span>(max_ice_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a aria-label="1"></a><span class="co"># Fit a regression: max ice cover by year ---------------</span></span>
+<span id="cb19-2"><a aria-label="2"></a>max_ice_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(ice_cover <span class="sc">~</span> year,</span>
+<span id="cb19-3"><a aria-label="3"></a>                    <span class="at">data =</span> max_ice_per_year)</span>
+<span id="cb19-4"><a aria-label="4"></a></span>
+<span id="cb19-5"><a aria-label="5"></a><span class="fu">summary</span>(max_ice_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
@@ -1098,18 +1034,18 @@ F-statistic: 7.539 on 1 and 52 DF,  p-value: 0.008274</code></pre>
 <div class="columns">
 <div class="column" style="width:55%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a aria-label="1"></a>max_ice_plot <span class="ot">&lt;-</span> max_ice_per_year <span class="sc">%&gt;%</span></span>
-<span id="cb24-2"><a aria-label="2"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> ice_cover)) <span class="sc">+</span></span>
-<span id="cb24-3"><a aria-label="3"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
-<span id="cb24-4"><a aria-label="4"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
-<span id="cb24-5"><a aria-label="5"></a>  <span class="fu">labs</span>(</span>
-<span id="cb24-6"><a aria-label="6"></a>    <span class="at">title =</span> <span class="st">"Lake Superior — Annual Maximum Ice Cover"</span>,</span>
-<span id="cb24-7"><a aria-label="7"></a>    <span class="at">x =</span> <span class="st">"Year"</span>,</span>
-<span id="cb24-8"><a aria-label="8"></a>    <span class="at">y =</span> <span class="st">"Max Ice Cover (%)"</span></span>
-<span id="cb24-9"><a aria-label="9"></a>  ) <span class="sc">+</span></span>
-<span id="cb24-10"><a aria-label="10"></a>  <span class="fu">theme_minimal</span>()</span>
-<span id="cb24-11"><a aria-label="11"></a></span>
-<span id="cb24-12"><a aria-label="12"></a>max_ice_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a aria-label="1"></a>max_ice_plot <span class="ot">&lt;-</span> max_ice_per_year <span class="sc">%&gt;%</span></span>
+<span id="cb21-2"><a aria-label="2"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> ice_cover)) <span class="sc">+</span></span>
+<span id="cb21-3"><a aria-label="3"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb21-4"><a aria-label="4"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
+<span id="cb21-5"><a aria-label="5"></a>  <span class="fu">labs</span>(</span>
+<span id="cb21-6"><a aria-label="6"></a>    <span class="at">title =</span> <span class="st">"Lake Superior — Annual Maximum Ice Cover"</span>,</span>
+<span id="cb21-7"><a aria-label="7"></a>    <span class="at">x =</span> <span class="st">"Year"</span>,</span>
+<span id="cb21-8"><a aria-label="8"></a>    <span class="at">y =</span> <span class="st">"Max Ice Cover (%)"</span></span>
+<span id="cb21-9"><a aria-label="9"></a>  ) <span class="sc">+</span></span>
+<span id="cb21-10"><a aria-label="10"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb21-11"><a aria-label="11"></a></span>
+<span id="cb21-12"><a aria-label="12"></a>max_ice_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>

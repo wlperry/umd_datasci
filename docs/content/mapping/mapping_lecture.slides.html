@@ -469,7 +469,7 @@ Bill Perry
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="mapping_lecture_files/figure-html/make-sf-13-1.png" alt="Scatter plot of Bigfoot sighting points by longitude and latitude with no basemap, the point cloud tracing the outline of the continental United States." width="480"></p>
+<p><img data-src="mapping_lecture_files/figure-revealjs/make-sf-13-1.png" alt="Scatter plot of Bigfoot sighting points by longitude and latitude with no basemap, the point cloud tracing the outline of the continental United States."></p>
 </figure>
 </div>
 </div>
@@ -582,7 +582,7 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="mapping_lecture_files/figure-html/points-map-13-1.png" alt="Map of the lower 48 US states with Bigfoot sighting points overlaid, colored by report classification, showing denser clusters in the Pacific Northwest." width="480"></p>
+<p><img data-src="mapping_lecture_files/figure-revealjs/points-map-13-1.png" alt="Map of the lower 48 US states with Bigfoot sighting points overlaid, colored by report classification, showing denser clusters in the Pacific Northwest."></p>
 </figure>
 </div>
 </div>
@@ -682,56 +682,27 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 </div></div>
 </section>
 
-<section id="live-demo-watch-it-break-a-blank-map" class="title-slide slide level1 center">
-<h1>Live Demo — Watch It Break (a blank map)</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p>If I <strong>skip</strong> the lowercase step, the join keys don’t match — <code>"Washington"</code> ≠ <code>"washington"</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a>states_sf <span class="sc">%&gt;%</span></span>
-<span id="cb11-2"><a aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> ID) <span class="sc">%&gt;%</span></span>
-<span id="cb11-3"><a aria-label="3"></a>  <span class="co"># "Washington" vs "washington"</span></span>
-<span id="cb11-4"><a aria-label="4"></a>  <span class="fu">left_join</span>(<span class="fu">count</span>(bigfoot_df, state), <span class="at">by =</span> <span class="st">"state"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Every state gets <code>NA</code> sightings → the whole map renders <strong>grey</strong>. No error, just a blank choropleth.</p>
-<p>The fix — make both keys the <strong>same case</strong> before joining (<code>str_to_lower()</code>).</p>
-</div><div class="column" style="width:40%;">
-<div class="callout callout-important callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Important</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>✅ Why show a blank choropleth?</strong></p>
-<p><code>left_join()</code> doesn’t know that <code>"Washington"</code> and <code>"washington"</code> mean the same state — as far as R is concerned they’re two unrelated strings, so every row fails to match and <code>sightings</code> comes back <code>NA</code> everywhere. <code>scale_fill_viridis_c()</code> then has nothing to shade with, and you get a map that ran without a single error yet shows you nothing. Grey-everywhere is the signature of a key-mismatch, not a code bug.</p>
-</div>
-</div>
-</div>
-</div></div>
-</section>
-
 <section id="step-2-join-counts-onto-the-map" class="title-slide slide level1 center">
 <h1>Step 2 — Join Counts onto the Map</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="co"># Join sightings to the state polygons ---------------</span></span>
-<span id="cb12-2"><a aria-label="2"></a>states_map <span class="ot">&lt;-</span> states_sf <span class="sc">%&gt;%</span></span>
-<span id="cb12-3"><a aria-label="3"></a>  <span class="co"># drop ":north" etc.</span></span>
-<span id="cb12-4"><a aria-label="4"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">str_remove</span>(ID, <span class="st">":.*"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb12-5"><a aria-label="5"></a>  <span class="fu">left_join</span>(sightings_by_state, <span class="at">by =</span> <span class="st">"state"</span>)</span>
-<span id="cb12-6"><a aria-label="6"></a></span>
-<span id="cb12-7"><a aria-label="7"></a><span class="fu">ggplot</span>(states_map) <span class="sc">+</span></span>
-<span id="cb12-8"><a aria-label="8"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> sightings), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
-<span id="cb12-9"><a aria-label="9"></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="at">option =</span> <span class="st">"magma"</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb12-10"><a aria-label="10"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings by State"</span>,</span>
-<span id="cb12-11"><a aria-label="11"></a>       <span class="at">fill =</span> <span class="st">"Sightings"</span>) <span class="sc">+</span></span>
-<span id="cb12-12"><a aria-label="12"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="co"># Join sightings to the state polygons ---------------</span></span>
+<span id="cb11-2"><a aria-label="2"></a>states_map <span class="ot">&lt;-</span> states_sf <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a aria-label="3"></a>  <span class="co"># drop ":north" etc.</span></span>
+<span id="cb11-4"><a aria-label="4"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">str_remove</span>(ID, <span class="st">":.*"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-5"><a aria-label="5"></a>  <span class="fu">left_join</span>(sightings_by_state, <span class="at">by =</span> <span class="st">"state"</span>)</span>
+<span id="cb11-6"><a aria-label="6"></a></span>
+<span id="cb11-7"><a aria-label="7"></a><span class="fu">ggplot</span>(states_map) <span class="sc">+</span></span>
+<span id="cb11-8"><a aria-label="8"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> sightings), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb11-9"><a aria-label="9"></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="at">option =</span> <span class="st">"magma"</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb11-10"><a aria-label="10"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings by State"</span>,</span>
+<span id="cb11-11"><a aria-label="11"></a>       <span class="at">fill =</span> <span class="st">"Sightings"</span>) <span class="sc">+</span></span>
+<span id="cb11-12"><a aria-label="12"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="mapping_lecture_files/figure-html/choropleth-13-1.png" alt="Choropleth map of US states shaded by number of Bigfoot sightings using a magma color scale, with darker states indicating more reports." width="480"></p>
+<p><img data-src="mapping_lecture_files/figure-revealjs/choropleth-13-1.png" alt="Choropleth map of US states shaded by number of Bigfoot sightings using a magma color scale, with darker states indicating more reports."></p>
 </figure>
 </div>
 </div>
@@ -775,18 +746,18 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># Albers Equal-Area (EPSG:5070) — the "textbook" US --</span></span>
-<span id="cb13-2"><a aria-label="2"></a><span class="fu">ggplot</span>(states_map) <span class="sc">+</span></span>
-<span id="cb13-3"><a aria-label="3"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> sightings), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
-<span id="cb13-4"><a aria-label="4"></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="at">option =</span> <span class="st">"magma"</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb13-5"><a aria-label="5"></a>  <span class="fu">coord_sf</span>(<span class="at">crs =</span> <span class="dv">5070</span>) <span class="sc">+</span></span>
-<span id="cb13-6"><a aria-label="6"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings by State (Albers projection)"</span>,</span>
-<span id="cb13-7"><a aria-label="7"></a>       <span class="at">fill =</span> <span class="st">"Sightings"</span>) <span class="sc">+</span></span>
-<span id="cb13-8"><a aria-label="8"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="co"># Albers Equal-Area (EPSG:5070) — the "textbook" US --</span></span>
+<span id="cb12-2"><a aria-label="2"></a><span class="fu">ggplot</span>(states_map) <span class="sc">+</span></span>
+<span id="cb12-3"><a aria-label="3"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> sightings), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb12-4"><a aria-label="4"></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="at">option =</span> <span class="st">"magma"</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb12-5"><a aria-label="5"></a>  <span class="fu">coord_sf</span>(<span class="at">crs =</span> <span class="dv">5070</span>) <span class="sc">+</span></span>
+<span id="cb12-6"><a aria-label="6"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings by State (Albers projection)"</span>,</span>
+<span id="cb12-7"><a aria-label="7"></a>       <span class="at">fill =</span> <span class="st">"Sightings"</span>) <span class="sc">+</span></span>
+<span id="cb12-8"><a aria-label="8"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="mapping_lecture_files/figure-html/albers-13-1.png" alt="Choropleth map of US states shaded by Bigfoot sighting counts, redrawn in an Albers equal-area projection so the country appears in its familiar proportions." width="480"></p>
+<p><img data-src="mapping_lecture_files/figure-revealjs/albers-13-1.png" alt="Choropleth map of US states shaded by Bigfoot sighting counts, redrawn in an Albers equal-area projection so the country appears in its familiar proportions."></p>
 </figure>
 </div>
 </div>
@@ -831,19 +802,19 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a aria-label="1"></a><span class="co"># Facet the point map by season ----------------------</span></span>
-<span id="cb14-2"><a aria-label="2"></a>bigfoot_sf <span class="sc">%&gt;%</span></span>
-<span id="cb14-3"><a aria-label="3"></a>  <span class="fu">filter</span>(season <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Spring"</span>,<span class="st">"Summer"</span>,<span class="st">"Fall"</span>,<span class="st">"Winter"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb14-4"><a aria-label="4"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb14-5"><a aria-label="5"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> states_sf, <span class="at">fill =</span> <span class="st">"grey96"</span>, <span class="at">color =</span> <span class="st">"grey80"</span>) <span class="sc">+</span></span>
-<span id="cb14-6"><a aria-label="6"></a>  <span class="fu">geom_sf</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">0.4</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
-<span id="cb14-7"><a aria-label="7"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> season) <span class="sc">+</span></span>
-<span id="cb14-8"><a aria-label="8"></a>  <span class="fu">coord_sf</span>(<span class="at">crs =</span> <span class="dv">5070</span>) <span class="sc">+</span></span>
-<span id="cb14-9"><a aria-label="9"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># Facet the point map by season ----------------------</span></span>
+<span id="cb13-2"><a aria-label="2"></a>bigfoot_sf <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a aria-label="3"></a>  <span class="fu">filter</span>(season <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Spring"</span>,<span class="st">"Summer"</span>,<span class="st">"Fall"</span>,<span class="st">"Winter"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb13-4"><a aria-label="4"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb13-5"><a aria-label="5"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> states_sf, <span class="at">fill =</span> <span class="st">"grey96"</span>, <span class="at">color =</span> <span class="st">"grey80"</span>) <span class="sc">+</span></span>
+<span id="cb13-6"><a aria-label="6"></a>  <span class="fu">geom_sf</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">0.4</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
+<span id="cb13-7"><a aria-label="7"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> season) <span class="sc">+</span></span>
+<span id="cb13-8"><a aria-label="8"></a>  <span class="fu">coord_sf</span>(<span class="at">crs =</span> <span class="dv">5070</span>) <span class="sc">+</span></span>
+<span id="cb13-9"><a aria-label="9"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="mapping_lecture_files/figure-html/season-13-1.png" alt="Four small maps of the lower 48 states, one per season, each showing Bigfoot sighting points in red, with summer showing the most reports." width="480"></p>
+<p><img data-src="mapping_lecture_files/figure-revealjs/season-13-1.png" alt="Four small maps of the lower 48 states, one per season, each showing Bigfoot sighting points in red, with summer showing the most reports."></p>
 </figure>
 </div>
 </div>
@@ -1110,6 +1081,44 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
         ]
       });
     </script>
+    
+    <script>
+      // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+      // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+      // slide changes (different for each slide format).
+      (function () {
+        // dispatch for htmlwidgets
+        function fireSlideEnter() {
+          const event = window.document.createEvent("Event");
+          event.initEvent("slideenter", true, true);
+          window.document.dispatchEvent(event);
+        }
+
+        function fireSlideChanged(previousSlide, currentSlide) {
+          fireSlideEnter();
+
+          // dispatch for shiny
+          if (window.jQuery) {
+            if (previousSlide) {
+              window.jQuery(previousSlide).trigger("hidden");
+            }
+            if (currentSlide) {
+              window.jQuery(currentSlide).trigger("shown");
+            }
+          }
+        }
+
+        // hookup for slidy
+        if (window.w3c_slidy) {
+          window.w3c_slidy.add_observer(function (slide_num) {
+            // slide_num starts at position 1
+            fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+          });
+        }
+
+      })();
+    </script>
+
     <script id="quarto-html-after-body" type="application/javascript">
       window.document.addEventListener("DOMContentLoaded", function (event) {
         const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
