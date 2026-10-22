@@ -1,59 +1,28 @@
 # ==========================================================
-# Activity 15: Pivoting Lake Superior ice data
+# Activity 15 - Pivoting Lake Superior ice data
 # Name:
 # Date:
 #
-# Save this file as scripts/15_ice_pivot.R
+# Save as scripts/15_ice_pivot.R
 #
-# YOU TYPE MOST OF THE CODE. Three things are already
-# written for you:
+# The code is written for you through section 9, and in
+# section 11. Section 10 is yours to type - the code is on
+# the activity page.
 #
-#   - the libraries
-#   - reading NOAA's file off the web
-#   - the long spaghetti-plot block in Part 7
-#
-# Everywhere else you will find
-#
-#     # YOUR CODE:
-#
-# followed by a blank line. The code is on the lecture
-# slides. Read it there and TYPE it in - do not paste.
-#
-# You answer the questions in the boxes marked # # # # # #
-# after "ANSWER:", with every line starting with #
-#
-# Your ANSWERS and your HOMEWORK are what gets graded.
-#
-# ----------------------------------------------------------
-# About the invisible(NULL) lines
-#
-# Every chunk below ends with
-#
-#     invisible(NULL)
-#
-# It is a BUMPER. When you press Ctrl/Cmd + Enter on the
-# last real line of a chunk, the cursor jumps to the next
-# line that has code on it. Without the bumper that is the
-# next chunk, way down past the answer box. With it, the
-# cursor stops right here and you keep your place.
-#
-# It does nothing and prints nothing. Leave it alone.
+# The THINK lines are to talk about, not to answer here.
+# The HOMEWORK at the bottom is what gets graded.
 # ==========================================================
 
-# Load libraries ------------------------------------------- [PRE-FILLED]
-library(tidyverse) # dplyr + tidyr + ggplot2 + stringr
-library(lubridate) # ymd(), month(), update()
+# ---- Libraries -------------------------------------------
+library(tidyverse)
+library(lubridate)
 
 invisible(NULL)
 
 
-# ---- 1: Read the raw file -------------------------------- [PRE-FILLED]
-# This is a plain-text, SPACE-separated file, not a CSV -
-# that is why it needs read.table() and not read_csv().
-# The day labels (Nov-10 ...) arrive as ROW NAMES, so
-# rownames_to_column() turns them into a real column.
-#
-# You need an internet connection for this line.
+# ---- 1 Read the raw file ---------------------------------
+# Space-separated text, not a CSV. Needs an internet
+# connection.
 
 url <- "https://www.glerl.noaa.gov/data/ice/glicd/daily/sup.txt"
 
@@ -69,170 +38,118 @@ head(ice_raw)
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q1. Why can't read_csv() open this file?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- 2: Inspect the wide shape ---------------------------
-# Write the two lines that report the SHAPE of ice_raw and
-# its COLUMN NAMES.
+# ---- 2 Inspect the wide shape ----------------------------
+dim(ice_raw)
 
-# YOUR CODE:
+names(ice_raw)
+
+# THINK: year is hiding in the column names. Why does that
+# break ggplot() and group_by()?
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q2. Rows = ____   Columns = ____
-#     What does ONE ROW represent (a day? a year? a
-#     day-of-winter?):
-#     What do the COLUMN NAMES look like:
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q3. R glued an X onto the front of every year column -
-#     X1973. Why? What rule do R column names follow?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# ---- 3 Pivot wide to long --------------------------------
+ice_long <- ice_raw %>%
+  pivot_longer(
+    cols = -date,
+    names_to = "year",
+    names_prefix = "X",
+    values_to = "ice_cover"
+  ) %>%
+  arrange(year, date)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q4. "Year" is hiding as 50-odd COLUMN NAMES, not as
-#     values in a column. Explain why that makes
-#     ggplot(aes(x = year)) and group_by(year) impossible
-#     right now.
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+dim(ice_long)
 
-# ---- 3: Pivot from wide to long --------------------------
-# PREDICT FIRST. ice_raw is about 209 rows x 55 columns.
-# After pivot_longer() collapses every year column:
-#
-#     columns I expect:
-#     rows I expect:
-#
-# Now write it. pivot_longer() needs FOUR arguments here:
-# cols, names_to, names_prefix, values_to. Call the result
-# ice_long, arrange() it by year and date, then report its
-# shape.
+head(ice_long)
 
-# YOUR CODE:
+# THINK: what does names_prefix = "X" do?
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q5. Rows in ice_long = ____  Columns = ____
-#     Was your prediction close?  Y / N
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q6. What does names_prefix = "X" do? What would the
-#     year column hold if you left it out?
-# ANSWER:
+# ---- 4 Fix winters that cross the new year ---------------
+# NOAA labels a season by the year it ENDS in, so Nov-10
+# under 1974 really happened in November 1973.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# The ymd() warning about 41 dates is Feb-29 in years with
+# no Feb 29. drop_na() removes them - correctly.
 
-# ---- 4: Fix winters that cross the new year --------------
-# An ice season runs Nov -> May, but NOAA labels the whole
-# season by the year it ENDS in. So Nov-10 under column
-# 1974 really happened in November 1973.
-#
-# Write the mutate() that:
-#   - turns year numeric
-#   - builds calendar_year with if_else() - Nov/Dec go to
-#     the PREVIOUS year
-#   - pastes a real full_date together and parses it
-#     with ymd()
-#   - pulls month out of full_date, label = TRUE
-# then drops rows with no ice value and no date.
-# Call the result ice_clean.
-#
-# EXPECT A WARNING: ymd() will say about 40 dates "failed
-# to parse". Those are Feb-29 in years with no February
-# 29th. drop_na() removes them - correctly, there was no
-# such day.
+ice_clean <- ice_long %>%
+  mutate(
+    year = as.numeric(year),
+    calendar_year = if_else(
+      str_starts(date, "Nov|Dec"),
+      year - 1,
+      year
+    ),
+    full_date = ymd(paste(calendar_year, date, sep = "-")),
+    month = month(full_date, label = TRUE)
+  ) %>%
+  drop_na(ice_cover, full_date)
 
-# YOUR CODE:
+dim(ice_clean)
+
+head(ice_clean)
+
+# THINK: why subtract 1 from year for Nov and Dec?
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q7. Explain the if_else() in plain English.
-#     Condition tested:
-#     What happens when TRUE:
-#     Why we subtract 1 from year:
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q8. Compare nrow(ice_long) and nrow(ice_clean). How many
-#     rows did drop_na() remove, and what were they?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# ---- 5 Summarize by year and month -----------------------
+monthly_avg <- ice_clean %>%
+  group_by(year, month) %>%
+  summarize(
+    mean_ice = mean(ice_cover, na.rm = TRUE),
+    .groups = "drop"
+  )
 
-# ---- 5: Summarize now that we are long -------------------
-# Write the group_by() / summarize() that gives the MEAN
-# ice cover for every year-month combination. Call it
-# monthly_avg, and use .groups = "drop".
-
-# YOUR CODE:
+head(monthly_avg)
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q9. This is the SAME pattern you used in Summary
-#     Statistics. Why was it impossible to run on ice_raw?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- 6: Pivot back to a wide summary table ---------------
-# PREDICT FIRST. One row per year, one column per month.
-#
-#     rows (years) I expect:
-#     columns (months + 1) I expect:
-#
-# Now write the pivot_wider() on ice_clean, using id_cols,
-# names_from, values_from, and values_fn = mean. arrange()
-# it by year so it reads top to bottom, call it
-# ice_pivot_table, and print it.
+# ---- 6 Pivot back to a wide table ------------------------
+# One row per year, one column per month. The months come
+# out in the order they appear, not calendar order.
 
-# YOUR CODE:
+ice_pivot_table <- ice_clean %>%
+  pivot_wider(
+    id_cols = year,
+    names_from = month,
+    values_from = ice_cover,
+    values_fn = mean
+  ) %>%
+  arrange(year)
+
+ice_pivot_table
+
+# THINK: long for computing, wide for reading. Which is
+# this, and who is it for?
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q10. Rows = ____  Columns = ____
-#      Was your prediction close?  Y / N
-#      Why is there a Jun column, and why is it almost
-#      all NA?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q11. When do you reach for pivot_longer(), and when for
-#      pivot_wider()? One sentence each.
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# ---- 7 Regress February ice on year ----------------------
+feb_model <- lm(Feb ~ year, data = ice_pivot_table)
 
-# ---- 7: NOAA's spaghetti plot ---------------------------- [PRE-FILLED]
-# This is the long one, so it is written for you. Run it
-# and READ it.
-#
-# The idea worth keeping: to stack 50 winters on one axis,
-# every date is forced onto a single FAKE year - October
-# onward becomes 1999, January onward becomes 2000 - so the
-# x-axis runs November through June exactly once.
+summary(feb_model)
+
+ice_pivot_table %>%
+  ggplot(aes(x = year, y = Feb)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+# THINK: slope, p-value, R-squared. Is February losing ice?
+
+invisible(NULL)
+
+
+# ---- 8 NOAA's spaghetti plot -----------------------------
+# Every date is forced onto one fake year so all 50 winters
+# share the same x-axis.
 
 ice_plot_data <- ice_clean %>%
   mutate(
@@ -281,195 +198,207 @@ ice_spaghetti_plot <- ggplot() +
 
 ice_spaghetti_plot
 
+# THINK: compare it to NOAA's own version at
+# glerl.noaa.gov/data/ice/spaghetti/sup_ice_compare.png
+
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q12. Open NOAA's own version:
-#   glerl.noaa.gov/data/ice/spaghetti/sup_ice_compare.png
-#      Did you recreate it?  Y / N
-#      What does the RED line represent:
-#      Why is the current year drawn LAST:
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q13. The thin blue lines use group = year inside aes().
-#      Take it out in your head - what would the plot look
-#      like instead, and why?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# ---- 9 Peak ice per winter, and its trend ----------------
+max_ice_per_year <- ice_clean %>%
+  group_by(year) %>%
+  slice_max(order_by = ice_cover, n = 1, with_ties = FALSE)
 
-# ---- 8: Each winter's peak ice with slice_max() ----------
-# PREDICT FIRST. slice_max() keeps the single highest
-# ice-cover day per year.
+max_ice_per_year %>%
+  arrange(ice_cover) %>%
+  select(year, date, ice_cover)
+
+max_ice_model <- lm(ice_cover ~ year, data = max_ice_per_year)
+
+summary(max_ice_model)
+
+max_ice_per_year %>%
+  ggplot(aes(x = year, y = ice_cover)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+# THINK: the slope is significant and the R-squared is only
+# 0.13. Why are those not in conflict?
+
+invisible(NULL)
+
+
+# ---- 10 Flip the wide table back to long -----------------
+# YOUR TURN. Code is on the activity page. Write three
+# things:
 #
-#     rows I expect:
-#
-# Now write the group_by() + slice_max() that keeps one row
-# per year - the highest ice_cover. Call it
-# max_ice_per_year, and use with_ties = FALSE so you get
-# exactly one row even when two days tie. Then look at it
-# sorted by ice_cover.
+#   a) monthly_long - pivot_longer() everything except
+#      year, then drop_na() and filter() down to
+#      Dec, Jan, Feb, Mar, Apr
+#   b) monthly_slopes - group_by(month) + summarize() with
+#      slope = coef(lm(mean_ice ~ year))[2]
+#   c) a plot of mean_ice by year, faceted by month
 
 # YOUR CODE:
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q14. Rows = ____
-#      Lowest maximum ice cover:  year = ____  value = ____ %
-#      Highest maximum ice cover: year = ____  value = ____ %
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: does your Feb slope match section 7? Which month
+# is losing ice fastest?
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q15. Look at the DATE of each year's peak. Early season
-#      or late? Does that date move much from winter to
-#      winter?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- 9: Model the trend in maximum ice cover -------------
-# PREDICT FIRST.
-#
-#     declining / flat / rising:
-#     significant at alpha = 0.05?  Y / N
-#
-# Now write the lm() of ice_cover on year using
-# max_ice_per_year, call it max_ice_model, and summary() it.
-# Then plot the yearly peaks: geom_point() plus a
-# geom_smooth(method = "lm") trend line.
+# ---- 11 If there is time: ice vs Duluth temp -------------
+# Ice is the response to cold. Instead of year as the
+# predictor, use the actual driver - and the month before.
+# You already installed GSODR in Activity 12.
 
-# YOUR CODE:
+library(janitor)
+library(GSODR)
+
+# Ice by calendar month. floor_date() knocks every date
+# back to the first of its month. Group on month_date, NOT
+# on year - year is the season-END year.
+ice_monthly <- ice_clean %>%
+  mutate(month_date = floor_date(full_date, "month")) %>%
+  group_by(month_date) %>%
+  summarize(mean_ice = mean(ice_cover, na.rm = TRUE),
+            .groups = "drop")
+
+ice_monthly
+
+# Duluth daily weather - this download takes a minute.
+duluth_df <- get_GSOD(years = 1973:2025,
+                      station = "727450-14913") %>%
+  clean_names()
+
+dim(duluth_df)
+
+# Monthly mean temp, plus the PREVIOUS month's temp.
+# lag() shifts a column down one row, so arrange() first.
+dlh_month <- duluth_df %>%
+  group_by(year, month) %>%
+  summarize(mean_temp = mean(temp, na.rm = TRUE),
+            .groups = "drop") %>%
+  mutate(month_date = ymd(paste(year, month, "01", sep = "-"))) %>%
+  arrange(month_date) %>%
+  mutate(temp_prior = lag(mean_temp))
+
+head(dlh_month)
+
+# Join the temperature onto the ice - next week's lecture,
+# here as a preview.
+ice_temp_df <- ice_monthly %>%
+  left_join(dlh_month, by = "month_date")
+
+ice_temp_df %>%
+  select(month_date, mean_ice, mean_temp, temp_prior)
+
+# This month's temperature
+ice_temp_model <- lm(mean_ice ~ mean_temp, data = ice_temp_df)
+
+summary(ice_temp_model)
+
+ice_temp_df %>%
+  ggplot(aes(x = mean_temp, y = mean_ice)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+# Last month's temperature
+ice_lag_model <- lm(mean_ice ~ temp_prior, data = ice_temp_df)
+
+summary(ice_lag_model)
+
+ice_temp_df %>%
+  ggplot(aes(x = temp_prior, y = mean_ice)) +
+  geom_point() +
+  geom_smooth(method = "lm")
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q16. Report the model.
-#      Slope (% per year) =
-#      p-value for the slope =
-#      R-squared =
-#      Significant at alpha = 0.05?  Y / N
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: which predictor has the bigger R-squared, this
+# month's cold or last month's? Why would last month's win?
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q17. The slope is significant, and the R-squared is small
-#      - around 0.13. Say what EACH number tells you, and
-#      why they are NOT in conflict.
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q18. One sentence: is Lake Superior's peak ice cover
-#      changing, and how confident are you given the
-#      scatter?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # ==========================================================
 # HOMEWORK - a different Great Lake
 #
-# Nothing below is filled in. Copy your OWN chunks from
-# above and change what needs changing - for most chunks
-# that is the URL and nothing else.
+# Graded. Copy your own chunks from above and change the
+# file name in the URL. Type answers after ANSWER:, every
+# line starting with #
 #
-# Pick ONE lake and change only the file name in the URL:
-#
-#     mic.txt  Michigan
-#     hur.txt  Huron
-#     eri.txt  Erie
-#     ont.txt  Ontario
+#     mic.txt Michigan   hur.txt Huron
+#     eri.txt Erie       ont.txt Ontario
 #
 # https://www.glerl.noaa.gov/data/ice/glicd/daily/<lake>.txt
 # ==========================================================
 
-# ---- H1: Read and pivot your lake ------------------------
-# Read it, pivot_longer() it, fix the Nov/Dec dates with
-# the same if_else(), and drop the NAs.
+# ---- H1 Read and pivot your lake -------------------------
+# Read it, pivot long, fix the Nov/Dec dates, drop the NAs.
 
 # YOUR CODE:
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# H-Q1. My lake:
-#       Rows x columns BEFORE the pivot:
-#       Rows x columns AFTER the pivot:
+# H-Q1. My lake, and rows x columns before and after the
+#       pivot.
 # ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- H2: Peak ice per winter -----------------------------
+
+# ---- H2 Peak ice per winter ------------------------------
 # slice_max() one row per year.
 
 # YOUR CODE:
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# H-Q2. Winters in my lake's record = ____
-#       Lowest-peak winter:  year = ____  value = ____ %
-#       Highest-peak winter: year = ____  value = ____ %
+# H-Q2. Number of winters, plus the lowest-peak and
+#       highest-peak years and values.
 # ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# ---- H3: Model the trend ---------------------------------
-# lm(ice_cover ~ year), summary() it, and plot it with a
-# geom_smooth(method = "lm") trend line.
+
+# ---- H3 Model the trend ----------------------------------
+# lm(ice_cover ~ year), summary(), and a plot with a
+# geom_smooth(method = "lm") line.
 
 # YOUR CODE:
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# H-Q3. Slope (% per year) =
-#       p-value =
-#       R-squared =
-#       Significant at alpha = 0.05?  Y / N
+# H-Q3. Slope (% per year), p-value, R-squared. Significant
+#       at alpha = 0.05?
 # ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# H-Q4. Lake Superior's slope is about -0.7 %/year. Is your
-#       lake losing maximum ice FASTER or SLOWER than
-#       Superior, and by how much?
+# H-Q4. Superior's slope is about -0.7 %/year. Is your lake
+#       faster or slower, and by how much?
 # ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# H-Q5. Using YOUR slope, say in plain language how fast
-#       your lake is losing (or gaining) maximum ice cover,
-#       and how much total change that adds up to across
-#       the whole record.
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# H-Q6. Your lake is shallower than Superior, and shallower
-#       water holds less heat. Explain in your own words how
-#       depth could make one lake's ice respond faster to
-#       the same warming - then say whether your slope
-#       actually came out the way that reasoning predicts.
+# ---- H4 Month by month -----------------------------------
+# pivot_wider() to the year-by-month table, flip it back to
+# long, and get every month's slope as in section 10.
+
+# YOUR CODE:
+
+invisible(NULL)
+
+# H-Q5. Which month is your lake losing ice fastest in? Same
+#       month as Superior?
 # ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+# ---- H5 Explain it ---------------------------------------
+# H-Q6. In plain language, how fast is your lake losing (or
+#       gaining) maximum ice, and how much across the whole
+#       record?
+# ANSWER:
+
+# H-Q7. Shallower lakes hold less heat. How could depth make
+#       one lake's ice respond faster than another's - and
+#       did your slope come out that way?
+# ANSWER:
+
 
 # ==========================================================
-# Before you hand this in: run the whole script top to
-# bottom with Ctrl/Cmd + Shift + Enter. It must run clean.
-#
-# NEXT TIME: Lecture 16 - two tables that each hold half
-# the story, and the joins that put them back together.
+# Run the whole script top to bottom with
+# Ctrl/Cmd + Shift + Enter. It must run clean.
 # ==========================================================

@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-10-19">
-<meta name="description" content="Hands-on companion to the pivoting lecture. Students read NOAA’s messy wide ice-cover file straight from the web, pivot it long, fix winters that cross the new year, summarize, pivot back wider, rebuild NOAA’s spaghetti plot, and model the trend in maximum ice cover. Students hand in the finished script.">
+<meta name="dcterms.date" content="2026-10-22">
+<meta name="description" content="Hands-on companion to the pivoting lecture. Students read NOAA’s messy wide ice-cover file straight from the web, pivot it long, fix winters that cross the new year, summarize, pivot back wider, regress monthly ice on year, rebuild NOAA’s spaghetti plot, and model the trend in maximum ice cover. Students hand in the finished script.">
 
 <title>Activity 15 — Wide, Long, and Wild: Pivoting Real Data – UMD DAta Science Biology</title>
 <style>
@@ -120,7 +120,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <link rel="stylesheet" href="../../css/main.css">
 <meta property="og:title" content="Activity 15 — Wide, Long, and Wild: Pivoting Real Data – UMD DAta Science Biology">
-<meta property="og:description" content="Hands-on companion to the pivoting lecture. Students read NOAA’s messy wide ice-cover file straight from the web, pivot it long, fix winters that cross the new year, summarize, pivot back wider, rebuild NOAA’s spaghetti plot, and model the trend in maximum ice cover. Students hand in the finished script.">
+<meta property="og:description" content="Hands-on companion to the pivoting lecture. Students read NOAA’s messy wide ice-cover file straight from the web, pivot it long, fix winters that cross the new year, summarize, pivot back wider, regress monthly ice on year, rebuild NOAA’s spaghetti plot, and model the trend in maximum ice cover. Students hand in the finished script.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 
@@ -419,7 +419,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    <p>Hands-on companion to the pivoting lecture. Students read NOAA’s messy wide ice-cover file straight from the web, pivot it long, fix winters that cross the new year, summarize, pivot back wider, rebuild NOAA’s spaghetti plot, and model the trend in maximum ice cover. Students hand in the finished script.</p>
+    <p>Hands-on companion to the pivoting lecture. Students read NOAA’s messy wide ice-cover file straight from the web, pivot it long, fix winters that cross the new year, summarize, pivot back wider, regress monthly ice on year, rebuild NOAA’s spaghetti plot, and model the trend in maximum ice cover. Students hand in the finished script.</p>
   </div>
 </div>
 
@@ -436,7 +436,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 19, 2026</p>
+      <p class="date">October 22, 2026</p>
     </div>
   </div>
   
@@ -457,9 +457,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Say why wide data breaks <code>ggplot()</code> and <code>group_by()</code></li>
 <li>Use <code>pivot_longer()</code> to make it tidy — and <code>pivot_wider()</code> to make a summary table</li>
 <li>Fix a real-world date wrinkle: winters that cross the new year</li>
+<li>Regress one month’s ice cover on <code>year</code> to get a slope</li>
 <li>Rebuild NOAA’s “spaghetti plot” of every ice season</li>
 <li>Use <code>slice_max()</code> to pull each winter’s peak ice cover</li>
 <li>Fit <code>lm()</code> to ask whether maximum ice cover is declining</li>
+<li>Flip the summary table back to long and compare every month’s slope at once</li>
+<li><em>If there is time:</em> join in Duluth’s monthly temperature and regress ice on temp — this month’s and last month’s</li>
 <li>Repeat the whole thing on a different Great Lake, for homework</li>
 </ol>
 <div class="callout callout-style-default callout-tip callout-titled">
@@ -489,9 +492,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="callout-body-container callout-body">
 <ul>
-<li><strong>You type most of the code.</strong> The skeleton pre-fills the libraries, the file read, and the long spaghetti-plot block. Every other chunk is a <code># YOUR CODE:</code> blank — the code is on the lecture slides, so read it there and type it in.</li>
-<li>You answer the <strong>Q</strong> boxes as <code>#</code> comments in the script.</li>
-<li>The <strong>homework</strong> at the bottom of the skeleton runs the whole workflow on a different Great Lake — that part you write yourself.</li>
+<li><strong>All of today’s code is right here in this activity.</strong> Type it into your script as we go and run it chunk by chunk. The skeleton has the import, the cleaning, the pivot to the wide summary table, and the regression already written — Part 10 is the one blank you fill in yourself.</li>
+<li>The <strong>Q</strong> boxes are <strong>things to think about</strong>, not inline homework. Read them, talk them over, answer them in your head. They are there for your benefit — you do <strong>not</strong> have to type answers into the script, and they are not graded.</li>
+<li>The <strong>homework</strong> at the bottom runs the whole workflow on a different Great Lake — that part you write, and that part <em>is</em> graded.</li>
 <li>Hand in <code>scripts/15_ice_pivot.R</code>. Run it top to bottom (<strong>Ctrl/Cmd + Shift + Enter</strong>) first — it must run with no errors.</li>
 </ul>
 </div>
@@ -506,10 +509,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Pivoting is easy to fake your way through by staring at <code>dim()</code> after the fact. Before each pivot, write down the shape you expect — how many rows, how many columns — then run it. A wrong prediction points straight at the argument you misunderstood: <code>cols</code>, <code>names_to</code>, or <code>values_to</code>.</p>
+<p>Pivoting is easy to fake your way through by staring at <code>dim()</code> after the fact. Before each pivot, say out loud the shape you expect — how many rows, how many columns — then run it. A wrong prediction points straight at the argument you misunderstood: <code>cols</code>, <code>names_to</code>, or <code>values_to</code>.</p>
 </div>
 </div>
-<p>Keep the plots plain today — no labels, colors, or themes except where the skeleton already has them. The goal is to <strong>read</strong> them.</p>
+<p>Keep the plots plain today — no labels, colors, or themes except where the code already has them. The goal is to <strong>read</strong> them.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -520,7 +523,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Every chunk ends with <code>invisible(NULL)</code>. It is a <strong>bumper</strong>. Press Ctrl/Cmd + Enter on a chunk’s last real line and your cursor jumps to the next line <em>that has code on it</em> — without the bumper, that is the next chunk, way down past the answer box. With it, the cursor stops right there and you keep your place. It does nothing and prints nothing.</p>
+<p>Every chunk ends with <code>invisible(NULL)</code>. It is a <strong>bumper</strong>. Press Ctrl/Cmd + Enter on a chunk’s last real line and your cursor jumps to the next line <em>that has code on it</em> — without the bumper, that is the next chunk, way down past the next heading. With it, the cursor stops right there and you keep your place. It does nothing and prints nothing.</p>
 </div>
 </div>
 <hr>
@@ -532,13 +535,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="part-1-load-libraries-and-read-the-raw-file" class="level1">
 <h1>Part 1 · Load libraries and read the raw file</h1>
-<p>This chunk is <strong>pre-filled</strong> in the skeleton. Run it and read it.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>url <span class="ot">&lt;-</span> <span class="st">"https://www.glerl.noaa.gov/data/ice/glicd/daily/sup.txt"</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>ice_raw <span class="ot">&lt;-</span> <span class="fu">read.table</span>(url, <span class="at">header =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                      <span class="at">na.strings =</span> <span class="fu">c</span>(<span class="st">"-999"</span>, <span class="st">"-99.00"</span>, <span class="st">"NA"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames_to_column</span>(<span class="at">var =</span> <span class="st">"date"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load libraries ---------------------------------------</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># dplyr + tidyr + ggplot2 + stringr</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)   <span class="co"># ymd(), month(), update()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read NOAA's messy text file straight off the web -----</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>url <span class="ot">&lt;-</span> <span class="st">"https://www.glerl.noaa.gov/data/ice/glicd/daily/sup.txt"</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>ice_raw <span class="ot">&lt;-</span> <span class="fu">read.table</span>(</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  url,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">header =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">na.strings =</span> <span class="fu">c</span>(<span class="st">"-999"</span>, <span class="st">"-99.00"</span>, <span class="st">"NA"</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames_to_column</span>(<span class="at">var =</span> <span class="st">"date"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ice_raw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <blockquote class="blockquote">
 <p>⚠️ <strong>Watch out!</strong> This file is space-separated, not comma-separated — that is why it needs <code>read.table()</code> and not <code>read_csv()</code>. The day labels (<code>Nov-10</code>…) arrive as <strong>row names</strong>, so <code>rownames_to_column()</code> turns them into a real <code>date</code> column.</p>
 </blockquote>
@@ -547,7 +560,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="part-2-inspect-the-wide-shape" class="level1">
 <h1>Part 2 · Inspect the wide shape</h1>
-<p>Write the two lines that report the shape of <code>ice_raw</code> and its column names.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># How wide is wide? ------------------------------------</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(ice_raw)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(ice_raw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Q2:</strong> Rows, columns, what <strong>one row</strong> represents (a day? a year? a day-of-winter?), and what the <strong>column names</strong> look like.</p>
 <p>✏️ <strong>Q3:</strong> R glued an <code>X</code> onto the front of every year column — <code>X1973</code>. Why? (What rule do R column names have to follow?)</p>
 <p>✏️ <strong>Q4:</strong> “Year” is hiding as 50-odd <strong>column names</strong>, not as values in a column. Explain why that makes <code>ggplot(aes(x = year))</code> and <code>group_by(year)</code> impossible right now.</p>
@@ -560,9 +577,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="part-3-pivot-from-wide-to-long" class="level1">
 <h1>Part 3 · Pivot from wide to long</h1>
 <blockquote class="blockquote">
-<p>🔮 <strong>Predict first:</strong> <code>ice_raw</code> is about 209 rows × 55 columns. After <code>pivot_longer()</code> collapses every year column, how many <strong>columns</strong> will the result have, and roughly how many <strong>rows</strong>? Write your guess in the skeleton before you run it.</p>
+<p>🔮 <strong>Predict first:</strong> <code>ice_raw</code> is about 209 rows × 55 columns. After <code>pivot_longer()</code> collapses every year column, how many <strong>columns</strong> will the result have, and roughly how many <strong>rows</strong>?</p>
 </blockquote>
-<p>Type the <code>pivot_longer()</code> call. It needs four arguments: <code>cols</code>, <code>names_to</code>, <code>names_prefix</code>, and <code>values_to</code>. Call the result <code>ice_long</code>, then <code>arrange()</code> it by <code>year</code> and <code>date</code> and check its shape.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Collapse every year column into year + ice_cover -----</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>ice_long <span class="ot">&lt;-</span> ice_raw <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="sc">-</span>date,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"year"</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_prefix =</span> <span class="st">"X"</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"ice_cover"</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(year, date)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(ice_long)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ice_long)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Four arguments do all the work: <code>cols = -date</code> pivots everything <strong>except</strong> <code>date</code>, <code>names_to</code> says where the old column names go, <code>names_prefix</code> strips the <code>X</code> off the front, and <code>values_to</code> names the column the cell values land in.</p>
 <p>✏️ <strong>Q5:</strong> Rows and columns in <code>ice_long</code>. Was your prediction close?</p>
 <p>✏️ <strong>Q6:</strong> What does <code>names_prefix = "X"</code> do? What would the <code>year</code> column hold if you left it out?</p>
 <hr>
@@ -570,21 +601,47 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="part-4-fix-winters-that-cross-the-new-year" class="level1">
 <h1>Part 4 · Fix winters that cross the new year</h1>
 <p>An ice season runs Nov → May, but NOAA labels the whole season by the year it <strong>ends</strong> in. So <code>Nov-10</code> under column <code>1974</code> really happened in <strong>November 1973</strong>.</p>
-<p>Type the <code>mutate()</code> that turns <code>year</code> numeric, builds <code>calendar_year</code> with <code>if_else()</code>, pastes a real <code>full_date</code> together with <code>ymd()</code>, and pulls <code>month</code> out of it — then drops rows with no ice value or no date. Call the result <code>ice_clean</code>.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Nov/Dec belong to the PREVIOUS calendar year ---------</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ice_clean <span class="ot">&lt;-</span> ice_long <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> <span class="fu">as.numeric</span>(year),</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">calendar_year =</span> <span class="fu">if_else</span>(</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_starts</span>(date, <span class="st">"Nov|Dec"</span>),</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>      year <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>      year</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">full_date =</span> <span class="fu">ymd</span>(<span class="fu">paste</span>(calendar_year, date, <span class="at">sep =</span> <span class="st">"-"</span>)),</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">month =</span> <span class="fu">month</span>(full_date, <span class="at">label =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(ice_cover, full_date)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(ice_clean)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ice_clean)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <blockquote class="blockquote">
-<p>⚠️ <strong>Watch out!</strong> <code>ymd()</code> will warn that about 40 dates “failed to parse”. Those are <code>Feb-29</code> in years that had no February 29th. <code>drop_na()</code> removes them, which is exactly right — there was no such day.</p>
+<p>⚠️ <strong>Watch out!</strong> <code>ymd()</code> will warn that about 41 dates “failed to parse”. Those are <code>Feb-29</code> in years that had no February 29th. <code>drop_na()</code> removes them, which is exactly right — there was no such day.</p>
 </blockquote>
 <p>✏️ <strong>Q7:</strong> Explain the <code>if_else()</code> in plain English: the condition tested, what happens when it is TRUE, and why we subtract 1 from <code>year</code>.</p>
 <p>✏️ <strong>Q8:</strong> How many rows did <code>drop_na()</code> remove, and what were they? (Compare <code>nrow(ice_long)</code> and <code>nrow(ice_clean)</code>.)</p>
 <hr>
 <blockquote class="blockquote">
 <h2 id="chunk-3-summarize-pivot-back-wider-after-lecture-chunk-3" class="anchored" data-anchor-id="part-4-fix-winters-that-cross-the-new-year">🧩 Chunk 3 — Summarize &amp; pivot back wider <em>(after lecture Chunk 3)</em></h2>
-<p>Parts 5–6: summarize the tidy data, then rebuild a readable table with <code>pivot_wider()</code>.</p>
+<p>Parts 5–7: summarize the tidy data, rebuild a readable table with <code>pivot_wider()</code>, and regress one month on year.</p>
 </blockquote>
 </section>
 <section id="part-5-summarize-now-that-were-long" class="level1">
 <h1>Part 5 · Summarize now that we’re long</h1>
-<p>Type the <code>group_by()</code> / <code>summarize()</code> that gives the mean ice cover for every year–month combination. Call it <code>monthly_avg</code>.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mean ice cover for every year-month ------------------</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>monthly_avg <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, month) <span class="sc">%&gt;%</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_ice =</span> <span class="fu">mean</span>(ice_cover, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(monthly_avg)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>✏️ <strong>Q9:</strong> This is the <strong>same</strong> pattern you used in Summary Statistics. Why was it impossible to run on <code>ice_raw</code>?</p>
 <hr>
 </section>
@@ -593,57 +650,295 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <blockquote class="blockquote">
 <p>🔮 <strong>Predict first:</strong> <code>pivot_wider()</code> will make one row per year and one column per month. Roughly how many <strong>rows</strong> (years) and <strong>columns</strong> (months + 1)?</p>
 </blockquote>
-<p>Type the <code>pivot_wider()</code> call on <code>ice_clean</code>, using <code>id_cols</code>, <code>names_from</code>, <code>values_from</code>, and <code>values_fn = mean</code>. <code>arrange()</code> the result by <code>year</code> so it reads top to bottom, and print it.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># One row per year, one column per month ---------------</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>ice_pivot_table <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">id_cols =</span> year,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> month,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> ice_cover,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_fn =</span> mean</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(year)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>ice_pivot_table</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<blockquote class="blockquote">
+<p>⚠️ <strong>Watch out!</strong> The month columns come out in the order the months <strong>first appear in the data</strong>, not in calendar order — <code>Apr</code>, <code>Dec</code>, <code>Feb</code>, <code>Jan</code>… That is normal for <code>pivot_wider()</code>, and it is why long data is better for computing.</p>
+</blockquote>
 <p>✏️ <strong>Q10:</strong> Rows and columns in the table. Was your prediction close? Why is a <code>Jun</code> column there, and why is it almost all <code>NA</code>?</p>
 <p>✏️ <strong>Q11:</strong> When would you reach for <code>pivot_longer()</code>, and when for <code>pivot_wider()</code>? One sentence each.</p>
 <blockquote class="blockquote">
 <p>💡 <strong>Key idea:</strong> long is for <strong>computing</strong> — <code>group_by</code>, <code>summarize</code>, <code>ggplot</code>. Wide is for <strong>reading</strong> — a table a human scans. The same data, shaped for two different audiences.</p>
 </blockquote>
 <hr>
+</section>
+<section id="part-7-regress-one-months-ice-cover-on-year" class="level1">
+<h1>Part 7 · Regress one month’s ice cover on year</h1>
+<p>February is usually Lake Superior’s iciest month. Now that the wide table has a <code>Feb</code> column, one month’s whole 50-year history is a single column — so a regression on <code>year</code> is one line of code.</p>
 <blockquote class="blockquote">
-<h2 id="chunk-4-visualize-model-the-trend-after-lecture-chunk-4" class="anchored" data-anchor-id="part-6-pivot-back-to-a-wide-summary-table">🧩 Chunk 4 — Visualize &amp; model the trend <em>(after lecture Chunk 4)</em></h2>
-<p>Parts 7–9: rebuild NOAA’s spaghetti plot, pull each year’s peak, and model the trend.</p>
+<p>🔮 <strong>Predict first:</strong> is February ice cover declining, flat, or rising? Will the slope be significant at α = 0.05?</p>
+</blockquote>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># February ice cover predicted by year -----------------</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>feb_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(Feb <span class="sc">~</span> year, <span class="at">data =</span> ice_pivot_table)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(feb_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot it ----------------------------------------------</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>ice_pivot_table <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> Feb)) <span class="sc">+</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Q12:</strong> Slope (% per year), <em>p</em>-value, and R² for February. Significant at α = 0.05?</p>
+<p>✏️ <strong>Q13:</strong> Try <code>lm(Mar ~ year, ...)</code> and <code>lm(Apr ~ year, ...)</code>. Does every month have the same slope? Which month is losing ice fastest?</p>
+<blockquote class="blockquote">
+<p>💡 <strong>Key idea:</strong> this works because the wide table put one month in one column. Doing it month by month gets old fast — in Part 10 you flip the table back to long and get <strong>every</strong> month’s slope in one shot.</p>
+</blockquote>
+<hr>
+<blockquote class="blockquote">
+<h2 id="chunk-4-visualize-model-the-trend-after-lecture-chunk-4" class="anchored" data-anchor-id="part-7-regress-one-months-ice-cover-on-year">🧩 Chunk 4 — Visualize &amp; model the trend <em>(after lecture Chunk 4)</em></h2>
+<p>Parts 8–11: rebuild NOAA’s spaghetti plot, pull each year’s peak, model the trend, flip the table back to long, and — if there is time — join in Duluth’s temperature.</p>
 </blockquote>
 </section>
-<section id="part-7-rebuild-noaas-spaghetti-plot" class="level1">
-<h1>Part 7 · Rebuild NOAA’s spaghetti plot</h1>
-<p>This is the long one, so it is <strong>pre-filled</strong> in the skeleton — the prep that maps every winter onto one shared axis, and the three-layer plot. Run it and read it; you are not expected to type this from scratch.</p>
+<section id="part-8-rebuild-noaas-spaghetti-plot" class="level1">
+<h1>Part 8 · Rebuild NOAA’s spaghetti plot</h1>
+<p>This is the long one. Type it, run it, and read it — do not worry about memorizing it.</p>
 <p>The one idea worth carrying away: to overlay 50 winters on one axis, every date is forced onto a single <strong>fake</strong> year — October onward becomes 1999, January onward becomes 2000 — so the x-axis runs November → June once.</p>
-<p>✏️ <strong>Q12:</strong> Open NOAA’s published plot at <a href="https://www.glerl.noaa.gov/data/ice/spaghetti/sup_ice_compare.png" class="uri">https://www.glerl.noaa.gov/data/ice/spaghetti/sup_ice_compare.png</a>. Did you recreate it? What does the <strong>red</strong> line represent, and why is the current year drawn <strong>last</strong>?</p>
-<p>✏️ <strong>Q13:</strong> The thin blue lines use <code>group = year</code> inside <code>aes()</code>. Take it out in your head — what would the plot look like instead, and why?</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Force every date onto one fake shared year -----------</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>ice_plot_data <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot_date =</span> <span class="fu">if_else</span>(</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">month</span>(full_date) <span class="sc">&gt;=</span> <span class="dv">10</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">update</span>(full_date, <span class="at">year =</span> <span class="dv">1999</span>),</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>      <span class="fu">update</span>(full_date, <span class="at">year =</span> <span class="dv">2000</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co"># The historical average for each day-of-winter --------</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>historical_avg <span class="ot">&lt;-</span> ice_plot_data <span class="sc">%&gt;%</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(plot_date) <span class="sc">%&gt;%</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_ice =</span> <span class="fu">mean</span>(ice_cover, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>current_yr <span class="ot">&lt;-</span> <span class="fu">max</span>(ice_plot_data<span class="sc">$</span>year)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>past_years <span class="ot">&lt;-</span> ice_plot_data <span class="sc">%&gt;%</span> <span class="fu">filter</span>(year <span class="sc">&lt;</span> current_yr)</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>current_year_data <span class="ot">&lt;-</span> ice_plot_data <span class="sc">%&gt;%</span> <span class="fu">filter</span>(year <span class="sc">==</span> current_yr)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Three layers, three geom_line() calls ----------------</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>ice_spaghetti_plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> past_years,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> plot_date, <span class="at">y =</span> ice_cover, <span class="at">group =</span> year),</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"blue"</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.15</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> historical_avg,</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> plot_date, <span class="at">y =</span> avg_ice),</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"red"</span>,</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">1.2</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> current_year_data,</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> plot_date, <span class="at">y =</span> ice_cover),</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"black"</span>,</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">1.2</span></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_labels =</span> <span class="st">"%b"</span>, <span class="at">date_breaks =</span> <span class="st">"1 month"</span>) <span class="sc">+</span></span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Lake Superior Average Ice Cover"</span>,</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="fu">paste</span>(<span class="st">"Comparing"</span>, current_yr, <span class="st">"to Historical Data"</span>),</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="cn">NULL</span>,</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Ice Cover (%)"</span></span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>ice_spaghetti_plot</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Q14:</strong> Open NOAA’s published plot at <a href="https://www.glerl.noaa.gov/data/ice/spaghetti/sup_ice_compare.png" class="uri">https://www.glerl.noaa.gov/data/ice/spaghetti/sup_ice_compare.png</a>. Did you recreate it? What does the <strong>red</strong> line represent, and why is the current year drawn <strong>last</strong>?</p>
+<p>✏️ <strong>Q15:</strong> The thin blue lines use <code>group = year</code> inside <code>aes()</code>. Take it out in your head — what would the plot look like instead, and why?</p>
 <hr>
 </section>
-<section id="part-8-pull-each-winters-peak-ice-with-slice_max" class="level1">
-<h1>Part 8 · Pull each winter’s peak ice with <code>slice_max()</code></h1>
+<section id="part-9-each-winters-peak-ice-and-the-trend-in-it" class="level1">
+<h1>Part 9 · Each winter’s peak ice, and the trend in it</h1>
 <blockquote class="blockquote">
 <p>🔮 <strong>Predict first:</strong> <code>slice_max()</code> keeps the single highest ice-cover day per year. How many <strong>rows</strong> will the result have?</p>
 </blockquote>
-<p>Type the <code>group_by()</code> + <code>slice_max()</code> that keeps one row — the highest <code>ice_cover</code> — per year. Call it <code>max_ice_per_year</code>, and use <code>with_ties = FALSE</code> so you get exactly one row even when two days tie.</p>
-<p>✏️ <strong>Q14:</strong> Rows in the result. Find the lowest-peak and the highest-peak winters: which year, and what value, for each?</p>
-<p>✏️ <strong>Q15:</strong> Look at the <strong>date</strong> of each year’s peak. Early season or late? Does that date move around much from winter to winter?</p>
-<hr>
-</section>
-<section id="part-9-model-the-trend-in-maximum-ice-cover" class="level1">
-<h1>Part 9 · Model the trend in maximum ice cover</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The single iciest day of each winter -----------------</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>max_ice_per_year <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_max</span>(<span class="at">order_by =</span> ice_cover, <span class="at">n =</span> <span class="dv">1</span>, <span class="at">with_ties =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(max_ice_per_year)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>max_ice_per_year <span class="sc">%&gt;%</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(ice_cover) <span class="sc">%&gt;%</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(year, date, ice_cover)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Q16:</strong> Rows in the result. Find the lowest-peak and the highest-peak winters: which year, and what value, for each?</p>
+<p>✏️ <strong>Q17:</strong> Look at the <strong>date</strong> of each year’s peak. Early season or late? Does that date move around much from winter to winter?</p>
 <blockquote class="blockquote">
-<p>🔮 <strong>Predict first:</strong> over 50+ years, is maximum ice cover <strong>declining, flat, or rising</strong>? And given the huge year-to-year scatter, will the slope come out significant at α = 0.05? Commit to both before you run it.</p>
+<p>🔮 <strong>Predict first:</strong> over 50+ years, is maximum ice cover <strong>declining, flat, or rising</strong>? And given the huge year-to-year scatter, will the slope come out significant at α = 0.05?</p>
 </blockquote>
-<p>Type the <code>lm()</code> of <code>ice_cover</code> on <code>year</code> using <code>max_ice_per_year</code>, and <code>summary()</code> it. Then plot the yearly peaks with <code>geom_point()</code> and a <code>geom_smooth(method = "lm")</code> trend line.</p>
-<p>✏️ <strong>Q16:</strong> Report the model honestly.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Maximum ice cover predicted by year ------------------</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>max_ice_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(ice_cover <span class="sc">~</span> year, <span class="at">data =</span> max_ice_per_year)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(max_ice_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the yearly peaks with a trend line --------------</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>max_ice_per_year <span class="sc">%&gt;%</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> ice_cover)) <span class="sc">+</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Q18:</strong> Report the model honestly.</p>
 <pre><code>Slope (% per year) =
 p-value for the slope =
 R-squared =
 Significant at alpha = 0.05?  Y / N</code></pre>
-<p>✏️ <strong>Q17:</strong> The slope is significant, and the R² is small — around 0.13. Say what each of those two numbers is telling you, and why they are <strong>not</strong> in conflict.</p>
-<p>✏️ <strong>Q18:</strong> One sentence: is Lake Superior’s peak ice cover changing, and how confident are you given the scatter?</p>
+<p>✏️ <strong>Q19:</strong> The slope is significant, and the R² is small — around 0.13. Say what each of those two numbers is telling you, and why they are <strong>not</strong> in conflict.</p>
+<p>✏️ <strong>Q20:</strong> One sentence: is Lake Superior’s peak ice cover changing, and how confident are you given the scatter?</p>
 <blockquote class="blockquote">
-<p>💡 <strong>Key idea:</strong> a real trend can be significant and still explain only a slice of the variation. Ice cover swings wildly with ENSO and the polar vortex; the long-term decline is a quiet signal underneath a very loud year-to-year noise. Reporting the slope without the R² — or the R² without the slope — tells only half of that.</p>
+<p>💡 <strong>Key idea:</strong> a real trend can be significant and still explain only a slice of the variation. Ice cover swings wildly with ENSO and the polar vortex; the long-term decline is a quiet signal underneath very loud year-to-year noise. Reporting the slope without the R² — or the R² without the slope — tells only half of that.</p>
+</blockquote>
+<hr>
+</section>
+<section id="part-10-flip-the-wide-table-back-to-long-you-write-this-one" class="level1">
+<h1>Part 10 · Flip the wide table back to long <em>(you write this one)</em></h1>
+<p>This is the one chunk the skeleton leaves blank — <strong>this is where we left off in class.</strong> You have the pattern from Part 3; the only thing that changes is which table you pivot.</p>
+<p>In Part 7 you ran one regression per month, by hand, one column at a time. There is a better way: flip <code>ice_pivot_table</code> back to <strong>long</strong> and every month’s slope comes out of a single <code>group_by()</code>.</p>
+<blockquote class="blockquote">
+<p>🔮 <strong>Predict first:</strong> <code>ice_pivot_table</code> is about 54 rows × 9 columns. Pivot all the month columns long — how many rows before you drop the <code>NA</code>s?</p>
+</blockquote>
+<p><strong>▶ Type this yourself:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Wide summary table -&gt; long again ---------------------</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>monthly_long <span class="ot">&lt;-</span> ice_pivot_table <span class="sc">%&gt;%</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="sc">-</span>year,</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"month"</span>,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"mean_ice"</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(mean_ice) <span class="sc">%&gt;%</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(month <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Dec"</span>, <span class="st">"Jan"</span>, <span class="st">"Feb"</span>, <span class="st">"Mar"</span>, <span class="st">"Apr"</span>))</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(monthly_long)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(monthly_long)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The <code>filter()</code> drops <code>Nov</code>, <code>May</code>, and <code>Jun</code> — months with only a handful of years of data, which is not enough to fit a line to.</p>
+<p><strong>▶ Type this yourself:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Every month's slope, in one shot ---------------------</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>monthly_slopes <span class="ot">&lt;-</span> monthly_long <span class="sc">%&gt;%</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(month) <span class="sc">%&gt;%</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_years =</span> <span class="fu">n</span>(),</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">slope =</span> <span class="fu">coef</span>(<span class="fu">lm</span>(mean_ice <span class="sc">~</span> year))[<span class="dv">2</span>]</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>monthly_slopes</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>▶ Type this yourself:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># One panel per month ----------------------------------</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>monthly_long <span class="sc">%&gt;%</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> mean_ice)) <span class="sc">+</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> month)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Q21:</strong> Rows and columns in <code>monthly_long</code>. Was your prediction close?</p>
+<p>✏️ <strong>Q22:</strong> Check your <code>Feb</code> slope against the one you got in Part 7. Do they match? They should — same data, same model, different shape.</p>
+<p>✏️ <strong>Q23:</strong> Which month is losing ice fastest, and which slowest? Why might mid-winter months be changing faster than the shoulder months?</p>
+<blockquote class="blockquote">
+<p>💡 <strong>Key idea:</strong> you went wide → long → wide → long in one script, and nothing was lost on any trip. Shape is not information; shape is just whichever form the <strong>next</strong> tool needs. Wide to read it, long to compute on it.</p>
+</blockquote>
+<hr>
+</section>
+<section id="part-11-if-there-is-time-bring-in-duluths-temperature" class="level1">
+<h1>Part 11 · If there is time — bring in Duluth’s temperature</h1>
+<p>Ice cover is the <em>response</em> to something: cold. So far every model has used <code>year</code> as the predictor, which is a stand-in for “whatever is changing.” Now use the actual driver.</p>
+<p>You need the temperature data <strong>on the same scale as the ice data</strong> — one value per calendar month — and then a <code>left_join()</code> to put the two together. (That join is next week’s lecture. Here it is as a preview.)</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Two more libraries -----------------------------------</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)   <span class="co"># clean_names()</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GSODR)     <span class="co"># NOAA station data</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>You installed <code>GSODR</code> back in Activity 12 — no need to install it again. Loading it prints a notice that GSOD retired in Aug 2025; that is expected, the archive still downloads.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mean ice cover for each calendar month ---------------</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>ice_monthly <span class="ot">&lt;-</span> ice_clean <span class="sc">%&gt;%</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">month_date =</span> <span class="fu">floor_date</span>(full_date, <span class="st">"month"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(month_date) <span class="sc">%&gt;%</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mean_ice =</span> <span class="fu">mean</span>(ice_cover, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>ice_monthly</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>floor_date()</code> knocks every date back to the first of its month, so every day in February 1979 becomes <code>1979-02-01</code>. That gives you one row per month, with a real date as the key to join on.</p>
+<blockquote class="blockquote">
+<p>⚠️ <strong>Watch out!</strong> Group on <code>month_date</code>, <strong>not</strong> on <code>year</code> and <code>month</code>. Remember <code>year</code> is the <em>season-end</em> year — a December belongs to the season labeled with the <em>next</em> year. <code>floor_date(full_date)</code> uses the real calendar date, which is what the weather data will be keyed on.</p>
+</blockquote>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Duluth daily weather, same years as the ice record ---</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>duluth_df <span class="ot">&lt;-</span> <span class="fu">get_GSOD</span>(<span class="at">years =</span> <span class="dv">1973</span><span class="sc">:</span><span class="dv">2025</span>,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>                      <span class="at">station =</span> <span class="st">"727450-14913"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(duluth_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This takes a minute — it is 50+ years of daily records.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Monthly mean temp, plus the PREVIOUS month's temp ----</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>dlh_month <span class="ot">&lt;-</span> duluth_df <span class="sc">%&gt;%</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, month) <span class="sc">%&gt;%</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mean_temp =</span> <span class="fu">mean</span>(temp, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">month_date =</span> <span class="fu">ymd</span>(<span class="fu">paste</span>(year, month, <span class="st">"01"</span>, <span class="at">sep =</span> <span class="st">"-"</span>))) <span class="sc">%&gt;%</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(month_date) <span class="sc">%&gt;%</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">temp_prior =</span> <span class="fu">lag</span>(mean_temp))</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(dlh_month)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>lag()</code> shifts a column down by one row — so <code>temp_prior</code> on the February row holds <strong>January’s</strong> temperature. It only works if the rows are in order and no months are missing, which is why <code>arrange(month_date)</code> comes first.</p>
+<p>✏️ <strong>Q24:</strong> Look at the first row of <code>dlh_month</code>. Why is <code>temp_prior</code> <code>NA</code> there?</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Join the temperature onto the ice data ---------------</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>ice_temp_df <span class="ot">&lt;-</span> ice_monthly <span class="sc">%&gt;%</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(dlh_month, <span class="at">by =</span> <span class="st">"month_date"</span>)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>ice_temp_df <span class="sc">%&gt;%</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(month_date, mean_ice, mean_temp, temp_prior)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Q25:</strong> <code>ice_monthly</code> had about 322 rows. How many does <code>ice_temp_df</code> have? What does that tell you about what a <code>left_join()</code> does to row count?</p>
+<p>✏️ <strong>Q26:</strong> A few rows have <code>NA</code> for <code>mean_temp</code>. Which months, and why? (Think about where each record starts and stops.)</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Ice cover predicted by THIS month's temperature ------</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>ice_temp_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(mean_ice <span class="sc">~</span> mean_temp, <span class="at">data =</span> ice_temp_df)</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(ice_temp_model)</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>ice_temp_df <span class="sc">%&gt;%</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> mean_temp, <span class="at">y =</span> mean_ice)) <span class="sc">+</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<blockquote class="blockquote">
+<p>🔮 <strong>Predict first:</strong> before you run the next chunk — will <strong>last</strong> month’s temperature predict ice cover better or worse than <strong>this</strong> month’s?</p>
+</blockquote>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Ice cover predicted by LAST month's temperature ------</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>ice_lag_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(mean_ice <span class="sc">~</span> temp_prior, <span class="at">data =</span> ice_temp_df)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(ice_lag_model)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>ice_temp_df <span class="sc">%&gt;%</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> temp_prior, <span class="at">y =</span> mean_ice)) <span class="sc">+</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>✏️ <strong>Q27:</strong> Fill this in from the two <code>summary()</code> calls:</p>
+<pre><code>                    slope (% per C)   p-value   R-squared
+this month's temp
+last month's temp</code></pre>
+<p>✏️ <strong>Q28:</strong> Which predictor won, and by how much? Was your prediction right?</p>
+<p>✏️ <strong>Q29:</strong> Why would the <em>previous</em> month’s cold predict today’s ice better than today’s cold does? (How long does it take a lake the size of Superior to freeze?)</p>
+<p>✏️ <strong>Q30:</strong> Both slopes are negative. Say what the lag model’s slope means in plain language: one degree colder last month buys you how much more ice this month?</p>
+<blockquote class="blockquote">
+<p>💡 <strong>Key idea:</strong> this is the whole arc of the course in one place. Pivot the data so it can be grouped, summarize it to the scale your question lives at, join in a second source keyed on something both tables share, then model it. The lag is the science: a lake is a big thermal flywheel, so its state today reflects the weather of weeks past, not the weather of this morning.</p>
 </blockquote>
 <hr>
 </section>
 <section id="homework-a-different-great-lake" class="level1">
 <h1>Homework — a different Great Lake</h1>
-<p><em>Write it at the bottom of the same script. Hand it in with your answers as <code>#</code> comments.</em></p>
+<p><em>Write it at the bottom of the same script. This part <strong>is</strong> graded — hand in your answers as <code>#</code> comments.</em></p>
 <p>You built the workflow on Lake Superior. Now run it end to end on a <strong>different</strong> Great Lake and compare. Pick one:</p>
 <table class="caption-top table">
 <thead>
@@ -671,7 +966,7 @@ Significant at alpha = 0.05?  Y / N</code></pre>
 </tr>
 </tbody>
 </table>
-<p>Change only the file name in the URL, then repeat Parts 1 → 9. Nothing is filled in — copy your own chunks from above and change what needs changing; for most chunks that is nothing at all.</p>
+<p>Change only the file name in the URL, then repeat Parts 1 → 10. Nothing is filled in — copy your own chunks from above and change what needs changing; for most chunks that is nothing at all.</p>
 <section id="h1-read-and-pivot-your-lake" class="level2">
 <h2 class="anchored" data-anchor-id="h1-read-and-pivot-your-lake">H1 · Read and pivot your lake</h2>
 <p>Read it, <code>pivot_longer()</code> it, fix the Nov/Dec dates, and drop the <code>NA</code>s.</p>
@@ -688,10 +983,15 @@ Significant at alpha = 0.05?  Y / N</code></pre>
 <p>✏️ <strong>H-Q3:</strong> Slope (% per year), <em>p</em>, R². Significant at α = 0.05?</p>
 <p>✏️ <strong>H-Q4:</strong> Lake Superior’s slope is about <strong>−0.7 %/year</strong>. Is your lake losing maximum ice <strong>faster or slower</strong> than Superior, and by how much?</p>
 </section>
-<section id="h4-explain-it" class="level2">
-<h2 class="anchored" data-anchor-id="h4-explain-it">H4 · Explain it</h2>
-<p>✏️ <strong>H-Q5:</strong> Using <strong>your</strong> slope, say in plain language how fast your lake is losing (or gaining) maximum ice cover, and how much total change that adds up to across the whole record.</p>
-<p>✏️ <strong>H-Q6:</strong> Your lake is shallower than Superior. Shallower water holds less heat. Explain in your own words how depth could make one lake’s ice respond faster to the same warming than another’s — and say whether your slope actually came out the way that reasoning predicts.</p>
+<section id="h4-month-by-month" class="level2">
+<h2 class="anchored" data-anchor-id="h4-month-by-month">H4 · Month by month</h2>
+<p>Build the wide summary table with <code>pivot_wider()</code>, flip it back to long, and get every month’s slope the way you did in Part 10.</p>
+<p>✏️ <strong>H-Q5:</strong> Which month is your lake losing ice fastest in? Is it the same month as Superior?</p>
+</section>
+<section id="h5-explain-it" class="level2">
+<h2 class="anchored" data-anchor-id="h5-explain-it">H5 · Explain it</h2>
+<p>✏️ <strong>H-Q6:</strong> Using <strong>your</strong> slope, say in plain language how fast your lake is losing (or gaining) maximum ice cover, and how much total change that adds up to across the whole record.</p>
+<p>✏️ <strong>H-Q7:</strong> Your lake is shallower than Superior. Shallower water holds less heat. Explain in your own words how depth could make one lake’s ice respond faster to the same warming than another’s — and say whether your slope actually came out the way that reasoning predicts.</p>
 <hr>
 </section>
 </section>
@@ -704,8 +1004,10 @@ Significant at alpha = 0.05?  Y / N</code></pre>
 <li><label><input type="checkbox">Use <code>pivot_longer()</code> to make wide data tidy</label></li>
 <li><label><input type="checkbox">Use <code>pivot_wider()</code> to build a human-readable summary table</label></li>
 <li><label><input type="checkbox">Fix seasonal dates that cross the new year with <code>if_else()</code> + <code>ymd()</code></label></li>
+<li><label><input type="checkbox">Fit <code>lm()</code> on one column of a wide table, and on a grouped long table</label></li>
 <li><label><input type="checkbox">Use <code>slice_max()</code> to pull one extreme row per group</label></li>
-<li><label><input type="checkbox">Fit and interpret <code>lm(ice_cover ~ year)</code>, reading the slope <strong>and</strong> the R²</label></li>
+<li><label><input type="checkbox">Read a slope <strong>and</strong> an R² together</label></li>
+<li><label><input type="checkbox">Summarize two sources to the same scale and <code>left_join()</code> them on a shared key</label></li>
 </ul>
 <p>Run your whole script top to bottom with <strong>Ctrl/Cmd + Shift + Enter</strong>. It must run clean.</p>
 <blockquote class="blockquote">
