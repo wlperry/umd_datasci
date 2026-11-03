@@ -30,8 +30,6 @@ bigfoot_df %>%
   select(title, state, latitude, longitude, classification, season) %>%
   head()
 
-# THINK: what does ONE ROW represent?
-
 invisible(NULL)
 
 
@@ -47,8 +45,8 @@ bigfoot_df <- bigfoot_df %>%
 
 nrow(bigfoot_df)
 
-# THINK: how many rows did that drop, and why must the NA
-# coordinates go BEFORE st_as_sf()?
+# THINK: why must the NA coordinates go BEFORE
+# st_as_sf()?
 
 invisible(NULL)
 
@@ -81,8 +79,8 @@ nrow(states_sf)
 states_sf %>%
   head(3)
 
-# THINK: what is in the ID column, and what CASE are the
-# names in? You need that answer in section 8.
+# THINK: what CASE are the state names in? You need that
+# in section 8.
 
 invisible(NULL)
 

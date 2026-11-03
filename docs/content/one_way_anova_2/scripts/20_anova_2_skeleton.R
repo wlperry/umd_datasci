@@ -7,14 +7,15 @@
 # Save this file as scripts/20_anova_2.R
 #
 # PART A - in class. The code is written for you. Run it
-#          chunk by chunk and answer the QA boxes.
+#          chunk by chunk. The THINK lines are to talk
+#          about, not to answer here.
 # PART B - homework. Sets 2 and 3 again, on a DIFFERENT
 #          measurement of your choosing. You write that
 #          code, by copying the matching Part A chunk and
 #          changing what needs changing. Answer the QB
 #          boxes.
 #
-# Your ANSWERS, and your Part B code, are what gets graded.
+# Your Part B code and QB answers are what gets graded.
 #
 # ----------------------------------------------------------
 # About the invisible(NULL) lines
@@ -49,6 +50,9 @@ invisible(NULL)
 # PART A - IN CLASS
 # ##########################################################
 
+invisible(NULL)
+
+
 # ---- A1: Same data, same model as last time --------------
 # Every script starts from the raw data. Nothing here
 # depends on objects left in last lecture's session.
@@ -75,6 +79,9 @@ invisible(NULL)
 #   2. the RESIDUALS are normally distributed
 #   3. the groups have EQUAL VARIANCE
 # ##########################################################
+
+invisible(NULL)
+
 
 # ---- A2: Normality is about the RESIDUALS ----------------
 # A residual is one bird's miss: its mass minus its
@@ -109,14 +116,11 @@ invisible(NULL)
 #                                  eye)
 # Panel 4  Residuals vs Leverage - is one point in charge?
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA1. Looking at panel 2, do the points track the dashed
-#      line?  Y / mostly / N
-#      Looking at panels 1 and 3, do the three stripes
-#      look like they have the same height?  Y / N
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: do the points track the dashed line in panel 2,
+# and does the spread look even across panel 1?
+
+invisible(NULL)
+
 
 # ---- A4: Shapiro-Wilk, as the backup ---------------------
 # H0: the residuals are normal. p > 0.05 means no evidence
@@ -133,12 +137,10 @@ invisible(NULL)
 # departures. Trust the plot; use the test as a second
 # opinion.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA2. Shapiro-Wilk W = ____   p = ____
-#      Does that agree with what you saw in panel 2?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: are the residuals normal enough?
+
+invisible(NULL)
+
 
 # ---- A5: Equal variance, by eye first --------------------
 
@@ -152,15 +154,11 @@ penguins_df %>%
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA3. Write the three sds down. How many times bigger is
-#      the largest than the smallest?
-#      Rule of thumb: equal n makes ANOVA forgiving about
-#      unequal variance; unequal n does not. Which case
-#      are we in?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: how many times bigger is the largest sd than
+# the smallest?
+
+invisible(NULL)
+
 
 # ---- A6: Levene's test -----------------------------------
 # Predict first: given those sds, will Levene call the
@@ -172,16 +170,15 @@ leveneTest(body_mass_g ~ species, data = penguins_df)
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA4. Levene F = ____   p = ____
-#      Equal variances?  Y / N
-#      So is the classic ANOVA from A1 allowed?  Y / N
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: does Levene's test pass or FAIL here? On these
+# penguins it fails - Adelie and Chinstrap are close in
+# mass but Gentoo is not.
 
 # This is not a mistake in the activity. It is what this
 # data set does. Real data does this constantly.
+
+invisible(NULL)
+
 
 # ---- A7: Welch's ANOVA - when variances are unequal ------
 # Same correction as Welch's t-test, which is already what
@@ -196,22 +193,8 @@ invisible(NULL)
 
 # The fractional denominator df is Welch's signature.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA5. Fill in both tests:
-#      classic  Anova()      F = ____   p = ____
-#      Welch    oneway.test  F = ____   p = ____
-#      Which one do you REPORT, and why that one?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA6. Both agree here, so the violated assumption cost
-#      us nothing. Is that a reason to skip the check
-#      next time? Explain.
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: both tests agree here, so what did the violated
+# assumption actually cost you?
 
 
 # ##########################################################
@@ -221,6 +204,9 @@ invisible(NULL)
 # tell you WHICH, and on the boxplot two of the three
 # species looked almost identical.
 # ##########################################################
+
+invisible(NULL)
+
 
 # ---- A8: Pairwise comparisons with emmeans ---------------
 # Predict first: will all three species differ from each
@@ -246,22 +232,13 @@ mass_emm$emmeans
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA7. Record each comparison.
-#      Adelie  vs Chinstrap:  p = ____  different? Y / N
-#      Adelie  vs Gentoo:     p = ____  different? Y / N
-#      Chinstrap vs Gentoo:   p = ____  different? Y / N
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: which pairs differ, and which do not?
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA8. The overall ANOVA p was below 0.001. Explain, in
-#      your own words, how that is consistent with two of
-#      the three species not differing at all.
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: the overall ANOVA p was below 0.001. Why is
+# that NOT enough to say which species differ?
+
+invisible(NULL)
+
 
 # ---- A9: Compact letter display -------------------------
 # Groups that SHARE a letter were NOT shown to be
@@ -277,12 +254,8 @@ invisible(NULL)
 # different" is not the same claim as "shown to be the
 # same".
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA9. Adelie: ____  Chinstrap: ____  Gentoo: ____
-#      Which species share a letter?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+invisible(NULL)
+
 
 # ---- A10: The backup that matches Welch ------------------
 # Tukey through emmeans uses the model's POOLED error - the
@@ -296,14 +269,11 @@ pairwise.t.test(penguins_df$body_mass_g,
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA10. Does this table tell the same story as A8's
-#       letters?  Y / N
-#       When the robust version agrees with the standard
-#       one, what do you report?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: does the letters table tell the same story as
+# the pairwise comparisons?
+
+invisible(NULL)
+
 
 # ---- A11: Plot the result --------------------------------
 
@@ -323,12 +293,11 @@ invisible(NULL)
 # Overlapping confidence intervals are a HINT, not a test.
 # The p-value is the test; the plot is how a reader sees it.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA11. Which intervals overlap, and does that match the
-#       pairwise p-values from QA7?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: which intervals overlap, and does that match
+# the letters?
+
+invisible(NULL)
+
 
 # ---- A12: Report the whole thing -------------------------
 # A complete write-up names:
@@ -339,20 +308,8 @@ invisible(NULL)
 #   - the pair that did NOT differ. That is a finding, not
 #     a failure.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA12. Write the full results paragraph with YOUR
-#       numbers. Use this as the skeleton:
-#
-#       "Body mass differed among the three penguin
-#        species. Variances were unequal (Levene's test:
-#        F(__, __) = ____, p = ____), so we report Welch's
-#        ANOVA: F(__, __) = ____, p ____. Tukey-adjusted
-#        comparisons showed that ______ was heavier than
-#        both ______ (p ____) and ______ (p ____), while
-#        ______ and ______ did not differ (p = ____)."
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: say the full results paragraph out loud, with
+# your numbers in it.
 
 
 # ##########################################################

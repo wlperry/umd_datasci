@@ -5,7 +5,7 @@
 #
 # Save this file as scripts/10_t_tests_2.R
 #
-# PART A (in class): run the code, answer the questions.
+# PART A (in class): run the code and read the output.
 #                    A2-A6  our leaf data: two-sample and
 #                           paired, pseudoreplication, the
 #                           summarize() fix, rerun.
@@ -13,8 +13,10 @@
 # PART B (hand in):  the same workflow on sugar maple leaf
 #                    MASS — you write the code.
 #
-# Answers go in the boxes marked  # # # # # #  — type after
-# "ANSWER:" and start every line with #
+# The THINK lines in Part A are to talk about, not to answer
+# here. Part B is what gets graded — answers go in the boxes
+# marked  # # # # # #  — type after "ANSWER:" and start every
+# line with #
 # ==========================================================
 
 # Load libraries -------------------------------------------
@@ -38,6 +40,9 @@ maple_df <-
 # PART A — IN CLASS
 # ##########################################################
 
+invisible(NULL)
+
+
 # ---- A2: Two-sample t-test on every leaf ------------------
 
 # Welch's two-sample t-test on the leaf data
@@ -52,13 +57,11 @@ tibble(
   p  = leaf_model$p.value
 )
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA2. Reject or fail to reject H0? Does the 95% CI
-#      include zero? Write the results sentence:
-#      [Finding] (Welch's t-test: t(df) = X.XX, p = X.XX).
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: reject or fail to reject H0? Does the 95% CI
+# include zero?
+
+invisible(NULL)
+
 
 # ---- A3: Where did these leaves come from? ----------------
 
@@ -67,12 +70,11 @@ leaf_df %>%
   count(teams, shade) %>%
   pivot_wider(names_from = shade, values_from = n)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA3. How many teams are there? Did every team turn in
-#      the same number of leaves? Which teams did not?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: did every team turn in the same number of
+# leaves?
+
+invisible(NULL)
+
 
 # ---- A4: Paired t-test on every leaf ----------------------
 
@@ -93,15 +95,11 @@ leaf_paired_model <- t.test(leaf_wide_df$shady,
                             paired = TRUE)
 leaf_paired_model
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA4. Record t, df, and p. How many pairs does df say
-#      you have? Look at your table: WHY does shady leaf
-#      #1 get paired with sunny leaf #1? Is there any
-#      real reason those two leaves belong together?
-#      (Note the NA rows - t.test() dropped those.)
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: record t, df, and p. Why is shady leaf #1 not
+# really a partner for sunny leaf #1?
+
+invisible(NULL)
+
 
 # ---- A5: Pseudoreplication — the one-line fix -------------
 
@@ -123,12 +121,8 @@ leaf_df <-
             .groups = "drop")
 leaf_df
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA5. How many rows does leaf_df have now? What is ONE
-#      row - a leaf, a side, a team, or a tree?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+invisible(NULL)
+
 
 # ---- A6: Rerun the same code and compare ------------------
 
@@ -136,11 +130,17 @@ leaf_df
 pseudo_2s     <- leaf_model
 pseudo_paired <- leaf_paired_model
 
+invisible(NULL)
+
+
 # ---- The same two-sample code as A2, not one character
 #      changed. Only leaf_df changed.
 leaf_model <- t.test(mass_g ~ shade, data = leaf_df,
                      var.equal = FALSE)
 leaf_model
+
+invisible(NULL)
+
 
 # ---- The same reshape + paired code as A4
 leaf_wide_df <- leaf_df %>%
@@ -171,15 +171,11 @@ tibble(
          leaf_model$p.value, leaf_paired_model$p.value)
 )
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA6. What happened to df? Did you lose data, or stop
-#      double-counting it? The sign of t flips - shady
-#      looked heavier before averaging and lighter after.
-#      Given the uneven leaf counts from QA3, why would
-#      averaging change the DIRECTION of the difference?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: what happened to df - did you lose data, or
+# stop double-counting it? Look at the SIGN of t too.
+
+invisible(NULL)
+
 
 # ---- A7: Sugar maple — average per tree and side ----------
 
@@ -194,12 +190,11 @@ maple_tree_df <- maple_df %>%
             .groups = "drop")
 maple_tree_df
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA7. Why do we average the 2 leaves from one side of
-#      one tree? How many values per side do we have now?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: why average the two leaves from one side of
+# one tree?
+
+invisible(NULL)
+
 
 # ---- A8: Two-sample — check, then test --------------------
 
@@ -217,12 +212,10 @@ maple_2s_model <- t.test(area ~ side,
                          var.equal = FALSE)
 maple_2s_model
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA8. Were the assumptions OK? Two-sample t, df, p?
-#      Reject or fail to reject?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: assumptions OK? t, df, p?
+
+invisible(NULL)
+
 
 # ---- A9: The slope plot -----------------------------------
 
@@ -233,12 +226,11 @@ maple_tree_df %>%
   geom_point() +
   scale_x_discrete(limits = c("sunny", "shady"))
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA9. How many lines go up? Why can this pattern be
-#      clear even when the two-sample test is borderline?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: how many lines go up? Why can this pattern be
+# so clear when the two-sample test was borderline?
+
+invisible(NULL)
+
 
 # ---- A10: Paired — check, then test ------------------------
 
@@ -263,13 +255,11 @@ maple_paired_model <- t.test(maple_wide_df$shady,
                              paired = TRUE)
 maple_paired_model
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA10. Are the differences normal enough? Paired t, df,
-#      p, and mean difference? Compare with the two-sample
-#      p — why is the paired test so much stronger?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: paired t, df, p, and the mean difference. Why
+# is the paired test so much stronger here?
+
+invisible(NULL)
+
 
 # ---- A11: Plot and report the paired result ----------------
 
@@ -303,13 +293,11 @@ ggsave("figures/maple_area_paired_plot.png",
        plot = maple_results_plot,
        width = 5, height = 4, dpi = 300)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA11. Write the results sentence:
-#      [Finding] (paired t-test: t(df) = X.XX, p = X.XXX;
-#      mean difference = X.X cm²).
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: say the results sentence out loud, with your
+# numbers in it.
+
+invisible(NULL)
+
 
 # ---- A12: Rank-based backups -------------------------------
 
@@ -320,12 +308,8 @@ wilcox.test(area ~ side, data = maple_tree_df)
 wilcox.test(maple_wide_df$shady, maple_wide_df$sunny,
             paired = TRUE)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA12. p for each? Which one "misses" that the t-test
-#      caught? Would you use these here — why or why not?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: which rank-based test misses the effect the
+# t-test caught? Would you report these here?
 
 
 # ##########################################################
@@ -341,6 +325,9 @@ wilcox.test(maple_wide_df$shady, maple_wide_df$sunny,
 #     mass_paired_model, mass_results_plot
 # Every chunk needs a # comment saying what it does.
 # ##########################################################
+
+invisible(NULL)
+
 
 # ---- B7: Average per tree and side ------------------------
 # TODO: mass_tree_df — mean mass_g per tree and side

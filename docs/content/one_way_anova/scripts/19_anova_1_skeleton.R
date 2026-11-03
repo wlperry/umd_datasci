@@ -8,10 +8,8 @@
 # ALL the code is written for you. Run it chunk by chunk
 # and watch what comes out.
 #
-# You answer the questions in the boxes marked # # # # # #
-# after "ANSWER:", with every line starting with #
-#
-# Your ANSWERS are what gets graded.
+# The THINK lines are to talk about, not to answer here.
+# The HOMEWORK at the bottom is what gets graded.
 #
 # ----------------------------------------------------------
 # About the invisible(NULL) lines
@@ -23,7 +21,7 @@
 # It is a BUMPER. When you press Ctrl/Cmd + Enter on the
 # last real line of a chunk, the cursor jumps to the next
 # line that has code on it. Without the bumper that is the
-# next chunk, way down past the answer box. With it, the
+# next chunk, way down past the next heading. With it, the
 # cursor stops right here and you keep your place.
 #
 # It does nothing and prints nothing. Leave it alone.
@@ -50,18 +48,10 @@ invisible(NULL)
 # That is a ONE-WAY ANOVA: one numeric response across the
 # levels of one categorical predictor.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q1. Why is this an ANOVA and not a t-test? One sentence.
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: why is this an ANOVA and not a t-test?
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q2. If you ran t-tests on all three PAIRS of species
-#     instead, what would be wrong with that?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: what would be wrong with running t-tests on
+# all three PAIRS of species instead?
 
 # ---- 2: Load the data ------------------------------------
 # WARNING: R 4.5 has its own penguins data set, where the
@@ -80,13 +70,10 @@ penguins_df %>% count(species)
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q3. Write down the sample size of each species.
-#     Adelie = ____  Chinstrap = ____  Gentoo = ____
-#     Are the groups BALANCED (equal n)?  Y / N
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: are the groups balanced (equal n)?
+
+invisible(NULL)
+
 
 # ---- 3: Plot it before you test it -----------------------
 # Predict first: which species is heaviest? Do you think
@@ -99,15 +86,12 @@ penguins_df %>%
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q4. Describe what you SEE.
-#     Heaviest species:
-#     Lightest species:
-#     Do any two species look almost the same?
-#     Do the boxes look like they have the same SPREAD?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: describe what you SEE - heaviest, lightest,
+# whether any two look alike, and whether the spreads
+# look similar.
+
+invisible(NULL)
+
 
 # ---- 4: species is a factor, and factors have an order ---
 # A factor is a categorical column with a fixed, ORDERED
@@ -132,26 +116,17 @@ penguins_df %>%
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q5. What order were the levels stored in, and what order
-#     are they in after fct_reorder()? Here they come out
-#     the same - why is it still worth doing?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: here the order comes out the same before and
+# after fct_reorder(). Why is it still worth doing?
+
+invisible(NULL)
+
 
 # ---- 5: State the hypotheses -----------------------------
 # Do this BEFORE you fit anything.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q6. Write the hypotheses.
-#     H0 in words:
-#     Ha in words:
-#     H0 in symbols:
-#     alpha =
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: say H0 and Ha out loud, in words and in
+# symbols, and name your alpha.
 
 # ---- 6: Fit the model ------------------------------------
 # Exactly the same lm() call as the regression lecture.
@@ -173,12 +148,11 @@ invisible(NULL)
 # The other two numbers are DIFFERENCES from Adelie.
 # That is called TREATMENT coding, and it is R's default.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q7. From coef(), what is the mean mass of an Adelie?
-#     How much heavier is a Gentoo than an Adelie?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: from coef(), how much heavier is a Gentoo
+# than an Adelie?
+
+invisible(NULL)
+
 
 # ---- 7: Change the baseline with fct_relevel() -----------
 # Predict first: if Gentoo becomes the first level, does
@@ -193,12 +167,11 @@ coef(mass_model_gentoo)
 
 invisible(NULL)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q8. What does (Intercept) mean in each of the two
-#     models? Did the overall ANOVA question change?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: what does (Intercept) mean in each of the two
+# models? Did the overall ANOVA question change?
+
+invisible(NULL)
+
 
 # ---- 8: Read the ANOVA table -----------------------------
 # Predict first: is p nearer 0.5, 0.05, or far below 0.001?
@@ -229,13 +202,10 @@ invisible(NULL)
 
 # Anova(mass_model, type = 2) is the same thing, spelled out.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q9. From the table: F = ____  df = ____ , ____
-#     p = ____    Reject H0 at alpha = 0.05?  Y / N
-#     Do all three tables above agree on F?   Y / N
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: F, both df, and p. Reject H0 at alpha = 0.05?
+
+invisible(NULL)
+
 
 # ---- 9: Type III, and the contrasts option it needs ------
 # Type III sums of squares are only meaningful when the
@@ -288,15 +258,11 @@ invisible(NULL)
 # changed for the rest of your R session and silently
 # affects every model you fit afterwards.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q10. Compare the two type = 3 tables, 9b and 9c.
-#      Which ROW changed, and which row stayed the same?
-#      Given that, why does the contrast coding matter at
-#      all here? (Hint: it does not, YET - what changes
-#      when you have two factors and an interaction?)
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: compare the two type = 3 tables. Which ROW
+# changed, and which row stayed the same?
+
+invisible(NULL)
+
 
 # ---- 10: Report it ---------------------------------------
 # For this course, report Anova(model) - Type II - unless
@@ -313,20 +279,12 @@ invisible(NULL)
 #
 # Never write p = 0.000. Write p < 0.001.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q11. Write the results sentence with YOUR numbers in it.
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: say the results sentence out loud, with your
+# numbers in it.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q12. That sentence does not say WHICH species differ,
-#      and it does not say whether the model was allowed
-#      to give us that p-value. Which of those two gaps
-#      worries you more, and why?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: that sentence does not say WHICH species
+# differ, or whether the model was ALLOWED to give that
+# p-value. Both of those are ANOVA II.
 
 # ##########################################################
 # HOMEWORK - A DIFFERENT MEASUREMENT
@@ -353,6 +311,9 @@ invisible(NULL)
 # Activity 20 homework, so you end up with one complete
 # analysis of one measurement.
 # ##########################################################
+
+invisible(NULL)
+
 
 # ---- H1: Read it and plot it -----------------------------
 # TODO: build penguins_hw by dropping NA from species and

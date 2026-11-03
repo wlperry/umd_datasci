@@ -5,13 +5,16 @@
 #
 # Save this file as scripts/09_t_tests_1.R
 #
-# PART A (in class): run the leaf code, answer the questions.
+# PART A (in class): run the leaf code. The THINK lines are
+#                    to talk about, not to answer here.
 # PART B (hand in):  check the assumptions yourself for the
-#                    sugar maple leaves and answer the questions.
-#                    (Sugar maple t-tests come in T-Tests II.)
+#                    sugar maple leaves and answer the QB
+#                    boxes. (Sugar maple t-tests come in
+#                    T-Tests II.)
 #
-# Answers go in the boxes marked  # # # # # #  — type after
-# "ANSWER:" and start every line with #
+# Part B is what gets graded. Answers go in the boxes marked
+#  # # # # # #  — type after "ANSWER:" and start every line
+# with #
 # ==========================================================
 
 # Load libraries -------------------------------------------
@@ -38,6 +41,9 @@ glimpse(maple_df)
 # PART A — IN CLASS: leaf data (leaf_df, groups in `shade`)
 # ##########################################################
 
+invisible(NULL)
+
+
 # ---- A2: Descriptive stats --------------------------------
 
 # Mean and SD of leaf mass for each side
@@ -49,23 +55,16 @@ leaf_df %>%
     sd   = sd(mass_g, na.rm = TRUE)
   )
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA2. How far apart are the two means?
-#      Which side has the bigger SD?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: how far apart are the two means, and which
+# side spreads wider?
+
+invisible(NULL)
+
 
 # ---- A3: Hypotheses ---------------------------------------
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA3. Write H0 and HA for leaf mass in words AND symbols
-#      (use mu for "mean"). One- or two-tailed? Alpha?
-# ANSWER:
-# H0:
-# HA:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: say H0 and HA out loud, in words and in
+# symbols. One- or two-tailed?
 
 # ---- A4: Normality — stacked histograms -------------------
 
@@ -75,12 +74,11 @@ leaf_df %>%
   geom_histogram(binwidth = 0.05) +
   facet_wrap(~shade, ncol = 1)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA4. Each side: roughly bell-shaped, or a long tail?
-#      Which side spreads wider?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: each side - roughly bell-shaped, or a long
+# tail?
+
+invisible(NULL)
+
 
 # ---- A5: Normality — box plot and QQ plot -----------------
 
@@ -96,13 +94,11 @@ leaf_df %>%
   stat_qq_line() +
   facet_wrap(~shade)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA5. Each side: do the dots follow the line? Where do
-#      they bend away? Does that match the long whisker
-#      in the box plot?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: do the dots follow the line? Where do they
+# bend away?
+
+invisible(NULL)
+
 
 # ---- A6: Normality — Shapiro-Wilk test --------------------
 
@@ -111,24 +107,21 @@ leaf_df %>%
   group_by(shade) %>%
   summarize(shapiro_p = shapiro.test(mass_g)$p.value)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA6. p for each side? Normal or not (p > 0.05)?
-#      Does the test agree with your QQ plots?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: is each side normal enough (p > 0.05)?
+
+invisible(NULL)
+
 
 # ---- A7: Equal variance — Levene's test -------------------
 
 # Levene's test for equal variance
 leveneTest(mass_g ~ shade, data = leaf_df)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA7. F and p? Equal spread or not?
-#      Why do we use Welch's t-test either way?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: equal spread or not? We use Welch either way
+# - why is that the safe choice?
+
+invisible(NULL)
+
 
 # ---- A8: Welch's t-test -----------------------------------
 
@@ -137,12 +130,8 @@ leaf_model <- t.test(mass_g ~ shade, data = leaf_df,
                      var.equal = FALSE)
 leaf_model
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# QA8. t = ?   df = ?   p = ?
-#      Reject H0 or fail to reject H0?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: t, df, and p. Do you reject H0 or fail to
+# reject it?
 
 
 # ##########################################################
@@ -157,6 +146,9 @@ leaf_model
 #   - mass is much bigger (check your histogram binwidth!)
 # Every chunk needs a # comment saying what it does.
 # ##########################################################
+
+invisible(NULL)
+
 
 # ---- B2: Descriptive stats --------------------------------
 # TODO: n, mean, and SD of mass_g for each side

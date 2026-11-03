@@ -8,16 +8,17 @@
 # ALL the code is written for you. Run it chunk by chunk and
 # watch what comes out.
 #
-# You answer FOUR questions, in the boxes marked # # # # # #
-# after "ANSWER:", with every line starting with #
-#
-# Your ANSWERS are what gets graded.
+# The THINK lines are to talk about, not to answer here.
+# The HOMEWORK at the bottom - sugar maple - is what gets
+# graded.
 # ==========================================================
 
 # Load libraries -------------------------------------------
 library(readxl) # read Excel files
 library(tidyverse) # dplyr + ggplot2
 library(janitor) # clean_names()
+
+invisible(NULL)
 
 
 # ---- 1: The study ----------------------------------------
@@ -29,20 +30,10 @@ library(janitor) # clean_names()
 # of the SAME paper cut to areas we already knew. That is
 # what the regression is for.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q1. What is the QUESTION this study is asking?
-#     One sentence.
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: what is the QUESTION this study is asking?
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q2. What are the HYPOTHESES?
-#     Give the null and the alternative, for leaf area and
-#     for leaf mass.
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: what are the null and the alternative, for
+# leaf area and for leaf mass?
 
 # ---- 2: Read the calibration data ------------------------
 
@@ -50,6 +41,8 @@ paper_df <- read_excel("data/paper_area_weights.xlsx") %>%
   clean_names()
 
 paper_df
+
+invisible(NULL)
 
 
 # ---- 3: The regression -----------------------------------
@@ -81,6 +74,9 @@ summary(paper_model)
 # We leave it on, because with it off a tiny p-value
 # prints as <0.0000000000000002.
 
+invisible(NULL)
+
+
 # ---- 4: Are the regression assumptions met? --------------
 # All four residual plots in one call
 par(mfrow = c(2, 2))
@@ -94,14 +90,11 @@ par(mfrow = c(1, 1))
 # Panel 3  Scale-Location      - scatter constant?
 # Panel 4  Residuals vs Leverage - any one point in charge?
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q3. Looking at the four plots, are the assumptions of
-#     the regression met? Say what you SEE in each plot,
-#     not what you hope to see. If something looks wrong,
-#     say which plot and what it means.
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: are the regression assumptions met? Say what
+# you SEE in each of the four plots.
+
+invisible(NULL)
+
 
 # ---- 5: Turn every tracing mass into a leaf area ---------
 
@@ -128,6 +121,9 @@ leaf_df
 # Some leaves have NA for area - that team never weighed
 # their tracings. R keeps the gap instead of inventing a
 # number, which is what you want.
+
+invisible(NULL)
+
 
 # ---- 5b: OPTIONAL - let R hand you the numbers -----------
 # You do not have to type the coefficients in. coef() pulls
@@ -162,6 +158,9 @@ head(leaf_coef_df$area_cm2, 3)
 # Either way is fine. Typing them in keeps the arithmetic
 # visible; coef() means you cannot mistype a digit.
 
+invisible(NULL)
+
+
 # ---- 6: One value per team per side ----------------------
 # Leaves from the same team on the same side are NOT
 # independent - they came off the same branch of the same
@@ -180,6 +179,8 @@ team_df <- leaf_df %>%
   )
 
 team_df
+
+invisible(NULL)
 
 
 # ---- 7: Paired t-tests -----------------------------------
@@ -213,14 +214,9 @@ mass_paired_model
 # Note the df. One team has no tracings at all, so the AREA
 # test uses 4 teams and the MASS test uses 5.
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q4. What do you CONCLUDE from the two paired t-tests?
-#     For each test give the mean difference, t, df and p,
-#     and say in plain words what it means for sunny
-#     versus shady leaves. Do the two tests agree?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: what do you conclude from the two paired
+# t-tests - mean difference, t, df, p, and what it
+# means for the method?
 
 # ##########################################################
 # HOMEWORK - sugar maple
@@ -245,6 +241,9 @@ mass_paired_model
 # Answer the SAME four questions, as comments, in your
 # script.
 # ##########################################################
+
+invisible(NULL)
+
 
 # ---- H1: Read the data -----------------------------------
 # TODO: library() calls, then read_excel() + clean_names()

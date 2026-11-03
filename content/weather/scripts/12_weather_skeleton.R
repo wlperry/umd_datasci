@@ -5,12 +5,11 @@
 #
 # Save this file as scripts/12_weather.R
 #
-# The code is already written. Run it chunk by chunk and
-# type your answers in the boxes marked  # # # # # #  —
-# after "ANSWER:", with every line starting with #
+# The code is already written. Run it chunk by chunk.
 #
-# Your ANSWERS, plus the EXTENSION at the bottom
-# (your own city), are what gets graded.
+# The THINK lines are to talk about, not to answer here.
+# The HOMEWORK at the bottom - your own city - is what
+# gets graded.
 # ==========================================================
 
 # Install these two once, from the Console:
@@ -26,6 +25,8 @@ library(tidyverse) # dplyr + ggplot2
 library(janitor) # clean_names()
 library(GSODR) # NOAA station data - Duluth, in class # it has been mothballed so had to switch
 library(nasapower) # NASA data by lat/long - another source, example only
+
+invisible(NULL)
 
 
 # ---- 1: Download the Duluth record -----------------------
@@ -49,12 +50,8 @@ dim(duluth_df)
 
 names(duluth_df)[13:18]
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q1. Rows = ____   Columns = ____
-#     What is ONE ROW - a day, a month, or a year?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+invisible(NULL)
+
 
 # ---- 2: Trim to what you need ----------------------------
 
@@ -64,12 +61,8 @@ dlh_df <- duluth_df %>%
 
 head(dlh_df, 3)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q2. What is in yearmoda that is not already in year and
-#     month? Why keep all three?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+invisible(NULL)
+
 
 # ---- 3: Plot the raw daily data --------------------------
 
@@ -78,16 +71,11 @@ dlh_df %>%
   ggplot(aes(x = yearmoda, y = temp)) +
   geom_point(alpha = 0.2, size = 0.5)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q3a. How tall is the band of points, roughly, in deg C?
-#      What causes that spread - climate change, or
-#      something else?
-# ANSWER:
-#
-# Q3b. Can you see a warming trend here? Why not?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: can you see a warming trend in this cloud of
+# daily points? Why not?
+
+invisible(NULL)
+
 
 # ---- 4: Summarize to one mean per year -------------------
 
@@ -106,15 +94,11 @@ dlh_year_df %>%
   geom_point() +
   geom_smooth(method = "lm")
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q4a. Rows now = ____   Rows you started with = ____
-# ANSWER:
-#
-# Q4b. Now the trend is visible. What did summarizing
-#      remove, and what did it keep?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: the trend is suddenly visible. What did
+# summarizing remove, and what did it keep?
+
+invisible(NULL)
+
 
 # ---- 5: Fit the trend and read the rate ------------------
 # slope     = Coefficients, year row, Estimate column
@@ -126,28 +110,17 @@ dlh_year_model <- lm(temp ~ year, data = dlh_year_df)
 
 summary(dlh_year_model)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q5a. Slope = ____ deg C per year.
-#      Positive or negative - warming or cooling?
-# ANSWER:
-#
-# Q5b. Slope x 10 = ____ deg C per DECADE.
-#      The record spans 78 years (1948-2025), so that is
-#      roughly ____ degrees in total.
-# ANSWER:
-#
-# Q5c. p-value = ____   Is the trend real, or luck?
-# ANSWER:
-#
-# Q5d. R-squared = ____   Year explains what fraction of
-#      the variation? What is the REST of it?
-# ANSWER:
-#
-# Q5e. The intercept is about -49 deg C. Why is that
-#      number meaningless here?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: is Duluth warming or cooling? The rate per
+# DECADE is the slope x 10.
+
+# THINK: R-squared is small but p is tiny. What is each
+# one telling you?
+
+# THINK: the intercept is about -49 deg C. Why is that
+# number meaningless here?
+
+invisible(NULL)
+
 
 # ---- 6: Label each day with a season ---------------------
 # NORTHERN hemisphere seasons.
@@ -165,17 +138,11 @@ dlh_season_df <- dlh_df %>%
 # Did it work?
 dlh_season_df %>% count(season)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q6a. Days in each season? Does a quarter / quarter /
-#      half make sense?
-# ANSWER:
-#
-# Q6b. Duluth is at latitude +46.84 - northern hemisphere.
-#      If you ran this exact code on Melbourne, Australia
-#      (latitude -37.7), what would be wrong?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: run this same code on Melbourne, Australia
+# (latitude -37.7). What would be wrong with the labels?
+
+invisible(NULL)
+
 
 # ---- 7: Summarize by year AND season ---------------------
 
@@ -189,11 +156,8 @@ head(season_year_df, 4)
 
 nrow(season_year_df)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q7. Rows = ____   Where does that number come from?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+invisible(NULL)
+
 
 # ---- 8: Plot both seasons --------------------------------
 # color = season inside aes() colors the points AND makes
@@ -204,15 +168,11 @@ season_year_df %>%
   geom_point() +
   geom_smooth(method = "lm")
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q8a. Roughly what temperature is each band centered on?
-# ANSWER:
-#
-# Q8b. Which line is STEEPER? Why is steepness the thing
-#      to compare, not which band sits higher?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: which line is STEEPER? Why is steepness the
+# thing to compare, and not which band sits higher?
+
+invisible(NULL)
+
 
 # ---- 9: A model for each season --------------------------
 
@@ -230,30 +190,16 @@ winter_df <- season_year_df %>%
 winter_model <- lm(temp ~ year, data = winter_df)
 summary(winter_model)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q9a. Read the `year` row of each summary():
-#
-#              slope (C/yr)   x10 (C/decade)   p-value
-#   annual       ______          ______         ______
-#   summer       ______          ______         ______
-#   winter       ______          ______         ______
-# ANSWER:
-#
-# Q9b. Which season warms faster, and by roughly how much?
-#      Does the annual rate sit between them?
-# ANSWER:
-#
-# Q9c. Why does an annual mean HIDE this? Name one
-#      biological thing that depends on winter temperature
-#      but not on the annual average.
-# ANSWER:
-#
-# Q9d. Write a results sentence for the ANNUAL trend:
-#      slope with units, the per-decade rate, F with both
-#      df, p, and R-squared.
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# THINK: which season warms faster, and by how much?
+# THINK: why does an annual mean HIDE that? Name one
+# biological thing that depends on winter temperature
+# but not on the annual average.
+
+# THINK: say the results sentence for the annual trend
+# out loud - slope with units, per-decade rate, p, R2.
+
+invisible(NULL)
+
 
 # ---- 10: Pick a place of your own ------------------------
 # Same analysis, somewhere else - using the SAME GSODR
@@ -346,25 +292,12 @@ dim(power_df)
 # and it lets you compare against the Duluth data you
 # already have in dlh_year_df.
 
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Q10a. Country = ____  stnid = ____  begin_year = ____
-#       What city is it?
-# ANSWER:
-#
-# Q10b. Rows = ____   Years of record = ____
-#       How does that compare with Duluth's 70?
-# ANSWER:
-#
-# Q10c. Northern or southern hemisphere? Will you need to
-#       swap the season labels?
-# ANSWER:
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
 # ##########################################################
 # HOMEWORK - out of class. Answers as # comments below.
 # ##########################################################
+
+invisible(NULL)
+
 
 # ---- H1: Your city's warming rate ------------------------
 # Parts 4 and 5 again, on city_df from Part 10.
@@ -389,6 +322,9 @@ summary(city_model)
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+invisible(NULL)
+
 
 # ---- H2: Your city's seasons -----------------------------
 # Parts 6 to 9 again. NORTHERN hemisphere labels are below.
@@ -436,6 +372,9 @@ summary(city_winter_model)
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+invisible(NULL)
+
 
 # ---- H3: Is your slope DIFFERENT from Duluth's? ----------
 # Two slopes can look different and still not be
@@ -520,6 +459,9 @@ summary(slope_model)
 # ANSWER:
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+invisible(NULL)
+
 
 # ---- H4: Explain your numbers ----------------------------
 
