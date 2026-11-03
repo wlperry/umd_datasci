@@ -1,6 +1,6 @@
 # Course Map — UMD Data Science Biology
 
-*Generated from `_schedule.yml` on 2026-10-19. Do not edit by hand — edit `_schedule.yml` and re-run `Rscript course_map.R`.*
+*Generated from `_schedule.yml` on 2026-11-03. Do not edit by hand — edit `_schedule.yml` and re-run `Rscript course_map.R`.*
 
 | # | Week | Topic | Folder (`content/`) | L | A | E |
 |--:|:----:|-------|---------------------|:-:|:-:|:-:|
@@ -19,19 +19,19 @@
 | 13 | 7 | Intro to the Final Project | `final_project` | L | · | · |
 | 14 | 7 | Finding Data & Examples for Your Project | `final_project` | · | A | E |
 | 15 | 8 | Lake Superior Ice — Pivoting Data | `pivoting` | L | A | · |
-| 16 | 8 | Joins — Fishers & the Weasel Family | `joins` | L | A | · |
+| 16 | 8 | Flex day | — | · | · | · |
 | 17 | 9 | No class — instructor away | — | · | · | · |
 | 18 | 9 | Holiday — Fall Break (no class) | — | · | · | · |
-| 19 | 10 | One-Way ANOVA I — The Basic Test, Start to Finish | `one_way_anova` | L | A | · |
-| 20 | 10 | One-Way ANOVA II — Assumptions & Follow-Up Tests | `one_way_anova_2` | L | A | · |
+| 19 | 10 | Joins — Fishers & the Weasel Family | `joins` | L | A | · |
+| 20 | 10 | Flex day | — | · | · | · |
 | 21 | 11 | Final Project Pitches (Day 1 of 2) | `final_project_pitch` | · | A | · |
 | 22 | 11 | Final Project Pitches (Day 2 of 2) | — | · | · | · |
 | 23 | 12 | Mapping — Bigfoot & GBIF | `mapping` | L | A | E |
 | 24 | 12 | Flex day | — | · | · | · |
 | 25 | 13 | Flex day | — | · | · | · |
 | 26 | 13 | Holiday — Thanksgiving (no class) | — | · | · | · |
-| 27 | 14 | Flex day | — | · | · | · |
-| 28 | 14 | Flex day | — | · | · | · |
+| 27 | 14 | One-Way ANOVA I — The Basic Test, Start to Finish | `one_way_anova` | L | A | · |
+| 28 | 14 | One-Way ANOVA II — Assumptions & Follow-Up Tests | `one_way_anova_2` | L | A | · |
 | 29 | 15 | Final Project Presentations — Posters | `final_project_poster` | · | A | · |
 | 30 | 15 | Flex day | — | · | · | · |
 

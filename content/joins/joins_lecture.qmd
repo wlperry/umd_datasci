@@ -5,8 +5,8 @@ author: "Bill Perry"
 date: today
 
 # --- Fields the SITE reads for ordering / listings / homepage ---
-order: 16
-week: 8
+order: 19
+week: 10
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
   Real projects spread data across several tables. This lecture teaches joins:
@@ -57,8 +57,7 @@ options(width = 65)   # printed R output wraps at 65 too
 
 # Where we left off — Lecture 15
 
-- **Pivoting** — reshaped NOAA's wide ice file into a long, tidy table with
-  `pivot_longer()`, and back into a summary table with `pivot_wider()`
+- **Pivoting** — reshaped NOAA's wide ice file into a long, tidy table with `pivot_longer()`, and back into a summary table with `pivot_wider()`
 - Fixed a real-world date wrinkle, then summarized and modelled the result
 - Your **final project** is under way — data found, question written
 - But every analysis so far — tidy or not — used **one** table
@@ -71,14 +70,14 @@ Real data almost never lives in a single table. Fishers (*Pekania pennanti*, a l
 
 # Goals for today
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 - Understand a **key** — the column that links two tables
 - Join when the key columns have **different names**
 - The **mutating joins** — `left_join()`, `inner_join()`, `full_join()`
 - The **filtering joins** — `semi_join()`, `anti_join()`
 - Build one combined capture + individual table
-::::
+:::
 
 :::: {.column width="40%"}
 **Tools today:**
@@ -99,12 +98,12 @@ Real data almost never lives in a single table. Fishers (*Pekania pennanti*, a l
 **Four chunks:** keys → `left_join` → the join family → filtering joins.
 :::
 ::::
-:::::
+::::::
 
 # How to Use These Slides — Predict · Type · Run
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 This lecture runs in **four short chunks**. After each chunk you switch to the **activity** and type the code yourself.
 
 **For every join, do three things:**
@@ -112,18 +111,18 @@ This lecture runs in **four short chunks**. After each chunk you switch to the *
 1.  **Predict** — before it runs, say how many rows you'll get
 2.  **Type** the code by hand — do not copy-paste
 3.  **Run** it and compare to your prediction
-::::
+:::
 
 :::: {.column width="40%"}
 ::: callout-note
 **✅ Why bother?**
 
--   A join can run without error and still hand you the wrong table — the only way to catch that is to know the row count you expected *before* you see the actual one.
--   Every join in this lecture takes `by = c("a" = "b")` as an argument — typing that syntax a dozen times is what makes it automatic under deadline pressure.
--   Four short chunks instead of one long one means `left_join`, `inner`/`full`, and `semi`/`anti` each get their own uncluttered mental slot.
+- A join can run without error and still hand you the wrong table — the only way to catch that is to know the row count you expected *before* you see the actual one.
+- Every join in this lecture takes `by = c("a" = "b")` as an argument — typing that syntax a dozen times is what makes it automatic under deadline pressure.
+- Four short chunks instead of one long one means `left_join`, `inner`/`full`, and `semi`/`anti` each get their own uncluttered mental slot.
 :::
 ::::
-:::::
+::::::
 
 # 🧩 Chunk 1 of 4 · Two Tables & a Key
 
@@ -136,7 +135,7 @@ This lecture runs in **four short chunks**. After each chunk you switch to the *
 # The Problem — Data in Two Tables
 
 ::::: columns
-:::: {.column width="60%"}
+::: {.column width="60%"}
 ```{r load-12}
 # Load BOTH fisher tables ----------------------------
 library(tidyverse)
@@ -147,19 +146,19 @@ individuals_df <- read_csv("data/fisher_individuals.csv")
 dim(captures_df)       # field events: when/where/mass/collar
 dim(individuals_df)    # released animals: sex/age/source/site
 ```
-::::
+:::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 - **`captures_df`** — one row per capture event: date, site, mass, collar id
 - **`individuals_df`** — one row per released fisher: sex, age class, source, release site
 - To use a capture you often need **both** — the event *and* who the animal is
-::::
+:::
 :::::
 
 # What Is a Key?
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 ```{r peek-12}
 # The columns that identify an animal ---------------
 captures_df    %>%
@@ -168,7 +167,7 @@ captures_df    %>%
 individuals_df %>% select(fisher_id, sex, site, release_date) %>%
   head(3)
 ```
-::::
+:::
 
 :::: {.column width="40%"}
 A **key** is the column that identifies an animal and links the tables.
@@ -183,12 +182,12 @@ A **key** is the column that identifies an animal and links the tables.
 The key must be **unique** in the table you look things up in (`individuals_df` — one row per fisher). It is *not* unique in `captures_df` — a fisher can be caught many times.
 :::
 ::::
-:::::
+::::::
 
 # Clean the Key Before Joining
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 ```{r keys-12}
 # The capture key is lowercase; the individual key is not
 captures_df %>% count(animal_id) %>% head()
@@ -200,7 +199,7 @@ n_distinct(individuals_df$fisher_id)
 n_distinct(captures_df$animal_id)   # includes "UNK" —
                                     # unmarked animals
 ```
-::::
+:::
 
 :::: {.column width="40%"}
 - `str_to_upper()` — `animal_id` was `"f07"`, `fisher_id` is `"F07"`. **Case must match** or the join finds nothing
@@ -210,7 +209,7 @@ n_distinct(captures_df$animal_id)   # includes "UNK" —
 **⚠️ Watch out!** A join silently fails to match if the keys differ in **type** (text vs number), **case**, or **format** — clean them first.
 :::
 ::::
-:::::
+::::::
 
 # 🛑 Pause — Do Activity Parts 1–3 Now
 
@@ -227,11 +226,11 @@ Load both tables, find the key in each, and fix its case. Predict how many captu
 # `left_join()` — Keep Every Capture Event
 
 ::: callout-note
-**🔮 Predict first:** `captures_df` has ~45 events; a few are unmarked animals. After a `left_join` (captures on the left), how many **rows** will we have, and how many will have a missing `sex`?
+**🔮 Predict first:** `captures_df` has \~45 events; a few are unmarked animals. After a `left_join` (captures on the left), how many **rows** will we have, and how many will have a missing `sex`?
 :::
 
 ::::: columns
-:::: {.column width="60%"}
+::: {.column width="60%"}
 ```{r leftjoin-12}
 # Match on differently-named keys with by = c() ------
 captures_joined <- captures_df %>%
@@ -242,34 +241,34 @@ nrow(captures_joined)                  # every capture
 sum(is.na(captures_joined$sex))        # events we can't
                                        # attribute
 ```
-::::
+:::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 - `by = c("animal_id" = "fisher_id")` — "match my `animal_id` to their `fisher_id`"
 - **`left_join` keeps every row on the left** (all capture events)
 - Unmarked-animal events get `NA` for sex, age, source
 
 📖 R4DS §19.3 — mutating joins
-::::
+:::
 :::::
 
 # 🛑 Halfway — Check In
 
 ::::: columns
-:::: {.column width="60%"}
+::: {.column width="60%"}
 **So far you can:**
 
 - Explain a key and why it must be unique (in the lookup table) and the same case/type in both tables
 - Join two tables whose key columns are named differently
 - Use `left_join()` to keep every row on the left
-::::
+:::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 **Still to come — the rest of the family:**
 
 - `inner_join` vs `left_join` vs `full_join`
 - `semi_join` and `anti_join` to **filter** instead of add columns
-::::
+:::
 :::::
 
 # 🧩 Chunk 3 of 4 · The Join Family
@@ -287,7 +286,7 @@ sum(is.na(captures_joined$sex))        # events we can't
 :::
 
 ::::: columns
-:::: {.column width="60%"}
+::: {.column width="60%"}
 ```{r family-12}
 # Same key, three different rules --------------------
 key <- c("animal_id" = "fisher_id")
@@ -298,27 +297,27 @@ full  <- full_join (captures_df, individuals_df, by = key)
 
 c(inner = nrow(inner), left = nrow(left), full = nrow(full))
 ```
-::::
+:::
 
-:::: {.column width="40%"}
-| Join | Keeps |
-|-------------|-------------------------------|
-| `inner_join` | only events with a **known** animal |
-| `left_join` | **all** capture events |
-| `full_join` | all events **and** every released fisher |
+::: {.column width="40%"}
+| Join         | Keeps                                    |
+|--------------|------------------------------------------|
+| `inner_join` | only events with a **known** animal      |
+| `left_join`  | **all** capture events                   |
+| `full_join`  | all events **and** every released fisher |
 
 `inner` drops the unmarked-animal events; `full` adds back the fishers that were released but never recaptured.
-::::
+:::
 :::::
 
 # Which Join Should You Use?
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 - **`left_join`** — the default. Keep everything on your main table, add what you can. *(Event-level analysis: keep all captures.)*
 - **`inner_join`** — only rows with a match. *(When an unattributed event would ruin the analysis.)*
 - **`full_join`** — keep everything from both. *(To audit what's missing on each side — which fishers vanished.)*
-::::
+:::
 
 :::: {.column width="40%"}
 ::: callout-note
@@ -329,7 +328,7 @@ Ask which rows you'd be upset to lose. Drop an unmarked capture and you undercou
 
 📖 R4DS §19.3–19.4
 ::::
-:::::
+::::::
 
 # 🛑 Pause — Do Activity Parts 6–8 Now
 
@@ -350,7 +349,7 @@ Run all three joins, compare the row counts, and decide which one you'd use to b
 :::
 
 ::::: columns
-:::: {.column width="60%"}
+::: {.column width="60%"}
 ```{r anti-12}
 # (a) capture events of unmarked animals
 captures_df %>%
@@ -363,40 +362,40 @@ individuals_df %>%
   anti_join(captures_df, by = c("fisher_id" = "animal_id")) %>%
   select(fisher_id, sex, site)
 ```
-::::
+:::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 - **`anti_join`** keeps the left rows with **no** match — "what's missing?"
 - It **adds no columns** — it filters
 - Direction matters: run it both ways to see each side's gaps
 
 📖 R4DS §19.5 — filtering joins
-::::
+:::
 :::::
 
 # `semi_join()` — Keep Only What Matched
 
 ::::: columns
-:::: {.column width="60%"}
+::: {.column width="60%"}
 ```{r semi-12}
 # Released fishers that WERE recaptured at least once
 individuals_df %>%
   semi_join(captures_df, by = c("fisher_id" = "animal_id")) %>%
   nrow()
 ```
-::::
+:::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 - **`semi_join`** keeps left rows that **have** a match — again, **no new columns**
 - Think of `semi`/`anti` as a **filter driven by another table**
 - `semi` + `anti` on the same table split it in two: recaptured vs never seen
-::::
+:::
 :::::
 
 # The Payoff — Build One Analysis-Ready Table
 
 ::::: columns
-:::: {.column width="60%"}
+::: {.column width="60%"}
 ```{r payoff-12}
 # Every KNOWN-individual capture, with the animal's attributes
 fisher_analysis <- captures_df %>%
@@ -410,13 +409,13 @@ fisher_analysis %>%
          days_since_release, mass_kg) %>%
   head()
 ```
-::::
+:::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 **You just built a real dataset from two raw ones.** `fisher_analysis` didn't exist in either source file — every row is a capture event *plus* the animal's sex, age, and days-since-release, ready for a model.
 
 Here `inner_join` is right: an event with no known animal can't go into an individual-level analysis.
-::::
+:::
 :::::
 
 # 🛑 Pause — Do Activity Parts 9–11 Now
@@ -426,7 +425,7 @@ Use `anti_join` both directions to find the gaps, `semi_join` to see who was rec
 # What We Learned Today
 
 ::::: columns
-:::: {.column width="60%"}
+::: {.column width="60%"}
 **Concepts:**
 
 - A **key** links two tables; it must be **unique** and the **same type**
@@ -440,9 +439,9 @@ Use `anti_join` both directions to find the gaps, `semi_join` to see who was rec
 - `left_join()`, `inner_join()`, `full_join()`
 - `semi_join()`, `anti_join()`
 - `str_to_upper()` (and `as.integer()`, `str_trim()`) for key hygiene
-::::
+:::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 **References:**
 
 - 📖 [R4DS Ch. 19 — Joins](https://r4ds.hadley.nz/joins)
@@ -452,5 +451,5 @@ Use `anti_join` both directions to find the gaps, `semi_join` to see who was rec
 
 - Turn latitude/longitude into a map with `sf` and `geom_sf()`
 - A different dataset (Bigfoot sightings) — same join thinking
-::::
+:::
 :::::
