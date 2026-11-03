@@ -198,7 +198,7 @@
     }
   </style>
 <meta property="og:title" content="Lecture — Mapping: Where Is Bigfoot? – UMD DAta Science Biology">
-<meta property="og:description" content="A 2-day intro to maps in R. Spatial data and coordinate systems, the sf package, turning latitude/longitude into a map with geom_sf(), drawing points on US states, and building a per-state choropleth by joining counts to the map — all with ~4,600 real Bigfoot sighting reports.">
+<meta property="og:description" content="An intro to maps in R. Spatial data and coordinate systems, the sf package, turning latitude/longitude into a map with geom_sf(), drawing points on US states, and building a per-state choropleth by joining counts to the map — all with ~5,000 real Bigfoot sighting reports.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 <body class="quarto-light">
@@ -219,12 +219,12 @@ Bill Perry
 
   <p class="date">2026-11-03</p>
 </section>
-<section id="where-we-left-off-factors-joins" class="title-slide slide level1 center">
-<h1>Where we left off — Factors &amp; Joins</h1>
+<section id="where-we-left-off-joins" class="title-slide slide level1 center">
+<h1>Where we left off — Joins</h1>
 <ul>
-<li><strong>Factors</strong> — reordered and relabeled categories for readable plots</li>
-<li><strong>Joins</strong> — combined a measurements table with a second table by a shared key</li>
-<li>Both skills come back <strong>today</strong>: we’ll join sighting counts onto a map</li>
+<li><strong>Joins</strong> — combined two fisher tables by a shared key, and used <code>anti_join()</code> to find what didn’t match</li>
+<li>Keys had to be <strong>cleaned</strong> before they would match — case, type, format</li>
+<li>That same skill comes back <strong>today</strong>: we’ll join sighting counts onto a map</li>
 </ul>
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
@@ -236,14 +236,14 @@ Bill Perry
 </div>
 <div class="callout-content">
 <p><strong>✅ Transition</strong></p>
-<p>You can wrangle, summarize, model, and join — today those skills point at a map instead of a table. Our dataset: <strong>~4,600 real Bigfoot sightings</strong> across the US, each with a latitude and longitude, ready to become points and then a choropleth. 🦶</p>
+<p>You can wrangle, summarize, model, and join — today those skills point at a map instead of a table. Our dataset: <strong>~5,000 real Bigfoot sightings</strong> across the US, each with a latitude and longitude, ready to become points and then a choropleth. 🦶</p>
 </div>
 </div>
 </div>
 </section>
 
-<section id="goals-for-today-a-2-day-lecture" class="title-slide slide level1 center">
-<h1>Goals for today (a 2-day lecture)</h1>
+<section id="goals-for-today" class="title-slide slide level1 center">
+<h1>Goals for today</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
 <ul>
@@ -261,7 +261,7 @@ Bill Perry
 </ul>
 <p><strong>Data:</strong></p>
 <ul>
-<li><code>bfro_reports_geocoded.csv</code> from Kaggle — save it to your <code>data/</code> folder</li>
+<li><code>bfro_reports_geocoded.csv</code> — in your <code>data/</code> folder (BFRO, via Kaggle)</li>
 </ul>
 <p><strong>Reference:</strong></p>
 <ul>
@@ -277,7 +277,7 @@ Bill Perry
 <p><strong>Tip</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>Day 1:</strong> points on a map. <strong>Day 2:</strong> choropleth + polish.</p>
+<p><strong>Four chunks:</strong> spatial data → points on a map → choropleth → polish.</p>
 </div>
 </div>
 </div>
@@ -317,8 +317,8 @@ Bill Perry
 </div></div>
 </section>
 
-<section id="chunk-1-of-4-spatial-data-the-sf-object-day-1" class="title-slide slide level1 center">
-<h1>🧩 Chunk 1 of 4 · Spatial Data &amp; the sf Object <em>(Day 1)</em></h1>
+<section id="chunk-1-of-4-spatial-data-the-sf-object" class="title-slide slide level1 center">
+<h1>🧩 Chunk 1 of 4 · Spatial Data &amp; the sf Object</h1>
 <p><strong>We will cover:</strong> what spatial data is, coordinate systems, and turning latitude/longitude into an <code>sf</code> object.</p>
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
@@ -376,7 +376,7 @@ Bill Perry
 <span id="cb1-3"><a aria-label="3"></a><span class="fu">library</span>(sf)       <span class="co"># simple features = spatial data frames</span></span>
 <span id="cb1-4"><a aria-label="4"></a><span class="fu">library</span>(maps)     <span class="co"># ready-made state/country outlines</span></span>
 <span id="cb1-5"><a aria-label="5"></a></span>
-<span id="cb1-6"><a aria-label="6"></a><span class="co"># Swap this path for your download -------------------</span></span>
+<span id="cb1-6"><a aria-label="6"></a><span class="co"># The file is in your data/ folder ------------------</span></span>
 <span id="cb1-7"><a aria-label="7"></a>bigfoot_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_reports_geocoded.csv"</span>)</span>
 <span id="cb1-8"><a aria-label="8"></a></span>
 <span id="cb1-9"><a aria-label="9"></a>bigfoot_df <span class="sc">%&gt;%</span></span>
@@ -384,14 +384,14 @@ Bill Perry
 <span id="cb1-11"><a aria-label="11"></a>  <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 5
-  title                   state latitude longitude classification
-  &lt;chr&gt;                   &lt;chr&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;         
-1 &lt;NA&gt;                    Alab…     NA        NA   Class B       
-2 &lt;NA&gt;                    Alas…     NA        NA   Class A       
-3 Report 6496: Bicycling… Rhod…     41.4     -71.5 Class A       
-4 &lt;NA&gt;                    Penn…     NA        NA   Class B       
-5 &lt;NA&gt;                    Oreg…     NA        NA   Class B       
-6 Report 9765: Motorist … Okla…     35.3     -99.2 Class A       </code></pre>
+  title                                  state latitude longitude classification
+  &lt;chr&gt;                                  &lt;chr&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;         
+1 &lt;NA&gt;                                   Alab…     NA        NA   Class B       
+2 &lt;NA&gt;                                   Alas…     NA        NA   Class A       
+3 Report 6496: Bicycling student has ni… Rhod…     41.4     -71.5 Class A       
+4 &lt;NA&gt;                                   Penn…     NA        NA   Class B       
+5 &lt;NA&gt;                                   Oreg…     NA        NA   Class B       
+6 Report 9765: Motorist and children ha… Okla…     35.3     -99.2 Class A       </code></pre>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
@@ -451,7 +451,7 @@ Bill Perry
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🔮 Predict first:</strong> ~4,600 rows of lat/long, plotted with <strong>no basemap</strong>. What shape will the cloud of points make?</p>
+<p><strong>🔮 Predict first:</strong> ~4,000 rows of lat/long, plotted with <strong>no basemap</strong>. What shape will the cloud of points make?</p>
 </div>
 </div>
 </div>
@@ -489,8 +489,8 @@ Bill Perry
 <p>Load the sightings, clean the coordinates, make an <code>sf</code> object, and plot the bare points. Predict the shape before you run it.</p>
 </section>
 
-<section id="chunk-2-of-4-points-on-a-real-map-day-1" class="title-slide slide level1 center">
-<h1>🧩 Chunk 2 of 4 · Points on a Real Map <em>(Day 1)</em></h1>
+<section id="chunk-2-of-4-points-on-a-real-map" class="title-slide slide level1 center">
+<h1>🧩 Chunk 2 of 4 · Points on a Real Map</h1>
 <p><strong>We will cover:</strong> adding a basemap of US states and layering the sightings on top, colored by class.</p>
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
@@ -597,18 +597,18 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 </div></div>
 </section>
 
-<section id="end-of-day-1-start-day-2-here" class="title-slide slide level1 center">
-<h1>🛑 End of Day 1 · Start Day 2 Here</h1>
+<section id="halfway-check-in" class="title-slide slide level1 center">
+<h1>🛑 Halfway — Check In</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
-<p><strong>Day 1 recap — you can now:</strong></p>
+<p><strong>So far you can:</strong></p>
 <ul>
 <li>Explain points, polygons, and CRS</li>
 <li>Turn lat/long into an <code>sf</code> object with <code>st_as_sf()</code></li>
 <li>Draw a basemap of states and layer points with <code>geom_sf()</code></li>
 </ul>
 </div><div class="column" style="width:40%;">
-<p><strong>Day 2 — the choropleth:</strong></p>
+<p><strong>Still to come — the choropleth:</strong></p>
 <ul>
 <li>Count sightings per state</li>
 <li><strong>Join</strong> those counts onto the map</li>
@@ -617,8 +617,8 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 </div></div>
 </section>
 
-<section id="chunk-3-of-4-choropleth-by-state-day-2" class="title-slide slide level1 center">
-<h1>🧩 Chunk 3 of 4 · Choropleth by State <em>(Day 2)</em></h1>
+<section id="chunk-3-of-4-choropleth-by-state" class="title-slide slide level1 center">
+<h1>🧩 Chunk 3 of 4 · Choropleth by State</h1>
 <p><strong>We will cover:</strong> counting sightings per state and <strong>joining</strong> them to the map to shade each state.</p>
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
@@ -723,8 +723,8 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <p>Count sightings per state, join them to the map, and shade the choropleth. Predict the top state before you run it.</p>
 </section>
 
-<section id="chunk-4-of-4-polish-explore-day-2" class="title-slide slide level1 center">
-<h1>🧩 Chunk 4 of 4 · Polish &amp; Explore <em>(Day 2)</em></h1>
+<section id="chunk-4-of-4-polish-explore" class="title-slide slide level1 center">
+<h1>🧩 Chunk 4 of 4 · Polish &amp; Explore</h1>
 <p><strong>We will cover:</strong> a proper US projection, and a fun exploration — sightings by season.</p>
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
