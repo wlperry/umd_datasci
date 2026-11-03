@@ -23,7 +23,7 @@
 | 17 | 9 | No class — instructor away | — | · | · | · |
 | 18 | 9 | Holiday — Fall Break (no class) | — | · | · | · |
 | 19 | 10 | Joins — Fishers & the Weasel Family | `joins` | L | A | · |
-| 20 | 10 | Mapping — Bigfoot & GBIF | `mapping` | L | A | E |
+| 20 | 10 | Mapping — Bigfoot & GBIF | `mapping` | L | A | · |
 | 21 | 11 | Final Project Pitches (Day 1 of 2) | `final_project_pitch` | · | A | · |
 | 22 | 11 | Final Project Pitches (Day 2 of 2) | — | · | · | · |
 | 23 | 12 | Flex day | — | · | · | · |

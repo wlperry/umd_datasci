@@ -12,7 +12,7 @@
 
   <meta name="author" content="Bill Perry">
   <meta name="dcterms.date" content="2026-11-03">
-  <title>UMD DAta Science Biology – Lecture — Mapping: Where Is Bigfoot?</title>
+  <title>UMD DAta Science Biology – Lecture — Mapping: Bigfoot, Moose, and Live Maps</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -197,8 +197,8 @@
       margin-right: 0; 
     }
   </style>
-<meta property="og:title" content="Lecture — Mapping: Where Is Bigfoot? – UMD DAta Science Biology">
-<meta property="og:description" content="An intro to maps in R. Spatial data and coordinate systems, the sf package, turning latitude/longitude into a map with geom_sf(), drawing points on US states, and building a per-state choropleth by joining counts to the map — all with ~5,000 real Bigfoot sighting reports.">
+<meta property="og:title" content="Lecture — Mapping: Bigfoot, Moose, and Live Maps – UMD DAta Science Biology">
+<meta property="og:description" content="An intro to maps in R. Spatial data and coordinate systems, the sf package, and geom_sf() — warming up on ~5,000 Bigfoot sighting reports, then downloading real moose occurrence records from GBIF with rgbif, mapping them across the US including Alaska, and finishing with a live leaflet map.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 <body class="quarto-light">
@@ -206,8 +206,8 @@
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h1 class="title">Lecture — Mapping: Where Is Bigfoot?</h1>
-  <p class="subtitle">Spatial data, sf, and geom_sf with real Bigfoot sighting reports</p>
+  <h1 class="title">Lecture — Mapping: Bigfoot, Moose, and Live Maps</h1>
+  <p class="subtitle">Spatial data and sf, real species records from GBIF, and an interactive leaflet map</p>
 
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
@@ -224,7 +224,7 @@ Bill Perry
 <ul>
 <li><strong>Joins</strong> — combined two fisher tables by a shared key, and used <code>anti_join()</code> to find what didn’t match</li>
 <li>Keys had to be <strong>cleaned</strong> before they would match — case, type, format</li>
-<li>That same skill comes back <strong>today</strong>: we’ll join sighting counts onto a map</li>
+<li>That same skill comes back at the end of today, pointed at a map</li>
 </ul>
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
@@ -236,7 +236,7 @@ Bill Perry
 </div>
 <div class="callout-content">
 <p><strong>✅ Transition</strong></p>
-<p>You can wrangle, summarize, model, and join — today those skills point at a map instead of a table. Our dataset: <strong>~5,000 real Bigfoot sightings</strong> across the US, each with a latitude and longitude, ready to become points and then a choropleth. 🦶</p>
+<p>Today has two halves. First, <strong>Bigfoot</strong> — a joke dataset with a serious lesson in it. Then the real thing: we download actual occurrence records for a species from <strong>GBIF</strong>, map them across the country, and finish with a map you can <strong>pan and zoom</strong>. 🦶🫎</p>
 </div>
 </div>
 </div>
@@ -250,23 +250,25 @@ Bill Perry
 <li>Understand <strong>spatial data</strong> — points, polygons, and coordinate systems</li>
 <li>Meet <strong><code>sf</code></strong> — a data frame with a <strong>geometry</strong> column</li>
 <li>Turn latitude/longitude into a map with <strong><code>geom_sf()</code></strong></li>
-<li>Draw sighting <strong>points</strong> on a map of US states</li>
-<li>Build a <strong>choropleth</strong> — sightings per state — by <strong>joining</strong> counts to the map</li>
-<li>Reproject to a proper US look</li>
+<li>Pull <strong>real species records</strong> from <strong>GBIF</strong> with <code>rgbif</code></li>
+<li>Map a species across the US — <strong>Alaska included</strong></li>
+<li>Build a <strong>live, zoomable map</strong> with <code>leaflet</code></li>
 </ul>
 </div><div class="column" style="width:40%;">
 <p><strong>Tools today:</strong></p>
 <ul>
 <li><code>tidyverse</code>, <code>sf</code>, <code>maps</code></li>
+<li><code>rgbif</code>, <code>leaflet</code> — <strong>install before class</strong></li>
 </ul>
 <p><strong>Data:</strong></p>
 <ul>
-<li><code>bfro_reports_geocoded.csv</code> — in your <code>data/</code> folder (BFRO, via Kaggle)</li>
+<li><code>bfro_reports_geocoded.csv</code> — in your <code>data/</code> folder</li>
+<li>Moose records — downloaded live from GBIF</li>
 </ul>
 <p><strong>Reference:</strong></p>
 <ul>
-<li>📖 <a href="https://r.geocompx.org/">R4DS + <code>sf</code> docs</a> (Geocomputation with R)</li>
-<li>🌐 <a href="https://r-spatial.github.io/sf/">sf package</a></li>
+<li>🌐 <a href="https://docs.ropensci.org/rgbif/">rgbif</a></li>
+<li>🌐 <a href="https://rstudio.github.io/leaflet/">leaflet for R</a></li>
 </ul>
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
@@ -277,7 +279,7 @@ Bill Perry
 <p><strong>Tip</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>Four chunks:</strong> spatial data → points on a map → choropleth → polish.</p>
+<p><strong>Four chunks:</strong> Bigfoot → GBIF → the moose map → going live.</p>
 </div>
 </div>
 </div>
@@ -288,14 +290,30 @@ Bill Perry
 <h1>How to Use These Slides — Predict · Type · Run</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
-<p>This lecture runs in <strong>four chunks over two days</strong>. After each chunk you switch to the <strong>activity</strong> and type the code yourself.</p>
-<p><strong>For every map, do three things:</strong></p>
+<p>This lecture runs in <strong>four short chunks</strong>. After each chunk you switch to the <strong>activity</strong> and run the code yourself.</p>
+<p><strong>Today is different:</strong> every line is already written, in the activity <em>and</em> in the skeleton. Your job is to <strong>run it, read it, and break it</strong>.</p>
 <ol type="1">
-<li><strong>Predict</strong> — before it draws, say where the points or the dark states will be</li>
-<li><strong>Type</strong> the code by hand — do not copy-paste</li>
-<li><strong>Run</strong> it and compare to your prediction</li>
+<li><strong>Predict</strong> — before a map draws, say what you expect to see</li>
+<li><strong>Run</strong> it and compare</li>
+<li><strong>Change something</strong> and run it again</li>
 </ol>
 </div><div class="column" style="width:40%;">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>⚠️ Install first</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a aria-label="1"></a><span class="fu">install.packages</span>(<span class="st">"rgbif"</span>)</span>
+<span id="cb1-2"><a aria-label="2"></a><span class="fu">install.packages</span>(<span class="st">"leaflet"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Do this <strong>before</strong> class — they pull in a lot of dependencies.</p>
+</div>
+</div>
+</div>
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -305,21 +323,17 @@ Bill Perry
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>✅ Why bother?</strong></p>
-<ul>
-<li>Naming the state you expect to be darkest <em>before</em> it renders is what makes you look at the result instead of admiring it.</li>
-<li><code>st_as_sf(coords = ..., crs = ...)</code> and <code>geom_sf()</code> have a specific argument order — typing them is what makes it stick.</li>
-<li>Spatial objects, basemaps, joins and projections each get their own chunk, so a CRS mismatch doesn’t get confused with a join-key mismatch.</li>
-</ul>
+<p><strong>The homework is a separate file</strong></p>
+<p><code>17_mapping_homework.R</code>. That one you turn in — a species <strong>you</strong> pick.</p>
 </div>
 </div>
 </div>
 </div></div>
 </section>
 
-<section id="chunk-1-of-4-spatial-data-the-sf-object" class="title-slide slide level1 center">
-<h1>🧩 Chunk 1 of 4 · Spatial Data &amp; the sf Object</h1>
-<p><strong>We will cover:</strong> what spatial data is, coordinate systems, and turning latitude/longitude into an <code>sf</code> object.</p>
+<section id="chunk-1-of-4-bigfoot-for-fun" class="title-slide slide level1 center">
+<h1>🧩 Chunk 1 of 4 · Bigfoot, for Fun</h1>
+<p><strong>We will cover:</strong> what spatial data is, and how latitude/longitude becomes a map.</p>
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -329,7 +343,7 @@ Bill Perry
 <p><strong>Tip</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🖐 After this chunk: Activity Parts 1–3</strong> (load the sightings, make them spatial).</p>
+<p><strong>🖐 After this chunk: Activity Parts 1–3</strong> (read it, make it spatial, map it).</p>
 </div>
 </div>
 </div>
@@ -339,15 +353,13 @@ Bill Perry
 <h1>What Is Spatial Data?</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
-<p>Two shapes cover almost everything:</p>
+<p>Three ideas and you have it:</p>
 <ul>
-<li><strong>Points</strong> — a single location: one Bigfoot sighting = (longitude, latitude)</li>
-<li><strong>Polygons</strong> — an area: the outline of a state or country</li>
+<li><strong>Points</strong> — one coordinate pair. A sighting, a tree, a weather station.</li>
+<li><strong>Polygons</strong> — a closed ring of coordinates. A state, a lake, a park.</li>
+<li><strong>CRS</strong> — the <em>coordinate reference system</em>: what the numbers <strong>mean</strong>.</li>
 </ul>
-<p>Both need a <strong>coordinate reference system (CRS)</strong> — the rulebook that says what the numbers mean.</p>
-<ul>
-<li><strong>EPSG:4326</strong> (WGS84) — plain longitude/latitude, what GPS and our CSV use</li>
-</ul>
+<p><code>4326</code> is plain latitude/longitude in degrees — what a phone GPS gives you, and what almost every dataset arrives in.</p>
 </div><div class="column" style="width:40%;">
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
@@ -358,8 +370,8 @@ Bill Perry
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>📖 New word</strong></p>
-<p><strong>CRS</strong> = Coordinate Reference System. Two maps won’t line up unless they share one. Lat/long is <code>crs = 4326</code>.</p>
+<p><strong>📖 Vocabulary</strong></p>
+<p>Two datasets will not line up unless they share a CRS. Most mismatched-map bugs are two layers in two different systems.</p>
 </div>
 </div>
 </div>
@@ -371,34 +383,26 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a aria-label="1"></a><span class="co"># Load packages + the sighting data ------------------</span></span>
-<span id="cb1-2"><a aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-3"><a aria-label="3"></a><span class="fu">library</span>(sf)       <span class="co"># simple features = spatial data frames</span></span>
-<span id="cb1-4"><a aria-label="4"></a><span class="fu">library</span>(maps)     <span class="co"># ready-made state/country outlines</span></span>
-<span id="cb1-5"><a aria-label="5"></a></span>
-<span id="cb1-6"><a aria-label="6"></a><span class="co"># The file is in your data/ folder ------------------</span></span>
-<span id="cb1-7"><a aria-label="7"></a>bigfoot_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_reports_geocoded.csv"</span>)</span>
-<span id="cb1-8"><a aria-label="8"></a></span>
-<span id="cb1-9"><a aria-label="9"></a>bigfoot_df <span class="sc">%&gt;%</span></span>
-<span id="cb1-10"><a aria-label="10"></a>  <span class="fu">select</span>(title, state, latitude, longitude, classification) <span class="sc">%&gt;%</span></span>
-<span id="cb1-11"><a aria-label="11"></a>  <span class="fu">head</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a aria-label="1"></a><span class="co"># Load packages + the sighting data ------------------</span></span>
+<span id="cb2-2"><a aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb2-3"><a aria-label="3"></a><span class="fu">library</span>(sf)       <span class="co"># spatial data frames</span></span>
+<span id="cb2-4"><a aria-label="4"></a><span class="fu">library</span>(maps)     <span class="co"># country + state outlines</span></span>
+<span id="cb2-5"><a aria-label="5"></a><span class="fu">library</span>(rgbif)    <span class="co"># species records from GBIF</span></span>
+<span id="cb2-6"><a aria-label="6"></a><span class="fu">library</span>(leaflet)  <span class="co"># live maps</span></span>
+<span id="cb2-7"><a aria-label="7"></a></span>
+<span id="cb2-8"><a aria-label="8"></a><span class="co"># The file is in your data/ folder ------------------</span></span>
+<span id="cb2-9"><a aria-label="9"></a>bigfoot_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/bfro_reports_geocoded.csv"</span>)</span>
+<span id="cb2-10"><a aria-label="10"></a></span>
+<span id="cb2-11"><a aria-label="11"></a><span class="fu">dim</span>(bigfoot_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 5
-  title                                  state latitude longitude classification
-  &lt;chr&gt;                                  &lt;chr&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;         
-1 &lt;NA&gt;                                   Alab…     NA        NA   Class B       
-2 &lt;NA&gt;                                   Alas…     NA        NA   Class A       
-3 Report 6496: Bicycling student has ni… Rhod…     41.4     -71.5 Class A       
-4 &lt;NA&gt;                                   Penn…     NA        NA   Class B       
-5 &lt;NA&gt;                                   Oreg…     NA        NA   Class B       
-6 Report 9765: Motorist and children ha… Okla…     35.3     -99.2 Class A       </code></pre>
+<pre><code>[1] 5021   29</code></pre>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
 <ul>
-<li><code>sf</code> = “<strong>s</strong>imple <strong>f</strong>eatures” — the standard for spatial data in R</li>
-<li>An <code>sf</code> object is a normal tibble <strong>plus a <code>geometry</code> column</strong></li>
-<li>Everything you know — <code>filter()</code>, <code>mutate()</code>, <code>group_by()</code> — still works</li>
+<li>An <strong><code>sf</code> object</strong> is a tibble with one extra column, <code>geometry</code></li>
+<li>Every dplyr verb you know still works on it</li>
+<li>~5,000 real BFRO reports, each geocoded to a lat/long</li>
 </ul>
 </div></div>
 </section>
@@ -408,21 +412,21 @@ Bill Perry
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a aria-label="1"></a><span class="co"># Drop missing coords + keep the lower 48 ------------</span></span>
-<span id="cb3-2"><a aria-label="2"></a>bigfoot_df <span class="ot">&lt;-</span> bigfoot_df <span class="sc">%&gt;%</span></span>
-<span id="cb3-3"><a aria-label="3"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(latitude), <span class="sc">!</span><span class="fu">is.na</span>(longitude)) <span class="sc">%&gt;%</span></span>
-<span id="cb3-4"><a aria-label="4"></a>  <span class="fu">filter</span>(longitude <span class="sc">&gt;</span> <span class="sc">-</span><span class="dv">125</span>, longitude <span class="sc">&lt;</span> <span class="sc">-</span><span class="dv">66</span>,</span>
-<span id="cb3-5"><a aria-label="5"></a>         latitude  <span class="sc">&gt;</span>   <span class="dv">24</span>, latitude  <span class="sc">&lt;</span>  <span class="dv">50</span>)</span>
-<span id="cb3-6"><a aria-label="6"></a></span>
-<span id="cb3-7"><a aria-label="7"></a><span class="fu">nrow</span>(bigfoot_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a aria-label="1"></a><span class="co"># Drop missing coords + keep the lower 48 ------------</span></span>
+<span id="cb4-2"><a aria-label="2"></a>bigfoot_df <span class="ot">&lt;-</span> bigfoot_df <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a aria-label="3"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(latitude), <span class="sc">!</span><span class="fu">is.na</span>(longitude)) <span class="sc">%&gt;%</span></span>
+<span id="cb4-4"><a aria-label="4"></a>  <span class="fu">filter</span>(longitude <span class="sc">&gt;</span> <span class="sc">-</span><span class="dv">125</span>, longitude <span class="sc">&lt;</span> <span class="sc">-</span><span class="dv">66</span>,</span>
+<span id="cb4-5"><a aria-label="5"></a>         latitude  <span class="sc">&gt;</span>   <span class="dv">24</span>, latitude  <span class="sc">&lt;</span>  <span class="dv">50</span>)</span>
+<span id="cb4-6"><a aria-label="6"></a></span>
+<span id="cb4-7"><a aria-label="7"></a><span class="fu">nrow</span>(bigfoot_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 4031</code></pre>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
 <ul>
-<li>Real coordinate data <strong>always</strong> has some missing values</li>
-<li>We also trim to the continental US so the map isn’t dominated by a few far-flung points</li>
+<li><code>st_as_sf()</code> <strong>errors</strong> on missing coordinates — filter them first</li>
+<li>The four numbers are a <strong>bounding box</strong> around the lower 48</li>
 </ul>
 <div class="callout callout-warning callout-titled callout-style-default">
 <div class="callout-body">
@@ -433,7 +437,7 @@ Bill Perry
 <p><strong>Warning</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>⚠️ Watch out!</strong> The next step (<code>st_as_sf</code>) <strong>errors</strong> if any latitude/longitude is <code>NA</code> — clean first, always.</p>
+<p><strong>⚠️ Remember this line.</strong> It throws Alaska away on purpose. In Chunk 3 we want Alaska <strong>back</strong>, and this is what would have eaten it.</p>
 </div>
 </div>
 </div>
@@ -451,47 +455,93 @@ Bill Perry
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🔮 Predict first:</strong> ~4,000 rows of lat/long, plotted with <strong>no basemap</strong>. What shape will the cloud of points make?</p>
+<p><strong>🔮 Predict first:</strong> ~4,000 rows of lat/long, plotted with <strong>no basemap</strong>. What shape will the cloud make?</p>
 </div>
 </div>
 </div>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a aria-label="1"></a><span class="co"># Build the geometry column from lon/lat -------------</span></span>
-<span id="cb5-2"><a aria-label="2"></a>bigfoot_sf <span class="ot">&lt;-</span> bigfoot_df <span class="sc">%&gt;%</span></span>
-<span id="cb5-3"><a aria-label="3"></a>  <span class="fu">st_as_sf</span>(<span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"longitude"</span>, <span class="st">"latitude"</span>), <span class="at">crs =</span> <span class="dv">4326</span>)</span>
-<span id="cb5-4"><a aria-label="4"></a></span>
-<span id="cb5-5"><a aria-label="5"></a><span class="co"># Just the points — the USA appears on its own -------</span></span>
-<span id="cb5-6"><a aria-label="6"></a><span class="fu">ggplot</span>(bigfoot_sf) <span class="sc">+</span></span>
-<span id="cb5-7"><a aria-label="7"></a>  <span class="fu">geom_sf</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb5-8"><a aria-label="8"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a aria-label="1"></a><span class="co"># Build the geometry column from lon/lat -------------</span></span>
+<span id="cb6-2"><a aria-label="2"></a>bigfoot_sf <span class="ot">&lt;-</span> bigfoot_df <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a aria-label="3"></a>  <span class="fu">st_as_sf</span>(<span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"longitude"</span>, <span class="st">"latitude"</span>),</span>
+<span id="cb6-4"><a aria-label="4"></a>           <span class="at">crs =</span> <span class="dv">4326</span>)</span>
+<span id="cb6-5"><a aria-label="5"></a></span>
+<span id="cb6-6"><a aria-label="6"></a><span class="co"># Just the points — the USA appears on its own -------</span></span>
+<span id="cb6-7"><a aria-label="7"></a><span class="fu">ggplot</span>(bigfoot_sf) <span class="sc">+</span></span>
+<span id="cb6-8"><a aria-label="8"></a>  <span class="fu">geom_sf</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">0.5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="mapping_lecture_files/figure-revealjs/make-sf-13-1.png" alt="Scatter plot of Bigfoot sighting points by longitude and latitude with no basemap, the point cloud tracing the outline of the continental United States."></p>
+<p><img data-src="mapping_lecture_files/figure-revealjs/make-sf-13-1.png" alt="Scatter of Bigfoot sighting coordinates with no basemap, which already resembles the outline of the United States."></p>
 </figure>
 </div>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
 <ul>
-<li><code>coords = c("longitude", "latitude")</code> — <strong>x first, then y</strong></li>
-<li><code>crs = 4326</code> — tells sf these are lon/lat degrees</li>
-<li>The points alone trace the outline of the country — that’s the “aha” of spatial data</li>
+<li><code>coords = c("longitude", "latitude")</code> — <strong>x first, always</strong></li>
+<li><code>crs = 4326</code> — tell <code>sf</code> these are degrees</li>
+<li>No map needed: <strong>the data drew the country</strong></li>
 </ul>
-<p>📖 sf: <code>st_as_sf()</code></p>
+</div></div>
+</section>
+
+<section id="put-it-on-a-real-map" class="title-slide slide level1 center">
+<h1>Put It on a Real Map</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a><span class="co"># Basemap first, then points on top ------------------</span></span>
+<span id="cb7-2"><a aria-label="2"></a>states_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(</span>
+<span id="cb7-3"><a aria-label="3"></a>  maps<span class="sc">::</span><span class="fu">map</span>(<span class="st">"state"</span>, <span class="at">plot =</span> <span class="cn">FALSE</span>, <span class="at">fill =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-4"><a aria-label="4"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb7-5"><a aria-label="5"></a>  <span class="fu">st_set_crs</span>(<span class="dv">4326</span>)</span>
+<span id="cb7-6"><a aria-label="6"></a></span>
+<span id="cb7-7"><a aria-label="7"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb7-8"><a aria-label="8"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> states_sf,</span>
+<span id="cb7-9"><a aria-label="9"></a>          <span class="at">fill =</span> <span class="st">"grey96"</span>, <span class="at">color =</span> <span class="st">"grey75"</span>) <span class="sc">+</span></span>
+<span id="cb7-10"><a aria-label="10"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> bigfoot_sf, <span class="at">alpha =</span> <span class="fl">0.2</span>,</span>
+<span id="cb7-11"><a aria-label="11"></a>          <span class="at">size =</span> <span class="fl">0.5</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
+<span id="cb7-12"><a aria-label="12"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="mapping_lecture_files/figure-revealjs/points-map-13-1.png" alt="Map of the lower 48 US states with Bigfoot sighting points overlaid in red, denser in the Pacific Northwest."></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<ul>
+<li><strong>Order matters</strong> — states first, points on top</li>
+<li><code>theme_void()</code> drops axes and grid</li>
+</ul>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>🤔 The real question</strong></p>
+<p>Is this a map of <strong>Bigfoot</strong>, or a map of <strong>where people live, hike, and file reports</strong>? Hold that thought — the moose data has the same problem.</p>
+</div>
+</div>
+</div>
 </div></div>
 </section>
 
 <section id="pause-do-activity-parts-13-now" class="title-slide slide level1 center">
 <h1>🛑 Pause — Do Activity Parts 1–3 Now</h1>
-<p>Load the sightings, clean the coordinates, make an <code>sf</code> object, and plot the bare points. Predict the shape before you run it.</p>
+<p>Read the sightings, make them spatial, and put them on the map. Then ask yourself what the map is really showing.</p>
 </section>
 
-<section id="chunk-2-of-4-points-on-a-real-map" class="title-slide slide level1 center">
-<h1>🧩 Chunk 2 of 4 · Points on a Real Map</h1>
-<p><strong>We will cover:</strong> adding a basemap of US states and layering the sightings on top, colored by class.</p>
+<section id="chunk-2-of-4-real-occurrence-data-gbif" class="title-slide slide level1 center">
+<h1>🧩 Chunk 2 of 4 · Real Occurrence Data — GBIF</h1>
+<p><strong>We will cover:</strong> where real species records come from, and how to pull them into R.</p>
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -501,231 +551,119 @@ Bill Perry
 <p><strong>Tip</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🖐 After this chunk: Activity Parts 4–6</strong> (draw the states + points).</p>
+<p><strong>🖐 After this chunk: Activity Parts 4–5</strong> (download moose, then check what you got).</p>
 </div>
 </div>
 </div>
 </section>
 
-<section id="get-a-basemap-us-states-as-sf" class="title-slide slide level1 center">
-<h1>Get a Basemap — US States as <code>sf</code></h1>
+<section id="where-real-occurrence-data-lives" class="title-slide slide level1 center">
+<h1>Where Real Occurrence Data Lives</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><strong>GBIF</strong> — the Global Biodiversity Information Facility — pools occurrence records from:</p>
+<ul>
+<li>museum and herbarium collections</li>
+<li>government survey programs</li>
+<li>citizen science apps like <strong>iNaturalist</strong></li>
+</ul>
+<p>Billions of records. Free. And <code>rgbif</code> queries it <strong>straight from R</strong> — no website, no download button.</p>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-warning callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Warning</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>⚠️ Scientific names only</strong></p>
+<p>GBIF does not know “moose.” It knows <strong><em>Alces alces</em></strong>. Common names are ambiguous across languages and regions; the binomial is not.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="downloading-moose" class="title-slide slide level1 center">
+<h1>Downloading Moose 🫎</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a aria-label="1"></a><span class="co"># Turn the built-in state outlines into sf ----------</span></span>
-<span id="cb6-2"><a aria-label="2"></a>states_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(</span>
-<span id="cb6-3"><a aria-label="3"></a>  maps<span class="sc">::</span><span class="fu">map</span>(<span class="st">"state"</span>, <span class="at">plot =</span> <span class="cn">FALSE</span>, <span class="at">fill =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb6-4"><a aria-label="4"></a>) <span class="sc">%&gt;%</span></span>
-<span id="cb6-5"><a aria-label="5"></a>  <span class="fu">st_set_crs</span>(<span class="dv">4326</span>)</span>
-<span id="cb6-6"><a aria-label="6"></a></span>
-<span id="cb6-7"><a aria-label="7"></a>states_sf <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a aria-label="1"></a><span class="co"># Up to 2000 US moose records with coordinates -------</span></span>
+<span id="cb8-2"><a aria-label="2"></a>moose_raw <span class="ot">&lt;-</span> <span class="fu">occ_data</span>(</span>
+<span id="cb8-3"><a aria-label="3"></a>  <span class="at">scientificName =</span> <span class="st">"Alces alces"</span>,</span>
+<span id="cb8-4"><a aria-label="4"></a>  <span class="at">country        =</span> <span class="st">"US"</span>,</span>
+<span id="cb8-5"><a aria-label="5"></a>  <span class="at">hasCoordinate  =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb8-6"><a aria-label="6"></a>  <span class="at">limit          =</span> <span class="dv">2000</span></span>
+<span id="cb8-7"><a aria-label="7"></a>)<span class="sc">$</span>data</span>
+<span id="cb8-8"><a aria-label="8"></a></span>
+<span id="cb8-9"><a aria-label="9"></a><span class="fu">dim</span>(moose_raw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Simple feature collection with 3 features and 1 field
-Geometry type: MULTIPOLYGON
-Dimension:     XY
-Bounding box:  xmin: -114.8093 ymin: 30.24071 xmax: -84.90089 ymax: 37.00161
-Geodetic CRS:  WGS 84
-               ID                           geom
-alabama   alabama MULTIPOLYGON (((-87.46201 3...
-arizona   arizona MULTIPOLYGON (((-114.6374 3...
-arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
+<pre><code>[1] 2000  119</code></pre>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
 <ul>
-<li><code>maps::map("state", fill = TRUE)</code> — polygon outlines of the lower 48, no download</li>
-<li><code>st_as_sf()</code> converts them to spatial features</li>
-<li><code>st_set_crs(4326)</code> — same lat/long system as our points, so they line up</li>
+<li><code>scientificName</code> — genus + species, spelled exactly</li>
+<li><code>country = "US"</code> — two-letter code</li>
+<li><code>hasCoordinate = TRUE</code> — skip records we can’t map</li>
+<li><code>limit</code> — how many to bring back</li>
+<li><strong><code>$data</code></strong> — <code>occ_data()</code> returns a list; the records are in its <code>data</code> slot</li>
 </ul>
-<div class="callout callout-note callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Note</strong></p>
-</div>
-<div class="callout-content">
-<p>The <code>ID</code> column holds the state name (lowercase) — we’ll use it to join later.</p>
-</div>
-</div>
-</div>
+<p>119 columns arrive. We want five.</p>
 </div></div>
 </section>
 
-<section id="layer-the-sightings-on-the-map" class="title-slide slide level1 center">
-<h1>Layer the Sightings on the Map</h1>
-<div class="callout callout-note callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Note</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>🔮 Predict first:</strong> Densest cluster — Pacific Northwest, Southeast, or Plains? Commit before it draws.</p>
-</div>
-</div>
-</div>
+<section id="what-did-limit-actually-give-you" class="title-slide slide level1 center">
+<h1>What Did <code>limit</code> Actually Give You?</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a aria-label="1"></a><span class="co"># Basemap first, then points on top ------------------</span></span>
-<span id="cb8-2"><a aria-label="2"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb8-3"><a aria-label="3"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> states_sf, <span class="at">fill =</span> <span class="st">"grey96"</span>, <span class="at">color =</span> <span class="st">"grey75"</span>) <span class="sc">+</span></span>
-<span id="cb8-4"><a aria-label="4"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> bigfoot_sf, <span class="fu">aes</span>(<span class="at">color =</span> classification),</span>
-<span id="cb8-5"><a aria-label="5"></a>          <span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb8-6"><a aria-label="6"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings Across the Lower 48"</span>,</span>
-<span id="cb8-7"><a aria-label="7"></a>       <span class="at">color =</span> <span class="st">"Report class"</span>) <span class="sc">+</span></span>
-<span id="cb8-8"><a aria-label="8"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure>
-<p><img data-src="mapping_lecture_files/figure-revealjs/points-map-13-1.png" alt="Map of the lower 48 US states with Bigfoot sighting points overlaid, colored by report classification, showing denser clusters in the Pacific Northwest."></p>
-</figure>
-</div>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<ul>
-<li><strong>Order matters:</strong> draw states first, points second (on top)</li>
-<li><code>aes(color = classification)</code> — colors Class A / B / C reports</li>
-<li><code>theme_void()</code> — drop the axes and grid for a clean map</li>
-</ul>
-<p>Notice the clusters — the Pacific Northwest lights up. 👀</p>
-</div></div>
-</section>
-
-<section id="halfway-check-in" class="title-slide slide level1 center">
-<h1>🛑 Halfway — Check In</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<p><strong>So far you can:</strong></p>
-<ul>
-<li>Explain points, polygons, and CRS</li>
-<li>Turn lat/long into an <code>sf</code> object with <code>st_as_sf()</code></li>
-<li>Draw a basemap of states and layer points with <code>geom_sf()</code></li>
-</ul>
-</div><div class="column" style="width:40%;">
-<p><strong>Still to come — the choropleth:</strong></p>
-<ul>
-<li>Count sightings per state</li>
-<li><strong>Join</strong> those counts onto the map</li>
-<li>Shade each state, then reproject for a proper US look</li>
-</ul>
-</div></div>
-</section>
-
-<section id="chunk-3-of-4-choropleth-by-state" class="title-slide slide level1 center">
-<h1>🧩 Chunk 3 of 4 · Choropleth by State</h1>
-<p><strong>We will cover:</strong> counting sightings per state and <strong>joining</strong> them to the map to shade each state.</p>
-<div class="callout callout-tip callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Tip</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>🖐 After this chunk: Activity Parts 7–9</strong> (count, join, shade).</p>
-</div>
-</div>
-</div>
-</section>
-
-<section id="step-1-count-sightings-per-state" class="title-slide slide level1 center">
-<h1>Step 1 — Count Sightings per State</h1>
-<div class="callout callout-note callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Note</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>🔮 Predict first:</strong> Which state do you think has the most Bigfoot reports? Write your guess before you run <code>count()</code>.</p>
-</div>
-</div>
-</div>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a><span class="co"># Sightings per state — lowercase to match the map --</span></span>
-<span id="cb9-2"><a aria-label="2"></a>sightings_by_state <span class="ot">&lt;-</span> bigfoot_df <span class="sc">%&gt;%</span></span>
-<span id="cb9-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">str_to_lower</span>(state)) <span class="sc">%&gt;%</span></span>
-<span id="cb9-4"><a aria-label="4"></a>  <span class="fu">count</span>(state, <span class="at">name =</span> <span class="st">"sightings"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb9-5"><a aria-label="5"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(sightings))</span>
-<span id="cb9-6"><a aria-label="6"></a></span>
-<span id="cb9-7"><a aria-label="7"></a><span class="fu">head</span>(sightings_by_state)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a aria-label="1"></a><span class="co"># How many US moose records EXIST? -------------------</span></span>
+<span id="cb10-2"><a aria-label="2"></a><span class="fu">occ_count</span>(<span class="at">scientificName =</span> <span class="st">"Alces alces"</span>,</span>
+<span id="cb10-3"><a aria-label="3"></a>          <span class="at">country =</span> <span class="st">"US"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 2
-  state      sightings
-  &lt;chr&gt;          &lt;int&gt;
-1 washington       538
-2 ohio             283
-3 florida          281
-4 california       277
-5 texas            218
-6 illinois         210</code></pre>
+<pre><code>[1] 28004</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="co"># What years did OUR 2000 come from? -----------------</span></span>
+<span id="cb12-2"><a aria-label="2"></a>moose_raw <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a aria-label="3"></a>  <span class="fu">count</span>(year, <span class="at">sort =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+   year     n
+  &lt;int&gt; &lt;int&gt;
+1  2026  2000</code></pre>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
-<ul>
-<li><code>count(state)</code> — one row per state with its total</li>
-<li><code>str_to_lower(state)</code> — the map’s state names are <strong>lowercase</strong>, so we match them now</li>
-<li>This is a plain summary table — next we glue it to the geometry</li>
-</ul>
-<p>📖 R4DS §16 — factors/strings for tidy keys</p>
+<p>About <strong>28,000</strong> records exist. We asked for 2,000 — and they all came from <strong>one year</strong>.</p>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong><code>limit</code> is a cutoff, not a sample.</strong></p>
+<p>It hands back the first <em>n</em> records GBIF returns, newest first. Map those and call it “the range” and you are making a claim your data cannot support.</p>
+</div>
+</div>
+</div>
 </div></div>
 </section>
 
-<section id="step-2-join-counts-onto-the-map" class="title-slide slide level1 center">
-<h1>Step 2 — Join Counts onto the Map</h1>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a><span class="co"># Join sightings to the state polygons ---------------</span></span>
-<span id="cb11-2"><a aria-label="2"></a>states_map <span class="ot">&lt;-</span> states_sf <span class="sc">%&gt;%</span></span>
-<span id="cb11-3"><a aria-label="3"></a>  <span class="co"># drop ":north" etc.</span></span>
-<span id="cb11-4"><a aria-label="4"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">str_remove</span>(ID, <span class="st">":.*"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb11-5"><a aria-label="5"></a>  <span class="fu">left_join</span>(sightings_by_state, <span class="at">by =</span> <span class="st">"state"</span>)</span>
-<span id="cb11-6"><a aria-label="6"></a></span>
-<span id="cb11-7"><a aria-label="7"></a><span class="fu">ggplot</span>(states_map) <span class="sc">+</span></span>
-<span id="cb11-8"><a aria-label="8"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> sightings), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
-<span id="cb11-9"><a aria-label="9"></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="at">option =</span> <span class="st">"magma"</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb11-10"><a aria-label="10"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings by State"</span>,</span>
-<span id="cb11-11"><a aria-label="11"></a>       <span class="at">fill =</span> <span class="st">"Sightings"</span>) <span class="sc">+</span></span>
-<span id="cb11-12"><a aria-label="12"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure>
-<p><img data-src="mapping_lecture_files/figure-revealjs/choropleth-13-1.png" alt="Choropleth map of US states shaded by number of Bigfoot sightings using a magma color scale, with darker states indicating more reports."></p>
-</figure>
-</div>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<ul>
-<li><code>left_join()</code> keeps <strong>every state</strong>, filling in its count</li>
-<li><code>str_remove(ID, ":.*")</code> merges split polygons (e.g.&nbsp;<code>michigan:north</code>)</li>
-<li><code>geom_sf(aes(fill = sightings))</code> shades each state</li>
-<li><code>scale_fill_viridis_c()</code> — a colorblind-safe gradient</li>
-</ul>
-<p>This is a <strong>choropleth</strong> — the map <em>is</em> the bar chart.</p>
-</div></div>
+<section id="pause-do-activity-parts-45-now" class="title-slide slide level1 center">
+<h1>🛑 Pause — Do Activity Parts 4–5 Now</h1>
+<p>Download the moose records, then find out how many exist and what years you actually got.</p>
 </section>
 
-<section id="pause-do-activity-parts-79-now" class="title-slide slide level1 center">
-<h1>🛑 Pause — Do Activity Parts 7–9 Now</h1>
-<p>Count sightings per state, join them to the map, and shade the choropleth. Predict the top state before you run it.</p>
-</section>
-
-<section id="chunk-4-of-4-polish-explore" class="title-slide slide level1 center">
-<h1>🧩 Chunk 4 of 4 · Polish &amp; Explore</h1>
-<p><strong>We will cover:</strong> a proper US projection, and a fun exploration — sightings by season.</p>
+<section id="chunk-3-of-4-map-the-moose-alaska-included" class="title-slide slide level1 center">
+<h1>🧩 Chunk 3 of 4 · Map the Moose — Alaska Included</h1>
+<p><strong>We will cover:</strong> the same <code>st_as_sf()</code> recipe on new column names, and a basemap that doesn’t stop at the Canadian border.</p>
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -735,38 +673,192 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <p><strong>Tip</strong></p>
 </div>
 <div class="callout-content">
-<p><strong>🖐 After this chunk: Activity Parts 10–12</strong> (reproject, then explore).</p>
+<p><strong>🖐 After this chunk: Activity Parts 6–7</strong> (trim it, then map the whole country).</p>
 </div>
 </div>
 </div>
 </section>
 
-<section id="reproject-for-a-proper-us-look-coord_sf" class="title-slide slide level1 center">
-<h1>Reproject for a Proper US Look — <code>coord_sf()</code></h1>
+<section id="trim-it-and-make-it-spatial" class="title-slide slide level1 center">
+<h1>Trim It and Make It Spatial</h1>
 <div class="columns">
 <div class="column" style="width:60%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="co"># Albers Equal-Area (EPSG:5070) — the "textbook" US --</span></span>
-<span id="cb12-2"><a aria-label="2"></a><span class="fu">ggplot</span>(states_map) <span class="sc">+</span></span>
-<span id="cb12-3"><a aria-label="3"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> sightings), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
-<span id="cb12-4"><a aria-label="4"></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="at">option =</span> <span class="st">"magma"</span>, <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb12-5"><a aria-label="5"></a>  <span class="fu">coord_sf</span>(<span class="at">crs =</span> <span class="dv">5070</span>) <span class="sc">+</span></span>
-<span id="cb12-6"><a aria-label="6"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Bigfoot Sightings by State (Albers projection)"</span>,</span>
-<span id="cb12-7"><a aria-label="7"></a>       <span class="at">fill =</span> <span class="st">"Sightings"</span>) <span class="sc">+</span></span>
-<span id="cb12-8"><a aria-label="8"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a aria-label="1"></a><span class="co"># Five columns is plenty -----------------------------</span></span>
+<span id="cb14-2"><a aria-label="2"></a>moose_df <span class="ot">&lt;-</span> moose_raw <span class="sc">%&gt;%</span></span>
+<span id="cb14-3"><a aria-label="3"></a>  <span class="fu">select</span>(species, stateProvince, decimalLatitude,</span>
+<span id="cb14-4"><a aria-label="4"></a>         decimalLongitude, year) <span class="sc">%&gt;%</span></span>
+<span id="cb14-5"><a aria-label="5"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(decimalLongitude),</span>
+<span id="cb14-6"><a aria-label="6"></a>         <span class="sc">!</span><span class="fu">is.na</span>(decimalLatitude))</span>
+<span id="cb14-7"><a aria-label="7"></a></span>
+<span id="cb14-8"><a aria-label="8"></a>moose_sf <span class="ot">&lt;-</span> moose_df <span class="sc">%&gt;%</span></span>
+<span id="cb14-9"><a aria-label="9"></a>  <span class="fu">st_as_sf</span>(<span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"decimalLongitude"</span>,</span>
+<span id="cb14-10"><a aria-label="10"></a>                      <span class="st">"decimalLatitude"</span>),</span>
+<span id="cb14-11"><a aria-label="11"></a>           <span class="at">crs =</span> <span class="dv">4326</span>)</span>
+<span id="cb14-12"><a aria-label="12"></a></span>
+<span id="cb14-13"><a aria-label="13"></a>moose_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(stateProvince, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 2
+  stateProvince     n
+  &lt;chr&gt;         &lt;int&gt;
+1 Alaska          641
+2 Colorado        469
+3 Wyoming         261
+4 Idaho           107</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<p>GBIF names its coordinates <code>decimalLongitude</code> / <code>decimalLatitude</code>.</p>
+<p><strong>The recipe did not change</strong> — only the names you hand to <code>coords</code>. Longitude still goes first.</p>
+<p>Alaska has more moose records than anywhere else. Which is a problem…</p>
+</div></div>
+</section>
+
+<section id="the-lower-48-basemap-problem" class="title-slide slide level1 center scrollable">
+<h1>The Lower-48 Basemap Problem</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><code>states_sf</code> from Chunk 1 is the <strong>lower 48 only</strong>. It has no Alaska at all — so the biggest cluster of moose in the country would simply not be drawn.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a aria-label="1"></a><span class="co"># Country outlines, Alaska included ------------------</span></span>
+<span id="cb16-2"><a aria-label="2"></a>usa_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(</span>
+<span id="cb16-3"><a aria-label="3"></a>  maps<span class="sc">::</span><span class="fu">map</span>(<span class="st">"world"</span>, <span class="at">regions =</span> <span class="st">"USA"</span>,</span>
+<span id="cb16-4"><a aria-label="4"></a>            <span class="at">plot =</span> <span class="cn">FALSE</span>, <span class="at">fill =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-5"><a aria-label="5"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb16-6"><a aria-label="6"></a>  <span class="fu">st_set_crs</span>(<span class="dv">4326</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-warning callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Warning</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>⚠️ Two traps at once</strong></p>
+<ol type="1">
+<li>The Aleutians cross the <strong>date line</strong>, so the raw extent runs −178 to +180 and squashes the country to a sliver. <code>coord_sf()</code> limits fix it.</li>
+<li><code>crs = 5070</code> is <strong>CONUS</strong> Albers — it mangles Alaska. Leave this map unprojected.</li>
+</ol>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="moose-across-the-country" class="title-slide slide level1 center">
+<h1>Moose Across the Country</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a aria-label="1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb17-2"><a aria-label="2"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> usa_sf,</span>
+<span id="cb17-3"><a aria-label="3"></a>          <span class="at">fill =</span> <span class="st">"grey96"</span>, <span class="at">color =</span> <span class="st">"grey75"</span>) <span class="sc">+</span></span>
+<span id="cb17-4"><a aria-label="4"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> moose_sf, <span class="at">alpha =</span> <span class="fl">0.3</span>,</span>
+<span id="cb17-5"><a aria-label="5"></a>          <span class="at">size =</span> <span class="fl">0.7</span>, <span class="at">color =</span> <span class="st">"darkgreen"</span>) <span class="sc">+</span></span>
+<span id="cb17-6"><a aria-label="6"></a>  <span class="fu">coord_sf</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">170</span>, <span class="sc">-</span><span class="dv">60</span>),</span>
+<span id="cb17-7"><a aria-label="7"></a>           <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">25</span>, <span class="dv">72</span>)) <span class="sc">+</span></span>
+<span id="cb17-8"><a aria-label="8"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="mapping_lecture_files/figure-revealjs/albers-13-1.png" alt="Choropleth map of US states shaded by Bigfoot sighting counts, redrawn in an Albers equal-area projection so the country appears in its familiar proportions."></p>
+<p><img data-src="mapping_lecture_files/figure-revealjs/moose-map-17-1.png" alt="Map of the United States including Alaska with moose occurrence points in dark green, clustered in Alaska, the northern Rockies, the upper Midwest, and New England."></p>
 </figure>
 </div>
 </div>
 </div>
 </div><div class="column" style="width:40%;">
+<p><strong>Read the biology off it:</strong></p>
 <ul>
-<li>Lat/long (<code>4326</code>) stretches the US; <strong>Albers (<code>5070</code>)</strong> is the shape you expect</li>
-<li><code>coord_sf(crs = 5070)</code> reprojects <strong>just for display</strong> — your data is unchanged</li>
-<li>One line, and the map suddenly looks professional</li>
+<li>Alaska, the northern Rockies, the upper Midwest, New England</li>
+<li>Nothing in the south — moose are a <strong>cold-adapted</strong> animal with a real southern limit</li>
+</ul>
+<p>Unlike Bigfoot, this pattern is mostly <strong>the species</strong>, not only the observers. Mostly.</p>
+</div></div>
+</section>
+
+<section id="pause-do-activity-parts-67-now" class="title-slide slide level1 center">
+<h1>🛑 Pause — Do Activity Parts 6–7 Now</h1>
+<p>Trim the records, make them spatial, and map them on a basemap with Alaska in it.</p>
+</section>
+
+<section id="chunk-4-of-4-go-live" class="title-slide slide level1 center">
+<h1>🧩 Chunk 4 of 4 · Go Live 🗺️</h1>
+<p><strong>We will cover:</strong> turning a static picture into a map you can pan, zoom, and click.</p>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>🖐 After this chunk: Activity Parts 8–9</strong> (make it live, then add popups).</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="leaflet-a-real-web-map" class="title-slide slide level1 center">
+<h1><code>leaflet</code> — a Real Web Map</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a aria-label="1"></a><span class="co"># A map you can zoom ---------------------------------</span></span>
+<span id="cb18-2"><a aria-label="2"></a><span class="fu">leaflet</span>(moose_sf) <span class="sc">%&gt;%</span></span>
+<span id="cb18-3"><a aria-label="3"></a>  <span class="fu">addTiles</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb18-4"><a aria-label="4"></a>  <span class="fu">addCircleMarkers</span>(<span class="at">radius =</span> <span class="dv">4</span>, <span class="at">stroke =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb18-5"><a aria-label="5"></a>                   <span class="at">fillOpacity =</span> <span class="fl">0.6</span>,</span>
+<span id="cb18-6"><a aria-label="6"></a>                   <span class="at">color =</span> <span class="st">"darkgreen"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Three lines:</p>
+<ul>
+<li><code>leaflet(moose_sf)</code> — start from your <code>sf</code> object</li>
+<li><code>addTiles()</code> — the actual world map, streamed from the web</li>
+<li><code>addCircleMarkers()</code> — a dot per record</li>
+</ul>
+</div><div class="column" style="width:40%;">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>▶ Run this one yourself</strong></p>
+<p>It opens in the RStudio <strong>Viewer</strong> pane. It can’t be printed onto a slide — the whole point is that it moves.</p>
+<p><strong>Zoom in:</strong> Anchorage. The Colorado Rockies. Maine.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
+<section id="click-a-dot-popups" class="title-slide slide level1 center">
+<h1>Click a Dot — Popups</h1>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a aria-label="1"></a><span class="fu">leaflet</span>(moose_sf) <span class="sc">%&gt;%</span></span>
+<span id="cb19-2"><a aria-label="2"></a>  <span class="fu">addTiles</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb19-3"><a aria-label="3"></a>  <span class="fu">addCircleMarkers</span>(</span>
+<span id="cb19-4"><a aria-label="4"></a>    <span class="at">radius      =</span> <span class="dv">4</span>,</span>
+<span id="cb19-5"><a aria-label="5"></a>    <span class="at">stroke      =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb19-6"><a aria-label="6"></a>    <span class="at">fillOpacity =</span> <span class="fl">0.6</span>,</span>
+<span id="cb19-7"><a aria-label="7"></a>    <span class="at">color       =</span> <span class="st">"darkgreen"</span>,</span>
+<span id="cb19-8"><a aria-label="8"></a>    <span class="at">popup       =</span> <span class="sc">~</span><span class="fu">paste0</span>(species, <span class="st">"&lt;br&gt;"</span>,</span>
+<span id="cb19-9"><a aria-label="9"></a>                          stateProvince, <span class="st">"&lt;br&gt;"</span>, year)</span>
+<span id="cb19-10"><a aria-label="10"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div><div class="column" style="width:40%;">
+<ul>
+<li><code>~</code> makes <code>popup</code> a <strong>formula</strong> — look these columns up for each row</li>
+<li><code>&lt;br&gt;</code> is a line break, because a popup is a tiny web page</li>
 </ul>
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
@@ -777,55 +869,17 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p>Different jobs use different CRSs — equal-area for choropleths, web maps use <code>3857</code>.</p>
+<p><strong>🤔 Zoom all the way in</strong></p>
+<p>Do the points sit in habitat — or do they trace <strong>roads, towns, and trailheads</strong>? That is sampling effort, visible with your own eyes.</p>
 </div>
 </div>
 </div>
 </div></div>
 </section>
 
-<section id="explore-sightings-by-season" class="title-slide slide level1 center">
-<h1>Explore — Sightings by Season 🍂</h1>
-<div class="callout callout-note callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Note</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>🔮 Predict first:</strong> In which season do you think the most sightings are reported? (Think about who is outdoors, and when.)</p>
-</div>
-</div>
-</div>
-<div class="columns">
-<div class="column" style="width:60%;">
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a aria-label="1"></a><span class="co"># Facet the point map by season ----------------------</span></span>
-<span id="cb13-2"><a aria-label="2"></a>bigfoot_sf <span class="sc">%&gt;%</span></span>
-<span id="cb13-3"><a aria-label="3"></a>  <span class="fu">filter</span>(season <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Spring"</span>,<span class="st">"Summer"</span>,<span class="st">"Fall"</span>,<span class="st">"Winter"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb13-4"><a aria-label="4"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb13-5"><a aria-label="5"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> states_sf, <span class="at">fill =</span> <span class="st">"grey96"</span>, <span class="at">color =</span> <span class="st">"grey80"</span>) <span class="sc">+</span></span>
-<span id="cb13-6"><a aria-label="6"></a>  <span class="fu">geom_sf</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">0.4</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
-<span id="cb13-7"><a aria-label="7"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> season) <span class="sc">+</span></span>
-<span id="cb13-8"><a aria-label="8"></a>  <span class="fu">coord_sf</span>(<span class="at">crs =</span> <span class="dv">5070</span>) <span class="sc">+</span></span>
-<span id="cb13-9"><a aria-label="9"></a>  <span class="fu">theme_void</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure>
-<p><img data-src="mapping_lecture_files/figure-revealjs/season-13-1.png" alt="Four small maps of the lower 48 states, one per season, each showing Bigfoot sighting points in red, with summer showing the most reports."></p>
-</figure>
-</div>
-</div>
-</div>
-</div><div class="column" style="width:40%;">
-<ul>
-<li><code>facet_wrap(~ season)</code> — one small map per season, same skill as any facet</li>
-<li>Summer dominates — more people outdoors = more reports (a sampling story!)</li>
-<li>This is how you’d explore <strong>any</strong> point dataset: filter, color, facet</li>
-</ul>
-</div></div>
+<section id="pause-do-activity-parts-89-now" class="title-slide slide level1 center">
+<h1>🛑 Pause — Do Activity Parts 8–9 Now</h1>
+<p>Make the map live, add popups, and zoom into a cluster until you can see what the records are really tracking.</p>
 </section>
 
 <section id="what-we-learned-today" class="title-slide slide level1 center">
@@ -836,27 +890,39 @@ arkansas arkansas MULTIPOLYGON (((-94.05103 3...</code></pre>
 <ul>
 <li>Spatial data = <strong>points/polygons + a CRS</strong></li>
 <li><code>sf</code> objects are tibbles with a <strong>geometry</strong> column</li>
-<li><code>st_as_sf(coords = c("lon","lat"), crs = 4326)</code> makes points</li>
 <li><code>geom_sf()</code> draws layers; <strong>order matters</strong> (basemap first)</li>
-<li>A <strong>choropleth</strong> = counts <strong>joined</strong> to polygons, shaded by value</li>
-<li><code>coord_sf(crs = ...)</code> reprojects for display</li>
+<li><strong>GBIF</strong> holds real occurrence records for nearly any species</li>
+<li><code>limit</code> is a <strong>cutoff, not a sample</strong> — every occurrence map is partly a map of <strong>sampling effort</strong></li>
+<li>A lower-48 basemap silently drops Alaska</li>
 </ul>
 <p><strong>R skills:</strong></p>
 <ul>
-<li><code>st_as_sf()</code>, <code>st_set_crs()</code>, <code>maps::map()</code></li>
-<li><code>geom_sf()</code>, <code>scale_fill_viridis_c()</code>, <code>coord_sf()</code></li>
-<li><code>count()</code> + <code>left_join()</code> + <code>str_to_lower()</code> for the choropleth</li>
+<li><code>st_as_sf()</code>, <code>st_set_crs()</code>, <code>maps::map()</code>, <code>coord_sf()</code></li>
+<li><code>occ_data()</code>, <code>occ_count()</code> from <code>rgbif</code></li>
+<li><code>leaflet()</code>, <code>addTiles()</code>, <code>addCircleMarkers()</code></li>
 </ul>
 </div><div class="column" style="width:40%;">
 <p><strong>References:</strong></p>
 <ul>
+<li>🌐 <a href="https://docs.ropensci.org/rgbif/">rgbif</a></li>
+<li>🌐 <a href="https://rstudio.github.io/leaflet/">leaflet for R</a></li>
 <li>🌐 <a href="https://r-spatial.github.io/sf/">sf package</a></li>
-<li>📖 <a href="https://r.geocompx.org/">Geocomputation with R</a></li>
 </ul>
-<p><strong>Extension (out of class):</strong></p>
-<ul>
-<li>Download <strong>your own</strong> species from <strong>GBIF</strong> with the <code>rgbif</code> package and map where it lives — see the activity.</li>
-</ul>
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Important</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>Homework — a separate file</strong></p>
+<p><code>17_mapping_homework.R</code>. Pick a species <strong>you</strong> care about, run today’s recipe on it, and make it live. The moose code is sitting right there to copy from.</p>
+</div>
+</div>
+</div>
+<p><strong>Up next:</strong> your final project pitches.</p>
 </div></div>
 
 

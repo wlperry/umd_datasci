@@ -1,63 +1,54 @@
 # ==========================================================
-# Activity 17 - Mapping Bigfoot sightings
+# Activity 17 - Mapping: Bigfoot, moose, and live maps
 # Name:
 # Date:
 #
 # Save as scripts/17_mapping.R
 #
-# The code is written for you everywhere except section 9.
-# Section 9 is yours to type - the code is on the activity
-# page.
+# ALL the code is written for you today. Run it chunk by
+# chunk, look at what comes out, then change things and see
+# what breaks. That is the point of today.
 #
 # The THINK lines are to talk about, not to answer here.
-# The EXTENSION at the bottom is what gets graded.
+#
+# YOU DO NOT TURN THIS FILE IN.
+# The homework is a separate file: 17_mapping_homework.R
 # ==========================================================
+
+# Install these ONCE, from the Console, BEFORE class:
+# install.packages("rgbif")
+# install.packages("leaflet")
 
 # ---- Libraries -------------------------------------------
 library(tidyverse)
-library(sf)     # spatial data frames
-library(maps)   # ready-made state outlines
+library(sf)       # spatial data frames
+library(maps)     # ready-made country and state outlines
+library(rgbif)    # download species records from GBIF
+library(leaflet)  # live, zoomable maps
 
 invisible(NULL)
 
 
-# ---- 1 Read the sighting reports -------------------------
-bigfoot_df <- read_csv("data/bfro_reports_geocoded.csv")
+# ---- 1 Bigfoot reports, trimmed to the lower 48 ----------
+# The four numbers are a BOUNDING BOX around the lower 48.
+# It throws Alaska and Hawaii away on purpose - remember
+# that in section 7, when we want Alaska back.
 
-dim(bigfoot_df)
-
-bigfoot_df %>%
-  select(title, state, latitude, longitude, classification, season) %>%
-  head()
-
-invisible(NULL)
-
-
-# ---- 2 Clean the coordinates -----------------------------
-# The four numbers are a bounding box around the lower 48.
-# Alaska and Hawaii would stretch the map and squash
-# everything else into a corner.
-
-bigfoot_df <- bigfoot_df %>%
+bigfoot_df <- read_csv("data/bfro_reports_geocoded.csv") %>%
   filter(!is.na(latitude), !is.na(longitude)) %>%
   filter(longitude > -125, longitude < -66,
          latitude  >   24, latitude  <  50)
 
 nrow(bigfoot_df)
 
-# THINK: why must the NA coordinates go BEFORE
-# st_as_sf()?
-
 invisible(NULL)
 
 
-# ---- 3 Build the sf object -------------------------------
+# ---- 2 Make it spatial -----------------------------------
 # x FIRST: coords = c("longitude", "latitude")
 
 bigfoot_sf <- bigfoot_df %>%
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
-
-bigfoot_sf
 
 ggplot(bigfoot_sf) +
   geom_sf(alpha = 0.2, size = 0.5)
@@ -68,110 +59,177 @@ ggplot(bigfoot_sf) +
 invisible(NULL)
 
 
-# ---- 4 Get US states as sf -------------------------------
+# ---- 3 Put it on a real map ------------------------------
+# Basemap FIRST, points on top.
+
 states_sf <- st_as_sf(
   maps::map("state", plot = FALSE, fill = TRUE)
 ) %>%
   st_set_crs(4326)
 
-nrow(states_sf)
-
-states_sf %>%
-  head(3)
-
-# THINK: what CASE are the state names in? You need that
-# in section 8.
-
-invisible(NULL)
-
-
-# ---- 5 Layer the sightings on the map --------------------
-# Basemap FIRST, points on top.
-
 ggplot() +
   geom_sf(data = states_sf, fill = "grey96", color = "grey75") +
-  geom_sf(data = bigfoot_sf, aes(color = classification),
-          alpha = 0.3, size = 0.6) +
+  geom_sf(data = bigfoot_sf, alpha = 0.2, size = 0.5, color = "firebrick") +
   theme_void()
 
-# THINK: why does the order of the two geom_sf() layers
-# matter?
+# THINK: is this map about BIGFOOT, or about PEOPLE - where
+# they live, hike, and file reports? Hold onto that. The
+# moose data has the same problem.
 
 invisible(NULL)
 
 
-# ---- 6 Who is reporting what -----------------------------
-bigfoot_df %>%
-  count(classification)
+# ---- 4 Meet GBIF -----------------------------------------
+# GBIF pools occurrence records from museums, herbaria,
+# surveys, and apps like iNaturalist. rgbif queries it from
+# R. You need the SCIENTIFIC name - "moose" will not work.
+#
+#   scientificName - genus and species, spelled exactly
+#   country        - two-letter code
+#   hasCoordinate  - skip records with no lat/long
+#   limit          - how many records to bring back
+#   $data          - occ_data() returns a list; the records
+#                    are in its `data` slot
 
-# THINK: is the geographic pattern about BIGFOOT or about
-# PEOPLE - where they live, hike, and file reports?
+moose_raw <- occ_data(
+  scientificName = "Alces alces",
+  country        = "US",
+  hasCoordinate  = TRUE,
+  limit          = 2000
+)$data
+
+dim(moose_raw)
+
+# 119 columns. GBIF carries everything anyone recorded.
 
 invisible(NULL)
 
 
-# ---- 7 Count sightings per state -------------------------
-# Lowercase now so the key matches the map's ID column.
+# ---- 5 What did limit actually give you? -----------------
+# How many US moose records does GBIF actually have?
+occ_count(scientificName = "Alces alces", country = "US")
+
+# And what years did OUR 2000 records come from?
+moose_raw %>%
+  count(year, sort = TRUE)
+
+# THINK: about 28,000 records exist, you asked for 2000,
+# and they all came from ONE year. So limit is not a random
+# sample - it is a CUTOFF. What does that do to any claim
+# you make about "the range" of a species?
+
+invisible(NULL)
+
+
+# ---- 6 Trim and make it spatial --------------------------
+# GBIF calls its coordinates decimalLongitude and
+# decimalLatitude. Same recipe, different names.
+# LONGITUDE STILL GOES FIRST.
+
+moose_df <- moose_raw %>%
+  select(species, stateProvince, decimalLatitude,
+         decimalLongitude, year) %>%
+  filter(!is.na(decimalLongitude), !is.na(decimalLatitude))
+
+moose_df %>%
+  count(stateProvince, sort = TRUE) %>%
+  head()
+
+moose_sf <- moose_df %>%
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"),
+           crs = 4326)
+
+moose_sf
+
+# THINK: which state has the most moose records?
+
+invisible(NULL)
+
+
+# ---- 7 A basemap with Alaska in it -----------------------
+# states_sf from section 3 is the lower 48 ONLY. The biggest
+# cluster of moose in the country is in Alaska, so we need a
+# different basemap.
+#
+# The coord_sf() limits matter: without them the map runs
+# out to the Aleutians, which cross the date line, and the
+# whole country squashes into a sliver.
+
+usa_sf <- st_as_sf(
+  maps::map("world", regions = "USA", plot = FALSE, fill = TRUE)
+) %>%
+  st_set_crs(4326)
+
+ggplot() +
+  geom_sf(data = usa_sf, fill = "grey96", color = "grey75") +
+  geom_sf(data = moose_sf, alpha = 0.3, size = 0.7, color = "darkgreen") +
+  coord_sf(xlim = c(-170, -60), ylim = c(25, 72)) +
+  theme_void()
+
+# THINK: where are the moose? Does that match what you know
+# about the species - and about where it is cold?
+
+invisible(NULL)
+
+
+# ---- 8 Your first live map -------------------------------
+# leaflet makes a REAL web map - tiles, pan, zoom - in the
+# RStudio Viewer pane.
+#
+#   leaflet(moose_sf)   start a map from your sf object
+#   addTiles()          the world map underneath, from the web
+#   addCircleMarkers()  a dot on every record
+#
+# ZOOM IN. Anchorage. The Colorado Rockies. Maine.
+
+leaflet(moose_sf) %>%
+  addTiles() %>%
+  addCircleMarkers(radius = 4, stroke = FALSE,
+                   fillOpacity = 0.6, color = "darkgreen")
+
+# THINK: zoom all the way in on a cluster. Do the points
+# land in forest and wetland, or along ROADS and TOWNS?
+
+invisible(NULL)
+
+
+# ---- 9 Labels on the dots --------------------------------
+# The ~ makes popup a FORMULA - "look these columns up for
+# each row". <br> is a line break, because the popup is a
+# little web page.
+
+leaflet(moose_sf) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    radius      = 4,
+    stroke      = FALSE,
+    fillOpacity = 0.6,
+    color       = "darkgreen",
+    popup       = ~paste0(species, "<br>", stateProvince, "<br>", year)
+  )
+
+# THINK: click a few dots. Is every record the species you
+# asked for?
+
+invisible(NULL)
+
+
+# ---- 10 If there is time: sightings per state ------------
+# Last class's left_join(), pointed at a map. Counts are one
+# table, polygons are another, and `state` is the key.
 
 sightings_by_state <- bigfoot_df %>%
   mutate(state = str_to_lower(state)) %>%
-  count(state, name = "sightings") %>%
-  arrange(desc(sightings))
-
-head(sightings_by_state)
-
-# THINK: predict the top state before you look.
-
-invisible(NULL)
-
-
-# ---- 8 Join counts to the map ----------------------------
-# Last class's joins lecture, pointed at a map. The
-# polygons are one table, the counts are another, and
-# `state` is the key.
-#
-# Some IDs are "washington:main", "washington:whidbey
-# island" - one row per LANDMASS. str_remove() cuts
-# everything from the colon on so the key matches.
+  count(state, name = "sightings")
 
 states_map <- states_sf %>%
-  mutate(state = str_remove(ID, ":.*")) %>%
+  mutate(state = str_remove(ID, ":.*")) %>%   # drop ":north" etc.
   left_join(sightings_by_state, by = "state")
 
-states_map %>%
-  st_drop_geometry() %>%
-  head()
-
-# Did every polygon find a count?
-states_map %>%
-  st_drop_geometry() %>%
-  filter(is.na(sightings))
-
-# THINK: exactly one polygon came back NA. Which one, and
-# is that a broken join or a true zero?
-
-invisible(NULL)
-
-
-# ---- 9 Shade the choropleth ------------------------------
-# THIS ONE IS YOURS TO TYPE. The code is on the activity
-# page, Part 9. It is where we left off in class.
-#
-# ggplot the states_map, map sightings to fill inside
-# aes(), add scale_fill_viridis_c(option = "magma",
-# direction = -1), and finish with theme_void().
-#
-# direction = -1 makes MORE sightings = DARKER. The
-# default reads backwards to almost everyone.
-
-# YOUR CODE:
-
-
-invisible(NULL)
-
-
-# ---- 10 Reproject for a proper US look -------------------
-# 4326 is degrees. 5070 is Albers Equal-Area, in meters.
+# direction = -1 makes MORE sightings = DARKER.
+# crs = 5070 is an equal-area projection for the lower 48 -
+# which is why we did NOT use it on the moose map, where it
+# would have mangled Alaska.
 
 ggplot(states_map) +
   geom_sf(aes(fill = sightings), color = "white") +
@@ -179,99 +237,17 @@ ggplot(states_map) +
   coord_sf(crs = 5070) +
   theme_void()
 
-# THINK: what changed about the SHAPE of the country? Why
-# does an area-based map deserve an equal-area projection?
-
-invisible(NULL)
-
-
-# ---- 11 If there is time: by season ----------------------
-# The filter drops season == "Unknown", which would draw a
-# fifth panel that means nothing.
-
-bigfoot_sf %>%
-  filter(season %in% c("Spring", "Summer", "Fall", "Winter")) %>%
-  ggplot() +
-  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
-  geom_sf(alpha = 0.2, size = 0.4, color = "firebrick") +
-  facet_wrap(~ season) +
-  coord_sf(crs = 5070) +
-  theme_void()
-
-# THINK: which season dominates, and is that about
-# Bigfoot or about people?
-
-invisible(NULL)
-
-
-# ---- 12 Save your map ------------------------------------
-# This is the one plot that gets a title, because it is
-# leaving your screen.
-
-choropleth_plot <- ggplot(states_map) +
-  geom_sf(aes(fill = sightings), color = "white") +
-  scale_fill_viridis_c(option = "magma", direction = -1) +
-  coord_sf(crs = 5070) +
-  labs(title = "Bigfoot Sightings by State",
-       fill = "Sightings") +
-  theme_void()
-
-ggsave("figures/bigfoot_choropleth.png",
-       plot = choropleth_plot,
-       width = 7, height = 5, units = "in", dpi = 300)
+# THINK: exactly one polygon comes back NA and draws grey.
+# Broken join, or a true zero? How would you tell?
 
 invisible(NULL)
 
 
 # ==========================================================
-# EXTENSION - this is the graded part
+# End of the in-class script.
 #
-# Map a real species you pick, pulled live from GBIF.
-# You need install.packages("rgbif") the first time.
+# THE HOMEWORK IS A SEPARATE FILE:
+#   17_mapping_homework.R
 #
-# E2 and E3 must be HANDWRITTEN, photographed, and
-# embedded. Typed answers get at most half credit.
-# ==========================================================
-
-# ---- E1 Map your own species -----------------------------
-# library(rgbif)
-#
-# occ <- occ_data(scientificName = "Genus species",
-#                 country = "US", hasCoordinate = TRUE,
-#                 limit = 1500)$data
-#
-# Then filter out NA decimalLongitude / decimalLatitude,
-# st_as_sf() them (x = longitude FIRST), and draw them on
-# the same states_sf basemap you used in class.
-# Save to figures/ at dpi = 300.
-
-# YOUR CODE:
-
-
-invisible(NULL)
-
-# E1. Your species:
-#     Records returned:
-
-
-# ---- E2 Predict, then check (BY HAND) --------------------
-# BEFORE running E1: sketch on a rough US outline where you
-# expect your species to occur, and why. Then compare your
-# prediction to the real map in 2-3 sentences, and note
-# anything that looks like a SAMPLING artifact rather than
-# real range.
-
-
-# ---- E3 Explain it (BY HAND) -----------------------------
-# 1. GBIF records are where people REPORTED the species.
-#    Give one concrete way that could bias YOUR map.
-# 2. What extra data would make a state-to-state
-#    comparison of your species fair?
-# 3. The choropleth recipe did not change from Bigfoot to
-#    your species. Why is that recipe dataset-independent?
-
-
-# ==========================================================
-# End of Activity 17. Run the whole script top to bottom
-# (Ctrl/Cmd + Shift + Enter). It must run clean.
+# Open it now and read the top of it.
 # ==========================================================
