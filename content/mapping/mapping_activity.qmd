@@ -31,14 +31,14 @@ execute:
 1.  Turn latitude/longitude into a spatial `sf` object and plot it
 2.  Pull **real occurrence records** from GBIF with `rgbif`
 3.  Map a species across the whole US — **Alaska included**
-4.  Build a **live map** you can pan and zoom
-5.  Do it again on a species *you* pick, for homework
+4.  **Change the scale** — the whole world, or one state
+5.  Build a **live map** you can pan and zoom
+6.  Do it again on a species *you* pick, for homework
 
 ::: callout-important
 ## ⚠️ Install these BEFORE class
 
-Two new packages. They pull in a pile of dependencies, so do this at home, not
-at 9:02 on class day:
+Two new packages. They pull in a pile of dependencies, so do this at home, not at 9:02 on class day:
 
 ``` r
 install.packages("rgbif")
@@ -57,13 +57,9 @@ install.packages("leaflet")
 ::: callout-important
 ## What you hand in
 
-- **Today is a run-it-and-look-at-it day.** Every line of code is in this
-  activity *and* in the in-class skeleton. Run it, read it, change things and
-  see what breaks. You do **not** turn in `scripts/17_mapping.R`.
+- **Today is a run-it-and-look-at-it day.** Every line of code is in this activity *and* in the in-class skeleton. Run it, read it, change things and see what breaks. You do **not** turn in `scripts/17_mapping.R`.
 - The **Q** boxes are **things to think about**. Not graded, not written down.
-- **You turn in `scripts/17_mapping_homework.R`** — a species you pick, mapped
-  with the same recipe. It is a separate file so there is no confusion about
-  what is being graded.
+- **You turn in `scripts/17_mapping_homework.R`** — a species you pick, mapped with the same recipe. It is a separate file so there is no confusion about what is being graded.
 :::
 
 ------------------------------------------------------------------------
@@ -103,7 +99,7 @@ nrow(bigfoot_df)
 
 # Part 2 · Make it spatial
 
-> 🔮 **Predict first:** you are about to plot ~4,000 points with **no basemap at all**. What shape will the cloud of points make?
+> 🔮 **Predict first:** you are about to plot \~4,000 points with **no basemap at all**. What shape will the cloud of points make?
 
 **▶ Run this:**
 
@@ -156,12 +152,9 @@ ggplot() +
 
 # Part 4 · Meet GBIF
 
-**GBIF** — the Global Biodiversity Information Facility — pools occurrence
-records from museums, herbaria, survey programs, and apps like iNaturalist.
-Billions of records, free, and the `rgbif` package queries it straight from R.
+**GBIF** — the Global Biodiversity Information Facility — pools occurrence records from museums, herbaria, survey programs, and apps like iNaturalist. Billions of records, free, and the `rgbif` package queries it straight from R.
 
-Today's species is the **moose**, *Alces alces*. You need the **scientific
-name** — GBIF does not take "moose."
+Today's species is the **moose**, *Alces alces*. You need the **scientific name** — GBIF does not take "moose."
 
 **▶ Run this:**
 
@@ -210,7 +203,7 @@ moose_raw %>%
 
 > ## 🧩 Chunk 3 — Map the moose, Alaska included *(after lecture Chunk 3)*
 >
-> Parts 6–7: clean it, then map the whole country.
+> Parts 6–8: clean it, map the whole country, then change the scale.
 
 # Part 6 · Trim and make it spatial
 
@@ -247,9 +240,7 @@ moose_sf
 
 # Part 7 · A basemap with Alaska in it
 
-Our `states_sf` from Part 3 is the **lower 48 only** — it has no Alaska. The
-single biggest cluster of moose records in the country is in Alaska, so we need
-a different basemap.
+Our `states_sf` from Part 3 is the **lower 48 only** — it has no Alaska. The single biggest cluster of moose records in the country is in Alaska, so we need a different basemap.
 
 **▶ Run this:**
 
@@ -268,9 +259,7 @@ ggplot() +
   theme_void()
 ```
 
-The `coord_sf()` limits are doing real work here. Without them the map stretches
-from Maine to the far end of the Aleutian Islands — which cross the
-international date line — and the whole country squashes into a sliver.
+The `coord_sf()` limits are doing real work here. Without them the map stretches from Maine to the far end of the Aleutian Islands — which cross the international date line — and the whole country squashes into a sliver.
 
 ✏️ **Q8:** Where are the moose? Name the regions. Does that match what you know about the species — and about where it is cold?
 
@@ -278,14 +267,129 @@ international date line — and the whole country squashes into a sliver.
 
 ------------------------------------------------------------------------
 
-> ## 🧩 Chunk 4 — Go live *(after lecture Chunk 4)*
+# Part 8 · Change the scale — the whole world, or one state
+
+Every map so far has been "the US." Changing the scale means turning **two knobs**, and they are separate:
+
+| Knob | What it controls | Where you turn it |
+|------------------|---------------------------|---------------------------|
+| **The download** | which records GBIF sends you | the arguments to `occ_data()` |
+| **The basemap** | which outlines get drawn underneath | the `maps::map()` call (and `coord_sf()` limits) |
+
+: {tbl-colwidths="[20,40,40]"}
+
+Turn one without the other and you get world-wide points on a US map, or US points floating on an empty planet.
+
+### 8a · The whole world
+
+**Knob 1:** just leave `country` out. No country means *everywhere*.
+
+**▶ Run this:**
+
+``` r
+# Moose anywhere on Earth ------------------------------
+moose_world_raw <- occ_data(
+  scientificName = "Alces alces",
+  hasCoordinate  = TRUE,
+  limit          = 2000
+)$data
+
+moose_world_raw %>%
+  count(country, sort = TRUE) %>%
+  head()
+```
+
+**Knob 2:** `maps::map("world")` with no `regions =` is every country.
+
+**▶ Run this:**
+
+``` r
+# Same recipe: drop missing coords, make it spatial ----
+moose_world_sf <- moose_world_raw %>%
+  filter(!is.na(decimalLongitude), !is.na(decimalLatitude)) %>%
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"),
+           crs = 4326)
+
+# Every country on Earth -------------------------------
+world_sf <- st_as_sf(
+  maps::map("world", plot = FALSE, fill = TRUE)
+) %>%
+  st_set_crs(4326)
+
+ggplot() +
+  geom_sf(data = world_sf, fill = "grey96", color = "grey75") +
+  geom_sf(data = moose_world_sf, alpha = 0.3, size = 0.7, color = "darkgreen") +
+  theme_void()
+```
+
+> 🌍 **Want an actual globe?** Add one more line to the end of that plot: `+ coord_sf(crs = "+proj=ortho +lat_0=60 +lon_0=-30")`. That is an *orthographic* projection — the Earth as seen from space. `lat_0` and `lon_0` are the spot you are looking straight down on; change them and the globe turns.
+
+✏️ **Q10:** Most of these 2,000 records come from **Norway and Sweden**. Are there more moose in Scandinavia than in Canada and Russia — or more people logging them? (Remember what `limit` does.)
+
+### 8b · One state
+
+**Knob 1:** add `stateProvince`. Spell it the way GBIF stores it — full name, capitalized.
+
+**▶ Run this:**
+
+``` r
+# Moose in Minnesota only ------------------------------
+moose_mn_raw <- occ_data(
+  scientificName = "Alces alces",
+  country        = "US",
+  stateProvince  = "Minnesota",
+  hasCoordinate  = TRUE,
+  limit          = 2000
+)$data
+
+nrow(moose_mn_raw)
+
+moose_mn_raw %>%
+  count(year) %>%
+  arrange(year)
+```
+
+**Knob 2:** `maps::map("county", regions = "minnesota")` draws the state *with its counties*. This time the name is **lower case** — the `maps` package spells things its own way.
+
+**▶ Run this:**
+
+``` r
+# Same recipe again ------------------------------------
+moose_mn_sf <- moose_mn_raw %>%
+  filter(!is.na(decimalLongitude), !is.na(decimalLatitude)) %>%
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"),
+           crs = 4326)
+
+# One state, with its counties -------------------------
+mn_sf <- st_as_sf(
+  maps::map("county", regions = "minnesota", plot = FALSE, fill = TRUE)
+) %>%
+  st_set_crs(4326)
+
+ggplot() +
+  geom_sf(data = mn_sf, fill = "grey96", color = "grey75") +
+  geom_sf(data = moose_mn_sf, alpha = 0.4, size = 1, color = "darkgreen") +
+  theme_void()
+```
+
+> ⚠️ **Watch out!** Two spellings of the same state: `"Minnesota"` for GBIF, `"minnesota"` for `maps`. Want a different state? Change **both**. Want state outlines only, no counties? Use `maps::map("state", regions = "minnesota", ...)`.
+
+✏️ **Q11:** The US download was all **one year**. The Minnesota download goes back to the **1980s** — with the *same* `limit = 2000`. Why? (Hint: compare `nrow()` to the limit.)
+
+✏️ **Q12:** Find Duluth on the map. What is the big cluster up the North Shore telling you — about moose, and about who is out there looking?
+
+> 💡 **Key idea:** scale is two decisions — **what you download** (`country`, `stateProvince`, or neither) and **what you draw underneath** (`"world"`, `"state"`, `"county"`). A small area often gets you the *whole* record; a big one gets you only the newest slice.
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 4 — Go live
+ *(after lecture Chunk 4)*
 >
-> Parts 8–9: a map you can actually zoom.
+> Parts 9–10: a map you can actually zoom.
 
-# Part 8 · Your first live map
+# Part 9 · Your first live map
 
-Everything so far has been a picture. `leaflet` makes a **real web map** —
-tiles, pan, zoom, scroll — right inside RStudio's Viewer pane.
+Everything so far has been a picture. `leaflet` makes a **real web map** — tiles, pan, zoom, scroll — right inside RStudio's Viewer pane.
 
 **▶ Run this:**
 
@@ -303,16 +407,13 @@ Three lines:
 - `addTiles()` — put the actual world map underneath, streamed from the web
 - `addCircleMarkers()` — drop a dot on every record
 
-**Zoom in.** Scroll onto Anchorage, onto the Colorado Rockies, onto Maine. This
-is the same data as Part 7 — but now you can ask it questions by looking.
+**Zoom in.** Scroll onto Anchorage, onto the Colorado Rockies, onto Maine. This is the same data as Part 7 — but now you can ask it questions by looking.
 
-✏️ **Q10:** Zoom all the way in on a cluster. Do the points land in forest and
-wetland, or do they line up along **roads and towns**? What does that tell you
-about how these records were collected?
+✏️ **Q13:** Zoom all the way in on a cluster. Do the points land in forest and wetland, or do they line up along **roads and towns**? What does that tell you about how these records were collected?
 
 ------------------------------------------------------------------------
 
-# Part 9 · Labels on the dots
+# Part 10 · Labels on the dots
 
 **▶ Run this:**
 
@@ -329,21 +430,17 @@ leaflet(moose_sf) %>%
   )
 ```
 
-The `~` makes `popup` a **formula** — "look these columns up in the data for
-each row." `<br>` is a line break, because the popup is a little web page.
+The `~` makes `popup` a **formula** — "look these columns up in the data for each row." `<br>` is a line break, because the popup is a little web page.
 
-✏️ **Q11:** Click a few dots. Is every record the species you asked for?
+✏️ **Q14:** Click a few dots. Is every record the species you asked for?
 
-> 💡 **Key idea:** the recipe never changed. Get coordinates → `st_as_sf()` →
-> draw them. Bigfoot, moose, or anything you download next semester — same four
-> steps, different file.
+> 💡 **Key idea:** the recipe never changed. Get coordinates → `st_as_sf()` → draw them. Bigfoot, moose, or anything you download next semester — same four steps, different file.
 
 ------------------------------------------------------------------------
 
-# Part 10 · If there is time — sightings per state
+# Part 11 · If there is time — sightings per state
 
-This is the `left_join()` from last class, pointed at a map. Counts are one
-table, polygons are another, and `state` is the key.
+This is the `left_join()` from last class, pointed at a map. Counts are one table, polygons are another, and `state` is the key.
 
 **▶ Run this:**
 
@@ -370,36 +467,29 @@ ggplot(states_map) +
   theme_void()
 ```
 
-`direction = -1` flips the scale so **more sightings = darker**; the default
-reads backwards to most people. `coord_sf(crs = 5070)` is an equal-area
-projection for the lower 48 — which is why we did **not** use it on the moose
-map, where Alaska would have been mangled.
+`direction = -1` flips the scale so **more sightings = darker**; the default reads backwards to most people. `coord_sf(crs = 5070)` is an equal-area projection for the lower 48 — which is why we did **not** use it on the moose map, where Alaska would have been mangled.
 
-✏️ **Q12:** Exactly one polygon comes back `NA` and draws grey. Is that a broken join or a true zero — and how would you tell?
+✏️ **Q15:** Exactly one polygon comes back `NA` and draws grey. Is that a broken join or a true zero — and how would you tell?
 
-✏️ **Q13:** Washington and California are big, populous, and forested. What **extra data** would make this a fair state-to-state comparison?
+✏️ **Q16:** Washington and California are big, populous, and forested. What **extra data** would make this a fair state-to-state comparison?
 
 ------------------------------------------------------------------------
 
 # Homework — map a species of your own
 
-**Open [`17_mapping_homework.R`](scripts/17_mapping_homework.R).** That file —
-not today's script — is what you turn in.
+**Open [`17_mapping_homework.R`](scripts/17_mapping_homework.R).** That file — not today's script — is what you turn in.
 
-You pick **one species you actually care about** (or several, if you want to
-compare them) and run today's recipe on it:
+You pick **one species you actually care about** (or several, if you want to compare them) and run today's recipe on it:
 
 1.  Look up its **scientific name** — GBIF will not take a common name
 2.  `occ_data()` it from GBIF
 3.  Check what you actually got — how many records, and from when
 4.  `st_as_sf()` and map it on the US basemap
-5.  Make it **live** with `leaflet`
-6.  Say whether the map matches the range you expected, and where sampling
-    effort is showing through
+5.  **Change the scale** — map it on the whole world, or in one state
+6.  Make it **live** with `leaflet`
+7.  Say whether the map matches the range you expected, and where sampling effort is showing through
 
-Everything you need is in the homework skeleton, with the moose code sitting
-right there as the worked example to copy from. The written answers go in as
-`#` comments.
+Everything you need is in the homework skeleton, with the moose code sitting right there as the worked example to copy from. **All the graded questions are in one block at the top of the file** — answer them there as `#` comments, so they are all in one place.
 
 ------------------------------------------------------------------------
 
@@ -412,11 +502,10 @@ At this point you should be able to:
 - [ ] Pull records for any species from GBIF with `occ_data()`
 - [ ] Say what `limit` does, and why an occurrence map is a sampling map
 - [ ] Use a basemap that includes Alaska, and crop it with `coord_sf()`
+- [ ] Change the scale: leave out `country` for the world, add `stateProvince` for one state, and match the basemap
 - [ ] Make a live, zoomable map with `leaflet()`
 
-> 💡 **Key idea:** you started with a joke dataset and finished by downloading
-> real biodiversity records for any species on Earth and putting them on a map
-> you can zoom. That is the same twenty lines of code either way.
+> 💡 **Key idea:** you started with a joke dataset and finished by downloading real biodiversity records for any species on Earth and putting them on a map you can zoom. That is the same twenty lines of code either way.
 
 ------------------------------------------------------------------------
 

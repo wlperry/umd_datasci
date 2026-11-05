@@ -172,7 +172,97 @@ ggplot() +
 invisible(NULL)
 
 
-# ---- 8 Your first live map -------------------------------
+# ---- 8 Change the scale: the world, or one state ---------
+# Scale is TWO knobs, and you turn them separately:
+#   1. the DOWNLOAD - what occ_data() asks GBIF for
+#   2. the BASEMAP  - what maps::map() draws underneath
+# Turn one without the other and the points and the map
+# will not match.
+
+# -- 8a The whole world --
+# Knob 1: leave country OUT. No country = everywhere.
+
+moose_world_raw <- occ_data(
+  scientificName = "Alces alces",
+  hasCoordinate  = TRUE,
+  limit          = 2000
+)$data
+
+moose_world_raw %>%
+  count(country, sort = TRUE) %>%
+  head()
+
+moose_world_sf <- moose_world_raw %>%
+  filter(!is.na(decimalLongitude), !is.na(decimalLatitude)) %>%
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"),
+           crs = 4326)
+
+# Knob 2: "world" with no regions = every country.
+
+world_sf <- st_as_sf(
+  maps::map("world", plot = FALSE, fill = TRUE)
+) %>%
+  st_set_crs(4326)
+
+ggplot() +
+  geom_sf(data = world_sf, fill = "grey96", color = "grey75") +
+  geom_sf(data = moose_world_sf, alpha = 0.3, size = 0.7, color = "darkgreen") +
+  theme_void()
+
+# Want a GLOBE? Add this to the end of the plot above:
+#   + coord_sf(crs = "+proj=ortho +lat_0=60 +lon_0=-30")
+# lat_0 / lon_0 = the spot you look straight down on.
+# Change them and the globe turns.
+
+# THINK: most of these records are from Norway and Sweden.
+# More moose there - or more people logging them?
+
+invisible(NULL)
+
+# -- 8b One state --
+# Knob 1: add stateProvince. GBIF spelling: "Minnesota".
+
+moose_mn_raw <- occ_data(
+  scientificName = "Alces alces",
+  country        = "US",
+  stateProvince  = "Minnesota",
+  hasCoordinate  = TRUE,
+  limit          = 2000
+)$data
+
+nrow(moose_mn_raw)
+
+moose_mn_raw %>%
+  count(year) %>%
+  arrange(year)
+
+moose_mn_sf <- moose_mn_raw %>%
+  filter(!is.na(decimalLongitude), !is.na(decimalLatitude)) %>%
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"),
+           crs = 4326)
+
+# Knob 2: "county" for one state WITH its counties.
+# maps spelling is lower case: "minnesota".
+# Change BOTH spellings to switch states.
+
+mn_sf <- st_as_sf(
+  maps::map("county", regions = "minnesota", plot = FALSE, fill = TRUE)
+) %>%
+  st_set_crs(4326)
+
+ggplot() +
+  geom_sf(data = mn_sf, fill = "grey96", color = "grey75") +
+  geom_sf(data = moose_mn_sf, alpha = 0.4, size = 1, color = "darkgreen") +
+  theme_void()
+
+# THINK: the US download was all one year. Minnesota goes
+# back to the 1980s with the SAME limit. Why? Compare
+# nrow() to the limit.
+
+invisible(NULL)
+
+
+# ---- 9 Your first live map -------------------------------
 # leaflet makes a REAL web map - tiles, pan, zoom - in the
 # RStudio Viewer pane.
 #
@@ -193,7 +283,7 @@ leaflet(moose_sf) %>%
 invisible(NULL)
 
 
-# ---- 9 Labels on the dots --------------------------------
+# ---- 10 Labels on the dots -------------------------------
 # The ~ makes popup a FORMULA - "look these columns up for
 # each row". <br> is a line break, because the popup is a
 # little web page.
@@ -214,7 +304,7 @@ leaflet(moose_sf) %>%
 invisible(NULL)
 
 
-# ---- 10 If there is time: sightings per state ------------
+# ---- 11 If there is time: sightings per state ------------
 # Last class's left_join(), pointed at a map. Counts are one
 # table, polygons are another, and `state` is the key.
 

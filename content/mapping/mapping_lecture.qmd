@@ -75,14 +75,17 @@ Today has two halves. First, **Bigfoot** — a joke dataset with a serious lesso
 - Turn latitude/longitude into a map with **`geom_sf()`**
 - Pull **real species records** from **GBIF** with `rgbif`
 - Map a species across the US — **Alaska included**
+- **Change the scale** — the whole world, or one state
 - Build a **live, zoomable map** with `leaflet`
+
+![](images/paste-1.png){width="45%"}
 :::
 
 :::: {.column width="40%"}
 **Tools today:**
 
 - `tidyverse`, `sf`, `maps`
-- `rgbif`, `leaflet` — **install before class**
+- `rgbif`, `leaflet` — **install**
 
 **Data:**
 
@@ -100,20 +103,16 @@ Today has two halves. First, **Bigfoot** — a joke dataset with a serious lesso
 ::::
 ::::::
 
-# How to Use These Slides — Predict · Type · Run
+# How to Use These Slides
 
-:::::: columns
+::::::: columns
 ::: {.column width="60%"}
 This lecture runs in **four short chunks**. After each chunk you switch to the **activity** and run the code yourself.
 
-**Today is different:** every line is already written, in the activity *and* in the skeleton. Your job is to **run it, read it, and break it**.
-
-1.  **Predict** — before a map draws, say what you expect to see
-2.  **Run** it and compare
-3.  **Change something** and run it again
+**Today is different:** every line is already written, in the activity *and* in the skeleton. Your job is to **run it, read it**.
 :::
 
-:::: {.column width="40%"}
+::::: {.column width="40%"}
 ::: callout-important
 **⚠️ Install first**
 
@@ -122,7 +121,7 @@ install.packages("rgbif")
 install.packages("leaflet")
 ```
 
-Do this **before** class — they pull in a lot of dependencies.
+Do this **at start of** class — they pull in a lot of dependencies.
 :::
 
 ::: callout-note
@@ -130,21 +129,17 @@ Do this **before** class — they pull in a lot of dependencies.
 
 `17_mapping_homework.R`. That one you turn in — a species **you** pick.
 :::
-::::
-::::::
+:::::
+:::::::
 
 # 🧩 Chunk 1 of 4 · Bigfoot, for Fun
 
 **We will cover:** what spatial data is, and how latitude/longitude becomes a map.
 
-::: callout-tip
-**🖐 After this chunk: Activity Parts 1–3** (read it, make it spatial, map it).
-:::
-
 # What Is Spatial Data?
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 Three ideas and you have it:
 
 - **Points** — one coordinate pair. A sighting, a tree, a weather station.
@@ -152,7 +147,7 @@ Three ideas and you have it:
 - **CRS** — the *coordinate reference system*: what the numbers **mean**.
 
 `4326` is plain latitude/longitude in degrees — what a phone GPS gives you, and what almost every dataset arrives in.
-::::
+:::
 
 :::: {.column width="40%"}
 ::: callout-note
@@ -161,12 +156,12 @@ Three ideas and you have it:
 Two datasets will not line up unless they share a CRS. Most mismatched-map bugs are two layers in two different systems.
 :::
 ::::
-:::::
+::::::
 
 # The `sf` Package — a Data Frame with Geometry
 
 ::::: columns
-:::: {.column width="60%"}
+::: {.column width="60%"}
 ```{r load-13}
 # Load packages + the sighting data ------------------
 library(tidyverse)
@@ -180,19 +175,19 @@ bigfoot_df <- read_csv("data/bfro_reports_geocoded.csv")
 
 dim(bigfoot_df)
 ```
-::::
+:::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 - An **`sf` object** is a tibble with one extra column, `geometry`
 - Every dplyr verb you know still works on it
-- ~5,000 real BFRO reports, each geocoded to a lat/long
-::::
+- \~5,000 real BFRO reports, each geocoded to a lat/long
+:::
 :::::
 
 # Clean the Coordinates First
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 ```{r clean-13}
 # Drop missing coords + keep the lower 48 ------------
 bigfoot_df <- bigfoot_df %>%
@@ -202,26 +197,26 @@ bigfoot_df <- bigfoot_df %>%
 
 nrow(bigfoot_df)
 ```
-::::
+:::
 
 :::: {.column width="40%"}
 - `st_as_sf()` **errors** on missing coordinates — filter them first
 - The four numbers are a **bounding box** around the lower 48
 
 ::: callout-warning
-**⚠️ Remember this line.** It throws Alaska away on purpose. In Chunk 3 we want Alaska **back**, and this is what would have eaten it.
+**⚠️ Remember this line.** It throws Alaska away on purpose. In Chunk 3 we want Alaska **back**.
 :::
 ::::
-:::::
+::::::
 
 # Make It Spatial — `st_as_sf()`
 
 ::: callout-note
-**🔮 Predict first:** ~4,000 rows of lat/long, plotted with **no basemap**. What shape will the cloud make?
+**🔮 Predict first:** \~4,000 rows of lat/long, plotted with **no basemap**. What shape will the cloud make?
 :::
 
 ::::: columns
-:::: {.column width="60%"}
+::: {.column width="60%"}
 ```{r make-sf-13}
 #| fig-format: png
 #| fig-height: 2.6
@@ -235,19 +230,19 @@ bigfoot_sf <- bigfoot_df %>%
 ggplot(bigfoot_sf) +
   geom_sf(alpha = 0.2, size = 0.5)
 ```
-::::
+:::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 - `coords = c("longitude", "latitude")` — **x first, always**
 - `crs = 4326` — tell `sf` these are degrees
 - No map needed: **the data drew the country**
-::::
+:::
 :::::
 
 # Put It on a Real Map
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 ```{r points-map-13}
 #| fig-format: png
 #| fig-height: 2.7
@@ -265,7 +260,7 @@ ggplot() +
           size = 0.5, color = "firebrick") +
   theme_void()
 ```
-::::
+:::
 
 :::: {.column width="40%"}
 - **Order matters** — states first, points on top
@@ -277,7 +272,7 @@ ggplot() +
 Is this a map of **Bigfoot**, or a map of **where people live, hike, and file reports**? Hold that thought — the moose data has the same problem.
 :::
 ::::
-:::::
+::::::
 
 # 🛑 Pause — Do Activity Parts 1–3 Now
 
@@ -293,8 +288,8 @@ Read the sightings, make them spatial, and put them on the map. Then ask yoursel
 
 # Where Real Occurrence Data Lives
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 **GBIF** — the Global Biodiversity Information Facility — pools occurrence records from:
 
 - museum and herbarium collections
@@ -302,21 +297,21 @@ Read the sightings, make them spatial, and put them on the map. Then ask yoursel
 - citizen science apps like **iNaturalist**
 
 Billions of records. Free. And `rgbif` queries it **straight from R** — no website, no download button.
-::::
+:::
 
 :::: {.column width="40%"}
 ::: callout-warning
 **⚠️ Scientific names only**
 
-GBIF does not know "moose." It knows ***Alces alces***. Common names are ambiguous across languages and regions; the binomial is not.
+GBIF does not know "moose." It knows ***Alces alces***. Common names are ambiguous across languages and regions; the genus species is not.
 :::
 ::::
-:::::
+::::::
 
 # Downloading Moose 🫎
 
 ::::: columns
-:::: {.column width="60%"}
+::: {.column width="60%"}
 ```{r gbif-17}
 #| cache: true
 # Up to 2000 US moose records with coordinates -------
@@ -329,9 +324,9 @@ moose_raw <- occ_data(
 
 dim(moose_raw)
 ```
-::::
+:::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 - `scientificName` — genus + species, spelled exactly
 - `country = "US"` — two-letter code
 - `hasCoordinate = TRUE` — skip records we can't map
@@ -339,13 +334,13 @@ dim(moose_raw)
 - **`$data`** — `occ_data()` returns a list; the records are in its `data` slot
 
 119 columns arrive. We want five.
-::::
+:::
 :::::
 
 # What Did `limit` Actually Give You?
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 ```{r gbif-check-17}
 #| cache: true
 # How many US moose records EXIST? -------------------
@@ -356,7 +351,7 @@ occ_count(scientificName = "Alces alces",
 moose_raw %>%
   count(year, sort = TRUE)
 ```
-::::
+:::
 
 :::: {.column width="40%"}
 About **28,000** records exist. We asked for 2,000 — and they all came from **one year**.
@@ -367,7 +362,7 @@ About **28,000** records exist. We asked for 2,000 — and they all came from **
 It hands back the first *n* records GBIF returns, newest first. Map those and call it "the range" and you are making a claim your data cannot support.
 :::
 ::::
-:::::
+::::::
 
 # 🛑 Pause — Do Activity Parts 4–5 Now
 
@@ -375,16 +370,16 @@ Download the moose records, then find out how many exist and what years you actu
 
 # 🧩 Chunk 3 of 4 · Map the Moose — Alaska Included
 
-**We will cover:** the same `st_as_sf()` recipe on new column names, and a basemap that doesn't stop at the Canadian border.
+**We will cover:** the same `st_as_sf()` recipe on new column names, a basemap that doesn't stop at the Canadian border, and how to zoom out to the world or in to one state.
 
 ::: callout-tip
-**🖐 After this chunk: Activity Parts 6–7** (trim it, then map the whole country).
+**🖐 After this chunk: Activity Parts 6–8** (trim it, map the whole country, then change the scale).
 :::
 
 # Trim It and Make It Spatial
 
 ::::: columns
-:::: {.column width="60%"}
+::: {.column width="60%"}
 ```{r moose-sf-17}
 #| cache: true
 # Five columns is plenty -----------------------------
@@ -401,21 +396,21 @@ moose_sf <- moose_df %>%
 
 moose_df %>% count(stateProvince, sort = TRUE) %>% head(4)
 ```
-::::
+:::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 GBIF names its coordinates `decimalLongitude` / `decimalLatitude`.
 
-**The recipe did not change** — only the names you hand to `coords`. Longitude still goes first.
+**The recipe did not change** — only the names you hand to `coords`. **Longitude still goes first.**
 
 Alaska has more moose records than anywhere else. Which is a problem…
-::::
+:::
 :::::
 
 # The Lower-48 Basemap Problem
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 `states_sf` from Chunk 1 is the **lower 48 only**. It has no Alaska at all — so the biggest cluster of moose in the country would simply not be drawn.
 
 ```{r usa-17}
@@ -424,24 +419,24 @@ usa_sf <- st_as_sf(
   maps::map("world", regions = "USA",
             plot = FALSE, fill = TRUE)
 ) %>%
-  st_set_crs(4326)
+  st_transform(4326)
 ```
-::::
+:::
 
 :::: {.column width="40%"}
 ::: callout-warning
 **⚠️ Two traps at once**
 
-1. The Aleutians cross the **date line**, so the raw extent runs −178 to +180 and squashes the country to a sliver. `coord_sf()` limits fix it.
-2. `crs = 5070` is **CONUS** Albers — it mangles Alaska. Leave this map unprojected.
+1.  The Aleutians cross the **date line**, so the raw extent runs −178 to +180 and squashes the country to a sliver. `coord_sf()` limits fix it.
+2.  `crs = 5070` is **CONUS** Albers — it mangles Alaska. Leave this map unprojected.
 :::
 ::::
-:::::
+::::::
 
 # Moose Across the Country
 
 ::::: columns
-:::: {.column width="60%"}
+::: {.column width="60%"}
 ```{r moose-map-17}
 #| cache: true
 #| fig-format: png
@@ -456,34 +451,156 @@ ggplot() +
            ylim = c(25, 72)) +
   theme_void()
 ```
-::::
+:::
 
-:::: {.column width="40%"}
+::: {.column width="40%"}
 **Read the biology off it:**
 
 - Alaska, the northern Rockies, the upper Midwest, New England
 - Nothing in the south — moose are a **cold-adapted** animal with a real southern limit
 
 Unlike Bigfoot, this pattern is mostly **the species**, not only the observers. Mostly.
-::::
+:::
 :::::
 
-# 🛑 Pause — Do Activity Parts 6–7 Now
+# Change the Scale — Two Knobs
 
-Trim the records, make them spatial, and map them on a basemap with Alaska in it.
+:::::: columns
+::: {.column width="60%"}
+```{r scale-download-17}
+#| cache: true
+# The whole world: leave country OUT -----------------
+moose_world_raw <- occ_data(
+  scientificName = "Alces alces",
+  hasCoordinate  = TRUE,
+  limit          = 2000
+)$data
+
+# One state: ADD stateProvince -----------------------
+moose_mn_raw <- occ_data(
+  scientificName = "Alces alces",
+  country        = "US",
+  stateProvince  = "Minnesota",
+  hasCoordinate  = TRUE,
+  limit          = 2000
+)$data
+
+nrow(moose_world_raw)
+nrow(moose_mn_raw)
+```
+:::
+
+:::: {.column width="40%"}
+Scale is **two separate decisions**:
+
+1.  **The download** — what `occ_data()` asks for: `country`, `stateProvince`, or neither
+2.  **The basemap** — what `maps::map()` draws: `"world"`, `"state"`, `"county"`
+
+::: callout-warning
+**⚠️ Turn both knobs**
+
+World points on a US basemap, or Minnesota points on the whole planet — the map is technically right and useless.
+:::
+::::
+::::::
+
+# Knob 2 — The Whole World
+
+::::: columns
+::: {.column width="60%"}
+```{r scale-world-17}
+#| cache: true
+#| fig-format: png
+#| fig-height: 2.4
+#| fig-alt: "World map with moose occurrence points in dark green across northern North America, Scandinavia, and Russia, densest in Norway and Sweden."
+moose_world_sf <- moose_world_raw %>%
+  filter(!is.na(decimalLongitude), !is.na(decimalLatitude)) %>%
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"),
+           crs = 4326)
+
+world_sf <- st_as_sf(
+  maps::map("world", plot = FALSE, fill = TRUE)) %>%
+  st_set_crs(4326)
+
+ggplot() +
+  geom_sf(data = world_sf, fill = "grey96", color = "grey75") +
+  geom_sf(data = moose_world_sf, alpha = 0.3,
+          size = 0.5, color = "darkgreen") +
+  theme_void()
+```
+:::
+
+::: {.column width="40%"}
+- `"world"` with no `regions =` → every country
+- Over half the 2,000 are **Norway + Sweden** — more moose, or more people logging them?
+
+**🌍 Want a globe?** Add one line:
+
+``` r
++ coord_sf(crs = "+proj=ortho
+             +lat_0=60 +lon_0=-30")
+```
+
+`lat_0` / `lon_0` = the spot you look straight down on.
+:::
+:::::
+
+# Knob 2 — One State, With Counties
+
+::::: columns
+::: {.column width="60%"}
+```{r scale-mn-17}
+#| cache: true
+#| fig-format: png
+#| fig-width: 4
+#| fig-height: 3.2
+#| fig-alt: "Minnesota county map with moose occurrence points clustered in the northeast Arrowhead region along the North Shore of Lake Superior, with a few scattered in the northwest."
+moose_mn_sf <- moose_mn_raw %>%
+  filter(!is.na(decimalLongitude), !is.na(decimalLatitude)) %>%
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"),
+           crs = 4326)
+
+mn_sf <- st_as_sf(
+  maps::map("county", regions = "minnesota",
+            plot = FALSE, fill = TRUE)) %>%
+  st_set_crs(4326)
+
+ggplot() +
+  geom_sf(data = mn_sf, fill = "grey96", color = "grey75") +
+  geom_sf(data = moose_mn_sf, alpha = 0.4,
+          size = 0.8, color = "darkgreen") +
+  theme_void()
+```
+:::
+
+::: {.column width="40%"}
+- Two spellings: `"Minnesota"` for **GBIF**, `"minnesota"` for **maps** — change **both** to switch states
+- The North Shore cluster — moose habitat, *and* Highway 61
+
+::: callout-important
+**A small area gets you the whole record.**
+
+The US pull was all one year. Minnesota has only a few hundred records — under the limit — so you get them all, back to the 1980s.
+:::
+:::
+:::::
+
+# 🛑 Pause — Do Activity Parts 6–8 Now
+
+Trim the records, map them on a basemap with Alaska in it, then change the scale — the whole world, and one state.
 
 # 🧩 Chunk 4 of 4 · Go Live 🗺️
 
 **We will cover:** turning a static picture into a map you can pan, zoom, and click.
 
 ::: callout-tip
-**🖐 After this chunk: Activity Parts 8–9** (make it live, then add popups).
+**🖐 After this chunk: Activity Parts 9–10** (make it live, then add popups).
 :::
 
 # `leaflet` — a Real Web Map
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 ```{r leaflet-demo-17}
 #| eval: false
 # A map you can zoom ---------------------------------
@@ -499,23 +616,23 @@ Three lines:
 - `leaflet(moose_sf)` — start from your `sf` object
 - `addTiles()` — the actual world map, streamed from the web
 - `addCircleMarkers()` — a dot per record
-::::
+:::
 
 :::: {.column width="40%"}
 ::: callout-important
 **▶ Run this one yourself**
 
-It opens in the RStudio **Viewer** pane. It can't be printed onto a slide — the whole point is that it moves.
+It opens in the **Viewer** pane. It can't be printed onto a slide — the whole point is that it moves.
 
 **Zoom in:** Anchorage. The Colorado Rockies. Maine.
 :::
 ::::
-:::::
+::::::
 
 # Click a Dot — Popups
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 ```{r leaflet-popup-17}
 #| eval: false
 leaflet(moose_sf) %>%
@@ -529,7 +646,7 @@ leaflet(moose_sf) %>%
                           stateProvince, "<br>", year)
   )
 ```
-::::
+:::
 
 :::: {.column width="40%"}
 - `~` makes `popup` a **formula** — look these columns up for each row
@@ -541,16 +658,16 @@ leaflet(moose_sf) %>%
 Do the points sit in habitat — or do they trace **roads, towns, and trailheads**? That is sampling effort, visible with your own eyes.
 :::
 ::::
-:::::
+::::::
 
-# 🛑 Pause — Do Activity Parts 8–9 Now
+# 🛑 Pause — Do Activity Parts 9–10 Now
 
 Make the map live, add popups, and zoom into a cluster until you can see what the records are really tracking.
 
 # What We Learned Today
 
-::::: columns
-:::: {.column width="60%"}
+:::::: columns
+::: {.column width="60%"}
 **Concepts:**
 
 - Spatial data = **points/polygons + a CRS**
@@ -559,13 +676,14 @@ Make the map live, add popups, and zoom into a cluster until you can see what th
 - **GBIF** holds real occurrence records for nearly any species
 - `limit` is a **cutoff, not a sample** — every occurrence map is partly a map of **sampling effort**
 - A lower-48 basemap silently drops Alaska
+- Scale = **two knobs**: what you download and what you draw underneath
 
 **R skills:**
 
 - `st_as_sf()`, `st_set_crs()`, `maps::map()`, `coord_sf()`
 - `occ_data()`, `occ_count()` from `rgbif`
 - `leaflet()`, `addTiles()`, `addCircleMarkers()`
-::::
+:::
 
 :::: {.column width="40%"}
 **References:**
@@ -582,4 +700,4 @@ Make the map live, add popups, and zoom into a cluster until you can see what th
 
 **Up next:** your final project pitches.
 ::::
-:::::
+::::::

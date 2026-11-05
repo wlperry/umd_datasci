@@ -13,15 +13,89 @@
 # the bonus at the bottom.
 #
 # HOW THIS WORKS
-# Each section gives you the moose line from class, commented
-# out, right above a blank where your version goes. Copy it,
-# change the parts that are yours, uncomment, run.
-#
-# Answer the H-Q questions as # comments where they appear.
-# Those answers are graded along with your code.
+# 1. ALL the graded questions are in the ANSWERS block right
+#    below. Answer them THERE, as # comments. Each code
+#    section tells you which questions it unlocks.
+# 2. Each code section gives you the moose line from class,
+#    commented out, right above a blank where your version
+#    goes. Copy it, change the parts that are yours,
+#    uncomment, run.
 #
 # It must run top to bottom (Ctrl/Cmd + Shift + Enter) with
-# no errors before you hand it in.
+# no errors before you hand it in - and when it does, the
+# maps should draw.
+# ==========================================================
+
+
+# ==========================================================
+# ANSWERS - every graded question, in one place
+# ==========================================================
+
+# H-Q1. (section H1) What species did you pick, common AND
+#       scientific name, and why that one?
+# ANSWER:
+#
+#
+# H-Q2. (section H1 - answer BEFORE you download anything)
+#       Where in the US do you expect it to be? Name the
+#       regions, and say why.
+# ANSWER:
+#
+#
+# H-Q3. (section H3) How many records does GBIF hold for
+#       your species in the US, and how many did you
+#       actually download?
+# ANSWER:
+#
+#
+# H-Q4. (section H3) What years did your records come from?
+#       Is that the whole history, or a slice off one end?
+# ANSWER:
+#
+#
+# H-Q5. (section H4) Which state has the most records for
+#       your species?
+# ANSWER:
+#
+#
+# H-Q6. (section H5) Compare the US map to your H-Q2
+#       prediction. What did you get right, and what
+#       surprised you? (If you tightened the coord_sf()
+#       limits to the lower 48, say so here.)
+# ANSWER:
+#
+#
+# H-Q7. (section H6) Which scale did you pick - the whole
+#       world, or one state - and which one? What does that
+#       map show that the US map did not? Did the number of
+#       records or the years change?
+# ANSWER:
+#
+#
+# H-Q8. (section H7) Zoom in on your densest cluster. Do the
+#       points sit in habitat that makes sense, or do they
+#       trace roads, towns, parks, and trailheads?
+# ANSWER:
+#
+#
+# H-Q9. (section H7) Sampling effort: name ONE concrete
+#       reason your map might show a pattern that is about
+#       PEOPLE rather than about your species - and say how
+#       you would check it.
+# ANSWER:
+#
+#
+# H-Q10. Three or four sentences, as if captioning your US
+#        map for a report: what it shows, how many records
+#        it is built on, what years they cover, and one
+#        honest limitation.
+# ANSWER:
+#
+#
+#
+
+# ==========================================================
+# CODE - your species, start to finish
 # ==========================================================
 
 # ---- Libraries -------------------------------------------
@@ -35,6 +109,9 @@ invisible(NULL)
 
 
 # ---- H1 Pick your species --------------------------------
+# -> then answer H-Q1 and H-Q2 at the top, BEFORE you
+#    download anything.
+#
 # You need the SCIENTIFIC name. GBIF will not take a common
 # name. Look it up - Wikipedia's info box, or search the
 # common name at gbif.org and read the species page.
@@ -48,20 +125,11 @@ invisible(NULL)
 # Store it in a variable so you only type it once, and
 # every line below keeps working when you change your mind.
 
-my_species <- "Genus species"   # <- PUT YOUR SPECIES HERE
+my_species <- "Genus species" # <- PUT YOUR SPECIES HERE
 
 my_species
 
 invisible(NULL)
-
-# H-Q1. What species did you pick, common AND scientific
-#       name, and why that one?
-# ANSWER:
-#
-# H-Q2. BEFORE you download anything: where in the US do you
-#       expect it to be? Name the regions, and say why.
-# ANSWER:
-#
 
 
 # ---- H2 Download it from GBIF ----------------------------
@@ -81,17 +149,18 @@ invisible(NULL)
 #
 # dim(my_raw)
 
-
 invisible(NULL)
 
 # If dim() says 0 rows, three things to check:
 #   1. spelling of the scientific name
-#   2. the species may have no US records - try country = NULL
-#      for the whole world, or pick another species
+#   2. the species may have no US records - pick another
+#      species, or jump ahead to H6 and map the world
 #   3. your internet connection
 
 
 # ---- H3 What did you actually get? -----------------------
+# -> then answer H-Q3 and H-Q4 at the top.
+#
 # Section 5 in class. How many records exist, versus how
 # many you pulled, and from when.
 #
@@ -101,25 +170,19 @@ invisible(NULL)
 
 # YOUR CODE:
 
-
 invisible(NULL)
-
-# H-Q3. How many records does GBIF hold for your species in
-#       the US, and how many did you actually download?
-# ANSWER:
-#
-# H-Q4. What years did your records come from? Is that the
-#       whole history, or a slice off one end?
-# ANSWER:
-#
 
 
 # ---- H4 Trim it and make it spatial ----------------------
+# -> then answer H-Q5 at the top.
+#
 # In class:
 #   moose_df <- moose_raw %>%
 #     select(species, stateProvince, decimalLatitude,
 #            decimalLongitude, year) %>%
 #     filter(!is.na(decimalLongitude), !is.na(decimalLatitude))
+#
+#   moose_df %>% count(stateProvince, sort = TRUE) %>% head()
 #
 #   moose_sf <- moose_df %>%
 #     st_as_sf(coords = c("decimalLongitude", "decimalLatitude"),
@@ -129,15 +192,12 @@ invisible(NULL)
 
 # YOUR CODE:
 
-
 invisible(NULL)
-
-# H-Q5. Which state has the most records for your species?
-# ANSWER:
-#
 
 
 # ---- H5 Map it on the US basemap -------------------------
+# -> then answer H-Q6 at the top.
+#
 # In class (the Alaska-included basemap and the crop):
 #   usa_sf <- st_as_sf(
 #     maps::map("world", regions = "USA", plot = FALSE, fill = TRUE)
@@ -156,7 +216,6 @@ invisible(NULL)
 
 # YOUR CODE:
 
-
 invisible(NULL)
 
 # Save it. Make the figures/ folder first if you do not
@@ -167,16 +226,79 @@ invisible(NULL)
 
 # YOUR CODE:
 
+invisible(NULL)
+
+
+# ---- H6 Change the scale: the world, OR one state --------
+# -> then answer H-Q7 at the top.
+#
+# Pick ONE. Remember it is two knobs: the DOWNLOAD and the
+# BASEMAP. Change both or they will not match.
+#
+# OPTION A - the whole world (leave country OUT):
+#   moose_world_raw <- occ_data(scientificName = "Alces alces",
+#                               hasCoordinate = TRUE,
+#                               limit = 2000)$data
+#
+#   moose_world_raw %>% count(country, sort = TRUE) %>% head()
+#
+#   moose_world_sf <- moose_world_raw %>%
+#     filter(!is.na(decimalLongitude), !is.na(decimalLatitude)) %>%
+#     st_as_sf(coords = c("decimalLongitude", "decimalLatitude"),
+#              crs = 4326)
+#
+#   world_sf <- st_as_sf(
+#     maps::map("world", plot = FALSE, fill = TRUE)
+#   ) %>% st_set_crs(4326)
+#
+#   ggplot() +
+#     geom_sf(data = world_sf, fill = "grey96", color = "grey75") +
+#     geom_sf(data = moose_world_sf, alpha = 0.3, size = 0.7,
+#             color = "darkgreen") +
+#     theme_void()
+#
+#   Globe instead of flat? Add to the end of the plot:
+#     + coord_sf(crs = "+proj=ortho +lat_0=60 +lon_0=-30")
+#
+# OPTION B - one state (add stateProvince):
+#   moose_mn_raw <- occ_data(scientificName = "Alces alces",
+#                            country = "US",
+#                            stateProvince = "Minnesota",
+#                            hasCoordinate = TRUE,
+#                            limit = 2000)$data
+#
+#   nrow(moose_mn_raw)
+#   moose_mn_raw %>% count(year) %>% arrange(year)
+#
+#   moose_mn_sf <- moose_mn_raw %>%
+#     filter(!is.na(decimalLongitude), !is.na(decimalLatitude)) %>%
+#     st_as_sf(coords = c("decimalLongitude", "decimalLatitude"),
+#              crs = 4326)
+#
+#   mn_sf <- st_as_sf(
+#     maps::map("county", regions = "minnesota",
+#               plot = FALSE, fill = TRUE)
+#   ) %>% st_set_crs(4326)
+#
+#   ggplot() +
+#     geom_sf(data = mn_sf, fill = "grey96", color = "grey75") +
+#     geom_sf(data = moose_mn_sf, alpha = 0.4, size = 1,
+#             color = "darkgreen") +
+#     theme_void()
+#
+#   Two spellings: "Minnesota" for GBIF, "minnesota" for maps.
+#   Pick a state where YOUR species actually lives (H4 told
+#   you which one has the most records).
+
+# YOUR CODE:
 
 invisible(NULL)
 
-# H-Q6. Compare the map to your H-Q2 prediction. What did
-#       you get right, and what surprised you?
-# ANSWER:
+
+# ---- H7 Make it live -------------------------------------
+# -> then answer H-Q8 and H-Q9 at the top. H-Q10 is the
+#    write-up - do it last.
 #
-
-
-# ---- H6 Make it live -------------------------------------
 # In class:
 #   leaflet(moose_sf) %>%
 #     addTiles() %>%
@@ -187,31 +309,7 @@ invisible(NULL)
 
 # YOUR CODE:
 
-
 invisible(NULL)
-
-# H-Q7. Zoom in on your densest cluster. Do the points sit
-#       in habitat that makes sense, or do they trace roads,
-#       towns, parks, and trailheads?
-# ANSWER:
-#
-# H-Q8. Sampling effort: name ONE concrete reason your map
-#       might show a pattern that is about PEOPLE rather
-#       than about your species - and say how you would
-#       check it.
-# ANSWER:
-#
-
-
-# ---- H7 Write it up --------------------------------------
-# H-Q9. Three or four sentences, as if captioning the figure
-#       for a report: what the map shows, how many records
-#       it is built on, what years they cover, and one
-#       honest limitation.
-# ANSWER:
-#
-#
-#
 
 
 # ==========================================================
@@ -234,11 +332,11 @@ invisible(NULL)
 # Then map color = which_species in ggplot, or use
 # addCircleMarkers(color = ~pal(which_species)) in leaflet.
 #
-# Tell us what the comparison shows in a # comment.
+# Tell us what the comparison shows in a # comment here.
 # ==========================================================
-
 
 # ==========================================================
 # Before you hand in: Session > Restart R, then run the
-# whole file top to bottom. It must run clean.
+# whole file top to bottom. It must run clean, and your
+# maps must draw.
 # ==========================================================
