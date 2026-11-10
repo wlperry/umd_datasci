@@ -1,0 +1,1978 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.11.9">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Bill Perry">
+<meta name="dcterms.date" content="2026-11-10">
+<meta name="description" content="A first, gentle pass at principal component analysis, assuming no statistics background at all. Why six correlated measurements are hard to look at, what PCA actually does (the shadow analogy), why you must scale first, running prcomp(), reading summary() for variance explained, building a scree plot, deciding how many components to keep, and checking that PC1 means something real by looking at which Pokemon sit at each end of it.">
+
+<title>Lecture — PCA I: Many Measurements, Few Axes – UMD DAta Science Biology</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-447e42e69aaa9833c0ba1b986f430b20.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-fb9bdec83dc8bbb861c64d9619a503f9.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-bb61aa1e324bf6c70075ca3d131a8e10.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-fb9bdec83dc8bbb861c64d9619a503f9.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../css/main.css">
+<meta property="og:title" content="Lecture — PCA I: Many Measurements, Few Axes – UMD DAta Science Biology">
+<meta property="og:description" content="A first, gentle pass at principal component analysis, assuming no statistics background at all. Why six correlated measurements are hard to look at, what PCA actually does (the shadow analogy), why you must scale first, running prcomp(), reading summary() for variance explained, building a scree plot, deciding how many components to keep, and checking that PC1 means something real by looking at which Pokemon sit at each end of it.">
+<meta property="og:image" content="https://wlperry.github.io/umd_datasci/content/pca_pokemon/pca_pokemon_lecture_files/figure-revealjs/scree-1.png">
+<meta property="og:site_name" content="UMD DAta Science Biology">
+<meta property="og:image:height" content="307">
+<meta property="og:image:width" content="672">
+</head>
+
+<body class="nav-sidebar docked quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          toggle.setAttribute("aria-checked", alternate ? "true" : "false");
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455).
+    // Not run on load: stylesheets are set before first paint there, and
+    // scrolling would undo the scroll to a URL fragment (#14973).
+    // The one pixel nudge keeps the reader where they were.
+    const refreshSafariScrollbar = () => {
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        const scrollY = window.scrollY;
+        window.scrollTo(0, scrollY > 0 ? scrollY - 1 : 1);
+        setTimeout(() => {
+          window.scrollTo(0, scrollY);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      refreshSafariScrollbar();
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav" aria-label="Toolbar">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item">Lecture — PCA I: Many Measurements, Few Axes</li></ol></nav>
+        <a class="flex-grow-1" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto" aria-label="Site">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+      <a href="../../index.html" class="sidebar-logo-link">
+      <img src="../../images/course-hex.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="../../images/course-hex.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
+      </a>
+      <div class="sidebar-tools-main">
+  <button type="button" role="switch" aria-checked="false" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode" aria-label="Toggle dark mode"><i class="bi"></i></button>
+</div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="https://wlperry.github.io/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">← Back to Perry Homepage</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-controls="quarto-sidebar-section-1" aria-expanded="false">
+ <span class="menu-text" id="quarto-sidebar-section-1-label">Course Information</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <ul id="quarto-sidebar-section-1" aria-labelledby="quarto-sidebar-section-1-label" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Schedule</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../syllabus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Syllabus</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../links.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Helpful Links</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-controls="quarto-sidebar-section-2" aria-expanded="false">
+ <span class="menu-text" id="quarto-sidebar-section-2-label">Course Materials</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <ul id="quarto-sidebar-section-2" aria-labelledby="quarto-sidebar-section-2-label" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../lectures.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lectures</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../activities.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Activities</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../common_code/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Common Code</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+    
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="pca_pokemon_lecture.slides.html"><i class="bi bi-file-slides"></i>RevealJS</a></li><li><a href="pca_pokemon_lecture.docx"><i class="bi bi-file-word"></i>MS Word</a></li><li><a href="pca_pokemon_lecture.pptx"><i class="bi bi-file-slides"></i>Powerpoint</a></li></ul></div></div>
+<!-- main -->
+<main class="content" id="quarto-document-content" tabindex="-1">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Lecture — PCA I: Many Measurements, Few Axes</h1>
+<p class="subtitle lead">Six numbers per Pokémon, one picture, and what ‘variance explained’ means</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">pca</div>
+    <div class="quarto-category">multivariate</div>
+    <div class="quarto-category">prcomp</div>
+    <div class="quarto-category">ggplot</div>
+    <div class="quarto-category">pokemon</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>A first, gentle pass at principal component analysis, assuming no statistics background at all. Why six correlated measurements are hard to look at, what PCA actually does (the shadow analogy), why you must scale first, running prcomp(), reading summary() for variance explained, building a scree plot, deciding how many components to keep, and checking that PC1 means something real by looking at which Pokemon sit at each end of it.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Bill Perry </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 10, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="something-completely-different" class="level1">
+<h1>Something Completely Different</h1>
+<p>Everything this term had <strong>one</strong> response variable.</p>
+<ul>
+<li>A t-test: one measurement, two groups</li>
+<li>Regression: one measurement against one other</li>
+<li>ANOVA: one measurement across several groups</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>✅ Transition</strong></p>
+<p>Today: <strong>six measurements at once</strong>, and no groups to compare. Not “is A different from B?” but <em>“what is the <strong>shape</strong> of this whole dataset?”</em> 🔴</p>
+</div>
+</div>
+</section>
+<section id="today-has-no-p-values" class="level1">
+<h1>Today Has No p-Values</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p>PCA is not a test. There is <strong>nothing to reject</strong>.</p>
+<ul>
+<li>No null hypothesis</li>
+<li>No p-value</li>
+<li>No assumptions to check</li>
+<li>Nothing passes or fails</li>
+</ul>
+<p>It is a way of <strong>looking</strong> at data that has too many columns to plot.</p>
+<p>So the question today is never <em>“is it significant?”</em> It is always <strong>“does this make sense?”</strong></p>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>⚠️ Set down one habit</strong></p>
+<p>For nine weeks, “did it work?” meant “is p small?”</p>
+<p>Today you judge your result by whether you can <strong>explain what the axes mean</strong>.</p>
+<p>That is a harder standard, not an easier one.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="goals-for-today" class="level1">
+<h1>Goals for Today</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<ul>
+<li>See <strong>why</strong> six columns are hard to look at</li>
+<li>Notice that the columns are <strong>correlated</strong></li>
+<li>Understand what PCA does — <strong>in words, not algebra</strong></li>
+<li>Know why you must <strong>scale</strong> first</li>
+<li>Run it: <code>prcomp()</code></li>
+<li>Read <strong>variance explained</strong> from <code>summary()</code></li>
+<li>Draw a <strong>scree plot</strong> and decide how many axes to keep</li>
+<li><strong>Sanity-check</strong> PC1 against things you already know</li>
+</ul>
+</div><div class="column" style="width:42%;">
+<p><strong>Tools today:</strong></p>
+<ul>
+<li><code>tidyverse</code> — that is it</li>
+</ul>
+<p><strong>Data:</strong> 🔴 the original <strong>151 Pokémon</strong>, six battle stats each</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>No new packages.</strong> <code>prcomp()</code> is built into R.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="why-pokémon" class="level1">
+<h1>Why Pokémon</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p>Because you can <strong>check the answer.</strong></p>
+<p>PCA will hand back new axes it invented, and you have to decide whether they mean anything. That is nearly impossible to judge on unfamiliar data.</p>
+<p>But if an axis puts <strong>Magikarp</strong> at one end and <strong>Mewtwo</strong> at the other, you know <em>exactly</em> what it found.</p>
+<p>The method is the same one used on gene expression, soil chemistry, and skull measurements. Only the checking is easier.</p>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>📖 The six stats</strong></p>
+<ul>
+<li><code>hp</code> — hit points</li>
+<li><code>attack</code> — physical attack</li>
+<li><code>defense</code> — physical defence</li>
+<li><code>sp_attack</code> — special attack</li>
+<li><code>sp_defense</code> — special defence</li>
+<li><code>speed</code> — speed</li>
+</ul>
+<p>Game-design numbers, but they behave exactly like six measurements off an animal.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="chunk-1-of-4-the-problem-with-six-columns" class="level1">
+<h1>🧩 Chunk 1 of 4 · The Problem With Six Columns</h1>
+<p><strong>We will cover:</strong> reading the data, and why you cannot just plot it.</p>
+</section>
+<section id="read-it-in" class="level1">
+<h1>Read It In</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>pokemon <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/pokemon_151.csv"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(pokemon)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 151  15</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>pokemon <span class="sc">%&gt;%</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, hp, attack, defense, sp_attack, sp_defense, speed) <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 7
+  name          hp attack defense sp_attack sp_defense speed
+  &lt;chr&gt;      &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;
+1 bulbasaur     45     49      49        65         65    45
+2 ivysaur       60     62      63        80         80    60
+3 venusaur      80     82      83       100        100    80
+4 charmander    39     52      43        60         50    65</code></pre>
+</div>
+</div>
+</section>
+<section id="six-columns-is-too-many-to-plot" class="level1">
+<h1>Six Columns Is Too Many to Plot</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p>One measurement → a histogram.</p>
+<p>Two → a scatterplot.</p>
+<p>Three → an awkward 3-D scatterplot nobody can read.</p>
+<p><strong>Six → nothing.</strong> There is no six-dimensional plot, and there never will be.</p>
+<p>You could draw all the pairs instead. Six columns make <strong>15 pairwise scatterplots</strong>, and no one can hold 15 plots in their head at once.</p>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>⚠️ The real problem</strong></p>
+<p>It is not that drawing is hard.</p>
+<p>It is that <strong>“which Pokémon are similar to each other?”</strong> is a question about all six numbers <strong>at the same time</strong>, and looking at them two at a time cannot answer it.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="make-them-a-table-of-their-own" class="level1">
+<h1>Make Them a Table of Their Own</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="ot">&lt;-</span> pokemon <span class="sc">%&gt;%</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(hp, attack, defense, sp_attack, sp_defense, speed)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(poke_stats)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 151   6</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🧠 Why a separate table</strong></p>
+<p>PCA needs <strong>numbers only</strong> — no names, no types. <code>poke_stats</code> is 151 rows and exactly 6 numeric columns.</p>
+<p>The rows stay in the <strong>same order</strong> as <code>pokemon</code>, which is what lets us glue the results back on later.</p>
+</div>
+</div>
+</section>
+<section id="do-the-stats-move-together" class="level1">
+<h1>Do the Stats Move Together?</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="sc">%&gt;%</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(<span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>              hp attack defense sp_attack sp_defense speed
+hp          1.00   0.30    0.12      0.24       0.49 -0.04
+attack      0.30   1.00    0.48      0.14       0.37  0.20
+defense     0.12   0.48    1.00      0.19       0.14 -0.05
+sp_attack   0.24   0.14    0.19      1.00       0.53  0.41
+sp_defense  0.49   0.37    0.14      0.53       1.00  0.39
+speed      -0.04   0.20   -0.05      0.41       0.39  1.00</code></pre>
+</div>
+</div>
+</section>
+<section id="reading-that-matrix" class="level1">
+<h1>Reading That Matrix</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p>The diagonal is all <code>1.00</code> — every column correlates perfectly with itself. Ignore it.</p>
+<p>Everything else is the interesting part:</p>
+<ul>
+<li><code>sp_attack</code> and <code>sp_defense</code>: <strong>0.53</strong></li>
+<li><code>hp</code> and <code>sp_defense</code>: <strong>0.49</strong></li>
+<li><code>attack</code> and <code>defense</code>: <strong>0.48</strong></li>
+<li><code>speed</code> and <code>defense</code>: <strong>−0.05</strong> — nothing at all</li>
+</ul>
+<p>So the six columns are <strong>not</strong> six independent facts. They overlap. Knowing one tells you something about the others.</p>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>✅ This is what makes PCA work</strong></p>
+<p>If all six columns were completely unrelated, PCA would have nothing to do — six axes in, six equally useless axes out.</p>
+<p><strong>Correlation is redundancy.</strong> PCA’s whole job is to squeeze the redundancy out.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="chunk-2-of-4-what-pca-actually-does" class="level1">
+<h1>🧩 Chunk 2 of 4 · What PCA Actually Does</h1>
+<p><strong>We will cover:</strong> the shadow analogy, and why scaling comes first.</p>
+</section>
+<section id="the-shadow-analogy" class="level1">
+<h1>The Shadow Analogy 🔦</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p>Hold your hand up in front of a lamp and look at the shadow on the wall.</p>
+<p>Your hand is <strong>3-D</strong>. The shadow is <strong>2-D</strong>. You have lost a dimension — but you can still tell it is a hand.</p>
+<p>Now <strong>rotate</strong> your hand. Some angles give a shadow you can recognise instantly. Others give a shapeless blob.</p>
+<p><strong>Same hand. Same wall. Different amount of information kept.</strong></p>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🎯 That is PCA</strong></p>
+<p>Your data is a cloud of 151 points in <strong>6-D</strong> space.</p>
+<p>PCA finds the angle that casts the <strong>most informative shadow</strong> — the one where the points stay as spread out as possible.</p>
+<p>Then it reports what that shadow is made of.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="said-without-the-analogy" class="level1">
+<h1>Said Without the Analogy</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p>PCA builds <strong>new measurements</strong> by blending the old ones:</p>
+<p><span class="math display">\[\text{PC1} = a_1\,\text{hp} + a_2\,\text{attack} + \ldots\]</span></p>
+<p>It picks the weights so that:</p>
+<ul>
+<li><strong>PC1</strong> captures as much of the spread between Pokémon as any single blend can</li>
+<li><strong>PC2</strong> captures as much of what is <strong>left over</strong> as possible — and is at right angles to PC1</li>
+<li><strong>PC3</strong> takes the next-biggest leftover, and so on</li>
+</ul>
+<p>Six columns in, six PCs out — but they come in <strong>order of usefulness</strong>.</p>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🧠 Two words you need</strong></p>
+<p><strong>Loading</strong> — how much an original stat contributes to a PC. <em>What the axis is made of.</em></p>
+<p><strong>Score</strong> — where one Pokémon sits along that PC. <em>Its new measurement.</em></p>
+<p>Loadings describe the <strong>axis</strong>. Scores describe the <strong>Pokémon</strong>. That is all of Chunk 2 of next class.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="first-you-must-scale" class="level1">
+<h1>First: You Must Scale</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">everything</span>(),</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                   <span class="sc">~</span> <span class="fu">round</span>(<span class="fu">sd</span>(.x), <span class="dv">1</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 6
+     hp attack defense sp_attack sp_defense speed
+  &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;
+1  28.6   26.8    26.9      28.5       24.2    27</code></pre>
+</div>
+</div>
+<p><code>hp</code> varies more than <code>defense</code> does — in raw points.</p>
+<p>PCA chases <strong>spread</strong>. Hand it unscaled columns and it will decide the most important thing in the data is whichever column happens to use the <strong>biggest numbers</strong>.</p>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>⚠️ A worked disaster</strong></p>
+<p>Imagine measuring animals in <strong>grams</strong> and <strong>kilometres</strong>.</p>
+<p>Body mass in grams: thousands. Home range in km: maybe 0.4.</p>
+<p>Unscaled, PC1 would be <strong>entirely mass</strong>, and would tell you nothing except which unit you typed.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="scaling-in-one-argument" class="level1">
+<h1>Scaling, In One Argument</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p><code>scale. = TRUE</code> converts every column to <strong>standard deviations from its own mean</strong> before doing anything else.</p>
+<p>After scaling, every column has:</p>
+<ul>
+<li>mean <strong>0</strong></li>
+<li>standard deviation <strong>1</strong></li>
+</ul>
+<p>Now all six compete <strong>fairly</strong>, and the units cancel out entirely.</p>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>⚠️ Mind the full stop</strong></p>
+<p>The argument is <strong><code>scale.</code></strong> — with a dot:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">prcomp</span>(poke_stats, <span class="at">scale. =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The dot is there because <code>scale</code> was already an R function. Leave it off and you get an error.</p>
+<p><strong>Almost always use <code>scale. = TRUE</code>.</strong></p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="chunk-3-of-4-run-it-and-read-it" class="level1">
+<h1>🧩 Chunk 3 of 4 · Run It and Read It</h1>
+<p><strong>We will cover:</strong> <code>prcomp()</code>, <code>summary()</code>, variance explained, and the scree plot.</p>
+</section>
+<section id="one-line" class="level1">
+<h1>One Line</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>poke_pca <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(poke_stats, <span class="at">center =</span> <span class="cn">TRUE</span>, <span class="at">scale. =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🧠 That is the entire analysis</strong></p>
+<ul>
+<li><code>center = TRUE</code> — subtract each column’s mean</li>
+<li><code>scale. = TRUE</code> — divide by each column’s standard deviation</li>
+</ul>
+<p>Everything from here on is <strong>reading the result</strong>, which is the part that takes judgement.</p>
+</div>
+</div>
+</section>
+<section id="what-came-back" class="level1">
+<h1>What Came Back</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(poke_pca)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Importance of components:
+                          PC1    PC2    PC3    PC4     PC5
+Standard deviation     1.5418 1.1349 0.9943 0.8280 0.58318
+Proportion of Variance 0.3962 0.2147 0.1648 0.1143 0.05668
+Cumulative Proportion  0.3962 0.6109 0.7756 0.8899 0.94655
+                           PC6
+Standard deviation     0.56630
+Proportion of Variance 0.05345
+Cumulative Proportion  1.00000</code></pre>
+</div>
+</div>
+</section>
+<section id="reading-summary-the-only-row-that-matters" class="level1">
+<h1>Reading <code>summary()</code> — the Only Row That Matters</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p>Ignore the first row. Read these two:</p>
+<p><strong><code>Proportion of Variance</code></strong> — how much of the total spread each PC captures:</p>
+<ul>
+<li><strong>PC1: 39.6%</strong></li>
+<li><strong>PC2: 21.5%</strong></li>
+<li>PC3: 16.5%</li>
+</ul>
+<p><strong><code>Cumulative Proportion</code></strong> — the running total:</p>
+<ul>
+<li>PC1 alone: <strong>39.6%</strong></li>
+<li>PC1 + PC2: <strong>61.1%</strong></li>
+<li>All six: 100%, always</li>
+</ul>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>✅ The headline</strong></p>
+<p><strong>Two</strong> invented axes carry <strong>61%</strong> of everything in six columns.</p>
+<p>So a flat scatterplot of PC1 against PC2 — which we draw next class — shows you about <strong>three-fifths</strong> of the whole dataset.</p>
+<p>That is the payoff.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="variance-explained-in-plain-words" class="level1">
+<h1>“Variance Explained”, In Plain Words</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p><strong>Variance</strong> here just means <em>how spread out things are</em>.</p>
+<p>Total variance = every way these 151 Pokémon differ from each other across all six stats.</p>
+<p>PC1 captures 39.6% of that. Meaning: if you threw away all six stats and kept <strong>only</strong> each Pokémon’s PC1 score, you would still have about <strong>40%</strong> of the information about how they differ.</p>
+<p>One number instead of six, for 40% of the picture.</p>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>⚠️ Not 39.6% of the Pokémon</strong></p>
+<p>And not 39.6% accuracy.</p>
+<p>It is 39.6% of the <strong>total variation</strong> — of the differences between them.</p>
+<p>If every Pokémon had identical stats there would be no variance at all, and PCA would have nothing to find.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="how-much-variance-per-axis" class="level1">
+<h1>How Much Variance Per Axis</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>var_df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">PC      =</span> <span class="fu">paste0</span>(<span class="st">"PC"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>),</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">percent =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> poke_pca<span class="sc">$</span>sdev<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> <span class="fu">sum</span>(poke_pca<span class="sc">$</span>sdev<span class="sc">^</span><span class="dv">2</span>), <span class="dv">1</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>var_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 2
+  PC    percent
+  &lt;chr&gt;   &lt;dbl&gt;
+1 PC1      39.6
+2 PC2      21.5
+3 PC3      16.5
+4 PC4      11.4
+5 PC5       5.7
+6 PC6       5.3</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🧠 Where that came from</strong></p>
+<p><code>poke_pca$sdev</code> is each PC’s standard deviation. Squaring it gives variance; dividing by the total turns it into a share; times 100 is a percent.</p>
+<p>It is the same numbers <code>summary()</code> printed — but now in a <strong>data frame</strong>, which means we can plot them.</p>
+</div>
+</div>
+</section>
+<section id="the-scree-plot" class="level1">
+<h1>The Scree Plot</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(var_df, <span class="fu">aes</span>(<span class="at">x =</span> PC, <span class="at">y =</span> percent)) <span class="sc">+</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>() <span class="sc">+</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> percent), <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="pca_pokemon_lecture_files/figure-revealjs/scree-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="reading-a-scree-plot" class="level1">
+<h1>Reading a Scree Plot</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p>A <strong>scree plot</strong> is variance explained, per axis, in order. (“Scree” is the loose rubble at the foot of a cliff — the shape the bars make.)</p>
+<p>You are looking for the <strong>elbow</strong>: where the bars stop dropping steeply and flatten into rubble.</p>
+<p>Here PC1 and PC2 stand up; from PC3 on the bars settle down and get similar. So the honest answer is <strong>keep two</strong>, and know you are holding 61%.</p>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>⚠️ There is no rule</strong></p>
+<p>Nothing tells you where the elbow is. People argue about it constantly.</p>
+<p>Common rough guides:</p>
+<ul>
+<li>Keep PCs until the cumulative total passes ~70–80%</li>
+<li>Keep the ones <strong>before</strong> the flat part</li>
+<li>Keep the ones you can <strong>interpret</strong></li>
+</ul>
+<p>That last one is the most useful.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="chunk-4-of-4-does-pc1-mean-anything" class="level1">
+<h1>🧩 Chunk 4 of 4 · Does PC1 Mean Anything?</h1>
+<p><strong>We will cover:</strong> the only check that matters — looking at who sits at each end.</p>
+</section>
+<section id="a-quick-look-at-what-pc1-is-made-of" class="level1">
+<h1>A Quick Look at What PC1 Is Made Of</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(poke_pca<span class="sc">$</span>rotation[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            PC1   PC2
+hp         0.38  0.19
+attack     0.42  0.43
+defense    0.28  0.59
+sp_attack  0.45 -0.33
+sp_defense 0.54 -0.17
+speed      0.32 -0.54</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>✅ Look at the PC1 column: every single number is positive</strong></p>
+<p>So a Pokémon scores high on PC1 by being high on <strong>all six stats at once</strong>.</p>
+<p>PC1 is an <strong>“overall power”</strong> axis. We will take this table apart properly next class — for now, notice that PC2 has <strong>minus signs</strong>, which means it is doing something completely different.</p>
+</div>
+</div>
+</section>
+<section id="where-does-each-pokémon-sit" class="level1">
+<h1>Where Does Each Pokémon Sit?</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="ot">&lt;-</span> pokemon <span class="sc">%&gt;%</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">PC1 =</span> poke_pca<span class="sc">$</span>x[, <span class="dv">1</span>],</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">PC2 =</span> poke_pca<span class="sc">$</span>x[, <span class="dv">2</span>])</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, hp, attack, speed, PC1, PC2) <span class="sc">%&gt;%</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 6
+  name         hp attack speed    PC1    PC2
+  &lt;chr&gt;     &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+1 bulbasaur    45     49    45 -1.18  -0.417
+2 ivysaur      60     62    60  0.123 -0.384
+3 venusaur     80     82    80  1.91  -0.269</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🧠 <code>poke_pca$x</code> holds the scores</strong></p>
+<p>One row per Pokémon, one column per PC — in the <strong>same row order</strong> as the data we put in. That is why we could glue it straight on with <code>mutate()</code>.</p>
+</div>
+</div>
+</section>
+<section id="the-top-of-pc1" class="level1">
+<h1>The Top of PC1</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(PC1)) <span class="sc">%&gt;%</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, is_legendary, PC1) <span class="sc">%&gt;%</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 3
+  name      is_legendary   PC1
+  &lt;chr&gt;     &lt;lgl&gt;        &lt;dbl&gt;
+1 mewtwo    TRUE          4.00
+2 dragonite FALSE         3.00
+3 mew       FALSE         2.88
+4 articuno  TRUE          2.81
+5 zapdos    TRUE          2.60
+6 moltres   TRUE          2.58</code></pre>
+</div>
+</div>
+</section>
+<section id="the-bottom-of-pc1" class="level1">
+<h1>The Bottom of PC1</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(PC1) <span class="sc">%&gt;%</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, PC1) <span class="sc">%&gt;%</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 2
+  name       PC1
+  &lt;chr&gt;    &lt;dbl&gt;
+1 magikarp -3.43
+2 caterpie -3.34
+3 weedle   -3.32
+4 metapod  -3.21
+5 kakuna   -3.19
+6 zubat    -2.45</code></pre>
+</div>
+</div>
+</section>
+<section id="that-is-the-whole-validation" class="level1">
+<h1>That Is the Whole Validation 🎣</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p><strong>Top of PC1:</strong> Mewtwo, Dragonite, Mew, Articuno, Zapdos, Moltres — <strong>every legendary in the game</strong>, plus the two strongest non-legendaries.</p>
+<p><strong>Bottom of PC1:</strong> <strong>Magikarp</strong>, Caterpie, Weedle, Metapod, Kakuna, Zubat.</p>
+<p>Nobody told PCA which Pokémon were strong. There is no “power” column in the file. It was handed six columns of numbers and it <strong>sorted them by overall strength</strong> on its own.</p>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>✅ Why this matters beyond Pokémon</strong></p>
+<p>This is the check you run on <strong>every</strong> PCA.</p>
+<p>You cannot test whether an axis is “real”. But you <em>can</em> look at what sits at each end and ask whether it lines up with something you already know.</p>
+<p>If it does, the axis is measuring something. If it does not, be very careful.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="put-a-number-on-it" class="level1">
+<h1>Put a Number on It</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(is_legendary) <span class="sc">%&gt;%</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">mean_PC1 =</span> <span class="fu">round</span>(<span class="fu">mean</span>(PC1), <span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 3
+  is_legendary     n mean_PC1
+  &lt;lgl&gt;        &lt;int&gt;    &lt;dbl&gt;
+1 FALSE          147    -0.08
+2 TRUE             4     3   </code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>The four legendaries average PC1 = 3.00; everyone else averages −0.08.</strong></p>
+<p>PC1 scores are in <strong>standard deviations</strong>, so the legendaries sit about <strong>three standard deviations</strong> above the crowd — on an axis that was built without ever being told they existed.</p>
+</div>
+</div>
+</section>
+<section id="what-we-have-and-what-is-missing" class="level1">
+<h1>What We Have, and What Is Missing</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p><strong>We have:</strong></p>
+<ul>
+<li>Two axes holding 61% of six columns</li>
+<li>PC1 identified as “overall power”, checked against Magikarp and Mewtwo</li>
+</ul>
+<p><strong>We do not have:</strong></p>
+<ul>
+<li>Any idea what <strong>PC2</strong> means</li>
+<li>A <strong>picture</strong> — we have not plotted a single Pokémon yet</li>
+<li>Any way to see the original six stats <strong>on</strong> that picture</li>
+</ul>
+<p>All three are next class.</p>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🎯 A hint about PC2</strong></p>
+<p>Look back at the loadings. In PC2, <code>defense</code> is <strong>+0.59</strong> and <code>speed</code> is <strong>−0.54</strong>.</p>
+<p>A big positive and a big negative on the same axis means PC2 is a <strong>trade-off</strong>, not a total.</p>
+<p>Which trade-off? Next class.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="your-homework" class="level1">
+<h1>Your Homework</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p>Do today again on <strong>all 1,025 Pokémon</strong> instead of the original 151.</p>
+<p><code>data/pokemon_1025.csv</code> has the identical columns, so the homework is mostly <strong>changing one filename</strong> and re-reading your output.</p>
+<p>The real question: <strong>does PC1 still mean the same thing?</strong> Twenty-five years of new Pokémon, nine generations — or is “overall power” just a quirk of the first 151?</p>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>📂 What you will do</strong></p>
+<p>The whole chunk-1-to-4 sequence on the bigger file, then compare your percentages and your top/bottom lists to today’s.</p>
+<p>All the code is in the homework file. Most of the marks are for <strong>reading</strong> what comes out.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="recap" class="level1">
+<h1>Recap</h1>
+<ul>
+<li>PCA is <strong>not a test</strong> — no p-value, no assumptions, nothing to reject</li>
+<li>It exists because <strong>six columns cannot be plotted</strong>, and pairs cannot answer “who is similar to whom”</li>
+<li>It works because the columns are <strong>correlated</strong> — correlation is redundancy</li>
+<li>Think <strong>shadows</strong>: a lower-dimensional view, taken from the most informative angle</li>
+<li><strong>Always <code>scale. = TRUE</code></strong>, or the column with the biggest numbers wins by default</li>
+<li><code>prcomp()</code> is one line; <strong>reading it</strong> is the work</li>
+<li><strong>PC1 = 39.6%, PC2 = 21.5%, together 61.1%</strong> of everything in six columns</li>
+<li>The <strong>scree plot</strong> shows where to stop; there is no rule, only judgement</li>
+<li><strong>Validate by looking at the ends.</strong> Magikarp at one end, Mewtwo at the other ✅</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>✅ Next</strong></p>
+<p>Open the activity and run it. Next class: what PC2 means, and the picture. 🔴</p>
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script>
+// Behaviour for Quarto's "Other Formats" panel (the .quarto-alternate-formats
+// list that shows in the top-right of every lecture/handout page).
+//
+//  * RevealJS decks (*.slides.html) REPLACE the current page when followed as a
+//    normal link, which throws away the site sidebar/nav. Open them in a new
+//    tab instead, so closing the tab lands you back where you were.
+//  * MS Word (.docx) / PowerPoint (.pptx) links should just download the file
+//    without navigating the main window away. The `download` attribute forces
+//    that (these are same-origin files on the published site).
+(function () {
+  function isSlides(href) {
+    return /slides\.html($|[?#])/i.test(href) || /-revealjs\.html($|[?#])/i.test(href);
+  }
+
+  function wireLinks() {
+    var links = document.querySelectorAll(".quarto-alternate-formats a[href]");
+    links.forEach(function (a) {
+      var href = a.getAttribute("href") || "";
+      if (isSlides(href)) {
+        a.target = "_blank";
+        a.rel = "noopener";
+      } else if (/\.(docx|pptx)($|[?#])/i.test(href)) {
+        a.setAttribute("download", "");
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", wireLinks);
+  } else {
+    // Script ran after the DOM was already parsed — wire immediately.
+    wireLinks();
+  }
+
+  // Safety net: some Quarto builds attach their own handler to these links, or
+  // re-render the panel after load, which can drop the target we set above.
+  // Catch the click itself and force the new tab.
+  document.addEventListener("click", function (event) {
+    var a = event.target && event.target.closest
+      ? event.target.closest(".quarto-alternate-formats a[href]")
+      : null;
+    if (!a) return;
+    var href = a.getAttribute("href") || "";
+    if (isSlides(href) && !event.defaultPrevented) {
+      event.preventDefault();
+      window.open(a.href, "_blank", "noopener");
+    }
+  });
+})();
+</script>
+
+<script>
+  // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+  // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+  // slide changes (different for each slide format).
+  (function () {
+    // dispatch for htmlwidgets
+    function fireSlideEnter() {
+      const event = window.document.createEvent("Event");
+      event.initEvent("slideenter", true, true);
+      window.document.dispatchEvent(event);
+    }
+
+    function fireSlideChanged(previousSlide, currentSlide) {
+      fireSlideEnter();
+
+      // dispatch for shiny
+      if (window.jQuery) {
+        if (previousSlide) {
+          window.jQuery(previousSlide).trigger("hidden");
+        }
+        if (currentSlide) {
+          window.jQuery(currentSlide).trigger("shown");
+        }
+      }
+    }
+
+    // hookup for slidy
+    if (window.w3c_slidy) {
+      window.w3c_slidy.add_observer(function (slide_num) {
+        // slide_num starts at position 1
+        fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+      });
+    }
+
+  })();
+</script>
+
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const toggle = window.document.createElement('button');
+      toggle.type = "button";
+      toggle.setAttribute("role", "switch");
+      toggle.setAttribute("aria-checked", "false");
+      toggle.classList.add('top-right');
+      toggle.classList.add('quarto-color-scheme-toggle');
+      toggle.setAttribute("aria-label", "Toggle dark mode");
+      toggle.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      toggle.appendChild(i);
+      // Put the toggle in a landmark of its own, so that landmark navigation
+      // can reach it.
+      //
+      // The container is always a fresh direct child of body, and the toggle is
+      // never moved into page furniture that the theme or the author controls.
+      // The toggle is positioned against the page, so any ancestor that
+      // establishes a containing block captures it: a positioned element or a
+      // grid for position: absolute, and transform, filter, will-change or
+      // contain for position: fixed. A direct child of body has none of these
+      // to inherit, and the shift when one appears is silent and visual.
+      //
+      // ARIA says a document should have at most one banner, and axe reports a
+      // duplicate whether or not the banners carry distinct labels. So use a
+      // header when the page has no banner yet, and a named region otherwise.
+      //
+      // A header is a banner wherever it sits, unless it is inside sectioning
+      // content, so this cannot just look at the children of body: a custom
+      // page layout wraps the title block header in a plain div. An explicit
+      // role="banner" always counts.
+      const sectioning = 'article, aside, main, nav, section, [role="article"], [role="complementary"], [role="main"], [role="navigation"], [role="region"]';
+      const hasBanner = Array.from(
+        window.document.querySelectorAll('header:not([role]), [role="banner"]')
+      ).some(function(el) {
+        return el.hasAttribute("role") || el.closest(sectioning) === null;
+      });
+      const container = window.document.createElement(hasBanner ? "div" : "header");
+      if (hasBanner) {
+        container.setAttribute("role", "region");
+        container.setAttribute("aria-label", "Toggle dark mode");
+      }
+      container.classList.add('quarto-color-scheme-toggle-container');
+      container.appendChild(toggle);
+      window.document.body.appendChild(container);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/wlperry\.github\.io\/umd_datasci");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+      window.quartoDecorateExternalLinks = function (root) {
+     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+          if (!link.classList.contains('no-external-icon')) {
+          }
+        }
+      }
+      };
+      window.quartoDecorateExternalLinks(window.document);
+    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
+    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
+    const hideOnEscAndFocusOut = {
+      name: 'hideOnEscAndFocusOut',
+      defaultValue: true,
+      fn(instance) {
+        const dismiss = () => {
+          // A show scheduled by the trigger delay would otherwise reopen it
+          instance.clearDelayTimeouts();
+          instance.hide();
+        };
+        const onKeyDown = (event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
+          // except an open reveal.js slide menu, which Esc should close too.
+          // The menu handles keys only when its keyboard option is on.
+          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
+            window.Reveal.getConfig().menu?.keyboard !== false;
+          if (!menuHandlesEsc) {
+            event.stopPropagation();
+          }
+          if (instance.popper.contains(window.document.activeElement)) {
+            // Disabled while refocusing so the focus trigger does not reopen it
+            instance.disable();
+            instance.reference.focus();
+            instance.enable();
+          }
+          dismiss();
+        };
+        const onFocusOut = (event) => {
+          const target = event.relatedTarget;
+          if (target && !instance.reference.contains(target) &&
+              !instance.popper.contains(target)) {
+            dismiss();
+          }
+        };
+        // On the trigger too: a click trigger (code-annotations: select) has no
+        // blur handling. Attached for the instance's lifetime so leaving the
+        // trigger also cancels a show still pending on the trigger delay.
+        instance.reference.addEventListener('focusout', onFocusOut);
+        return {
+          onShow() {
+            window.document.addEventListener('keydown', onKeyDown, true);
+            instance.popper.addEventListener('focusout', onFocusOut);
+          },
+          onHide() {
+            window.document.removeEventListener('keydown', onKeyDown, true);
+            instance.popper.removeEventListener('focusout', onFocusOut);
+          },
+          onDestroy() {
+            instance.reference.removeEventListener('focusout', onFocusOut);
+          },
+        };
+      },
+    };
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+        plugins: [hideOnEscAndFocusOut],
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          // Each band is positioned against its own containing block, which is
+          // not the offsetParent of the lines, so place it from client rects.
+          const placeBand = (band, firstEl, lastEl, codeBlock) => {
+            const container = band.offsetParent;
+            if (container === null) {
+              return;
+            }
+            const containerRect = container.getBoundingClientRect();
+            // Reveal.js scales slides with a transform, so convert client
+            // pixels back to the CSS pixels of the container.
+            const scale = containerRect.height / container.offsetHeight || 1;
+            const firstRect = firstEl.getBoundingClientRect();
+            const lastRect = lastEl.getBoundingClientRect();
+            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
+            const height = (lastRect.bottom - firstRect.top) / scale;
+            band.style.top = top - 2 + "px";
+            band.style.height = height + 4 + "px";
+            if (codeBlock) {
+              // Without the copy button wrapper, the containing block is wider
+              // than the code block, so span the code block explicitly.
+              const blockRect = codeBlock.getBoundingClientRect();
+              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
+              band.style.width = blockRect.width / scale + "px";
+            }
+          };
+          if (lineIds.length > 0) {
+            const el = window.document.getElementById(lineIds[0]);
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const parent = el.parentElement.parentElement;
+            // cook up a div (if necessary) and position it
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            placeBand(gutterDiv, el, lastEl);
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+  <script type="application/javascript">
+  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 UMD Data Science Biology Perry</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/wlperry">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="mailto:wlperry@d.umn.edu">
+      <i class="bi bi-envelope-heart-fill" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

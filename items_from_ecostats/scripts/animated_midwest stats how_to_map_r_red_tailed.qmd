@@ -1,0 +1,145 @@
+---
+title: "Spatial Data and Mapping in R (Ornithology Edition)"
+author: "data_science"
+format: 
+  html:
+    toc: true
+    toc-depth: 2
+    theme: cosmo
+execute:
+  warning: false
+  message: false
+---
+
+## Introduction
+
+Welcome! In this module, we are going to learn how to build professional geographic maps in R. While you are likely familiar with using `ggplot2` to make scatterplots and bar charts, mapping requires handling a special type of data: **spatial vectors** (points, lines, and polygons).
+
+By the end of this worksheet, you will know how to take a standard dataset of bird sightings (latitude and longitude), convert it into spatial data, and layer it over real-world political and physical boundaries.
+
+## 1. The Spatial Toolkit: Beyond the Tidyverse
+
+Standard dataframes are great for numbers and text, but they don't natively understand geography. To map data, we need libraries that can handle spatial geometries. We will load `tidyverse` for our standard data wrangling, alongside these spatial-specific packages:
+
+-   **`sf` (Simple Features):** The backbone of spatial analysis in R. 
+-   **`tigris`:** A package that connects directly to the US Census Bureau to download highly accurate boundaries.
+-   **`rnaturalearth`:** The go-to package for global physical features.
+-   **`rinat`:** A package that connects to the iNaturalist database.
+-   **`gganimate`:** An incredible package that turns static `ggplot` maps into animated GIFs!
+
+```{r load-libraries}
+# You may need to run install.packages(c("rinat", "gganimate", "gifski")) in the console first!
+library(rinat)
+library(gganimate)
+
+# Load the necessary libraries
+library(tidyverse)
+library(sf)
+library(tigris)         
+library(rnaturalearth)  
+```
+
+## 2. Setting the Stage: Building the Base Map
+
+Before we can plot our birds, we need a "canvas" or base map for them to sit on. In spatial data science, we build maps by stacking individual shapefiles on top of each other. 
+
+```{r get-base-maps}
+# 1. Fetch US state boundaries 
+ne_states <- states(cb = TRUE, resolution = "500k") %>% 
+  filter(STUSPS %in% c("NY", "PA", "NJ", "CT", "MA", "VT", "NH", "ME", "RI", 
+                       "OH", "MI", "IN", "IL", "WI", "MN"))
+
+# 2. Fetch Canadian provinces 
+canada_prov <- ne_states(country = "canada", returnclass = "sf")
+
+# 3. Fetch a physical map of the ocean 
+ocean_base <- ne_download(scale = 50, category = "physical", type = "ocean", returnclass = "sf")
+
+# 4. Fetch a physical map of major lakes 
+lakes_base <- ne_download(scale = 50, category = "physical", type = "lakes", returnclass = "sf")
+```
+
+## 3. Fetching Live Data for Multiple Months
+
+To animate our map over time, we need data from multiple months. Because the API limits how much data we can pull at once, the easiest and safest way to do this is to fetch May, June, and July separately, and then bind them together into one big dataframe.
+
+```{r hawk_data}
+# Define our bounding box variable to save typing!
+my_bounds <- c(37, -97.5, 49.5, -66)
+
+# Fetch May
+may_data <- get_inat_obs(taxon_name = "Accipiter striatus", year = 2025, month = 5, bounds = my_bounds, maxresults = 300)
+# Fetch June
+jun_data <- get_inat_obs(taxon_name = "Accipiter striatus", year = 2025, month = 6, bounds = my_bounds, maxresults = 300)
+# Fetch July
+jul_data <- get_inat_obs(taxon_name = "Accipiter striatus", year = 2025, month = 7, bounds = my_bounds, maxresults = 300)
+
+# Combine them all together using dplyr's bind_rows()
+hawk_data <- bind_rows(may_data, jun_data, jul_data) %>%
+  # We use the lubridate package (part of tidyverse) to extract the month 
+  # name (e.g., "May") from the datetime column so we can label our animation!
+  mutate(Month_Name = lubridate::month(datetime, label = TRUE, abbr = FALSE))
+```
+
+## 4. Making it Spatial
+
+We convert our combined dataframe into an `sf` object, just like before.
+
+```{r make-spatial}
+hawks_sf <- st_as_sf(
+  hawk_data, 
+  coords = c("longitude", "latitude"), 
+  crs = 4326
+)              
+```
+
+## 5. Animating the Map with `gganimate`
+
+Building an animation uses the exact same `ggplot` code as a static map, with one magical function added at the very end: **`transition_states()`**. 
+
+This function tells R to split the data by our `Month_Name` column, draw a separate map for each month, and stitch them into a GIF. We can even use `{closest_state}` in our title to make the title update as the GIF plays!
+
+```{r build-base-map}
+hawk_map <- ggplot() +
+  
+  geom_sf(data = ocean_base, fill = "aliceblue", color = NA) +
+  geom_sf(data = canada_prov, fill = "gray95", color = "gray50") +
+  geom_sf(data = ne_states, fill = "gray95", color = "gray50") +
+  geom_sf(data = lakes_base, fill = "aliceblue", color = "lightblue") +
+  
+  # The Birds
+  geom_sf(data = hawks_sf, color = "darkred", size = 2, alpha = 0.7) +
+  
+  coord_sf(xlim = c(-97.5, -66), ylim = c(37, 49.5), crs = 4326) +
+  
+  theme_minimal() +
+  
+  # Note the {closest_state} variable in the title!
+  labs(
+    title = "Sharp-shinned Hawk Sightings: {closest_state} 2025",
+    subtitle = "Recent iNaturalist observations in the Northern US & Canada",
+    caption = "Data: iNaturalist, Natural Earth, US Census Bureau"
+  ) +
+  
+  # THE ANIMATION MAGIC
+  # transition_states tells R to animate based on the Month_Name column
+  transition_states(
+    Month_Name, 
+    transition_length = 1, # How long it takes to fade between months
+    state_length = 3       # How long it pauses on each month
+  )
+
+# Render the animation! (This might take 30-60 seconds to process)
+animate(hawk_map, fps = 10, width = 800, height = 500)
+```
+
+## 6. Exporting Your Animation
+
+Because this is a GIF and not a static image, we cannot use `ggsave()`. Instead, `gganimate` gives us a special function called `anim_save()`.
+
+```{r export-map}
+#| eval: false
+
+# anim_save automatically saves the last rendered animation
+anim_save("hawk_migration_animation.gif")
+```

@@ -1,0 +1,332 @@
+---
+title: "Mapping Species Distributions in R"
+subtitle: "Tracking Fishers (*Pekania pennanti*) across the Midwest"
+format: 
+  revealjs:
+    theme: default
+    scrollable: true
+    slide-number: true
+    css: style.css
+    width: 1280
+    height: 720
+  docx: 
+    toc: true
+    number-sections: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Introduction to Spatial Data
+
+::::: columns
+::: {.column width="60%"}
+We are going to build geographic maps in R. To do this, we work with spatial vectors.
+
+Standard dataframes hold text and numbers. Spatial dataframes hold geometries:
+
+\- **Points:** A specific animal sighting or a single tree.
+
+\- **Lines:** Rivers, roads, or animal movement tracks.
+
+\- **Polygons:** State boundaries, lakes, or oceans.
+
+(Why do paper maps never win at poker? Because they always fold).
+:::
+
+::: {.column width="40%"}
+FIGURE
+:::
+:::::
+
+## The Spatial Toolkit
+
+::::: columns
+::: {.column width="60%"}
+To handle these geometries, we need libraries that bridge the gap between geographic data and the `tidyverse`.
+
+- `sf` (Simple Features): backbone of R spatial analysis. It makes maps act like dataframes.
+- `tigris`: Pulls accurate US boundaries (states, counties) directly from the Census Bureau.
+- `rnaturalearth`: Provides global boundaries, including Canada, lakes, and oceans.
+- `rinat`: Pulls community-science observations directly from iNaturalist.
+:::
+
+::: {.column width="40%"}
+```{r}
+# Install if needed:
+# install.packages(c("sf", "tigris", "rnaturalearth", "rinat"))
+
+library(tidyverse)
+library(sf)
+library(tigris)
+library(rnaturalearth)
+library(rinat)
+```
+:::
+:::::
+
+## Map Projections: Flattening the Earth
+
+::::: columns
+::: {.column width="60%"}
+The Earth is a 3D sphere. Our screens are flat. A map projection is the mathematical formula used to flatten the Earth.
+
+Every projection distorts something: area, shape, distance, or direction. In R, changing a projection means recalculating the underlying grid. We define projections using a Coordinate Reference System (CRS), often assigned via an EPSG code or a PROJ4 string. We ensure all our map layers share the exact same CRS so they align perfectly.
+:::
+
+::: {.column width="40%"}
+figure
+:::
+:::::
+
+## Fetching the Base Map
+
+::::: columns
+::: {.column width="40%"}
+First, we pull the political and physical boundaries. We filter the data to the specific states and provinces we want.
+
+Notice how we use st_transform() to set a uniform projection. Here, we use EPSG 4269 (NAD83), which is standard for North American mapping.
+:::
+
+::: {.column width="60%"}
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| paged-print: false
+### US States
+
+midwest <- states(cb = TRUE, resolution = "20m") %>% 
+  filter(STUSPS %in% c("MN", "WI", "MI", "ND", "SD", "IA")) %>% 
+  st_transform(crs = 4269)
+
+### Canadian Provinces
+
+canada <- ne_states(country = "Canada", returnclass = "sf") %>% 
+  filter(name %in% c("Ontario", "Manitoba")) %>% 
+  st_transform(crs = 4269)
+
+### Major Lakes
+
+lakes <- ne_download(scale = 50, type = "lakes", 
+                     category = "physical", 
+                     returnclass = "sf") %>% 
+  st_transform(crs = 4269)
+```
+:::
+:::::
+
+## Fetching Fisher Data
+
+::::: columns
+::: {.column width="40%"}
+Fishers (Pekania pennanti) are a key mustelid in Minnesota's forests. We will query recent observations from iNaturalist using rinat.
+
+The data comes in as a standard dataframe (latitude/longitude columns). We use st_as_sf() to convert those columns into a recognized spatial point geometry.
+:::
+
+::: {.column width="60%"}
+```{r}
+# Get iNaturalist data Pekania pennanti 
+fisher_raw <- get_inat_obs(taxon_name = "Hemimysis anomala", 
+                           bounds = c(40, -100, 50, -85), 
+                           maxresults = 200)
+
+# Convert to a spatial object
+fisher_sf <- st_as_sf(fisher_raw, 
+                      coords = c("longitude", "latitude"), 
+                      crs = 4326) %>% # 4326 is standard GPS coordinates
+  st_transform(crs = 4269) # Match the base map projection
+
+```
+:::
+:::::
+
+## Building the Map (Points)
+
+::::: columns
+::: {.column width="40%"}
+Mapping in sf relies on geom_sf(). We stack layers exactly like a lasagna. Bottom layers first (land), top layers last (points).
+
+We use coord_sf() to zoom the "camera lens" to our specific bounding box.
+:::
+
+::: {.column width="60%"}
+```{r}
+ggplot() +
+  geom_sf(data = canada, fill = "gray95", color = "gray50") +
+  geom_sf(data = midwest, fill = "gray95", color = "gray50") +
+  geom_sf(data = lakes, fill = "aliceblue", color = "lightblue") +
+  geom_sf(data = fisher_sf, color = "darkred", size = 1.5, alpha = 0.6) +
+  coord_sf(xlim = c(-100, -85), ylim = c(40, 50), expand = FALSE) +
+  theme_minimal() +
+  labs(title = "Fisher Sightings in the Midwest",
+       caption = "Data: iNaturalist")
+
+```
+:::
+:::::
+
+## Distribution Heatmaps
+
+::::: columns
+::: {.column width="40%"}
+Points are great, but dense clusters become illegible. We can use a 2D kernel density estimate (a heatmap) to highlight distribution hotspots.
+
+To use stat_density_2d(), we extract the raw coordinates back out of our spatial object, then map the calculated density (after_stat(level)) to a color gradient.
+:::
+
+::: {.column width="60%"}
+```{r}
+# Extract raw coordinates for the density function
+fisher_coords <- fisher_sf %>%
+  mutate(lon = st_coordinates(.)[,1],
+         lat = st_coordinates(.)[,2]) %>%
+  st_drop_geometry()
+
+ggplot() +
+  geom_sf(data = canada, fill = "grey20", color = "grey50") +
+  geom_sf(data = midwest, fill = "grey20", color = "grey50") +
+  geom_sf(data = lakes, fill = "black", color = NA) +
+  stat_density_2d(data = fisher_coords, 
+                  aes(x = lon, y = lat, fill = after_stat(level)), 
+                  geom = "polygon", alpha = 0.6) +
+  scale_fill_viridis_c(option = "plasma") +
+  coord_sf(xlim = c(-100, -85), ylim = c(40, 50), expand = FALSE) +
+  theme_minimal() +
+  labs(title = "Fisher Sighting Density",
+       fill = "Density")
+```
+:::
+:::::
+
+## Map Projections: Flattening the Earth
+
+::::: columns
+::: {.column width="60%"}
+The Earth is a 3D sphere. Our screens are flat. A map projection is the mathematical formula used to flatten the Earth.
+
+Every projection distorts something: area, shape, distance, or direction.
+
+In R, changing a projection means recalculating the underlying coordinate grid. We define projections using a Coordinate Reference System (CRS), often assigned via an EPSG code. We ensure all our map layers share the exact same CRS so they align perfectly.
+:::
+
+::: {.column width="40%"}
+figure
+:::
+:::::
+
+## Fetching the Base Map
+
+::::: columns
+::: {.column width="60%"}
+First, we pull the political and physical boundaries. We filter the data to the specific states and provinces we want.
+
+Notice how we use st_transform() to set a uniform projection. Here, we use EPSG 4269 (NAD83), which is a standard coordinate system for North American mapping.
+:::
+
+::: {.column width="40%"}
+```{r}
+# US States
+midwest <- states(cb = TRUE, resolution = "20m") %>% 
+  filter(STUSPS %in% c("MN", "WI", "MI", "ND", "SD", "IA")) %>%
+  st_transform(crs = 4269)
+
+# Canadian Provinces
+canada <- ne_states(country = "Canada", returnclass = "sf") %>%
+  filter(name %in% c("Ontario", "Manitoba")) %>%
+  st_transform(crs = 4269)
+
+# Major Lakes
+lakes <- ne_download(scale = 50, type = "lakes", category = "physical", returnclass = "sf") %>%
+  st_transform(crs = 4269)
+```
+:::
+:::::
+
+## Fetching Fisher Data
+
+::::: columns
+::: {.column width="60%"}
+Fishers (Pekania pennanti) are a key mustelid in Minnesota's forests. We will query recent observations from iNaturalist using the rinat API.
+
+The data comes in as a standard dataframe of latitude and longitude columns. We use st_as_sf() to convert those columns into a recognized spatial point geometry.
+:::
+
+::: {.column width="40%"}
+```{r}
+# Get iNaturalist data
+fisher_raw <- get_inat_obs(taxon_name = "Pekania pennanti", 
+                           bounds = c(40, -100, 50, -85), 
+                           maxresults = 500)
+
+# Convert to a spatial object
+fisher_sf <- st_as_sf(fisher_raw, 
+                      coords = c("longitude", "latitude"), 
+                      crs = 4326) %>% # 4326 is standard GPS coordinates
+  st_transform(crs = 4269) # Match the base map projection
+```
+:::
+:::::
+
+## Building the Map (Points)
+
+::::: columns
+::: {.column width="40%"}
+Mapping in sf relies on geom_sf(). We stack layers exactly like a lasagna. Bottom layers first (land), top layers last (the animals).
+
+We use coord_sf() to zoom the "camera lens" to our specific bounding box so the map isn't awkwardly zoomed out.
+:::
+
+::: {.column width="60%"}
+```{r}
+#| fig.height: 5
+ggplot() +
+  geom_sf(data = canada, fill = "gray95", color = "gray50") +
+  geom_sf(data = midwest, fill = "gray95", color = "gray50") +
+  geom_sf(data = lakes, fill = "aliceblue", color = "lightblue") +
+  geom_sf(data = fisher_sf, color = "darkred", size = 1.5, alpha = 0.6) +
+  coord_sf(xlim = c(-100, -85), ylim = c(40, 50), expand = FALSE) +
+  theme_minimal() +
+  labs(title = "Fisher Sightings in the Midwest",
+       caption = "Data: iNaturalist")
+
+
+```
+:::
+:::::
+
+## Distribution Heatmaps
+
+::::: columns
+::: {.column width="40%"}
+Points are great, but dense clusters become illegible. We can use a 2D kernel density estimate (a heatmap) to highlight distribution hotspots.
+
+To use stat_density_2d(), we extract the raw coordinates back out of our spatial object, then map the calculated density to a color gradient.
+:::
+
+::: {.column width="60%"}
+```{r}
+#| fig.height: 5
+# Extract raw coordinates for the density function
+fisher_coords <- fisher_sf %>%
+  mutate(lon = st_coordinates(.)[,1],
+         lat = st_coordinates(.)[,2]) %>%
+  st_drop_geometry()
+
+ggplot() +
+  geom_sf(data = canada, fill = "grey20", color = "grey50") +
+  geom_sf(data = midwest, fill = "grey20", color = "grey50") +
+  geom_sf(data = lakes, fill = "black", color = NA) +
+  stat_density_2d(data = fisher_coords, 
+                  aes(x = lon, y = lat, fill = after_stat(level)), 
+                  geom = "polygon", alpha = 0.6) +
+  scale_fill_viridis_c(option = "plasma") +
+  coord_sf(xlim = c(-100, -85), ylim = c(40, 50), expand = FALSE) +
+  theme_minimal() +
+  labs(title = "Fisher Sighting Density",
+       fill = "Density")
+```
+:::
+:::::

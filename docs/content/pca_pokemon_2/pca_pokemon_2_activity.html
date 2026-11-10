@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.11.9">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Bill Perry">
+<meta name="dcterms.date" content="2026-11-10">
+<meta name="description" content="Hands-on companion to the second PCA lecture, written for students with no previous statistics. Reading a loadings table, the mixed-signs rule, naming PC2 and then confirming it from the Pokemon at each end, plotting the scores, colouring by a variable that was deliberately kept out of the PCA, labelling only the extremes with ggrepel, building a biplot from the loadings, and writing up a PCA with no p-value. Homework is the full 1,025-Pokemon interpretation.">
+
+<title>Activity 22 — PCA II: Loadings, Scores, and the Biplot – UMD DAta Science Biology</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-447e42e69aaa9833c0ba1b986f430b20.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-fb9bdec83dc8bbb861c64d9619a503f9.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-bb61aa1e324bf6c70075ca3d131a8e10.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-fb9bdec83dc8bbb861c64d9619a503f9.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../css/main.css">
+<meta property="og:title" content="Activity 22 — PCA II: Loadings, Scores, and the Biplot – UMD DAta Science Biology">
+<meta property="og:description" content="Hands-on companion to the second PCA lecture, written for students with no previous statistics. Reading a loadings table, the mixed-signs rule, naming PC2 and then confirming it from the Pokemon at each end, plotting the scores, colouring by a variable that was deliberately kept out of the PCA, labelling only the extremes with ggrepel, building a biplot from the loadings, and writing up a PCA with no p-value. Homework is the full 1,025-Pokemon interpretation.">
+<meta property="og:site_name" content="UMD DAta Science Biology">
+</head>
+
+<body class="nav-sidebar docked quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          toggle.setAttribute("aria-checked", alternate ? "true" : "false");
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455).
+    // Not run on load: stylesheets are set before first paint there, and
+    // scrolling would undo the scroll to a URL fragment (#14973).
+    // The one pixel nudge keeps the reader where they were.
+    const refreshSafariScrollbar = () => {
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        const scrollY = window.scrollY;
+        window.scrollTo(0, scrollY > 0 ? scrollY - 1 : 1);
+        setTimeout(() => {
+          window.scrollTo(0, scrollY);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      refreshSafariScrollbar();
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav" aria-label="Toolbar">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item">Activity 22 — PCA II: Loadings, Scores, and the Biplot</li></ol></nav>
+        <a class="flex-grow-1" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto" aria-label="Site">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+      <a href="../../index.html" class="sidebar-logo-link">
+      <img src="../../images/course-hex.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="../../images/course-hex.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
+      </a>
+      <div class="sidebar-tools-main">
+  <button type="button" role="switch" aria-checked="false" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode" aria-label="Toggle dark mode"><i class="bi"></i></button>
+</div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="https://wlperry.github.io/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">← Back to Perry Homepage</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-controls="quarto-sidebar-section-1" aria-expanded="false">
+ <span class="menu-text" id="quarto-sidebar-section-1-label">Course Information</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <ul id="quarto-sidebar-section-1" aria-labelledby="quarto-sidebar-section-1-label" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Schedule</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../syllabus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Syllabus</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../links.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Helpful Links</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-controls="quarto-sidebar-section-2" aria-expanded="false">
+ <span class="menu-text" id="quarto-sidebar-section-2-label">Course Materials</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <ul id="quarto-sidebar-section-2" aria-labelledby="quarto-sidebar-section-2-label" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../lectures.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lectures</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../activities.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Activities</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../common_code/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Common Code</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+    
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="pca_pokemon_2_activity.docx"><i class="bi bi-file-word"></i>MS Word</a></li></ul></div></div>
+<!-- main -->
+<main class="content" id="quarto-document-content" tabindex="-1">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Activity 22 — PCA II: Loadings, Scores, and the Biplot</h1>
+<p class="subtitle lead">What PC2 means, labelling the interesting points, and reading arrows</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">pca</div>
+    <div class="quarto-category">multivariate</div>
+    <div class="quarto-category">prcomp</div>
+    <div class="quarto-category">biplot</div>
+    <div class="quarto-category">ggplot</div>
+    <div class="quarto-category">pokemon</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>Hands-on companion to the second PCA lecture, written for students with no previous statistics. Reading a loadings table, the mixed-signs rule, naming PC2 and then confirming it from the Pokemon at each end, plotting the scores, colouring by a variable that was deliberately kept out of the PCA, labelling only the extremes with ggrepel, building a biplot from the loadings, and writing up a PCA with no p-value. Homework is the full 1,025-Pokemon interpretation.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Bill Perry </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 10, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="in-class-activity-22-loadings-scores-and-the-biplot" class="level1">
+<h1>In-class Activity 22: Loadings, Scores, and the Biplot 🔴</h1>
+<section id="todays-objectives" class="level3">
+<h3 class="anchored" data-anchor-id="todays-objectives">Today’s Objectives</h3>
+<ol type="1">
+<li>Read a <strong>loadings</strong> table properly</li>
+<li>Learn the one rule that matters: <strong>mixed signs mean a trade-off</strong></li>
+<li><strong>Name PC2</strong> from its loadings — then prove it from the data</li>
+<li>Plot the Pokémon in <strong>PC space</strong>: the picture, at last</li>
+<li><strong>Label</strong> only the interesting points, with <code>ggrepel</code></li>
+<li>Build a <strong>biplot</strong> by hand, so the arrows are not magic</li>
+<li><strong>Write up</strong> a PCA when there is no p-value to lean on</li>
+</ol>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>⚠️ Install this BEFORE class
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>One new package. Small and fast, but do it at home:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"ggrepel"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>📂 Files for today
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>In-class skeleton:</strong> <a href="scripts/22_pca_2_skeleton.R"><code>22_pca_2_skeleton.R</code></a> → save it as <code>scripts/22_pca_2.R</code>. <strong>Every line of code is already written.</strong></li>
+<li><strong>Homework skeleton:</strong> <a href="scripts/22_pca_2_homework.R"><code>22_pca_2_homework.R</code></a> → save it under that same name. <strong>This one is what you turn in</strong>, and its code is written too.</li>
+<li><strong>Data</strong> — both go in your <code>data/</code> folder:
+<ul>
+<li><a href="data/pokemon_151.csv"><code>pokemon_151.csv</code></a> — today, in class</li>
+<li><a href="data/pokemon_1025.csv"><code>pokemon_1025.csv</code></a> — the homework</li>
+</ul></li>
+</ul>
+</div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>What you hand in
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Today is a run-it-and-read-it day.</strong> You do <strong>not</strong> turn in <code>scripts/22_pca_2.R</code>.</li>
+<li>The <strong>Q</strong> boxes are <strong>things to think about</strong>. Not graded.</li>
+<li><strong>You turn in <code>scripts/22_pca_2_homework.R</code></strong> — all 1,025 Pokémon, and you name the axes yourself.</li>
+</ul>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Still no p-values
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Today the whole job is <strong>interpretation</strong> — looking at numbers and deciding what they mean. There is no output that will tell you whether you got it right. That is not a flaw in the method; it is what the method is for.</p>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="part-1-where-we-left-off-and-starting-again" class="level1">
+<h1>Part 1 · Where we left off, and starting again</h1>
+<p>Last class: six correlated stats, impossible to plot. PCA found new axes by blending them. <strong>PC1 = 39.6%</strong>, <strong>PC2 = 21.5%</strong>, together <strong>61.1%</strong>. PC1 had all-positive loadings, so we called it <em>overall power</em>, and checked it — <strong>Magikarp</strong> at the bottom, <strong>Mewtwo</strong> at the top.</p>
+<p>Three things were missing: what <strong>PC2</strong> means, a <strong>picture</strong>, and a way to see the original stats <strong>on</strong> that picture.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggrepel)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>pokemon <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/pokemon_151.csv"</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="ot">&lt;-</span> pokemon <span class="sc">%&gt;%</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(hp, attack, defense, sp_attack, sp_defense, speed)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>poke_pca <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(poke_stats, <span class="at">center =</span> <span class="cn">TRUE</span>, <span class="at">scale. =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(poke_pca)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>🧠 Every script starts from the raw data
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Nothing today depends on objects left over in last class’s session. Restart R, run from the top, get the same answer.</p>
+<p>If a script only works because of something you ran yesterday, it is <strong>broken</strong> — you just cannot see it yet.</p>
+</div>
+</div>
+<hr>
+</section>
+<section id="part-2-the-loadings-table" class="level1">
+<h1>Part 2 · The loadings table</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(poke_pca<span class="sc">$</span>rotation[, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>], <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>One row per original stat, one column per PC. A <strong>loading</strong> is how much that stat contributes to that axis:</p>
+<ul>
+<li><strong>big number</strong> → matters a lot to that axis</li>
+<li><strong>near zero</strong> → barely involved</li>
+<li>the <strong>sign</strong> → which direction</li>
+</ul>
+<section id="pc1-all-the-same-sign" class="level3">
+<h3 class="anchored" data-anchor-id="pc1-all-the-same-sign">PC1 — all the same sign</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Stat</th>
+<th>PC1 loading</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>sp_defense</code></td>
+<td><strong>0.54</strong></td>
+</tr>
+<tr class="even">
+<td><code>sp_attack</code></td>
+<td>0.45</td>
+</tr>
+<tr class="odd">
+<td><code>attack</code></td>
+<td>0.42</td>
+</tr>
+<tr class="even">
+<td><code>hp</code></td>
+<td>0.38</td>
+</tr>
+<tr class="odd">
+<td><code>speed</code></td>
+<td>0.32</td>
+</tr>
+<tr class="even">
+<td><code>defense</code></td>
+<td>0.28</td>
+</tr>
+</tbody>
+</table>
+<p>Every one <strong>positive</strong>, none of them tiny. To score high on PC1 you must be high on <strong>everything</strong>.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>✅ The rule for all-positive loadings
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>An axis where every loading shares a sign is a <strong>“total” axis</strong> — overall size, overall strength, overall abundance.</p>
+<p>You will see this constantly. <strong>PC1 is very often a total</strong>, because the single biggest way things differ is usually just <em>how much</em> of them there is.</p>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="part-3-pc2-has-mixed-signs" class="level1">
+<h1>Part 3 · PC2 has mixed signs</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 40%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Stat</th>
+<th>PC2 loading</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>defense</code></td>
+<td><strong>+0.59</strong></td>
+<td>⬆️</td>
+</tr>
+<tr class="even">
+<td><code>attack</code></td>
+<td>+0.43</td>
+<td>⬆️</td>
+</tr>
+<tr class="odd">
+<td><code>hp</code></td>
+<td>+0.19</td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>sp_defense</code></td>
+<td>−0.17</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>sp_attack</code></td>
+<td>−0.33</td>
+<td>⬇️</td>
+</tr>
+<tr class="even">
+<td><code>speed</code></td>
+<td><strong>−0.54</strong></td>
+<td>⬇️</td>
+</tr>
+</tbody>
+</table>
+<p>Two big <strong>positives</strong> and two big <strong>negatives</strong> on the same axis.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>✅ The rule for mixed signs
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Mixed signs mean a <strong>trade-off</strong>, not a total.</p>
+<p>PC2 is not measuring <em>how much</em>. It is measuring <strong>which kind</strong> — being strong in one way <strong>instead of</strong> another.</p>
+<ul>
+<li><strong>High PC2</strong> = <code>defense</code> + <code>attack</code></li>
+<li><strong>Low PC2</strong> = <code>speed</code> + <code>sp_attack</code></li>
+</ul>
+</div>
+</div>
+<section id="naming-it" class="level3">
+<h3 class="anchored" data-anchor-id="naming-it">Naming it</h3>
+<p>High PC2 means tough and hard-hitting but <strong>slow</strong>. Low PC2 means fast and special-attacking but <strong>fragile</strong>. Anyone who has played the game already has names for these:</p>
+<ul>
+<li><strong>High PC2</strong> → a <strong>tank</strong></li>
+<li><strong>Low PC2</strong> → a <strong>glass cannon</strong></li>
+</ul>
+<p>PC2 is a <strong>“tank ↔︎ glass cannon”</strong> axis, and it carries <strong>21.5%</strong> of all the variation in six columns.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>⚠️ You named it. The maths did not.
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>prcomp()</code> returned a column of numbers labelled <code>PC2</code>. It has no idea what a tank is.</p>
+<p><strong>Naming an axis is interpretation, and it is your responsibility.</strong> It is also the single most valuable thing you do in a PCA — and the easiest place to fool yourself.</p>
+</div>
+</div>
+<p>✏️ <strong>Q1:</strong> <code>hp</code> loads +0.19 on PC2 — small but positive. Does that fit the tank story? Would you mention <code>hp</code> if you were describing this axis in one sentence?</p>
+<hr>
+</section>
+</section>
+<section id="part-4-prove-the-name-from-the-data" class="level1">
+<h1>Part 4 · Prove the name from the data</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="ot">&lt;-</span> pokemon <span class="sc">%&gt;%</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">PC1 =</span> poke_pca<span class="sc">$</span>x[, <span class="dv">1</span>],</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">PC2 =</span> poke_pca<span class="sc">$</span>x[, <span class="dv">2</span>])</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(PC2)) <span class="sc">%&gt;%</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, defense, speed, PC2) <span class="sc">%&gt;%</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">4</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(PC2) <span class="sc">%&gt;%</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, defense, speed, PC2) <span class="sc">%&gt;%</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 18%">
+<col style="width: 42%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>End of PC2</th>
+<th>Who is there</th>
+<th>Defence</th>
+<th>Speed</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Top</strong></td>
+<td>Rhydon, Golem, Cloyster, Rhyhorn</td>
+<td>95 – <strong>180</strong></td>
+<td>25 – 70</td>
+</tr>
+<tr class="even">
+<td><strong>Bottom</strong></td>
+<td>Abra, Kadabra, <strong>Alakazam</strong>, Jynx</td>
+<td>15 – 45</td>
+<td>90 – <strong>120</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Alakazam is the fastest, most fragile special attacker in the game. Golem is a literal boulder. They sit at <strong>opposite ends</strong> of an axis built from nothing but six columns of numbers.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>✅ The two-step, every time
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li><strong>Read the loadings</strong> → form a guess about what the axis means</li>
+<li><strong>Look at the extremes</strong> → check the guess against things you already know</li>
+</ol>
+<p>Do them in that order. <strong>If step 2 disagrees with step 1, believe step 2.</strong></p>
+</div>
+</div>
+<hr>
+</section>
+<section id="part-5-finally-the-picture" class="level1">
+<h1>Part 5 · Finally, the picture</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(poke_scores, <span class="fu">aes</span>(<span class="at">x =</span> PC1, <span class="at">y =</span> PC2)) <span class="sc">+</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.7</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Every dot is <strong>one Pokémon</strong>. Neither axis is a thing anyone measured — both were invented by <code>prcomp()</code>.</p>
+<ul>
+<li><strong>Left ↔︎ right</strong> = weak ↔︎ strong <em>(PC1, 39.6%)</em></li>
+<li><strong>Bottom ↔︎ top</strong> = glass cannon ↔︎ tank <em>(PC2, 21.5%)</em></li>
+</ul>
+<p>Two dots close together = two Pokémon with <strong>similar stat profiles overall</strong>. That is the question we could not answer with 15 pairwise scatterplots. And this one flat picture holds <strong>61%</strong> of six columns.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>🧠 The origin is average
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The scores were centred, so <strong>(0, 0)</strong> is the <strong>average</strong> Pokémon — not zero power.</p>
+<p>A dot at the far left is not “no stats”. It is <strong>well below average</strong>. Scores are in standard deviations, which is why they run roughly −3.5 to +3.5.</p>
+</div>
+</div>
+<p>✏️ <strong>Q2:</strong> Find roughly where you would expect a Pokémon with <em>every stat exactly average</em> to sit. Now where would one with <em>every stat slightly above average</em> sit?</p>
+<hr>
+</section>
+<section id="part-6-colour-by-something-you-know" class="level1">
+<h1>Part 6 · Colour by something you know</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(poke_scores, <span class="fu">aes</span>(<span class="at">x =</span> PC1, <span class="at">y =</span> PC2, <span class="at">color =</span> is_legendary)) <span class="sc">+</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.7</span>, <span class="at">size =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The four legendaries sit in a cluster at the <strong>far right</strong> — high PC1 — and slightly <strong>low</strong> on PC2. So the game’s strongest Pokémon are not just powerful; they lean a little towards the <strong>fast, special-attacking</strong> side rather than the tank side.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>✅ <code>is_legendary</code> was never in the PCA
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Look back at Part 1: <code>poke_stats</code> has <strong>six</strong> columns, and <code>is_legendary</code> is not one of them. <code>prcomp()</code> never saw it. We only used it to <strong>colour</strong> the finished result.</p>
+<p><strong>That is the right way round.</strong> Build the axes from the <strong>measurements</strong> only, <em>then</em> colour by the thing you care about and see whether it lines up.</p>
+<p>Put the grouping variable <strong>into</strong> the PCA and you have built the answer you wanted — the same circular trap as the wētā’s <code>head_length</code>.</p>
+</div>
+</div>
+<p>✏️ <strong>Q3:</strong> Suppose you were studying skull measurements from two species and put “species” into the PCA as a 0/1 column. What would go wrong, and how would you know?</p>
+<hr>
+</section>
+<section id="part-7-label-only-the-interesting-ones" class="level1">
+<h1>Part 7 · Label only the interesting ones</h1>
+<p>Labelling all 151 gives you a solid black rectangle. So label only the <strong>extremes</strong> — the ones furthest from the centre, which are the ones a reader will ask about.</p>
+<ul>
+<li><code>abs(PC1)</code> is distance from the centre, ignoring direction</li>
+<li><code>quantile(abs(PC1), 0.97)</code> is the value only 3% of Pokémon exceed</li>
+<li>Together: <em>“far from average on PC1, either way”</em></li>
+</ul>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>extremes <span class="ot">&lt;-</span> poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">abs</span>(PC1) <span class="sc">&gt;</span> <span class="fu">quantile</span>(<span class="fu">abs</span>(PC1), <span class="fl">0.97</span>) <span class="sc">|</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>         <span class="fu">abs</span>(PC2) <span class="sc">&gt;</span> <span class="fu">quantile</span>(<span class="fu">abs</span>(PC2), <span class="fl">0.97</span>))</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(extremes)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>extremes <span class="sc">%&gt;%</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, PC1, PC2)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(poke_scores, <span class="fu">aes</span>(<span class="at">x =</span> PC1, <span class="at">y =</span> PC2)) <span class="sc">+</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> <span class="st">"grey70"</span>) <span class="sc">+</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> extremes, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text_repel</span>(<span class="at">data =</span> extremes, <span class="fu">aes</span>(<span class="at">label =</span> name), <span class="at">size =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The <code>|</code> in the filter means <strong>OR</strong>, so a Pokémon qualifies by being extreme on <strong>either</strong> axis, not both.</p>
+<p>Three layers, and the <strong>order matters</strong> — later layers draw on top:</p>
+<ol type="1">
+<li>all 151 points, grey, in the background</li>
+<li>the extremes, on top, in red</li>
+<li>names, <strong>only</strong> for the extremes</li>
+</ol>
+<p><code>geom_text_repel()</code> is <code>ggrepel</code>’s version of <code>geom_text()</code>: it nudges labels apart so they do not overlap, and draws a little line back to the dot.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>🎯 <code>data =</code> inside a layer
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Each <code>geom_</code> can take its <strong>own</strong> <code>data =</code>. Give it one and that layer ignores the data in <code>ggplot()</code>.</p>
+<p>That is how you draw two different subsets on one plot — and it works for every geom, not just these.</p>
+</div>
+</div>
+<p>✏️ <strong>Q4:</strong> Change <code>0.97</code> to <code>0.90</code> and re-run, then to <code>0.99</code>. There is no correct value. How did you decide which looked best, and what does that tell you about the choice?</p>
+<hr>
+</section>
+<section id="part-8-the-biplot" class="level1">
+<h1>Part 8 · The biplot</h1>
+<p>Our plot shows <strong>where Pokémon sit</strong>. It does not show <strong>which direction each original stat points</strong>.</p>
+<p>A <strong>biplot</strong> draws both at once:</p>
+<ul>
+<li><strong>Points</strong> = the Pokémon (the <strong>scores</strong>)</li>
+<li><strong>Arrows</strong> = the original stats (the <strong>loadings</strong>)</li>
+</ul>
+<p>R has a built-in <code>biplot(poke_pca)</code>, but it is ugly and hard to control. Building ours from the loadings means you know exactly what the arrows <strong>are</strong>.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>arrows_df <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(poke_pca<span class="sc">$</span>rotation[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], <span class="at">rownames =</span> <span class="st">"stat"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">PC1 =</span> PC1 <span class="sc">*</span> <span class="dv">4</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">PC2 =</span> PC2 <span class="sc">*</span> <span class="dv">4</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>arrows_df</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(poke_scores, <span class="fu">aes</span>(<span class="at">x =</span> PC1, <span class="at">y =</span> PC2)) <span class="sc">+</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> <span class="st">"grey75"</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_segment</span>(<span class="at">data =</span> arrows_df,</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>               <span class="fu">aes</span>(<span class="at">x =</span> <span class="dv">0</span>, <span class="at">y =</span> <span class="dv">0</span>, <span class="at">xend =</span> PC1, <span class="at">yend =</span> PC2),</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>               <span class="at">arrow =</span> <span class="fu">arrow</span>(<span class="at">length =</span> <span class="fu">unit</span>(<span class="fl">0.2</span>, <span class="st">"cm"</span>))) <span class="sc">+</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text_repel</span>(<span class="at">data =</span> arrows_df, <span class="fu">aes</span>(<span class="at">label =</span> stat),</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>                  <span class="at">fontface =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="fl">3.4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>⚠️ Why <code>* 4</code>
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Loadings run about −0.6 to +0.6. The scores run about −3.5 to +3.5. Draw the arrows at their true length and they <strong>vanish into a dot</strong> at the centre.</p>
+<p>Multiplying by 4 is <strong>purely cosmetic</strong>. It changes the arrows’ <strong>lengths on screen</strong>, never their <strong>directions</strong> — and the directions are the part you interpret. Try 2, or 6, and see.</p>
+</div>
+</div>
+<section id="reading-the-arrows" class="level3">
+<h3 class="anchored" data-anchor-id="reading-the-arrows">Reading the arrows</h3>
+<ul>
+<li><strong>Every arrow points right</strong> — all six stats increase with PC1; the all-positive loadings, now visible</li>
+<li><strong><code>defense</code> points up-right</strong>, <strong><code>speed</code> points down-right</strong> — nearly opposite vertically, which is the trade-off</li>
+<li><code>attack</code> sits with <code>defense</code>; <code>sp_attack</code> and <code>sp_defense</code> lean with <code>speed</code></li>
+<li><strong><code>defense</code> has the longest arrow</strong>, <strong><code>hp</code> the shortest</strong> — so <code>hp</code> is the stat least involved in these two axes</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>✅ Read angles, not positions
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 35%">
+<col style="width: 65%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Arrows</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>close together</td>
+<td>correlated stats</td>
+</tr>
+<tr class="even">
+<td>at right angles</td>
+<td>unrelated</td>
+</tr>
+<tr class="odd">
+<td>opposite</td>
+<td>trade-off</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="part-9-a-trap-worth-naming" class="level1">
+<h1>Part 9 · A trap worth naming</h1>
+<p>Last class the correlation between <code>speed</code> and <code>defense</code> was <strong>−0.05</strong> — essentially <strong>unrelated</strong>.</p>
+<p>But on this biplot their arrows point in nearly <strong>opposite</strong> directions, which <em>looks</em> like a strong trade-off.</p>
+<p><strong>Both are true.</strong> The biplot is a <strong>shadow</strong>. Two arrows can look opposed in the shadow while being unrelated in the full six dimensions.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>⚠️ So always say how much you are showing
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<blockquote class="blockquote">
+<p><em>“PC1 and PC2, which together explain <strong>61.1%</strong> of the variance”</em></p>
+</blockquote>
+<p>Without that number, a reader cannot tell whether your biplot is the whole story or <strong>three-fifths</strong> of it.</p>
+<p><strong>Never show a biplot without its percentages.</strong></p>
+</div>
+</div>
+<p>✏️ <strong>Q5:</strong> Go back to the correlation matrix from last class. Find another pair whose biplot arrows and actual correlation disagree. Why is PC3 relevant here?</p>
+<hr>
+</section>
+<section id="part-10-writing-up-a-pca" class="level1">
+<h1>Part 10 · Writing up a PCA</h1>
+<p>There is no p-value, so the structure is different from everything else this term.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>📝 The model paragraph
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<blockquote class="blockquote">
+<p>Six battle statistics for the 151 original Pokémon were standardised and reduced by principal component analysis. The first two components explained <strong>61.1%</strong> of the total variance (<strong>PC1 39.6%</strong>, <strong>PC2 21.5%</strong>). <strong>PC1</strong> loaded positively on all six statistics (0.28 to 0.54) and is interpreted as <strong>overall power</strong>: the four legendary Pokémon averaged <strong>PC1 = 3.00</strong> against <strong>−0.08</strong> for all others, and Magikarp held the lowest score. <strong>PC2</strong> contrasted <code>defense</code> (<strong>+0.59</strong>) and <code>attack</code> (+0.43) against <code>speed</code> (<strong>−0.54</strong>) and <code>sp_attack</code> (−0.33), separating durable, slow-moving species such as Golem and Cloyster from fast, fragile ones such as Alakazam.</p>
+</blockquote>
+</div>
+</div>
+<p>What that paragraph does:</p>
+<ul>
+<li>Says <strong>what went in</strong> — six stats, 151 Pokémon</li>
+<li>Says it was <strong>standardised</strong> (<code>scale. = TRUE</code>)</li>
+<li>Gives <strong>variance explained</strong>, per axis <strong>and</strong> cumulative</li>
+<li><strong>Names each axis</strong>, and gives the loadings that justify the name</li>
+<li>Gives <strong>evidence from the data</strong> — real Pokémon at each end</li>
+<li>Never says “significant”, because nothing was tested</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>⚠️ The two failure modes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Too little:</strong> <em>“We ran a PCA and PC1 explained 39.6%.”</em> Explained of what? Meaning what?</p>
+<p><strong>Too much:</strong> <em>“PC1 proves power is one-dimensional.”</em> PCA <strong>proves</strong> nothing. It <strong>describes</strong>.</p>
+<p>Describe, name, justify. Stop there.</p>
+</div>
+</div>
+<p>✏️ <strong>Q6:</strong> The paragraph names two Pokémon for PC2 and two for PC1. Why is naming actual data points more convincing than just quoting the loadings?</p>
+<hr>
+</section>
+<section id="extension-homework-all-1025-pokémon-interpreted" class="level1">
+<h1>Extension (homework) — all 1,025 Pokémon, interpreted</h1>
+<p><strong>This is what you turn in:</strong> <code>scripts/22_pca_2_homework.R</code></p>
+<p>Last homework you ran the PCA on all 1,025 Pokémon and read the numbers. Now you <strong>interpret</strong> it:</p>
+<ul>
+<li>Read the loadings and <strong>name PC2 yourself</strong> — no answer is printed anywhere</li>
+<li><strong>Confirm</strong> it from the extremes, and if they disagree with your name, change it <em>and say that you changed it</em></li>
+<li>Draw the <strong>scores plot</strong>, coloured by legendary status — <strong>71</strong> of them this time, not 4</li>
+<li>Draw the <strong>biplot</strong></li>
+<li>Write a full <strong>PCA results paragraph</strong></li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>The code is already written
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Open the file and press <strong>Ctrl/Cmd + Shift + Enter</strong>. Everything runs.</p>
+<p>Nearly all of the marks are for <strong>naming the axes</strong> and for the <strong>write-up</strong>. The only code you write is one number, in the optional section at the bottom.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>🎯 One thing to watch for
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>With 1,025 Pokémon your scores plot has <strong>1,025 dots</strong> and your labelled plot is crowded.</p>
+<p>One of the questions asks what you would change to make it readable — and <em>“label fewer things”</em> is a perfectly good answer, as long as you say what you lose by doing it.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Before you hand in
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Session &gt; Restart R</strong>, then run the whole file top to bottom. It must run clean, and all four plots must draw.</p>
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script>
+// Behaviour for Quarto's "Other Formats" panel (the .quarto-alternate-formats
+// list that shows in the top-right of every lecture/handout page).
+//
+//  * RevealJS decks (*.slides.html) REPLACE the current page when followed as a
+//    normal link, which throws away the site sidebar/nav. Open them in a new
+//    tab instead, so closing the tab lands you back where you were.
+//  * MS Word (.docx) / PowerPoint (.pptx) links should just download the file
+//    without navigating the main window away. The `download` attribute forces
+//    that (these are same-origin files on the published site).
+(function () {
+  function isSlides(href) {
+    return /slides\.html($|[?#])/i.test(href) || /-revealjs\.html($|[?#])/i.test(href);
+  }
+
+  function wireLinks() {
+    var links = document.querySelectorAll(".quarto-alternate-formats a[href]");
+    links.forEach(function (a) {
+      var href = a.getAttribute("href") || "";
+      if (isSlides(href)) {
+        a.target = "_blank";
+        a.rel = "noopener";
+      } else if (/\.(docx|pptx)($|[?#])/i.test(href)) {
+        a.setAttribute("download", "");
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", wireLinks);
+  } else {
+    // Script ran after the DOM was already parsed — wire immediately.
+    wireLinks();
+  }
+
+  // Safety net: some Quarto builds attach their own handler to these links, or
+  // re-render the panel after load, which can drop the target we set above.
+  // Catch the click itself and force the new tab.
+  document.addEventListener("click", function (event) {
+    var a = event.target && event.target.closest
+      ? event.target.closest(".quarto-alternate-formats a[href]")
+      : null;
+    if (!a) return;
+    var href = a.getAttribute("href") || "";
+    if (isSlides(href) && !event.defaultPrevented) {
+      event.preventDefault();
+      window.open(a.href, "_blank", "noopener");
+    }
+  });
+})();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const toggle = window.document.createElement('button');
+      toggle.type = "button";
+      toggle.setAttribute("role", "switch");
+      toggle.setAttribute("aria-checked", "false");
+      toggle.classList.add('top-right');
+      toggle.classList.add('quarto-color-scheme-toggle');
+      toggle.setAttribute("aria-label", "Toggle dark mode");
+      toggle.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      toggle.appendChild(i);
+      // Put the toggle in a landmark of its own, so that landmark navigation
+      // can reach it.
+      //
+      // The container is always a fresh direct child of body, and the toggle is
+      // never moved into page furniture that the theme or the author controls.
+      // The toggle is positioned against the page, so any ancestor that
+      // establishes a containing block captures it: a positioned element or a
+      // grid for position: absolute, and transform, filter, will-change or
+      // contain for position: fixed. A direct child of body has none of these
+      // to inherit, and the shift when one appears is silent and visual.
+      //
+      // ARIA says a document should have at most one banner, and axe reports a
+      // duplicate whether or not the banners carry distinct labels. So use a
+      // header when the page has no banner yet, and a named region otherwise.
+      //
+      // A header is a banner wherever it sits, unless it is inside sectioning
+      // content, so this cannot just look at the children of body: a custom
+      // page layout wraps the title block header in a plain div. An explicit
+      // role="banner" always counts.
+      const sectioning = 'article, aside, main, nav, section, [role="article"], [role="complementary"], [role="main"], [role="navigation"], [role="region"]';
+      const hasBanner = Array.from(
+        window.document.querySelectorAll('header:not([role]), [role="banner"]')
+      ).some(function(el) {
+        return el.hasAttribute("role") || el.closest(sectioning) === null;
+      });
+      const container = window.document.createElement(hasBanner ? "div" : "header");
+      if (hasBanner) {
+        container.setAttribute("role", "region");
+        container.setAttribute("aria-label", "Toggle dark mode");
+      }
+      container.classList.add('quarto-color-scheme-toggle-container');
+      container.appendChild(toggle);
+      window.document.body.appendChild(container);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/wlperry\.github\.io\/umd_datasci");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+      window.quartoDecorateExternalLinks = function (root) {
+     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+          if (!link.classList.contains('no-external-icon')) {
+          }
+        }
+      }
+      };
+      window.quartoDecorateExternalLinks(window.document);
+    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
+    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
+    const hideOnEscAndFocusOut = {
+      name: 'hideOnEscAndFocusOut',
+      defaultValue: true,
+      fn(instance) {
+        const dismiss = () => {
+          // A show scheduled by the trigger delay would otherwise reopen it
+          instance.clearDelayTimeouts();
+          instance.hide();
+        };
+        const onKeyDown = (event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
+          // except an open reveal.js slide menu, which Esc should close too.
+          // The menu handles keys only when its keyboard option is on.
+          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
+            window.Reveal.getConfig().menu?.keyboard !== false;
+          if (!menuHandlesEsc) {
+            event.stopPropagation();
+          }
+          if (instance.popper.contains(window.document.activeElement)) {
+            // Disabled while refocusing so the focus trigger does not reopen it
+            instance.disable();
+            instance.reference.focus();
+            instance.enable();
+          }
+          dismiss();
+        };
+        const onFocusOut = (event) => {
+          const target = event.relatedTarget;
+          if (target && !instance.reference.contains(target) &&
+              !instance.popper.contains(target)) {
+            dismiss();
+          }
+        };
+        // On the trigger too: a click trigger (code-annotations: select) has no
+        // blur handling. Attached for the instance's lifetime so leaving the
+        // trigger also cancels a show still pending on the trigger delay.
+        instance.reference.addEventListener('focusout', onFocusOut);
+        return {
+          onShow() {
+            window.document.addEventListener('keydown', onKeyDown, true);
+            instance.popper.addEventListener('focusout', onFocusOut);
+          },
+          onHide() {
+            window.document.removeEventListener('keydown', onKeyDown, true);
+            instance.popper.removeEventListener('focusout', onFocusOut);
+          },
+          onDestroy() {
+            instance.reference.removeEventListener('focusout', onFocusOut);
+          },
+        };
+      },
+    };
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+        plugins: [hideOnEscAndFocusOut],
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          // Each band is positioned against its own containing block, which is
+          // not the offsetParent of the lines, so place it from client rects.
+          const placeBand = (band, firstEl, lastEl, codeBlock) => {
+            const container = band.offsetParent;
+            if (container === null) {
+              return;
+            }
+            const containerRect = container.getBoundingClientRect();
+            // Reveal.js scales slides with a transform, so convert client
+            // pixels back to the CSS pixels of the container.
+            const scale = containerRect.height / container.offsetHeight || 1;
+            const firstRect = firstEl.getBoundingClientRect();
+            const lastRect = lastEl.getBoundingClientRect();
+            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
+            const height = (lastRect.bottom - firstRect.top) / scale;
+            band.style.top = top - 2 + "px";
+            band.style.height = height + 4 + "px";
+            if (codeBlock) {
+              // Without the copy button wrapper, the containing block is wider
+              // than the code block, so span the code block explicitly.
+              const blockRect = codeBlock.getBoundingClientRect();
+              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
+              band.style.width = blockRect.width / scale + "px";
+            }
+          };
+          if (lineIds.length > 0) {
+            const el = window.document.getElementById(lineIds[0]);
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const parent = el.parentElement.parentElement;
+            // cook up a div (if necessary) and position it
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            placeBand(gutterDiv, el, lastEl);
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+  <script type="application/javascript">
+  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 UMD Data Science Biology Perry</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/wlperry">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="mailto:wlperry@d.umn.edu">
+      <i class="bi bi-envelope-heart-fill" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

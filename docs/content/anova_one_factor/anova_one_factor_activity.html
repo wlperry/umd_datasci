@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.11.9">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Bill Perry">
+<meta name="dcterms.date" content="2026-11-10">
+<meta name="description" content="Hands-on companion to the one-factor ANOVA lecture. Students read a possum dataset found on Kaggle, turn site numbers into named groups with factor(), plot before testing, fit with lm(), read car::Anova(type = 2), check assumptions with performance::check_model() and car::leveneTest(), measure the effect with eta-squared, and find which of the seven sites differ using emmeans and a compact letter display. Homework repeats the whole recipe on tail length, plus an optional section where an assumption check fails on purpose.">
+
+<title>Activity 19 — One-Factor ANOVA: Start to Finish – UMD DAta Science Biology</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-447e42e69aaa9833c0ba1b986f430b20.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-fb9bdec83dc8bbb861c64d9619a503f9.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-bb61aa1e324bf6c70075ca3d131a8e10.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../site_libs/bootstrap/bootstrap-fb9bdec83dc8bbb861c64d9619a503f9.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../css/main.css">
+<meta property="og:title" content="Activity 19 — One-Factor ANOVA: Start to Finish – UMD DAta Science Biology">
+<meta property="og:description" content="Hands-on companion to the one-factor ANOVA lecture. Students read a possum dataset found on Kaggle, turn site numbers into named groups with factor(), plot before testing, fit with lm(), read car::Anova(type = 2), check assumptions with performance::check_model() and car::leveneTest(), measure the effect with eta-squared, and find which of the seven sites differ using emmeans and a compact letter display. Homework repeats the whole recipe on tail length, plus an optional section where an assumption check fails on purpose.">
+<meta property="og:site_name" content="UMD DAta Science Biology">
+</head>
+
+<body class="nav-sidebar docked quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          toggle.setAttribute("aria-checked", alternate ? "true" : "false");
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455).
+    // Not run on load: stylesheets are set before first paint there, and
+    // scrolling would undo the scroll to a URL fragment (#14973).
+    // The one pixel nudge keeps the reader where they were.
+    const refreshSafariScrollbar = () => {
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        const scrollY = window.scrollY;
+        window.scrollTo(0, scrollY > 0 ? scrollY - 1 : 1);
+        setTimeout(() => {
+          window.scrollTo(0, scrollY);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      refreshSafariScrollbar();
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav" aria-label="Toolbar">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item">Activity 19 — One-Factor ANOVA: Start to Finish</li></ol></nav>
+        <a class="flex-grow-1" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto" aria-label="Site">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+      <a href="../../index.html" class="sidebar-logo-link">
+      <img src="../../images/course-hex.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="../../images/course-hex.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
+      </a>
+      <div class="sidebar-tools-main">
+  <button type="button" role="switch" aria-checked="false" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode" aria-label="Toggle dark mode"><i class="bi"></i></button>
+</div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="https://wlperry.github.io/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">← Back to Perry Homepage</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-controls="quarto-sidebar-section-1" aria-expanded="false">
+ <span class="menu-text" id="quarto-sidebar-section-1-label">Course Information</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <ul id="quarto-sidebar-section-1" aria-labelledby="quarto-sidebar-section-1-label" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Schedule</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../syllabus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Syllabus</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../links.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Helpful Links</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-controls="quarto-sidebar-section-2" aria-expanded="false">
+ <span class="menu-text" id="quarto-sidebar-section-2-label">Course Materials</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <ul id="quarto-sidebar-section-2" aria-labelledby="quarto-sidebar-section-2-label" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../lectures.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lectures</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../activities.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Activities</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../common_code/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Common Code</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+    
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="anova_one_factor_activity.docx"><i class="bi bi-file-word"></i>MS Word</a></li></ul></div></div>
+<!-- main -->
+<main class="content" id="quarto-document-content" tabindex="-1">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Activity 19 — One-Factor ANOVA: Start to Finish</h1>
+<p class="subtitle lead">Seven Australian possum sites, eight steps, and the one question F cannot answer</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">anova</div>
+    <div class="quarto-category">emmeans</div>
+    <div class="quarto-category">car</div>
+    <div class="quarto-category">performance</div>
+    <div class="quarto-category">factors</div>
+    <div class="quarto-category">statistics</div>
+    <div class="quarto-category">kaggle</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    <p>Hands-on companion to the one-factor ANOVA lecture. Students read a possum dataset found on Kaggle, turn site numbers into named groups with factor(), plot before testing, fit with lm(), read car::Anova(type = 2), check assumptions with performance::check_model() and car::leveneTest(), measure the effect with eta-squared, and find which of the seven sites differ using emmeans and a compact letter display. Homework repeats the whole recipe on tail length, plus an optional section where an assumption check fails on purpose.</p>
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Bill Perry </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 10, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="in-class-activity-19-one-factor-seven-groups" class="level1">
+<h1>In-class Activity 19: One Factor, Seven Groups 🐾</h1>
+<section id="todays-objectives" class="level3">
+<h3 class="anchored" data-anchor-id="todays-objectives">Today’s Objectives</h3>
+<ol type="1">
+<li>See why <strong>twenty-one t-tests</strong> is the wrong answer to “do these seven groups differ?”</li>
+<li>Turn group <strong>codes into named, ordered groups</strong> with <code>factor()</code></li>
+<li><strong>Plot the data before testing it</strong> — and predict the answer</li>
+<li>Fit with <code>lm()</code> and read the right table: <code>car::Anova(type = 2)</code></li>
+<li>Check the assumptions <strong>after</strong> the fit — <code>check_model()</code>, <code>leveneTest()</code>, <code>shapiro.test()</code></li>
+<li>Say <strong>how big</strong> the effect is with eta-squared</li>
+<li>Find <strong>which</strong> groups differ — <code>emmeans()</code>, <code>pairs()</code>, and a compact letter display</li>
+<li>Do it again on a different measurement for homework</li>
+</ol>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>⚠️ Install these BEFORE class
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Five packages, and <code>performance</code> drags in about a dozen dependencies. <strong>This is not a two-minute job — do it at home.</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"performance"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"see"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"emmeans"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"multcomp"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"effectsize"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>📂 Files for today
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>In-class skeleton:</strong> <a href="scripts/19_anova_one_factor_skeleton.R"><code>19_anova_one_factor_skeleton.R</code></a> → save it as <code>scripts/19_anova_one_factor.R</code>. <strong>All of today’s code is already in it.</strong></li>
+<li><strong>Homework skeleton:</strong> <a href="scripts/19_anova_one_factor_homework.R"><code>19_anova_one_factor_homework.R</code></a> → save it under that same name. <strong>This one is what you turn in.</strong></li>
+<li><strong>Data</strong> — this goes in your <code>data/</code> folder:
+<ul>
+<li><a href="data/possum.csv"><code>possum.csv</code></a> — today in class, and the homework</li>
+</ul></li>
+</ul>
+</div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>What you hand in
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Today is a run-it-and-look-at-it day.</strong> Every line is in this activity <em>and</em> in the skeleton. You do <strong>not</strong> turn in <code>scripts/19_anova_one_factor.R</code>.</li>
+<li>The <strong>Q</strong> boxes are <strong>things to think about</strong>. Not graded, not written down.</li>
+<li><strong>You turn in <code>scripts/19_anova_one_factor_homework.R</code></strong> — the same recipe on tail length.</li>
+</ul>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="part-1-where-the-data-came-from" class="level1">
+<h1>Part 1 · Where the data came from</h1>
+<p>Your final projects need data, so here is how today’s data was actually found.</p>
+<p>A search of <strong>kaggle.com/datasets</strong> for <code>possum</code> returns one useful hit: <strong>“OpenIntro Possum”</strong>, 104 rows and 8 columns. That uploader mirrored it from <strong>OpenIntro</strong>, a statistics-textbook project. OpenIntro in turn took it from a <strong>1995 paper</strong> in the <em>Australian Journal of Zoology</em>.</p>
+<p>The trail runs: <strong>Kaggle → textbook → peer-reviewed field study.</strong></p>
+<p>The animals are <strong>mountain brushtail possums</strong>, <em>Trichosurus cunninghami</em> — nocturnal, tree-dwelling Australian marsupials. 104 of them were live-trapped at <strong>seven forest sites</strong>, from Victoria in the south up to Queensland, and each one was measured.</p>
+<p>Our question:</p>
+<blockquote class="blockquote">
+<p><strong>Do possums from different sites differ in total length?</strong></p>
+</blockquote>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 18%">
+<col style="width: 22%">
+<col style="width: 60%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Role</th>
+<th>Column</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Response</td>
+<td><code>total_l</code></td>
+<td>total length, cm — a number</td>
+</tr>
+<tr class="even">
+<td>Factor</td>
+<td><code>site</code></td>
+<td>which forest it was trapped in — seven groups</td>
+</tr>
+</tbody>
+</table>
+<p>One factor, seven levels. That is the entire design, and it is where the test gets its name.</p>
+<p>✏️ <strong>Q1:</strong> Kaggle is a <em>mirror</em>, not a source — anyone can upload anything. How far back could you trace the data you are using for your final project? If you cannot find who collected it, what should that tell you?</p>
+<hr>
+</section>
+<section id="part-2-why-not-just-run-lots-of-t-tests" class="level1">
+<h1>Part 2 · Why not just run lots of t-tests?</h1>
+<p>Seven groups make <strong>21 pairs</strong>. We know how to compare two groups, so why not do it 21 times?</p>
+<p>Because each test at <span class="math inline">\(\alpha = 0.05\)</span> carries a 5% chance of a false positive. Run 21 of them on data where <strong>nothing at all is going on</strong>:</p>
+<p><span class="math display">\[1 - 0.95^{21} = 0.66\]</span></p>
+<p>A <strong>66% chance</strong> of at least one “significant” result from pure noise. You would find something roughly two times out of three, and it would mean nothing.</p>
+<p>ANOVA asks <strong>one</strong> question instead — <em>is there any difference among these seven means?</em> — for one p-value and one 5% risk. It answers by comparing two kinds of variation:</p>
+<p><span class="math display">\[F = \frac{\text{variation between groups}}{\text{variation within groups}}\]</span></p>
+<ul>
+<li><span class="math inline">\(F \approx 1\)</span> → groups differ about as much as individuals do. Nothing to see.</li>
+<li><span class="math inline">\(F \gg 1\)</span> → groups differ <strong>more</strong> than individuals within them do. Something is going on.</li>
+</ul>
+<p>✏️ <strong>Q2:</strong> “More tests” sounds more thorough. Explain to someone who has not taken this class why running more tests makes you <em>more</em> likely to be wrong, not less.</p>
+<hr>
+</section>
+<section id="part-3-read-it-in" class="level1">
+<h1>Part 3 · Read it in</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load packages ---------------------------------------</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car)          <span class="co"># Anova(), leveneTest()</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(performance)  <span class="co"># check_model(), check_normality()</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(emmeans)      <span class="co"># follow-up comparisons</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(multcomp)     <span class="co"># cld() - the compact letter display</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(effectsize)   <span class="co"># eta_squared()</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the file ---------------------------------------</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>possum_raw <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/possum.csv"</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(possum_raw)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(possum_raw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li>104 rows, 8 columns</li>
+<li><code>head_l</code>, <code>skull_w</code>, <code>total_l</code>, <code>tail_l</code> are the measurements; <code>site</code>, <code>pop</code>, <code>sex</code>, <code>age</code> describe the animal</li>
+</ul>
+<hr>
+</section>
+<section id="part-4-the-site-column-is-a-trap" class="level1">
+<h1>Part 4 · The <code>site</code> column is a trap</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>possum_raw <span class="sc">%&gt;%</span> <span class="fu">count</span>(site)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Seven groups, 7 to 33 animals each. But look at <strong>what</strong> those group names are.</p>
+<p>They are the integers <strong>1 to 7</strong>. To R, that is a <strong>quantity</strong> — as if site 6 were “twice site 3”. It is not. It is a <strong>name</strong> that happens to be written with a digit.</p>
+<p>Leave it like that and <code>lm()</code> will fit a <strong>straight line through site number</strong>, which is nonsense. There is no error. There is no warning. You get a p-value, and it is meaningless.</p>
+<p>✏️ <strong>Q3:</strong> The sites are numbered 1–7 in geographic order, south to north. Does that make <code>site</code> a number? What would the model be claiming if you fit a line through it?</p>
+<hr>
+</section>
+<section id="part-5-fix-it-with-factor" class="level1">
+<h1>Part 5 · Fix it with <code>factor()</code></h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>possum_df <span class="ot">&lt;-</span> possum_raw <span class="sc">%&gt;%</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(total_l)) <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">site_name =</span> <span class="fu">factor</span>(site,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                            <span class="at">levels =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">7</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                            <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Cambarville"</span>, <span class="st">"Bellbird"</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"Whian Whian"</span>, <span class="st">"Byrangery"</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"Conondale"</span>, <span class="st">"Allyn River"</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"Bulburin"</span>)))</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>possum_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(site_name)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="fu">levels</span>(possum_df<span class="sc">$</span>site_name)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>levels</code> = the values <strong>as they appear in the data</strong></li>
+<li><code>labels</code> = what you want them <strong>called</strong></li>
+<li>The two lists must be the <strong>same length</strong> and in the <strong>same order</strong></li>
+</ul>
+<p>The site names come from the <strong>OpenIntro codebook</strong> — we did not invent them. They sit in three states:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 35%">
+<col style="width: 65%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>State</th>
+<th>Sites</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Victoria</td>
+<td>Cambarville, Bellbird</td>
+</tr>
+<tr class="even">
+<td>New South Wales</td>
+<td>Whian Whian, Byrangery</td>
+</tr>
+<tr class="odd">
+<td>Queensland / N. NSW</td>
+<td>Conondale, Allyn River, Bulburin</td>
+</tr>
+</tbody>
+</table>
+<p>✏️ <strong>Q4:</strong> Suppose you typed the seven labels in the wrong order. What would R tell you? (Nothing.) What would happen to every result for the rest of the session?</p>
+<hr>
+</section>
+<section id="part-6-look-at-it-before-you-test-it" class="level1">
+<h1>Part 6 · Look at it before you test it</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(possum_df, <span class="fu">aes</span>(<span class="at">x =</span> site_name, <span class="at">y =</span> total_l)) <span class="sc">+</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>outlier.shape = NA</code> stops the boxplot drawing outlier dots, because <code>geom_jitter()</code> is already drawing <strong>every</strong> point</li>
+<li><code>width = 0.15</code> keeps the jitter tight enough that you can still tell which group is which</li>
+</ul>
+<p>Read it before you test anything:</p>
+<ul>
+<li><strong>Bellbird</strong> sits low</li>
+<li><strong>Byrangery</strong> sits high</li>
+<li>The middle five <strong>overlap heavily</strong></li>
+<li>The boxes are about <strong>equally tall</strong> — spread looks similar across sites</li>
+<li>No wild outliers</li>
+</ul>
+<p>✏️ <strong>Q5:</strong> Predict the result <strong>now</strong>, out loud: significant or not? Driven by which sites? Will the middle five separate from each other? Write your prediction down — you will check it in Part 12.</p>
+<p>✏️ <strong>Q6:</strong> Why is predicting the answer before you test not cheating? (What would you do if the test came back disagreeing with the picture?)</p>
+<hr>
+</section>
+<section id="part-7-the-group-means" class="level1">
+<h1>Part 7 · The group means</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>possum_df <span class="sc">%&gt;%</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(site_name) <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">mean_total =</span> <span class="fu">round</span>(<span class="fu">mean</span>(total_l), <span class="dv">1</span>),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">sd_total   =</span> <span class="fu">round</span>(<span class="fu">sd</span>(total_l), <span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 15%">
+<col style="width: 45%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Site</th>
+<th>n</th>
+<th>Mean total length (cm)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Cambarville</td>
+<td>33</td>
+<td>89.7</td>
+</tr>
+<tr class="even">
+<td>Bellbird</td>
+<td>13</td>
+<td>81.8</td>
+</tr>
+<tr class="odd">
+<td>Whian Whian</td>
+<td>7</td>
+<td>88.1</td>
+</tr>
+<tr class="even">
+<td>Byrangery</td>
+<td>7</td>
+<td>92.2</td>
+</tr>
+<tr class="odd">
+<td>Conondale</td>
+<td>13</td>
+<td>86.9</td>
+</tr>
+<tr class="even">
+<td>Allyn River</td>
+<td>13</td>
+<td>84.5</td>
+</tr>
+<tr class="odd">
+<td>Bulburin</td>
+<td>18</td>
+<td>85.7</td>
+</tr>
+</tbody>
+</table>
+<p>There is an obvious story here, and it is wrong. Seven sites on a north–south gradient invites:</p>
+<blockquote class="blockquote">
+<p><em>Colder in the south → bigger animals. Bergmann’s rule.</em></p>
+</blockquote>
+<p>Look again. The two <strong>Victorian</strong> sites are the southernmost, and they are at <strong>opposite extremes</strong> — Cambarville 89.7 cm, Bellbird 81.8 cm. Two forests, same state, <strong>8 cm apart</strong>. Latitude cannot explain that.</p>
+<p>✏️ <strong>Q7:</strong> A significant F will tell you the sites <strong>differ</strong>. What will it tell you about <em>why</em>? What else would you need to measure to test a latitude explanation?</p>
+<hr>
+</section>
+<section id="part-8-fit-the-model" class="level1">
+<h1>Part 8 · Fit the model</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>total_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(total_l <span class="sc">~</span> site_name, <span class="at">data =</span> possum_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>response ~ predictor</code>, exactly as in regression. The only change is that the predictor is a <strong>factor with seven levels</strong> instead of a number.</p>
+<p>There is no separate ANOVA function. <strong>ANOVA is a linear model</strong> — not a simplification, literally the same machinery you used for regression.</p>
+<hr>
+</section>
+<section id="part-9-do-not-read-summary-first" class="level1">
+<h1>Part 9 · Do not read <code>summary()</code> first</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>You get <strong>six slopes</strong>, with names like <code>site_nameBellbird</code>, each comparing one site to <strong>Cambarville</strong> — because Cambarville is level 1, so it became the baseline.</p>
+<p>That answers <em>“is each site different from Cambarville?”</em>. Nobody asked about Cambarville.</p>
+<p>✏️ <strong>Q8:</strong> Change which site is level 1 and all six of those p-values change. Does the real answer depend on which site happens to be listed first? So what does that tell you about this table?</p>
+<hr>
+</section>
+<section id="part-10-the-right-table" class="level1">
+<h1>Part 10 · The right table</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(total_model, <span class="at">type =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>F(6, 97) = 14.58, p = 8.45 × 10⁻¹²</strong></p>
+<p>One line, one p-value, one question answered: the seven site means are <strong>not all the same</strong>.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 15%">
+<col style="width: 60%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>In the table</th>
+<th>Value</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Sum Sq</code> (site)</td>
+<td>907.6</td>
+<td>variation <strong>explained</strong> by site</td>
+</tr>
+<tr class="even">
+<td><code>Sum Sq</code> (resid)</td>
+<td>1006.2</td>
+<td>variation left over <strong>within</strong> sites</td>
+</tr>
+<tr class="odd">
+<td><code>Df</code> (site)</td>
+<td>6</td>
+<td>7 groups − 1</td>
+</tr>
+<tr class="even">
+<td><code>Df</code> (resid)</td>
+<td>97</td>
+<td>104 possums − 7 groups</td>
+</tr>
+<tr class="odd">
+<td><code>F value</code></td>
+<td>14.58</td>
+<td>the ratio, after dividing each <code>Sum Sq</code> by its <code>Df</code></td>
+</tr>
+</tbody>
+</table>
+<p>Between-site variation is <strong>14 and a half times</strong> within-site variation.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Why <code>type = 2</code>?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>With <strong>one</strong> factor, Types I, II and III give the <strong>identical</strong> answer — it genuinely does not matter here. We write <code>type = 2</code> as a habit, because the moment you add a second factor it starts mattering a great deal.</p>
+</div>
+</div>
+<hr>
+</section>
+<section id="part-11-how-big-is-it-f-does-not-say" class="level1">
+<h1>Part 11 · How big is it? F does not say</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">eta_squared</span>(<span class="fu">Anova</span>(total_model, <span class="at">type =</span> <span class="dv">2</span>), <span class="at">partial =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Eta-squared (<span class="math inline">\(\eta^2\)</span>) = 0.47.</strong> Which site a possum came from accounts for <strong>47% of all the variation</strong> in total length. The other 53% is possums being individuals.</p>
+<p>✏️ <strong>Q9:</strong> p answers <em>“is it real?”</em> and <span class="math inline">\(\eta^2\)</span> answers <em>“is it big?”</em>. With a big enough sample, a difference far too small to care about gets a tiny p.&nbsp;Why must a results section report both?</p>
+<hr>
+</section>
+<section id="part-12-check-the-assumptions-after-fitting" class="level1">
+<h1>Part 12 · Check the assumptions — <em>after</em> fitting</h1>
+<p>ANOVA assumes two things you can test, and one you check by thinking:</p>
+<ol type="1">
+<li><strong>Equal variances</strong> across groups</li>
+<li><strong>Normal residuals</strong> — what the model <em>missed</em> is normally distributed</li>
+<li><strong>Independence</strong> — each possum is one animal, trapped once, measured once ✅</li>
+</ol>
+<p>You cannot check residuals before you have residuals. <strong>Fit first, then check.</strong></p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">check_model</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Five panels, read like this:</p>
+<ul>
+<li><strong>Posterior predictive check</strong> — simulated data should sit on top of real data</li>
+<li><strong>Linearity</strong> — flat line, no funnel</li>
+<li><strong>Homogeneity of variance</strong> — flat line; a slope or wedge means trouble</li>
+<li><strong>Influential observations</strong> — points inside the dashed contours</li>
+<li><strong>Normality of residuals</strong> — dots hugging the diagonal</li>
+</ul>
+<p>All five look healthy here. That is a boring plot, and boring is exactly what you want.</p>
+<p><strong>▶ Then run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Equal variances across sites?</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(total_l <span class="sc">~</span> site_name, <span class="at">data =</span> possum_df)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Normal residuals?</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(total_model))</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># The same two checks, in English:</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="fu">check_homogeneity</span>(total_model)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">check_normality</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li>Levene <strong>p = 0.805</strong> → no evidence variances differ. <strong>PASS</strong></li>
+<li>Shapiro–Wilk <strong>p = 0.588</strong> → no evidence of non-normality. <strong>PASS</strong></li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>⚠️ These tests run backwards
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>For the <strong>main</strong> test, a small p was the interesting result. For <strong>assumption</strong> tests it is the opposite — a small p means your test is in trouble.</p>
+<p>Say it out loud every time: <em>“Levene p = 0.805. Big. Variances are fine. Carry on.”</em></p>
+</div>
+</div>
+<p>✏️ <strong>Q10:</strong> With small groups these tests are weak and pass almost anything; with huge samples they are brutal and fail on differences too small to matter. So why look at <code>check_model()</code> <strong>as well</strong>, every time?</p>
+<p>✏️ <strong>Q11:</strong> Go back to your Part 6 prediction. Did the picture and the test agree?</p>
+<hr>
+</section>
+<section id="part-13-f-said-not-all-equal-that-is-all-it-said" class="level1">
+<h1>Part 13 · F said “not all equal” — that is all it said</h1>
+<p>We have <strong>F(6, 97) = 14.58, p &lt; 0.001</strong>: <em>at least one</em> site differs from <em>at least one</em> other. It does <strong>not</strong> say which, how many, or in which direction.</p>
+<p>For that you need <strong>post-hoc</strong> comparisons — “after the fact”.</p>
+<p>Running 21 comparisons was wrong <strong>as a first move</strong>. Running them <strong>after</strong> a significant F, <strong>with the p-values adjusted</strong>, is the standard, defensible approach. The gate came first.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>site_means <span class="ot">&lt;-</span> <span class="fu">emmeans</span>(total_model, <span class="sc">~</span> site_name)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>site_means</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="fu">pairs</span>(site_means, <span class="at">adjust =</span> <span class="st">"tukey"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>emmeans</code> gives each site’s estimated mean with a standard error and confidence interval. <code>pairs()</code> then compares all 21 pairs, and <strong>Tukey</strong> widens every p-value to pay for running 21 tests.</p>
+<p><strong>10 of the 21 pairs come back significant</strong> — the ends separate, the middle mostly does not. Exactly what the boxplot said.</p>
+<p>✏️ <strong>Q12:</strong> What would these 21 p-values look like with <code>adjust = "none"</code>? Which pairs would flip? Is that the 66% problem from Part 2, back again?</p>
+<hr>
+</section>
+<section id="part-14-the-letters" class="level1">
+<h1>Part 14 · The letters</h1>
+<p>Nobody wants 21 p-values in a results section. They want to know which groups <strong>cluster together</strong>.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cld</span>(site_means, <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Share a letter → not shown to differ. No letter in common → they differ.</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 25%">
+<col style="width: 35%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Site</th>
+<th>Mean (cm)</th>
+<th>Letters</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Bellbird</td>
+<td>81.8</td>
+<td>a</td>
+</tr>
+<tr class="even">
+<td>Allyn River</td>
+<td>84.5</td>
+<td>ab</td>
+</tr>
+<tr class="odd">
+<td>Bulburin</td>
+<td>85.7</td>
+<td>b</td>
+</tr>
+<tr class="even">
+<td>Conondale</td>
+<td>86.9</td>
+<td>bc</td>
+</tr>
+<tr class="odd">
+<td>Whian Whian</td>
+<td>88.1</td>
+<td>bcd</td>
+</tr>
+<tr class="even">
+<td>Cambarville</td>
+<td>89.7</td>
+<td>cd</td>
+</tr>
+<tr class="odd">
+<td>Byrangery</td>
+<td>92.2</td>
+<td>d</td>
+</tr>
+</tbody>
+</table>
+<p>A clean ladder from 81.8 cm up to 92.2 cm. <strong>Bellbird</strong> (<code>a</code>) and <strong>Byrangery</strong> (<code>d</code>) share nothing, so they differ. <strong>Allyn River</strong> (<code>ab</code>) cannot be told apart from either neighbour.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>⚠️ Read R’s own note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<blockquote class="blockquote">
+<p><em>“If two or more means share the same grouping symbol, then we cannot show them to be different. <strong>But we also did not show them to be the same.</strong>”</em></p>
+</blockquote>
+<p>Sharing a letter is a <strong>failure to detect a difference</strong> — not evidence of equality. Byrangery has n = 7.</p>
+</div>
+</div>
+<p>✏️ <strong>Q13:</strong> Byrangery has the highest mean and only 7 animals. If someone trapped 70 more there, what would you expect to happen to its letters — and why?</p>
+<hr>
+</section>
+<section id="part-15-put-the-letters-on-the-plot" class="level1">
+<h1>Part 15 · Put the letters on the plot</h1>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>letters_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">cld</span>(site_means, <span class="at">Letters =</span> letters)) <span class="sc">%&gt;%</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">group =</span> <span class="fu">trimws</span>(.group))</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(possum_df, <span class="fu">aes</span>(<span class="at">x =</span> site_name, <span class="at">y =</span> total_l)) <span class="sc">+</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> letters_df,</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>            <span class="fu">aes</span>(<span class="at">x =</span> site_name, <span class="at">y =</span> <span class="dv">97</span>, <span class="at">label =</span> group),</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">size =</span> <span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>cld()</code> returns an object, so <code>as.data.frame()</code> makes it plottable</li>
+<li><code>.group</code> arrives padded with spaces for alignment, so <code>trimws()</code> strips them</li>
+<li><code>y = 97</code> just parks the letters above the tallest point</li>
+</ul>
+<p>This single figure now carries the whole result: the raw data, the group spread, and which groups differ.</p>
+<hr>
+</section>
+<section id="part-16-write-it-up" class="level1">
+<h1>Part 16 · Write it up</h1>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>📝 The whole result, in three sentences
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<blockquote class="blockquote">
+<p>Total length differed significantly among the seven trapping sites (one-way ANOVA, <strong>F(6, 97) = 14.58, p &lt; 0.001</strong>), and site accounted for <strong>47% of the variation</strong> in length (<strong>η² = 0.47</strong>). Residuals were normally distributed (Shapiro–Wilk <strong>p = 0.59</strong>) with homogeneous variances across sites (Levene’s test <strong>p = 0.81</strong>). Tukey-adjusted comparisons separated <strong>Bellbird</strong> (mean <strong>81.8 cm</strong>) from <strong>Byrangery</strong> (<strong>92.2 cm</strong>), with the remaining five sites forming an <strong>overlapping middle group</strong>.</p>
+</blockquote>
+</div>
+</div>
+<p>Every number has a job: the <strong>test</strong>, <strong>F with both df</strong> (so a reader can reconstruct your design), <strong>p</strong> written as <code>p &lt; 0.001</code> and never <code>p = 0.000</code>, the <strong>effect size</strong>, the <strong>assumption checks</strong> so the reader knows you looked, and the <strong>pattern</strong> with real means attached.</p>
+<p>✏️ <strong>Q14:</strong> That paragraph never uses the word “proves”, and never says two sites are “the same”. Find the places where it would have been tempting to say either, and explain what it says instead.</p>
+<hr>
+</section>
+<section id="part-17-break-it-on-purpose" class="level1">
+<h1>Part 17 · Break it on purpose</h1>
+<p>Remember Part 4 — <code>site</code> left as a number. Let us actually do it and compare.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>broken_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(total_l <span class="sc">~</span> site, <span class="at">data =</span> possum_df)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(broken_model, <span class="at">type =</span> <span class="dv">2</span>)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(total_model, <span class="at">type =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The broken one reports <strong>Df = 1</strong>, not 6, and comes back <strong>p = 0.0075</strong> — still “significant”!</p>
+<p>It fit a single straight line through site <strong>ID</strong> and asked <em>“does length go up as site number goes up?”</em> — a question about the order someone typed the sites in. It still prints a p-value. Nothing warns you.</p>
+<p>✏️ <strong>Q15:</strong> The broken model is significant. If you had never checked, you would have reported it. What in the output would have given it away?</p>
+<hr>
+</section>
+<section id="the-recipe-for-next-time" class="level1">
+<h1>The recipe, for next time</h1>
+<ol type="1">
+<li><code>factor()</code> the groups — <code>levels</code>, <code>labels</code></li>
+<li><strong>Plot</strong> it, and predict the answer</li>
+<li><code>lm()</code></li>
+<li><code>Anova(type = 2)</code></li>
+<li><code>check_model()</code> + <code>leveneTest()</code> + <code>shapiro.test()</code></li>
+<li><code>eta_squared()</code></li>
+<li><code>emmeans()</code> → <code>pairs()</code> → <code>cld()</code></li>
+<li>Write the sentence</li>
+</ol>
+<hr>
+</section>
+<section id="extension-homework-the-same-possums-a-different-ruler" class="level1">
+<h1>Extension (homework) — the same possums, a different ruler</h1>
+<p><strong>This is what you turn in:</strong> <code>scripts/19_anova_one_factor_homework.R</code></p>
+<p>The file carries <strong>four</strong> measurements on every animal:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 75%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>total_l</code></td>
+<td>total length, cm — what we used today</td>
+</tr>
+<tr class="even">
+<td><code>tail_l</code></td>
+<td>tail length, cm — <strong>your homework</strong></td>
+</tr>
+<tr class="odd">
+<td><code>head_l</code></td>
+<td>head length, mm</td>
+</tr>
+<tr class="even">
+<td><code>skull_w</code></td>
+<td>skull width, mm</td>
+</tr>
+</tbody>
+</table>
+<p>You run <strong>all eight steps</strong> again on <strong><code>tail_l</code></strong>. Same 104 animals, same seven sites, same recipe — a different ruler.</p>
+<p>The real question is whether the <strong>pattern holds</strong>. Today’s letters ran from Bellbird at the bottom to Byrangery at the top. Do the sites with the longest <em>bodies</em> also have the longest <em>tails</em>? Your last question asks you to put your letters next to ours and say what changed.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>📖 And one part where it breaks
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The homework also has an <strong>optional</strong> section on <code>skull_w</code>, where one of the two assumptions <strong>fails</strong>.</p>
+<p>That is there on purpose. Every assumption check you have run so far has passed, which makes it easy to think the check is a formality. It is not — and it is much better to meet a failure here, on homework, than in your final project.</p>
+</div>
+</div>
+</section>
+<section id="next-class-new-zealand-tree-wētā" class="level1">
+<h1>Next class — New Zealand tree wētā 🦗</h1>
+<p><strong>Wellington tree wētā</strong>, <em>Hemideina crassidens</em>, is a large flightless relative of crickets found only in New Zealand. Its adult males come in <strong>three distinct forms</strong>: small-jawed sneaks, intermediates, and huge-jawed fighters that hold harems.</p>
+<p>We will find the three forms differ enormously in <strong>ear size</strong> — wētā hear through a membrane on the foreleg. Then we will divide ear size <strong>by body size</strong>, run the identical test, and watch the answer <strong>change</strong>.</p>
+<p>ANOVA answers the question you <strong>asked</strong> it. Making sure that is the question you <strong>meant</strong> is the whole job of next class.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Before you hand in
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Session &gt; Restart R</strong>, then run the whole file top to bottom. It must run clean, and your plots must draw.</p>
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script>
+// Behaviour for Quarto's "Other Formats" panel (the .quarto-alternate-formats
+// list that shows in the top-right of every lecture/handout page).
+//
+//  * RevealJS decks (*.slides.html) REPLACE the current page when followed as a
+//    normal link, which throws away the site sidebar/nav. Open them in a new
+//    tab instead, so closing the tab lands you back where you were.
+//  * MS Word (.docx) / PowerPoint (.pptx) links should just download the file
+//    without navigating the main window away. The `download` attribute forces
+//    that (these are same-origin files on the published site).
+(function () {
+  function isSlides(href) {
+    return /slides\.html($|[?#])/i.test(href) || /-revealjs\.html($|[?#])/i.test(href);
+  }
+
+  function wireLinks() {
+    var links = document.querySelectorAll(".quarto-alternate-formats a[href]");
+    links.forEach(function (a) {
+      var href = a.getAttribute("href") || "";
+      if (isSlides(href)) {
+        a.target = "_blank";
+        a.rel = "noopener";
+      } else if (/\.(docx|pptx)($|[?#])/i.test(href)) {
+        a.setAttribute("download", "");
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", wireLinks);
+  } else {
+    // Script ran after the DOM was already parsed — wire immediately.
+    wireLinks();
+  }
+
+  // Safety net: some Quarto builds attach their own handler to these links, or
+  // re-render the panel after load, which can drop the target we set above.
+  // Catch the click itself and force the new tab.
+  document.addEventListener("click", function (event) {
+    var a = event.target && event.target.closest
+      ? event.target.closest(".quarto-alternate-formats a[href]")
+      : null;
+    if (!a) return;
+    var href = a.getAttribute("href") || "";
+    if (isSlides(href) && !event.defaultPrevented) {
+      event.preventDefault();
+      window.open(a.href, "_blank", "noopener");
+    }
+  });
+})();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const toggle = window.document.createElement('button');
+      toggle.type = "button";
+      toggle.setAttribute("role", "switch");
+      toggle.setAttribute("aria-checked", "false");
+      toggle.classList.add('top-right');
+      toggle.classList.add('quarto-color-scheme-toggle');
+      toggle.setAttribute("aria-label", "Toggle dark mode");
+      toggle.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      toggle.appendChild(i);
+      // Put the toggle in a landmark of its own, so that landmark navigation
+      // can reach it.
+      //
+      // The container is always a fresh direct child of body, and the toggle is
+      // never moved into page furniture that the theme or the author controls.
+      // The toggle is positioned against the page, so any ancestor that
+      // establishes a containing block captures it: a positioned element or a
+      // grid for position: absolute, and transform, filter, will-change or
+      // contain for position: fixed. A direct child of body has none of these
+      // to inherit, and the shift when one appears is silent and visual.
+      //
+      // ARIA says a document should have at most one banner, and axe reports a
+      // duplicate whether or not the banners carry distinct labels. So use a
+      // header when the page has no banner yet, and a named region otherwise.
+      //
+      // A header is a banner wherever it sits, unless it is inside sectioning
+      // content, so this cannot just look at the children of body: a custom
+      // page layout wraps the title block header in a plain div. An explicit
+      // role="banner" always counts.
+      const sectioning = 'article, aside, main, nav, section, [role="article"], [role="complementary"], [role="main"], [role="navigation"], [role="region"]';
+      const hasBanner = Array.from(
+        window.document.querySelectorAll('header:not([role]), [role="banner"]')
+      ).some(function(el) {
+        return el.hasAttribute("role") || el.closest(sectioning) === null;
+      });
+      const container = window.document.createElement(hasBanner ? "div" : "header");
+      if (hasBanner) {
+        container.setAttribute("role", "region");
+        container.setAttribute("aria-label", "Toggle dark mode");
+      }
+      container.classList.add('quarto-color-scheme-toggle-container');
+      container.appendChild(toggle);
+      window.document.body.appendChild(container);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/wlperry\.github\.io\/umd_datasci");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+      window.quartoDecorateExternalLinks = function (root) {
+     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+          if (!link.classList.contains('no-external-icon')) {
+          }
+        }
+      }
+      };
+      window.quartoDecorateExternalLinks(window.document);
+    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
+    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
+    const hideOnEscAndFocusOut = {
+      name: 'hideOnEscAndFocusOut',
+      defaultValue: true,
+      fn(instance) {
+        const dismiss = () => {
+          // A show scheduled by the trigger delay would otherwise reopen it
+          instance.clearDelayTimeouts();
+          instance.hide();
+        };
+        const onKeyDown = (event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
+          // except an open reveal.js slide menu, which Esc should close too.
+          // The menu handles keys only when its keyboard option is on.
+          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
+            window.Reveal.getConfig().menu?.keyboard !== false;
+          if (!menuHandlesEsc) {
+            event.stopPropagation();
+          }
+          if (instance.popper.contains(window.document.activeElement)) {
+            // Disabled while refocusing so the focus trigger does not reopen it
+            instance.disable();
+            instance.reference.focus();
+            instance.enable();
+          }
+          dismiss();
+        };
+        const onFocusOut = (event) => {
+          const target = event.relatedTarget;
+          if (target && !instance.reference.contains(target) &&
+              !instance.popper.contains(target)) {
+            dismiss();
+          }
+        };
+        // On the trigger too: a click trigger (code-annotations: select) has no
+        // blur handling. Attached for the instance's lifetime so leaving the
+        // trigger also cancels a show still pending on the trigger delay.
+        instance.reference.addEventListener('focusout', onFocusOut);
+        return {
+          onShow() {
+            window.document.addEventListener('keydown', onKeyDown, true);
+            instance.popper.addEventListener('focusout', onFocusOut);
+          },
+          onHide() {
+            window.document.removeEventListener('keydown', onKeyDown, true);
+            instance.popper.removeEventListener('focusout', onFocusOut);
+          },
+          onDestroy() {
+            instance.reference.removeEventListener('focusout', onFocusOut);
+          },
+        };
+      },
+    };
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+        plugins: [hideOnEscAndFocusOut],
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          // Each band is positioned against its own containing block, which is
+          // not the offsetParent of the lines, so place it from client rects.
+          const placeBand = (band, firstEl, lastEl, codeBlock) => {
+            const container = band.offsetParent;
+            if (container === null) {
+              return;
+            }
+            const containerRect = container.getBoundingClientRect();
+            // Reveal.js scales slides with a transform, so convert client
+            // pixels back to the CSS pixels of the container.
+            const scale = containerRect.height / container.offsetHeight || 1;
+            const firstRect = firstEl.getBoundingClientRect();
+            const lastRect = lastEl.getBoundingClientRect();
+            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
+            const height = (lastRect.bottom - firstRect.top) / scale;
+            band.style.top = top - 2 + "px";
+            band.style.height = height + 4 + "px";
+            if (codeBlock) {
+              // Without the copy button wrapper, the containing block is wider
+              // than the code block, so span the code block explicitly.
+              const blockRect = codeBlock.getBoundingClientRect();
+              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
+              band.style.width = blockRect.width / scale + "px";
+            }
+          };
+          if (lineIds.length > 0) {
+            const el = window.document.getElementById(lineIds[0]);
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const parent = el.parentElement.parentElement;
+            // cook up a div (if necessary) and position it
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            placeBand(gutterDiv, el, lastEl);
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+  <script type="application/javascript">
+  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2026 UMD Data Science Biology Perry</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/wlperry">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="mailto:wlperry@d.umn.edu">
+      <i class="bi bi-envelope-heart-fill" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

@@ -1,0 +1,162 @@
+---
+title: "Spatial Data and Mapping in R (Ornithology Edition)"
+author: "data_science"
+format: 
+  html:
+    toc: true
+    toc-depth: 2
+    theme: cosmo
+execute:
+  warning: false
+  message: false
+---
+
+## Introduction
+
+Welcome! In this module, we are going to learn how to build maps in R. While you are likely familiar with using `ggplot2` to make scatterplots and bar charts, mapping requires handling a special type of data: **spatial vectors** (points, lines, and polygons).
+
+By the end of this worksheet, you will know how to take a standard dataset of bird sightings (latitude and longitude), convert it into spatial data, and layer it over real-world political and physical boundaries.
+
+## 1. The Spatial Toolkit: Beyond the Tidyverse
+
+To map data, we need libraries that understand geography. We will load `tidyverse` for our standard data wrangling, alongside these spatial-specific packages:
+
+-   **`sf` (Simple Features):** The backbone of spatial analysis in R. It allows R to treat geographic shapes (like the boundary of New York or the exact point a hawk was seen) as standard dataframe columns.
+-   **`tigris`:** A package that connects directly to the US Census Bureau to download state, county, and regional boundaries.
+-   **`rnaturalearth`:** Great for global physical features, like oceans, major lakes, or country borders.
+-   **`ggrepel`:** An extension for `ggplot2` that pushes text labels away from each other so they don't overlap on your map.
+
+```{r load-libraries}
+# You may need to have them run install.packages("rinat") in the console first!
+# install.packages("rinat")
+library(rinat)
+
+# Load the necessary libraries
+library(tidyverse)
+library(sf)
+library(tigris)         
+library(rnaturalearth)  
+library(ggrepel)
+```
+
+## 2. Setting the Stage: Getting Base Maps
+
+Before we can plot our birds, we need a map for them to sit on. We will fetch the political boundaries for the Northeastern US using `tigris`, the Canadian provinces using `rnaturalearth`, and the physical boundary of the Atlantic Ocean.
+
+```{r get-base-maps}
+
+# 1. Fetch US state boundaries using the tigris package
+ne_states <- states(
+  # cb = TRUE downloads "Cartographic Boundaries". 
+  # This gives us smoothed lines made for visual mapping, rather than highly 
+  # detailed legal boundaries (which often extend far out into the ocean!).
+  cb = TRUE, 
+  
+  # resolution = "500k" sets the detail level to a 1:500,000 scale. 
+  # This is a great balance: it looks detailed but keeps the map rendering fast.
+  resolution = "500k"
+) %>% 
+  # STUSPS is the column in the tigris data holding the 2-letter state postal code
+  filter(STUSPS %in% c("NY", "PA", "NJ", "CT", "MA", "VT", "NH", "ME", "RI"))
+
+
+# 2. Fetch Canadian provinces using rnaturalearth
+# Since our map extends north, we need land for the Canadian birds to sit on!
+canada_prov <- ne_states(
+  country = "canada", 
+  returnclass = "sf"
+)
+
+
+# 3. Fetch a physical map of the ocean from the Natural Earth database
+ocean_base <- ne_download(
+  # scale = 50 gives us a medium resolution map (1:50 million).
+  scale = 50, 
+  
+  # category and type tell the database exactly what physical feature we want to download.
+  category = "physical", 
+  type = "ocean", 
+  
+  # returnclass = "sf" is CRITICAL! It forces R to return the data as a modern 
+  # "simple feature" spatial object that works perfectly with ggplot2.
+  returnclass = "sf"
+)
+
+```
+
+> **Pro-Tip for Future Projects:** You can change `STUSPS` to any state abbreviation to map different regions, or use `rnaturalearth::ne_countries()` if you are mapping bird migrations internationally!
+>
+> **Watch out for `cb = TRUE`:** If you ever map coastal birds and set `cb = FALSE` in tigris, R will draw the state polygons extending miles out into the Atlantic Ocean (to the legal maritime borders), which covers up the coastal geography!
+
+## 3. Fetch live, real Red-tailed Hawk sightings from iNaturalist
+
+This grabs recent citizen science observations directly from the web.
+
+```{r hawk_data}
+hawk_data <- get_inat_obs(
+  taxon_name = "Buteo jamaicensis", # Red-tailed Hawk
+  
+  # Set a geographic bounding box: c(min_lat, min_lon, max_lat, max_lon)
+  # This matches the Northeast US and parts of Southeastern Canada
+  bounds = c(38, -81, 48, -66),     
+  
+  # Limit the results so the API downloads quickly in a classroom setting
+  maxresults = 700                  
+)
+```
+
+## 4. Convert standard dataframe into a spatial (sf) object
+
+```{r make-spatial}
+hawks_sf <- st_as_sf(
+  hawk_data, 
+  
+  # iNaturalist returns coordinate columns named exactly "longitude" and "latitude"
+  coords = c("longitude", "latitude"), 
+  
+  # EPSG code 4326 means standard WGS84 GPS coordinates
+  crs = 4326
+)              
+```
+
+## 5. Layering the Map with `ggplot2`
+
+
+
+Now that all our spatial objects share the same CRS, we build the map exactly like a standard `ggplot`. Think of it like a layer cake: we add layers from bottom to top using `geom_sf()`. `geom_sf()` is incredibly smart—it automatically figures out if it's drawing polygons (states/provinces) or points (birds).
+
+```{r build-base-map}
+hawk_map <- ggplot() +
+  
+  # Layer 1: The Ocean (Bottom layer)
+  geom_sf(data = ocean_base, fill = "aliceblue", color = NA) +
+  
+  # Layer 2: Canada (Middle layer, landmass)
+  geom_sf(data = canada_prov, fill = "gray95", color = "gray50") +
+  
+  # Layer 3: The US States (Middle layer, landmass)
+  geom_sf(data = ne_states, fill = "gray95", color = "gray50") +
+  
+  # Layer 4: The Birds! (Top layer)
+  # Since every row is one sighting, we just set a static size and color.
+  # alpha = 0.5 makes the dots slightly transparent so we can see where sightings cluster!
+  geom_sf(data = hawks_sf, color = "darkred", size = 1.5, alpha = 0.5) +
+  
+  # Zooming the map: Crop the "camera" to just the Northeast US / SE Canada bounding box
+  coord_sf(xlim = c(-81, -66), ylim = c(38, 48)) +
+  
+  theme_minimal()
+
+# Let's take a look at our progress
+hawk_map
+```
+
+Finally, we can save our masterpiece for a report or presentation!
+
+```{r export-map}
+#| eval: false
+
+# ggsave automatically saves the last plot displayed (or the one you specify).
+# Setting exact widths and heights ensures your text and points scale properly.
+ggsave("hawk_distribution_map.pdf", plot = hawk_map, width = 7, height = 6, units = "in")
+```

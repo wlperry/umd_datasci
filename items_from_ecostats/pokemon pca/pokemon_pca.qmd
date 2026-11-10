@@ -1,0 +1,361 @@
+---
+title: "Downloading Pokémon data from an API, then running a PCA"
+format:
+  html:
+    toc: true
+    code-fold: show
+    embed-resources: true
+execute:
+  warning: false
+  message: false
+---
+
+## Overview
+
+This script is meant to be run **one cell at a time**. First we learn how to
+download data from a web API (PokéAPI, free, no account or key needed) by
+starting with a single Pokémon. Then we turn that into a function, loop over many
+Pokémon, save the result as a CSV, and finally run a principal component analysis (PCA).
+
+Run each chunk in order and look at the output before moving on.
+
+## 1. Setup
+
+```{r}
+#| label: setup
+library(tidyverse) # data wrangling and plotting
+library(jsonlite) # reads JSON, the format web APIs return
+
+n_pokemon <- 1025 # 151 = Generation 1. Use 1025 for every species (slower).
+```
+
+## 2. What is an API?
+
+An API is a web address that returns data instead of a web page. Paste this
+address into your browser to see what comes back:
+
+<https://pokeapi.co/api/v2/pokemon/1>
+
+You will see text in JSON format. That is Bulbasaur (Pokémon number 1).
+The number at the end of the address chooses the Pokémon.
+
+## 3. Download one Pokémon
+
+`fromJSON()` reads the web address and turns the JSON into an R list.
+
+```{r}
+#| label: fetch-one
+p <- fromJSON("https://pokeapi.co/api/v2/pokemon/1")
+```
+
+Look at what we got. These are all the pieces of information available.
+
+```{r}
+#| label: look-names
+names(p)
+```
+
+Simple values are easy to pull out with `$`.
+
+```{r}
+#| label: look-simple
+p$name
+p$height # decimetres
+p$weight # hectograms
+```
+
+The base stats are tucked inside a table called `stats`.
+
+```{r}
+#| label: look-stats
+p$stats
+```
+
+The stat names are nested one level deeper (`p$stats$stat$name`).
+The numbers we want are in `base_stat`.
+
+```{r}
+#| label: look-stats-2
+p$stats$stat$name
+p$stats$base_stat
+```
+
+Types work the same way.
+
+```{r}
+#| label: look-types
+p$types$type$name
+```
+
+## 4. Pull out the pieces we want
+
+Combine the stat names and values into one named vector.
+
+```{r}
+#| label: stats-vector
+stats <- setNames(p$stats$base_stat, p$stats$stat$name)
+stats
+```
+
+Now build a one-row table (a tibble) for this Pokémon.
+
+```{r}
+#| label: one-row
+types <- p$types$type$name
+
+tibble(
+  id = p$id,
+  name = p$name,
+  type1 = types[1],
+  type2 = if (length(types) > 1) types[2] else NA_character_,
+  height_m = p$height / 10, # convert to metres
+  weight_kg = p$weight / 10, # convert to kilograms
+  hp = stats[["hp"]],
+  attack = stats[["attack"]],
+  defense = stats[["defense"]],
+  sp_attack = stats[["special-attack"]],
+  sp_defense = stats[["special-defense"]],
+  speed = stats[["speed"]]
+)
+```
+
+## 5. Some information lives at a different address
+
+Whether a Pokémon is legendary is stored in a second endpoint,
+`pokemon-species`. We fetch it the same way.
+
+```{r}
+#| label: species
+s <- fromJSON("https://pokeapi.co/api/v2/pokemon-species/1")
+
+s$generation$name
+s$is_legendary
+s$is_mythical
+```
+
+## 6. Wrap it in a function
+
+Everything we just did, bundled so we can reuse it for any Pokémon number.
+
+```{r}
+#| label: function
+get_pokemon <- function(id) {
+  p <- fromJSON(paste0("https://pokeapi.co/api/v2/pokemon/", id))
+  s <- fromJSON(paste0("https://pokeapi.co/api/v2/pokemon-species/", id))
+
+  stats <- setNames(p$stats$base_stat, p$stats$stat$name)
+  types <- p$types$type$name
+
+  Sys.sleep(0.1) # short pause so we are polite to the free server
+
+  tibble(
+    id = p$id,
+    name = p$name,
+    type1 = types[1],
+    type2 = if (length(types) > 1) types[2] else NA_character_,
+    height_m = p$height / 10,
+    weight_kg = p$weight / 10,
+    hp = stats[["hp"]],
+    attack = stats[["attack"]],
+    defense = stats[["defense"]],
+    sp_attack = stats[["special-attack"]],
+    sp_defense = stats[["special-defense"]],
+    speed = stats[["speed"]],
+    generation = s$generation$name,
+    is_legendary = s$is_legendary,
+    is_mythical = s$is_mythical
+  )
+}
+```
+
+Test it on Pikachu (number 25).
+
+```{r}
+#| label: test-function
+get_pokemon(25)
+```
+
+## 7. Download a few at once
+
+`map()` runs the function on each number, and `list_rbind()` stacks the results
+into one table.
+
+```{r}
+#| label: download-few
+few <- map(1:5, get_pokemon) |> list_rbind()
+few
+```
+
+## 8. Download them all and save a CSV
+
+Downloading hundreds of Pokémon means hundreds of web requests, so we only do it
+once and save the result. `possibly()` keeps the loop going if one request fails.
+This cell takes a minute or two.
+
+```{r}
+#| label: download-all
+dir.create("data", showWarnings = FALSE)
+cache_file <- file.path("data", paste0("pokemon_", n_pokemon, ".csv"))
+
+if (!file.exists(cache_file)) {
+  safe_get <- possibly(get_pokemon, otherwise = NULL)
+
+  pokemon <- map(seq_len(n_pokemon), safe_get, .progress = TRUE) |>
+    list_rbind()
+
+  write_csv(pokemon, cache_file)
+}
+```
+
+From now on we read the saved file instead of downloading again.
+
+```{r}
+#| label: read-cache
+pokemon <- read_csv(cache_file, show_col_types = FALSE)
+write_csv(pokemon, "pokemon 151.csv")
+glimpse(pokemon)
+```
+
+## 9. Explore
+
+```{r}
+#| label: explore
+stat_cols <- c("hp", "attack", "defense", "sp_attack", "sp_defense", "speed")
+
+pokemon |>
+  select(all_of(stat_cols)) |>
+  summary()
+```
+
+Which stats move together?
+
+```{r}
+#| label: correlations
+pokemon |>
+  select(all_of(stat_cols)) |>
+  cor() |>
+  round(2)
+```
+
+## 10. Run the PCA
+
+We center and scale the stats so no stat dominates just because its numbers
+are bigger.
+
+```{r}
+#| label: pca
+pca <- prcomp(pokemon[, stat_cols], center = TRUE, scale. = TRUE)
+summary(pca)
+```
+
+### Scree plot
+
+How much variation does each component capture?
+
+```{r}
+#| label: scree
+var_tbl <- tibble(
+  PC = paste0("PC", seq_along(pca$sdev)),
+  prop_var = pca$sdev^2 / sum(pca$sdev^2)
+)
+
+ggplot(var_tbl, aes(PC, prop_var)) +
+  geom_col(fill = "steelblue") +
+  geom_text(
+    aes(label = scales::percent(prop_var, accuracy = 0.1)),
+    vjust = -0.4
+  ) +
+  scale_y_continuous(
+    labels = scales::percent,
+    expand = expansion(mult = c(0, 0.1))
+  ) +
+  labs(x = NULL, y = "Variance explained", title = "Scree plot") +
+  theme_minimal()
+```
+
+### Loadings
+
+Loadings show which stats drive each component. PC1 is usually an "overall
+strength" axis. Later components contrast things like speed versus defense.
+
+```{r}
+#| label: loadings
+round(pca$rotation[, 1:3], 2)
+```
+
+## 11. Plot the Pokémon in PC space
+
+```{r}
+#| label: scores
+scores <- bind_cols(pokemon, as_tibble(pca$x[, 1:3]))
+
+ggplot(scores, aes(PC1, PC2, color = is_legendary)) +
+  geom_point(alpha = 0.7, size = 2) +
+  scale_color_manual(
+    values = c("grey60", "firebrick"),
+    labels = c("Not legendary", "Legendary"),
+    name = NULL
+  ) +
+  labs(
+    title = "Pokémon in PCA space",
+    subtitle = "Colored by legendary status"
+  ) +
+  theme_minimal()
+```
+
+Label the extreme Pokémon. This needs the `ggrepel` package
+(`install.packages("ggrepel")` if you do not have it).
+
+```{r}
+#| label: extremes
+extremes <- scores |>
+  filter(
+    abs(PC1) > quantile(abs(PC1), 0.97) | abs(PC2) > quantile(abs(PC2), 0.97)
+  )
+
+ggplot(scores, aes(PC1, PC2)) +
+  geom_point(color = "grey70") +
+  geom_point(data = extremes, color = "firebrick") +
+  ggrepel::geom_text_repel(
+    data = extremes,
+    aes(label = name),
+    size = 3,
+    max.overlaps = 30
+  ) +
+  theme_minimal()
+```
+
+A biplot adds arrows showing how each stat points through the plot.
+
+```{r}
+#| label: biplot
+arrows <- as_tibble(pca$rotation[, 1:2], rownames = "stat") |>
+  mutate(across(c(PC1, PC2), ~ .x * 4)) # stretch arrows so they are visible
+
+ggplot(scores, aes(PC1, PC2)) +
+  geom_point(aes(color = type1), alpha = 0.6) +
+  geom_segment(
+    data = arrows,
+    aes(x = 0, y = 0, xend = PC1, yend = PC2),
+    arrow = arrow(length = unit(0.2, "cm")),
+    inherit.aes = FALSE
+  ) +
+  geom_text(
+    data = arrows,
+    aes(PC1, PC2, label = stat),
+    inherit.aes = FALSE,
+    vjust = -0.5,
+    fontface = "bold"
+  ) +
+  labs(color = "Primary type") +
+  theme_minimal()
+```
+
+## Things to try
+
+1. Add `height_m` and `weight_kg` (log-transformed) to the PCA. How do the loadings change?
+2. Does PC1 separate legendary from non-legendary Pokémon? Compare mean PC1 by group.
+3. Cluster the PC1 and PC2 scores with `kmeans()`. Do the clusters match types?
+4. Set `n_pokemon <- 1025` and compare generations.
+5. Subset to a list of Pokémon you care about (for example a current competitive
+   roster) and see whether they separate from the rest in PC space.

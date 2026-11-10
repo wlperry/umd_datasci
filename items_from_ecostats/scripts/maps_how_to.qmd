@@ -1,0 +1,307 @@
+---
+title: "Mapping Species Distributions in R"
+subtitle: "Data Science 2026"
+format: 
+  revealjs:
+    theme: default
+    scrollable: true
+    slide-number: true
+    css: style.css
+    # width: 1280
+    # height: 720
+  docx: 
+    toc: true
+    number-sections: true
+execute:
+  keep-md: true
+  freeze: auto
+  cache: true
+  echo: true
+  warning: false
+  message: false
+---
+
+## Maps
+
+These maps show two different approaches to depicting Greenland. The left map is an orthographic projection, emulating a globe. The right map is a Mercator projection, which exaggerates the sizes of landmasses — including Greenland — that are closest to the poles.
+
+::::: columns
+::: {.column width="100%"}
+![](images/clipboard-2056916416.png)
+:::
+:::::
+
+## Introduction to Spatial Data
+
+::::: columns
+::: {.column width="60%"}
+We are going to build geographic maps in R. To do this, we work with spatial vectors.
+
+Standard dataframes hold text and numbers. Spatial dataframes hold geometries:
+
+-   **Points:** A specific animal sighting or a single tree.
+-   **Lines:** Rivers, roads, or animal movement tracks.
+-   **Polygons:** State boundaries, lakes, or oceans.
+
+(Why do paper maps never win at poker?
+
+Because they always fold).
+:::
+
+::: {.column width="40%"}
+![](images/clipboard-211788351.png)
+:::
+:::::
+
+## The Spatial Toolkit
+
+::::: columns
+::: {.column width="50%"}
+To handle these geometries, we need libraries that bridge the gap between geographic data and the `tidyverse`.
+
+-   `sf` (Simple Features): backbone of R spatial analysis. It makes maps act like dataframes.
+-   `tigris`: Pulls accurate US boundaries (states, counties) directly from the Census Bureau.
+-   `rnaturalearth`: Provides global boundaries, including Canada, lakes, and oceans.
+-   `rinat`: Pulls community-science observations directly from iNaturalist.
+:::
+
+::: {.column width="50%"}
+```{r}
+# Install if needed:
+# install.packages("sf")
+# install.packages("tigris")
+# install.packages("rnaturalearth")
+# install.packages("rinat")
+# install.packages("osmdata")
+
+# load libraries
+library(tidyverse)
+library(sf)
+library(tigris)
+library(rnaturalearth)
+library(rinat)
+library(osmdata)   
+```
+:::
+:::::
+
+## Map Projections: Flattening the Earth
+
+::::: columns
+::: {.column width="60%"}
+The Earth is a 3D sphere. Our screens are flat. A map projection is the mathematical formula used to flatten the Earth.
+
+Every projection distorts something: - area, - shape, - distance, or - direction
+
+In R, changing a projection means recalculating the underlying grid. We define projections using a Coordinate Reference System (CRS), often assigned via an EPSG code or a PROJ4 string. We ensure all our map layers share the exact same CRS so they align perfectly.
+:::
+
+::: {.column width="40%"}
+![](images/clipboard-2210289981.png)
+:::
+:::::
+
+## Fetching the Base Map
+
+::::: columns
+::: {.column width="50%"}
+-   First, we pull the political and physical boundaries. Filter data to the specific states/ provinces.
+-   Use st_transform() to set a uniform projection.
+-   Here, use EPSG 4269 (NAD83), which is standard for North American mapping.
+-   USA Contiguous Albers Equal Area (EPSG: 5070) -preserves area so same all over
+-   Lambert Conformal Conic (EPSG: 3857 or State-Specific)
+-   MN/WI/IA: Mostly UTM Zone 15N (EPSG: 26915) - high res state specific
+-   MI: Mostly UTM Zone 16N (EPSG: 26916)- high res state specific
+:::
+
+::: {.column width="50%"}
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| paged-print: false
+### US States
+midwest <- states(cb = TRUE, resolution = "20m") %>% 
+  filter(STUSPS %in% c("MN", "WI", "MI", "ND", "SD", "IA")) %>% 
+  st_transform(crs = 4269)
+
+### Canadian Provinces
+canada <- ne_states(country = "Canada", returnclass = "sf") %>% 
+  filter(name %in% c("Ontario", "Manitoba")) %>% 
+  st_transform(crs = 4269)
+
+### Major Lakes
+lakes <- ne_download(scale = 50, type = "lakes", 
+                     category = "physical", 
+                     returnclass = "sf") %>% 
+  st_transform(crs = 4269)
+```
+:::
+:::::
+
+## Fetching Fisher Data
+
+::::: columns
+::: {.column width="40%"}
+Fishers (*Pekania pennanti*) are a key mustelid in Minnesota's forests.
+
+We will query recent observations from iNaturalist using **rinat**.
+
+The data comes in as a standard dataframe (latitude/longitude columns).
+
+Use st_as_sf() to convert those columns into a recognized spatial point geometry.
+
+![](images/clipboard-3990679598.png)
+:::
+
+::: {.column width="60%"}
+```{r}
+# Get iNaturalist data 
+# black bear Ursus americanus
+fisher_raw <- get_inat_obs(taxon_name = "Pekania pennanti ", 
+                           bounds = c(40, -100, 50, -85), # lat lon
+                           maxresults = 200)
+
+# Convert to a spatial object
+fisher_sf <- st_as_sf(fisher_raw, 
+                      coords = c("longitude", "latitude"), 
+                      crs = 4326) %>% # 4326 is standard GPS coordinates
+  st_transform(crs = 4269) # Match the base map projection
+
+```
+:::
+:::::
+
+## Building the Map (Points)
+
+::::: columns
+::: {.column width="40%"}
+Mapping in sf relies on geom_sf().
+
+Stack layers exactly like a lasagna. Bottom layers first (land), top layers last (points).
+
+We use coord_sf() to zoom the "camera lens" to our specific bounding box.
+:::
+
+::: {.column width="60%"}
+```{r}
+ggplot() +
+  geom_sf(data = canada, fill = "gray95", color = "gray50") +
+  geom_sf(data = midwest, fill = "gray95", color = "gray50") +
+  geom_sf(data = lakes, fill = "aliceblue", color = "lightblue") +
+  geom_sf(data = fisher_sf, color = "darkred", size = 1.5, alpha = 0.6) +
+  coord_sf(xlim = c(-100, -85), ylim = c(40, 50), expand = FALSE) +
+  theme_minimal() +
+  labs(title = "Fisher Sightings in the Midwest",
+       caption = "Data: iNaturalist")
+
+```
+:::
+:::::
+
+## Distribution Heatmaps
+
+::::: columns
+::: {.column width="40%"}
+Points are great, but dense clusters become illegible. We can use a 2D kernel density estimate (a heatmap) to highlight distribution hotspots.
+
+To use stat_density_2d(), we extract the raw coordinates back out of our spatial object, then map the calculated density (after_stat(level)) to a color gradient.
+:::
+
+::: {.column width="60%"}
+```{r}
+# Extract raw coordinates for the density function
+fisher_coords <- fisher_sf %>%
+  mutate(lon = st_coordinates(.)[,1],
+         lat = st_coordinates(.)[,2]) %>%
+  st_drop_geometry()
+
+ggplot() +
+  geom_sf(data = canada, fill = "grey80", color = "grey50") +
+  geom_sf(data = midwest, fill = "grey80", color = "grey50") +
+  geom_sf(data = lakes, fill = "lightblue", color = NA) +
+  stat_density_2d(data = fisher_coords, 
+                  aes(x = lon, y = lat, fill = after_stat(level)), 
+                  geom = "polygon", alpha = 0.6) +
+  scale_fill_viridis_c(option = "plasma") +
+  coord_sf(xlim = c(-100, -85), ylim = c(40, 50), expand = FALSE) +
+  theme_minimal() +
+  labs(title = "Fisher Sighting Density",
+       fill = "Density")
+```
+:::
+:::::
+
+## Making more maps with other features - streams
+
+Get Minnesota State Boundary
+
+```{r}
+mn_base <- states(cb = TRUE, resolution = "500k") %>% filter(STUSPS == "MN")
+```
+## Get Lake Superior Boundary
+
+```{r}
+great_lakes <- ne_download(scale = 10, type = "lakes",
+                           category = "physical", 
+                           returnclass = "sf") 
+lake_superior <- great_lakes %>% 
+  filter(name == "Lake Superior")
+
+# Match CRS (Crucial for spatial operations)
+lake_superior <- st_transform(lake_superior, st_crs(mn_base))
+
+# 3. Create a "Clipping Box" for the West Arm
+# This creates a polygon of the area specifically around the NE tip
+west_arm_box <- st_bbox(c(xmin = -92.5, ymin = 46.5, xmax = -89.0, ymax = 48.5), 
+                        crs = st_crs(mn_base)) %>% 
+                st_as_sfc()
+
+# 4. Clip the lake to that specific box
+lake_superior_clipped <- st_intersection(lake_superior, west_arm_box)
+```
+
+## Get the North Shore Rivers
+
+```{r}
+set_overpass_url("https://overpass-api.de/api/interpreter") 
+
+# Dynamic MN box (adds a small buffer to ensure edges aren't cut)
+mn_bbox <- st_bbox(mn_base)
+
+# Get Rivers
+rivers_data <- opq(bbox = mn_bbox, timeout = 400) %>%
+  add_osm_feature(key = "waterway", value = c("river")) %>% 
+  osmdata_sf()
+
+rivers <- rivers_data$osm_lines
+```
+
+## Match coordinate systems and clip exactly to the MN boundary
+
+```{r}
+# Match coordinate systems
+mn_base_matched <- st_transform(mn_base, crs = st_crs(rivers))
+# Clip/Filter to the MN boundary
+rivers_mn <- st_filter(rivers, mn_base_matched)
+```
+
+
+
+## Map Generation
+::::: columns
+::: {.column width="100%"}
+```{r}
+rivers.plot <- ggplot() + 
+  geom_sf(data = mn_base_matched, fill = "gray95", color = "gray50") + 
+  geom_sf(data = lake_superior_clipped, fill = "aliceblue", color = "lightblue") +
+  # geom_sf(data = inland_lakes_mn, fill = "#D4E6F1", color = "#85C1E9", linewidth = 0.3) +
+  geom_sf(data = rivers_mn, 
+          color = "grey30", linewidth = 0.1) +
+theme_minimal() + 
+  theme(legend.position = "none") + 
+  coord_sf(crs = 26915) # to make minnesota look normal
+rivers.plot 
+```
+:::
+:::::

@@ -1,0 +1,673 @@
+---
+order: 21
+week: 11
+title: "Activity 18 — Mapping Redux: Ranges That Move"
+subtitle: "Time on a map with facets, convex hulls and hex grids, two species at once, and an interactive ggplotly map"
+author: "Bill Perry"
+date: today
+
+type: activity
+description: >
+  Hands-on companion to the mapping redux lecture. Students download
+  spotted lanternfly records one snapshot year at a time, facet them to put
+  time on the map, turn the dots into a range with a convex hull and then a
+  hex grid, watch the hull fail on the Eurasian collared-dove, map two
+  flying squirrel species at once, and finish with an interactive ggplotly
+  map with a period slider. Homework is the same recipe on a species they
+  pick.
+categories: [maps, sf, spatial, gbif, ggplotly, plotly, invasive species]
+
+format:
+  html: default
+  docx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# In-class Activity 18: Ranges That Move 🪰🕊️🐿️
+
+### Today's Objectives
+
+1.  Download occurrence records **one snapshot year at a time**, and know why
+2.  Put **time on a map** with `facet_wrap()`
+3.  Turn a cloud of dots into a range with a **convex hull** — and catch it lying
+4.  Build a **hex grid**, join points into it, and count
+5.  Map **two species at once**
+6.  Make a map **interactive** with `ggplotly()`, including a period slider
+7.  Do it again on a species *you* pick, for homework
+
+::: callout-important
+## ⚠️ Install this BEFORE class
+
+One new package:
+
+``` r
+install.packages("plotly")
+```
+:::
+
+::: callout-tip
+## 📂 Files for today
+
+- **In-class skeleton:** [`18_mapping_redux_skeleton.R`](scripts/18_mapping_redux_skeleton.R) → save it as `scripts/18_mapping_redux.R`. **All of today's code is already in it.**
+- **Homework skeleton:** [`18_mapping_redux_homework.R`](scripts/18_mapping_redux_homework.R) → save it as `scripts/18_mapping_redux_homework.R`. **This one is what you turn in.**
+- **Data** — all of these go in your `data/` folder:
+  - [`collared_dove_gbif.csv`](data/collared_dove_gbif.csv)
+  - [`flying_squirrels_gbif.csv`](data/flying_squirrels_gbif.csv)
+  - [`opossum_gbif.csv`](data/opossum_gbif.csv)
+  - [`giant_swallowtail_gbif.csv`](data/giant_swallowtail_gbif.csv)
+  - [`spotted_lanternfly_gbif.csv`](data/spotted_lanternfly_gbif.csv) — a backup, in case the live download fails
+:::
+
+::: callout-important
+## What you hand in
+
+- **Today is a run-it-and-look-at-it day**, like last mapping class. Every line is in this activity *and* in the skeleton. You do **not** turn in `scripts/18_mapping_redux.R`.
+- The **Q** boxes are **things to think about**. Not graded, not written down.
+- **You turn in `scripts/18_mapping_redux_homework.R`** — a species you pick, mapped across time.
+:::
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 1 — Time on a map *(after lecture Chunk 1)*
+>
+> Parts 1–4: download year by year, stack, and facet.
+
+# Part 1 · Load up and download three snapshot years
+
+**▶ Run this:**
+
+``` r
+# Load libraries ---------------------------------------
+library(tidyverse)
+library(sf)       # spatial data frames
+library(maps)     # ready-made country and state outlines
+library(rgbif)    # download species records from GBIF
+library(plotly)   # interactive plots
+```
+
+Last time we asked GBIF for 2,000 moose records in one go and they all came back from a single year. That was a curiosity then. Today it would wreck everything — so we ask for **one year at a time**.
+
+**▶ Run this** (it takes about 20 seconds):
+
+``` r
+# One download per snapshot year -----------------------
+slf_2018 <- occ_data(scientificName = "Lycorma delicatula", country = "US",
+                     hasCoordinate = TRUE, year = 2018, limit = 1500)$data
+
+slf_2021 <- occ_data(scientificName = "Lycorma delicatula", country = "US",
+                     hasCoordinate = TRUE, year = 2021, limit = 1500)$data
+
+slf_2025 <- occ_data(scientificName = "Lycorma delicatula", country = "US",
+                     hasCoordinate = TRUE, year = 2025, limit = 1500)$data
+```
+
+Three identical calls. **Only `year` changes.**
+
+> ⚠️ **Watch out!** If a download fails — bad wifi, GBIF having a bad day — skip ahead to Part 14. There is a cached copy of all of this in your `data/` folder and the rest of the activity will work fine from it.
+
+✏️ **Q1:** The same `limit = 1500` is on all three calls. Is that a *target* or a *ceiling*? What do you expect 2018 to come back with, given the insect was first found in 2014?
+
+------------------------------------------------------------------------
+
+# Part 2 · Stack them and look hard at the counts
+
+**▶ Run this:**
+
+``` r
+# Stack the three years, keep five columns -------------
+slf_df <- bind_rows(slf_2018, slf_2021, slf_2025) %>%
+  select(species,
+         state     = stateProvince,
+         year,
+         longitude = decimalLongitude,
+         latitude  = decimalLatitude) %>%
+  filter(!is.na(longitude), !is.na(latitude))
+
+count(slf_df, year)
+```
+
+- `bind_rows()` stacks data frames that share column names — the three years become one table
+- `select()` **renames while it selects**: `state = stateProvince` means *new name = old name*
+- GBIF's coordinate columns get short names here so the rest of the day is easier to type
+
+✏️ **Q2:** One of those three years hit the ceiling of 1,500 and one did not. Which is which, and what does that tell you about how many records exist?
+
+✏️ **Q3:** GBIF holds roughly **21,000** US lanternfly records for 2025. You have 1,500 of them. If more dots show up in the 2025 panel than the 2018 panel, does that prove there were more lanternflies?
+
+> 💡 **Key idea:** you cannot compare the **number** of dots across panels — the download caps saw to that. You *can* compare **where** they are. Shape, not count.
+
+------------------------------------------------------------------------
+
+# Part 3 · Make it spatial
+
+Nothing new here. This is the exact recipe from the Bigfoot map.
+
+**▶ Run this:**
+
+``` r
+# lon/lat -> geometry ----------------------------------
+slf_sf <- slf_df %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+# Basemap: the lower 48 --------------------------------
+states_sf <- st_as_sf(
+  maps::map("state", plot = FALSE, fill = TRUE)
+) %>%
+  st_set_crs(4326)
+
+slf_sf
+```
+
+✏️ **Q4:** `slf_df` had a `longitude` and a `latitude` column. Look at `slf_sf` — where did they go?
+
+------------------------------------------------------------------------
+
+# Part 4 · Put time on the map
+
+> 🔮 **Predict first:** three panels, 2018 / 2021 / 2025. Sketch on paper what you think each one looks like before you run it.
+
+**▶ Run this:**
+
+``` r
+# One panel per snapshot year --------------------------
+ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+  geom_sf(data = slf_sf, color = "firebrick", size = 0.7, alpha = 0.5) +
+  coord_sf(xlim = c(-92, -69), ylim = c(33, 45)) +
+  facet_wrap(~ year) +
+  theme_void()
+```
+
+`facet_wrap(~ year)` is the **only** new line. It is the same faceting you used on penguins and on leaves — a map is just a plot.
+
+✏️ **Q5:** Find the 2018 cluster. That is Berks County, Pennsylvania, where the insect was first found in 2014. Which direction did it go first?
+
+✏️ **Q6:** Pull up a map of interstate highways in your head, or in a browser. Does the 2025 spread look like something that walked, or something that hitched a ride?
+
+> 💡 **Key idea:** **small multiples.** Everything is held constant — same basemap, same limits, same colours — except the one thing you are comparing. Side by side beats an animation, because you can *look* instead of having to *remember*.
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 2 — From dots to a range *(after lecture Chunk 2)*
+>
+> Parts 5–7: the convex hull, and the day it lies.
+
+# Part 5 · The convex hull
+
+A **convex hull** is the smallest polygon that contains every point — stretch a rubber band around the whole cloud and let go.
+
+**▶ Run this:**
+
+``` r
+# One hull per year ------------------------------------
+slf_hulls <- slf_sf %>%
+  group_by(year) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  st_convex_hull()
+
+slf_hulls
+```
+
+- `group_by()` then `summarise()` — the **same two verbs** you have used since week three
+- `st_union()` glues one year's points into a single multipoint blob
+- `st_convex_hull()` wraps the rubber band around that blob
+
+**▶ Run this:**
+
+``` r
+# Hull behind, points on top ---------------------------
+ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+  geom_sf(data = slf_hulls, aes(fill = factor(year)), alpha = 0.35, color = "grey30") +
+  geom_sf(data = slf_sf, size = 0.4, alpha = 0.3) +
+  coord_sf(xlim = c(-92, -69), ylim = c(33, 45)) +
+  facet_wrap(~ year) +
+  theme_void() +
+  theme(legend.position = "none")
+```
+
+**▶ Run this:**
+
+``` r
+# Put a number on it -----------------------------------
+slf_hulls %>%
+  mutate(area_km2 = as.numeric(st_area(geometry)) / 1e6) %>%
+  st_drop_geometry()
+```
+
+- `st_area()` measures a polygon. It reports **square metres**, so divide by a million for km²
+- `st_drop_geometry()` throws the geometry column away and leaves a plain table
+
+✏️ **Q7:** Look at the 2025 hull. Put your finger on a big patch of it that has **no dots in it at all**. Is the lanternfly there?
+
+✏️ **Q8:** The area roughly triples between panels. Is "the range tripled" a fair sentence to write about those numbers?
+
+------------------------------------------------------------------------
+
+# Part 6 · A second species — the Eurasian collared-dove
+
+The **Eurasian collared-dove**, *Streptopelia decaocto*, escaped a pet shop in the Bahamas in the 1970s, reached Florida in the early 1980s, and crossed the whole continent in about thirty years.
+
+This file was downloaded for you — one capped batch per year from 1990 to 2025, which takes 36 separate downloads and far longer than a class period. The script that did it is in `scripts/00_build_cached_data.R` if you want to see it.
+
+**▶ Run this:**
+
+``` r
+# Read the cached records ------------------------------
+dove_df <- read_csv("data/collared_dove_gbif.csv")
+
+# Cut 36 years into four periods -----------------------
+dove_df <- dove_df %>%
+  mutate(period = case_when(
+    year <= 1998 ~ "1990-1998",
+    year <= 2006 ~ "1999-2006",
+    year <= 2014 ~ "2007-2014",
+    TRUE         ~ "2015-2025"))
+
+count(dove_df, period)
+```
+
+- `case_when()` — straight out of the factors module, doing exactly what it did there
+- Periods instead of single years, because one year of 1990s bird records is far too thin
+- The labels are written so they sort **alphabetically into chronological order**. That is deliberate — it is why the panels will come out in the right order with no extra work
+
+**▶ Run this:**
+
+``` r
+# Spatial, then the dots -------------------------------
+dove_sf <- dove_df %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+  geom_sf(data = dove_sf, color = "firebrick", size = 0.4, alpha = 0.4) +
+  coord_sf(xlim = c(-125, -66), ylim = c(24, 50)) +
+  facet_wrap(~ period, nrow = 1) +
+  theme_void()
+```
+
+✏️ **Q9:** Describe the four panels in one sentence each. Where does the bird start, and where does it end up?
+
+------------------------------------------------------------------------
+
+# Part 7 · Now watch the hull fail
+
+Same two lines that worked on the lanternfly. Same species of question. Completely different result.
+
+**▶ Run this:**
+
+``` r
+# The identical hull recipe ----------------------------
+dove_hulls <- dove_sf %>%
+  group_by(period) %>%
+  summarise(geometry = st_union(geometry)) %>%
+  st_convex_hull()
+
+ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+  geom_sf(data = dove_hulls, fill = "steelblue", alpha = 0.3, color = "steelblue4") +
+  geom_sf(data = dove_sf, color = "firebrick", size = 0.3, alpha = 0.3) +
+  coord_sf(xlim = c(-125, -66), ylim = c(24, 50)) +
+  facet_wrap(~ period, nrow = 1) +
+  theme_void()
+```
+
+**▶ Run this:**
+
+``` r
+# How many records are west of 100 degrees W? ----------
+dove_df %>%
+  group_by(period) %>%
+  summarise(records      = n(),
+            west_of_100W = sum(longitude < -100),
+            percent_west = round(100 * mean(longitude < -100), 1))
+```
+
+✏️ **Q10:** The **dots** in panel 1 are a knot in Florida. The **hull** in panel 1 covers most of the country. How many records does it take to do that?
+
+✏️ **Q11:** The table says 4.5% of 1990s records were west of 100°W and 65% of recent ones are. The hull panels all look the same. Which of those two things is the better description of a range expansion?
+
+> 💡 **Key idea:** a convex hull is set **only** by its outermost points. Everything inside is ignored, so one escaped pet or one typo'd coordinate can redraw a continent. A hull answers *"how far apart are the extremes?"* — which is not the same question as *"where does this species live?"*
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 3 — Hexagons *(after lecture Chunk 3)*
+>
+> Parts 8–10: a grid, a spatial join, and a count.
+
+# Part 8 · Build a hex grid
+
+Instead of wrapping the outside, chop the region into equal cells and **count the records in each one**.
+
+**▶ Run this:**
+
+``` r
+# A rectangle over the eastern US ----------------------
+east_box <- st_bbox(c(xmin = -92, xmax = -69, ymin = 33, ymax = 45), crs = 4326) %>%
+  st_as_sfc()
+
+# Tile it with hexagons --------------------------------
+hex_grid <- st_make_grid(east_box, cellsize = 0.5, square = FALSE) %>%
+  st_as_sf() %>%
+  mutate(hex_id = row_number())
+
+nrow(hex_grid)
+```
+
+- `st_bbox()` builds a bounding box from four numbers; `st_as_sfc()` turns it into a real shape
+- `square = FALSE` is the whole trick — it tiles with **hexagons** instead of squares
+- `cellsize = 0.5` is half a degree, roughly **55 km** across
+- `hex_id` gives each cell a name, so we can join to it later
+
+> **Why hexagons?** A square has neighbours at two different distances — edge neighbours are closer than corner ones. A hexagon's six neighbours are all the same distance away, so spread looks the same in every direction.
+
+✏️ **Q12:** Change `cellsize` to `2` and re-run. How many cells now? What would an enormous cell size turn the map into?
+
+------------------------------------------------------------------------
+
+# Part 9 · Which hexagon is each record in?
+
+**▶ Run this:**
+
+``` r
+# A spatial join: point -> the hexagon containing it ----
+slf_hex_counts <- st_join(slf_sf, hex_grid) %>%
+  st_drop_geometry() %>%
+  count(year, hex_id, name = "records")
+
+head(slf_hex_counts)
+```
+
+**`st_join()` is `left_join()` with geometry as the key.** Look at what is missing: there is no `by =` argument. There does not need to be one — the key is the question *"is this point inside that polygon?"*, and `sf` works that out itself.
+
+After that it is `count()`, the same `count()` as always: one row per year per occupied cell.
+
+✏️ **Q13:** `st_join()` needs no `by =`. In an ordinary `left_join()`, what would go wrong if you forgot it?
+
+------------------------------------------------------------------------
+
+# Part 10 · The hex map, and the number that comes with it
+
+**▶ Run this:**
+
+``` r
+# Attach the counts to the hexagons --------------------
+slf_hex_map <- hex_grid %>%
+  inner_join(slf_hex_counts, by = "hex_id")
+
+# The headline number ----------------------------------
+slf_hex_map %>%
+  st_drop_geometry() %>%
+  count(year, name = "occupied_hexes")
+```
+
+`inner_join()` is the ordinary join from two weeks ago — and here its *dropping* behaviour is the point. Cells with no records never match, so they fall out and never get drawn.
+
+**▶ Run this:**
+
+``` r
+# The hex map ------------------------------------------
+ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+  geom_sf(data = slf_hex_map, aes(fill = records), color = NA) +
+  scale_fill_viridis_c(option = "magma", direction = -1) +
+  coord_sf(xlim = c(-92, -69), ylim = c(33, 45)) +
+  facet_wrap(~ year) +
+  theme_void()
+```
+
+Now do the same for the dove, on a coarser grid because the region is the whole country.
+
+**▶ Run this:**
+
+``` r
+# A grid over the lower 48 -----------------------------
+us_box <- st_bbox(c(xmin = -125, xmax = -66, ymin = 24, ymax = 50), crs = 4326) %>%
+  st_as_sfc()
+
+us_hex <- st_make_grid(us_box, cellsize = 1.5, square = FALSE) %>%
+  st_as_sf() %>%
+  mutate(hex_id = row_number())
+
+# Same three steps: join, count, attach ----------------
+dove_hex_counts <- st_join(dove_sf, us_hex) %>%
+  st_drop_geometry() %>%
+  count(period, hex_id, name = "records")
+
+dove_hex_map <- us_hex %>%
+  inner_join(dove_hex_counts, by = "hex_id")
+
+dove_hex_map %>%
+  st_drop_geometry() %>%
+  count(period, name = "occupied_hexes")
+```
+
+**▶ Run this:**
+
+``` r
+# The dove in hexagons ---------------------------------
+ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+  geom_sf(data = dove_hex_map, aes(fill = records), color = NA) +
+  scale_fill_viridis_c(option = "magma", direction = -1) +
+  coord_sf(xlim = c(-125, -66), ylim = c(24, 50)) +
+  facet_wrap(~ period, nrow = 1) +
+  theme_void()
+```
+
+✏️ **Q14:** The dove's four hulls were four near-identical blobs. Its four occupied-hex counts are not. Same data, same four panels — why can one summary see the expansion and the other cannot?
+
+✏️ **Q15:** A single escaped pet dove in Oregon in 1991. What does it do to the hull? What does it do to the hex count?
+
+> 💡 **Key idea:** report a range as **occupied cells**, not hull area, whenever a stray record is possible — which is always.
+
+| | Convex hull | Hex grid |
+|------------------|---------------------------|---------------------------|
+| Built from | outermost points only | every point |
+| One stray record | redraws the whole range | lights up one cell |
+| Holes in the range | invisible | visible |
+| The number it gives you | area | occupied cells |
+| Lines of code | 2 | 5 |
+
+: {tbl-colwidths="[28,36,36]"}
+
+------------------------------------------------------------------------
+
+> ## 🧩 Chunk 4 — Two species, and going interactive *(after lecture Chunk 4)*
+>
+> Parts 11–13.
+
+# Part 11 · Two species on one map
+
+The two North American flying squirrels — **southern** (*Glaucomys volans*, oak and hickory) and **northern** (*Glaucomys sabrinus*, spruce and fir) — meet in a narrow band across the upper Midwest and New England. That band runs right over the top of Duluth.
+
+**▶ Run this:**
+
+``` r
+# Both species, one file -------------------------------
+squirrel_df <- read_csv("data/flying_squirrels_gbif.csv")
+
+count(squirrel_df, species)
+
+squirrel_sf <- squirrel_df %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+```
+
+**▶ Run this:**
+
+``` r
+# color = species, and that is the whole trick ---------
+ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+  geom_sf(data = squirrel_sf, aes(color = species), size = 0.7, alpha = 0.6) +
+  coord_sf(xlim = c(-100, -66), ylim = c(25, 50)) +
+  theme_void()
+```
+
+**▶ Run this:**
+
+``` r
+# The same data, side by side --------------------------
+ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+  geom_sf(data = squirrel_sf, aes(color = species), size = 0.7, alpha = 0.6) +
+  coord_sf(xlim = c(-100, -66), ylim = c(25, 50)) +
+  facet_wrap(~ species) +
+  theme_void() +
+  theme(legend.position = "none")
+```
+
+> ⚠️ **Watch out!** `coord_sf()` crops this one to the **East**. The northern flying squirrel has a second population down the Pacific coast; leave the limits off and it sits way out to the left, squashing the part you care about.
+
+✏️ **Q16:** Which of the two plots lets you find the contact zone, and which lets you see each range on its own? Would you ever make both?
+
+✏️ **Q17:** There are about 3,400 southern records and 770 northern ones here. Is the southern squirrel four times as common, or four times as findable? (It is nocturnal, it comes to bird feeders, and it lives where more people live.)
+
+✏️ **Q18:** We did **not** slice these two by year. With 770 northern records spread over 35 years, what would the panels look like — and what would you be tempted to conclude from them?
+
+------------------------------------------------------------------------
+
+# Part 12 · Make it interactive with `ggplotly()`
+
+`ggplotly()` takes a ggplot you have already built and hands back a web version: hover, zoom, pan.
+
+There is one catch on maps. **`ggplotly()` does not understand `geom_sf()` well** — it throws away custom hover text and sometimes forgets your `coord_sf()` limits. So for the interactive version we drop back to plain longitude and latitude columns, with `geom_polygon()` for the basemap and `geom_point()` for the records.
+
+**▶ Run this:**
+
+``` r
+# The basemap as an ordinary data frame ----------------
+states_df <- map_data("state")
+
+head(states_df)
+```
+
+`map_data("state")` is the same outlines, handed back as a plain data frame with `long`, `lat`, and `group`. The `group` column keeps Michigan's two peninsulas from being joined by a stray line across the lake.
+
+**▶ Run this:**
+
+``` r
+# Build an ordinary ggplot -----------------------------
+slf_gg <- ggplot() +
+  geom_polygon(data = states_df, aes(long, lat, group = group),
+               fill = "grey96", color = "grey80") +
+  geom_point(data = slf_df,
+             aes(longitude, latitude,
+                 color = factor(year),
+                 text  = paste0(state, " ", year)),
+             size = 1, alpha = 0.6) +
+  coord_fixed(1.3, xlim = c(-92, -69), ylim = c(33, 45)) +
+  theme_void()
+
+# Hand it to plotly ------------------------------------
+ggplotly(slf_gg, tooltip = "text")
+```
+
+- `text =` is **not** a real ggplot aesthetic. ggplot prints a warning and ignores it — that warning is expected
+- `ggplotly()` picks it up anyway, and `tooltip = "text"` says *show only that*
+- `coord_fixed(1.3)` stops the country looking squashed. `coord_sf()` would handle it properly, but we are off the `sf` path here on purpose
+
+**Hover over a few points. Then box-zoom into eastern Pennsylvania and keep going.**
+
+✏️ **Q19:** Swap `tooltip = "text"` for `tooltip = "all"` and hover again. Which is more useful, and why would you ever choose to show *less*?
+
+------------------------------------------------------------------------
+
+# Part 13 · A slider instead of an animation
+
+**▶ Run this:**
+
+``` r
+# frame = is the only change ---------------------------
+slf_anim <- ggplot() +
+  geom_polygon(data = states_df, aes(long, lat, group = group),
+               fill = "grey96", color = "grey80") +
+  geom_point(data = slf_df,
+             aes(longitude, latitude,
+                 frame = factor(year),
+                 text  = paste0(state, " ", year)),
+             color = "firebrick", size = 1, alpha = 0.6) +
+  coord_fixed(1.3, xlim = c(-92, -69), ylim = c(33, 45)) +
+  theme_void()
+
+ggplotly(slf_anim, tooltip = "text")
+```
+
+A **play button and a slider** appear under the plot. `frame = factor(year)` is the only line that changed.
+
+This is three scatterplots with a slider on top — not a rendered movie — so it runs on any laptop and needs no extra packages.
+
+✏️ **Q20:** Compare the slider to the faceted map from Part 4. Which one makes it easier to see *how much* ground was gained between 2021 and 2025? Which one is more fun? Are those the same thing?
+
+> 💡 **Key idea:** interactive is for **exploring** — you ask it questions by hovering and zooming. Faceted small multiples are for **explaining** — the comparison is already made for the reader. A figure in a paper is a facet. A figure on a website can be either.
+
+------------------------------------------------------------------------
+
+# Part 14 · If there is time — was your download honest?
+
+You mapped 1,500 lanternfly records from 2025. GBIF holds about 21,000. The cached file in `data/` holds a capped batch from **every** year, pulled the same way.
+
+**▶ Run this:**
+
+``` r
+# The cached file, 2025 only ---------------------------
+slf_cached <- read_csv("data/spotted_lanternfly_gbif.csv") %>%
+  filter(year == 2025)
+
+# Your live download, 2025 only ------------------------
+slf_live <- slf_df %>%
+  filter(year == 2025)
+
+# Compare where they say the insect is -----------------
+slf_cached %>% count(state, sort = TRUE) %>% head(8)
+
+slf_live %>% count(state, sort = TRUE) %>% head(8)
+```
+
+✏️ **Q21:** Do the two top-eight lists agree? If they do not, which states appear in one and not the other?
+
+✏️ **Q22:** Neither list is the truth — both are cutoffs of the same 21,000 records. What would you have to download to get the real answer, and why did we not do that in class?
+
+------------------------------------------------------------------------
+
+# Homework — a species that moves, of your own
+
+**Open [`18_mapping_redux_homework.R`](scripts/18_mapping_redux_homework.R).** That file — not today's script — is what you turn in.
+
+Pick **one species** and run today's recipe on it across time:
+
+1.  Use a cached file — **Virginia opossum** or **giant swallowtail** — or download your own species one year at a time
+2.  Cut the years into **periods** with `case_when()`
+3.  **Facet** the map by period
+4.  Build a **convex hull** and measure its area
+5.  Build a **hex grid** and count **occupied hexes** per period
+6.  Say which of those two numbers you believe, and why
+7.  Then the hard one: **is your species moving, or are there just more people with phones?**
+
+Everything you need is in the homework skeleton, with the lanternfly and dove code sitting right there as worked examples. **All the graded questions are in one block at the top of the file** — answer them there as `#` comments.
+
+------------------------------------------------------------------------
+
+# Review and checkpoint
+
+At this point you should be able to:
+
+- [ ] Download records **year by year** so that every year gets a fair share
+- [ ] Explain why `limit` makes a single large download useless for a time series
+- [ ] Put time on a map with `facet_wrap()`
+- [ ] Build a convex hull with `st_union()` + `st_convex_hull()`, and measure it with `st_area()`
+- [ ] Say in one sentence why a convex hull can be badly wrong
+- [ ] Build a hex grid with `st_make_grid(square = FALSE)`
+- [ ] Use `st_join()` to put points into polygons, then `count()` them
+- [ ] Report a range as **occupied cells per period**
+- [ ] Map two species at once with `color = species`, overlaid and faceted
+- [ ] Hand a ggplot to `ggplotly()`, add hover `text`, and add a `frame` slider
+
+> 💡 **Key idea:** the dots were never the range. Every map you made today was a **claim** about what the dots mean — and the whole skill is knowing which claims your data can carry.
+
+------------------------------------------------------------------------
+
+*End of Activity 18.*

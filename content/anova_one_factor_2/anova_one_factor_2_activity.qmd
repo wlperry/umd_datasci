@@ -1,0 +1,500 @@
+---
+order: 25
+week: 13
+title: "Activity 20 — ANOVA II: Wētā, and Correcting for Size"
+subtitle: "The same eight steps, two traps the possums never showed us, and a result that vanishes"
+author: "Bill Perry"
+date: today
+
+type: activity
+description: >
+  Hands-on companion to the second ANOVA lecture. Students re-run the
+  eight-step recipe on New Zealand tree weta, meet a circular response
+  variable and a grouping variable confounded with body size, watch a
+  hugely significant ear-size result collapse to p = 0.449 after one
+  mutate(), learn to report a non-significant ANOVA, and bring the females
+  back as a fourth group. Homework is the hind leg, raw and relative.
+categories: [anova, emmeans, car, performance, factors, statistics, new zealand]
+
+format:
+  html: default
+  docx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# In-class Activity 20: Wētā, and Correcting for Size 🦗
+
+### Today's Objectives
+
+1.  Re-run **all eight steps** from last class on a new animal
+2.  Catch a response variable that is **circular** — the answer baked into the group labels
+3.  Catch a grouping variable **confounded with body size**
+4.  Fix it with one `mutate()` — and watch a result **vanish**
+5.  Report a **non-significant** ANOVA properly
+6.  Bring the **females** back as a fourth group
+7.  Do it again on the hind leg for homework
+
+::: callout-tip
+## 📦 Nothing new to install 🎉
+
+Same five packages as last class: `performance`, `see`, `emmeans`, `multcomp`, `effectsize`. If they worked last time they will work today.
+:::
+
+::: callout-tip
+## 📂 Files for today
+
+-   **In-class skeleton:** [`20_anova_one_factor_2_skeleton.R`](scripts/20_anova_one_factor_2_skeleton.R) → save it as `scripts/20_anova_one_factor_2.R`. **All of today's code is already in it.**
+-   **Homework skeleton:** [`20_anova_one_factor_2_homework.R`](scripts/20_anova_one_factor_2_homework.R) → save it under that same name. **This one is what you turn in.**
+-   **Data** — goes in your `data/` folder:
+    -   [`weta_traits.csv`](data/weta_traits.csv)
+:::
+
+::: callout-important
+## What you hand in
+
+-   **Today is a run-it-and-look-at-it day.** Every line is in this activity *and* in the skeleton. You do **not** turn in `scripts/20_anova_one_factor_2.R`.
+-   The **Q** boxes are **things to think about**. Not graded, not written down.
+-   **You turn in `scripts/20_anova_one_factor_2_homework.R`** — the hind leg.
+:::
+
+------------------------------------------------------------------------
+
+# Part 1 · Meet the wētā
+
+**Wellington tree wētā**, *Hemideina crassidens*, is a large, flightless, nocturnal relative of crickets found **only in New Zealand**. It lives in galleries chewed into dead wood, where a male defends a cavity holding several females. It is big enough to sit in your palm, and it will bite.
+
+New Zealand has almost no native land mammals. Insects took the roles mammals take elsewhere — and got **big** doing it. Wētā are what happens to a cricket when nothing is hunting it from the ground.
+
+313 adults were collected at night on **Te Pākeka / Maud Island** in March and April 2016, and 11 body parts were measured on each.
+
+The interesting part is the males. They stop growing at the **8th, 9th or 10th instar** — three *discrete* adult forms, not a smooth gradient:
+
+| Morph | Head and jaws | Strategy |
+|-------|---------------|----------|
+| `eighth` | small | **sneaks** into another male's gallery |
+| `ninth` | intermediate | mixed |
+| `tenth` | enormous | **fights** for galleries, holds harems |
+
+: {tbl-colwidths="[18,32,50]"}
+
+Three strategies for the same job, living side by side in the same forest. One factor, three levels — exactly last class's design. The animals are stranger; the test is identical.
+
+------------------------------------------------------------------------
+
+# Part 2 · Read it in
+
+**▶ Run this:**
+
+``` r
+# Load packages - nothing new today -------------------
+library(tidyverse)
+library(car)          # Anova(), leveneTest()
+library(performance)  # check_model()
+library(emmeans)      # follow-up comparisons
+library(multcomp)     # cld()
+library(effectsize)   # eta_squared()
+
+# Read the file ---------------------------------------
+weta_raw <- read_csv("data/weta_traits.csv")
+
+dim(weta_raw)
+
+weta_raw %>% count(morph)
+```
+
+313 rows, 14 columns — and **four** groups, not three. 118 of the 313 animals are **female**.
+
+------------------------------------------------------------------------
+
+# Part 3 · Two traps, before any test
+
+### Trap 1 — the females would swamp it
+
+Females are much smaller than every male morph. Leave them in and the ANOVA comes back wildly significant, driven almost entirely by **sex**, and the three male morphs get buried underneath it.
+
+Our question is *"do the three male morphs differ?"* — so the data has to **be** the three male morphs.
+
+`filter()` is not housekeeping. It is where you decide what your test is **about**.
+
+### Trap 2 — `head_length` is circular
+
+The three morphs were **defined** using head length. Straight from the data's own documentation:
+
+| Morph | Rule |
+|-------|------|
+| `eighth` | male, `head_length < 18.51` |
+| `ninth` | male, `18.51` ≤ `head_length` ≤ `24.15` |
+| `tenth` | male, `head_length > 24.15` |
+
+: {tbl-colwidths="[25,75]"}
+
+So *"does head length differ among morphs?"* is **guaranteed to be yes**. The answer was built into the labels. You would get an enormous F and learn nothing at all.
+
+::: callout-important
+## ⚠️ Circular reasoning, in code
+
+If the grouping variable was **made from** the response variable, the test is meaningless.
+
+Nothing in R will stop you. `Anova()` will hand you `p < 2e-16` and a gold star. **You** have to catch this.
+:::
+
+✏️ **Q1:** Your final project will have grouping variables in it. How would you check whether any of them were derived from the thing you plan to use as a response?
+
+------------------------------------------------------------------------
+
+# Part 4 · Males only, foreleg length
+
+**▶ Run this:**
+
+``` r
+weta_df <- weta_raw %>%
+  filter(sex == "m", !is.na(foretibia)) %>%
+  mutate(morph = factor(morph,
+                        levels = c("eighth", "ninth", "tenth")))
+
+weta_df %>% count(morph)
+
+levels(weta_df$morph)
+```
+
+-   `eighth` 78, `ninth` 79, `tenth` 38
+
+::: callout-note
+## `levels` with no `labels` this time
+
+Last class the groups arrived as the integers 1–7, so `factor()` needed both `levels` and `labels`. Here the groups are already **words**, so it only needs `levels` — to fix the **order**.
+
+Left alone, R sorts alphabetically: *eighth, ninth, tenth*. That happens to be right. **Do not rely on luck** — say it out loud in the code.
+:::
+
+✏️ **Q2:** `tenth` has n = 38, less than half of either other group. What does that do to your ability to detect a difference involving that morph?
+
+------------------------------------------------------------------------
+
+# Part 5 · Look at it, then the means
+
+**▶ Run this:**
+
+``` r
+ggplot(weta_df, aes(x = morph, y = foretibia)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.5)
+
+weta_df %>%
+  group_by(morph) %>%
+  summarise(n = n(),
+            mean_foretibia = round(mean(foretibia), 2),
+            mean_pronotum  = round(mean(pronotum), 2))
+```
+
+| Morph | n | Mean foretibia (mm) | Mean pronotum (mm) |
+|-------|---|---------------------|--------------------|
+| `eighth` | 78 | 11.82 | 6.37 |
+| `ninth` | 79 | 13.19 | 6.93 |
+| `tenth` | 38 | 14.32 | 7.52 |
+
+: {tbl-colwidths="[18,12,35,35]"}
+
+✏️ **Q3:** Look at the **last** column. `pronotum` is the standard measure of body size in an insect, and it climbs too — 6.37 → 6.93 → 7.52. Hold onto that. Why might it matter for every analysis we do today?
+
+------------------------------------------------------------------------
+
+# Part 6 · Fit, test, size, check, letters
+
+**▶ Run this:**
+
+``` r
+fore_model <- lm(foretibia ~ morph, data = weta_df)
+
+Anova(fore_model, type = 2)
+
+eta_squared(Anova(fore_model, type = 2), partial = FALSE)
+
+check_model(fore_model, check = c("homogeneity", "qq"))
+
+leveneTest(foretibia ~ morph, data = weta_df)
+
+shapiro.test(residuals(fore_model))
+
+cld(emmeans(fore_model, ~ morph), Letters = letters)
+```
+
+-   **F(2, 192) = 268.5, p \< 0.001, η² = 0.74**
+-   Levene **p = 0.233** → **PASS**; Shapiro–Wilk **p = 0.542** → **PASS**
+-   Letters: **`a` \| `b` \| `c`** — all three morphs separate
+
+Morph explains **74%** of the variation in foreleg length, every assumption passes, and every group is distinguishable from every other.
+
+::: callout-tip
+## 🎯 Cleanest result you will ever see
+
+Which is exactly when you should get suspicious.
+:::
+
+------------------------------------------------------------------------
+
+# Part 7 · The ears
+
+A wētā has no ears on its head. It hears through a **tympanic membrane** on the **foreleg tibia** — a drum on the knee. Our file has that membrane's **area**, in mm², as `ear`.
+
+So we can ask a real behavioural question:
+
+> The sneaks have to listen for the fighters. **Do the three morphs differ in ear size?**
+
+**▶ Run this:**
+
+``` r
+ear_model <- lm(ear ~ morph, data = weta_df)
+
+Anova(ear_model, type = 2)
+
+eta_squared(Anova(ear_model, type = 2), partial = FALSE)
+
+cld(emmeans(ear_model, ~ morph), Letters = letters)
+```
+
+-   **F(2, 192) = 122.2, p \< 0.001, η² = 0.56**
+-   Letters: **`a` \| `b` \| `c`** — all three separate
+-   Ear area climbs **2.50 → 2.99 → 3.42 mm²**
+
+Assumptions pass. Write the paper: *"the fighting morph has a 37% larger hearing organ."*
+
+### Stop
+
+Go back and look at Part 5 again. Mean **pronotum** by morph: **6.37 → 6.93 → 7.52 mm**.
+
+The tenth-instar males have bigger ears. They also have bigger **everything**. They are **bigger animals**.
+
+::: callout-warning
+## ⚠️ What did we actually test?
+
+We asked: *do the morphs differ in ear **size**?* → **Yes.**
+
+We **wanted** to ask: *do the morphs differ in **hearing**?*
+
+Those are not the same question, and `Anova()` cannot tell them apart.
+:::
+
+✏️ **Q4:** Before we fix it — write down what you think will happen to F once we account for body size. Will it drop a little, or a lot?
+
+------------------------------------------------------------------------
+
+# Part 8 · The correction, and a units problem
+
+The fix is to divide ear size by body size. But there is a **units** problem first:
+
+-   `ear` is an **area**, in **mm²**
+-   `pronotum` is a **length**, in **mm**
+
+Dividing an area by a length is **meaningless**. So first take the **square root** of the area, which turns it back into a length, and *then* divide. Length over length gives a **ratio**, with no units at all.
+
+**▶ Run this:**
+
+``` r
+weta_rel <- weta_df %>%
+  mutate(ear_rel = sqrt(ear) / pronotum)
+
+weta_rel %>%
+  group_by(morph) %>%
+  summarise(n = n(),
+            mean_ear     = round(mean(ear), 2),
+            mean_ear_rel = round(mean(ear_rel), 4))
+```
+
+| Morph | Mean `ear` (mm²) | Mean `ear_rel` |
+|-------|------------------|----------------|
+| `eighth` | 2.50 | 0.2485 |
+| `ninth` | 2.99 | 0.2490 |
+| `tenth` | 3.42 | 0.2459 |
+
+: {tbl-colwidths="[25,37,38]"}
+
+Raw ear area is climbing hard. Relative ear is **flat** — flat to three decimal places, and the *largest* morph is fractionally the *lowest*.
+
+::: callout-note
+## 📐 Check your units
+
+This is the oldest trick in quantitative biology and it catches errors nothing else catches. If the units of your answer are nonsense, the answer is nonsense — however good the p-value looks.
+:::
+
+------------------------------------------------------------------------
+
+# Part 9 · Run it
+
+**▶ Run this:**
+
+``` r
+ear_rel_model <- lm(ear_rel ~ morph, data = weta_rel)
+
+leveneTest(ear_rel ~ morph, data = weta_rel)
+
+shapiro.test(residuals(ear_rel_model))
+
+Anova(ear_rel_model, type = 2)
+
+eta_squared(Anova(ear_rel_model, type = 2), partial = FALSE)
+
+cld(emmeans(ear_rel_model, ~ morph), Letters = letters)
+```
+
+-   **F(2, 192) = 0.80, p = 0.449, η² = 0.008**
+-   Levene **p = 0.59** → **PASS**; Shapiro–Wilk **p = 0.50** → **PASS**
+-   Letters: all three share **`a`**
+
+::: callout-important
+## 🔄 It is gone
+
+Morph now explains **under 1%** of the variation in relative ear size.
+
+Both assumptions pass, so this is a **trustworthy null** — not a broken model.
+
+Same ears. Same animals. Two defensible analyses. **Opposite conclusions.** `p < 0.001` → `p = 0.449`, on one `mutate()`.
+:::
+
+### Both results are correct
+
+They answer different questions:
+
+-   **Raw ear** answers *"is a tenth-instar male's hearing organ physically bigger?"* → **Yes, clearly.**
+-   **Relative ear** answers *"has the hearing organ been scaled up more than the rest of the animal?"* → **No.**
+
+A tenth-instar male has a bigger ear for the same reason it has a bigger leg: **it is a bigger wētā.**
+
+✏️ **Q5:** Check your Q4 prediction. Did you expect it to go all the way to nothing?
+
+✏️ **Q6:** Which of the two would you report in a paper about wētā **hearing**? Which in a paper about **how big the organ is**? Is either one a trick?
+
+------------------------------------------------------------------------
+
+# Part 10 · How to report a non-significant ANOVA
+
+::: callout-important
+## 📝 Say it with the same confidence
+
+> Relative tympanic membrane size did **not** differ detectably among the three male morphs (one-way ANOVA, **F(2, 192) = 0.80, p = 0.449, η² = 0.008**), with homogeneous variances (Levene's test **p = 0.59**) and normally distributed residuals (Shapiro–Wilk **p = 0.50**). Raw membrane area **did** differ (**F(2, 192) = 122.2, p \< 0.001**), but so did body size, and the difference did not survive scaling.
+:::
+
+Three rules for a null result:
+
+1.  **Report the numbers anyway** — F, both df, p, and η². "Not significant" on its own is not a result.
+2.  **Report it with the assumption checks.** A null from a model that *passes* its checks means something. A null from a broken model means nothing.
+3.  **Never write "no difference."** Write "**no detectable** difference", or "we did not detect a difference".
+
+✏️ **Q7:** The smallest group here has n = 38. Explain why that makes rule 3 more than just fussy wording.
+
+------------------------------------------------------------------------
+
+# Part 11 · Bring the females back
+
+In Part 4 we dropped the females because they would swamp a question about male morphs. Now we ask a question they belong in:
+
+> Across all four adult forms, is the **foreleg** scaled up differently?
+
+The foreleg is the **weapon** — a tenth-instar male fights with it. If it has been built up beyond general body size, relative foreleg length should separate the groups.
+
+Both `foretibia` and `pronotum` are **lengths** in mm, so **no square root** this time. Just divide.
+
+**▶ Run this:**
+
+``` r
+weta_all <- weta_raw %>%
+  filter(!is.na(foretibia)) %>%
+  mutate(morph = factor(morph,
+                        levels = c("female", "eighth", "ninth", "tenth")),
+         fore_rel = foretibia / pronotum)
+
+weta_all %>% count(morph)
+
+fore_rel_model <- lm(fore_rel ~ morph, data = weta_all)
+
+leveneTest(fore_rel ~ morph, data = weta_all)
+
+shapiro.test(residuals(fore_rel_model))
+
+Anova(fore_rel_model, type = 2)
+
+cld(emmeans(fore_rel_model, ~ morph), Letters = letters)
+```
+
+-   **F(3, 309) = 266.3, p \< 0.001, η² = 0.72**
+-   Levene **p = 0.086** → **PASS**; Shapiro–Wilk **p = 0.53** → **PASS**
+-   Letters: **`a` \| `b` \| `c` \| `c`**
+
+Females, then `eighth`, then `ninth` — all separate. But **`ninth` and `tenth` share `c`**. Five of the six pairs are significant; that one is not.
+
+Relative foreleg length rises steeply, then **plateaus**.
+
+### What that plateau means
+
+This result **survived** the body-size correction — unlike the ears. The foreleg really has been built up more than the animal as a whole.
+
+But it stops. Going from ninth to tenth instar makes a wētā bigger **without** making its foreleg relatively longer again. Whatever the tenth-instar morph is doing differently, by that point it is doing it with **overall size**, not with leg proportion.
+
+::: callout-warning
+## ⚠️ And the honest caveat
+
+`n = 38` for the tenth morph. `ninth` and `tenth` sharing a letter is a **failure to detect** a difference, not proof of sameness. With 380 tenth-instar males it might well split.
+
+Say that, then stop.
+:::
+
+✏️ **Q8:** The ear difference vanished after correction and the foreleg difference did not. In one sentence each, what does that tell you about what a wētā's body is doing to its ear, versus to its foreleg?
+
+------------------------------------------------------------------------
+
+# Part 12 · Do the circular one on purpose
+
+Part 3 said never to test `head_length`. Let us look at what that mistake produces, so you recognise it in the wild.
+
+**▶ Run this:**
+
+``` r
+circular_model <- lm(head_length ~ morph, data = weta_df)
+
+Anova(circular_model, type = 2)
+
+eta_squared(Anova(circular_model, type = 2), partial = FALSE)
+```
+
+**F(2, 192) = 568, η² = 0.86.** Morph "explains" **86%** of head length — the biggest effect anywhere in this dataset, and it is completely **empty**. We drew the group boundaries with that exact ruler.
+
+✏️ **Q9:** Nothing in that output looks wrong. No warning, no error, assumptions fine. So what is the only thing that could ever have caught it?
+
+------------------------------------------------------------------------
+
+# Extension (homework) — the hind leg, raw and relative
+
+**This is what you turn in:** `scripts/20_anova_one_factor_2_homework.R`
+
+Today we did the **foreleg** — the weapon — and then the **ears**, where a huge result vanished once we divided by body size.
+
+For homework you do the **hind leg**: `hindtibia`, the jumping leg. Same two analyses, raw then relative.
+
+::: callout-important
+## It will not come out like the ears
+
+The ears went from `p < 0.001` all the way to `p = 0.449` — to nothing at all.
+
+The hind leg does something **in between**. Your job is to **describe** what it does, not to match the answer we got in class. Two of the questions are specifically about why a trait might only *shrink* after correction instead of *disappearing*.
+:::
+
+There is also an **optional** section on `eye`, where the **raw** analysis fails its normality check and the **relative** one passes comfortably. Sometimes the more meaningful question is also the better-behaved model. Not always — but sometimes, and it is worth knowing why that happens.
+
+::: callout-note
+## 📖 Cite your data
+
+Real archived research data, released under **CC BY 4.0** — free to reuse **with credit**:
+
+> trait_data.csv. Zenodo, doi:10.5281/zenodo.22959939. Data creator: Clint D. Kelly, Université du Québec à Montréal.
+
+Our copy, `weta_traits.csv`, is that file with the numbers rounded to 4 decimal places. Nothing else was changed. Saying so is part of the credit.
+:::
+
+::: callout-important
+## Before you hand in
+
+**Session \> Restart R**, then run the whole file top to bottom. It must run clean, and your plots must draw.
+:::

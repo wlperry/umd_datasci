@@ -1,6 +1,6 @@
 # Course Map — UMD Data Science Biology
 
-*Generated from `_schedule.yml` on 2026-11-03. Do not edit by hand — edit `_schedule.yml` and re-run `Rscript course_map.R`.*
+*Generated from `_schedule.yml` on 2026-11-09. Do not edit by hand — edit `_schedule.yml` and re-run `Rscript course_map.R`.*
 
 | # | Week | Topic | Folder (`content/`) | L | A | E |
 |--:|:----:|-------|---------------------|:-:|:-:|:-:|
@@ -24,14 +24,14 @@
 | 18 | 9 | Holiday — Fall Break (no class) | — | · | · | · |
 | 19 | 10 | Joins — Fishers & the Weasel Family | `joins` | L | A | · |
 | 20 | 10 | Mapping — Bigfoot & GBIF | `mapping` | L | A | · |
-| 21 | 11 | Final Project Pitches (Day 1 of 2) | `final_project_pitch` | · | A | · |
-| 22 | 11 | Final Project Pitches (Day 2 of 2) | — | · | · | · |
-| 23 | 12 | Flex day | — | · | · | · |
-| 24 | 12 | Flex day | — | · | · | · |
-| 25 | 13 | Flex day | — | · | · | · |
+| 21 | 11 | Mapping Redux — Ranges That Move | `mapping_redux` | L | A | · |
+| 22 | 11 | Final Project Pitches (Day 1 of 2) | `final_project_pitch` | · | A | · |
+| 23 | 12 | Final Project Pitches (Day 2 of 2) | — | · | · | · |
+| 24 | 12 | One-Factor ANOVA — Start to Finish | `anova_one_factor` | L | A | E |
+| 25 | 13 | One-Factor ANOVA II — Wētā, and Correcting for Size | `anova_one_factor_2` | L | A | E |
 | 26 | 13 | Holiday — Thanksgiving (no class) | — | · | · | · |
-| 27 | 14 | One-Way ANOVA I — The Basic Test, Start to Finish | `one_way_anova` | L | A | · |
-| 28 | 14 | One-Way ANOVA II — Assumptions & Follow-Up Tests | `one_way_anova_2` | L | A | · |
+| 27 | 14 | PCA I — Many Measurements, Few Axes | `pca_pokemon` | L | A | E |
+| 28 | 14 | PCA II — Loadings, Scores, and the Biplot | `pca_pokemon_2` | L | A | E |
 | 29 | 15 | Final Project Presentations — Posters | `final_project_poster` | · | A | · |
 | 30 | 15 | Flex day | — | · | · | · |
 

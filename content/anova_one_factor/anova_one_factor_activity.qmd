@@ -1,0 +1,572 @@
+---
+order: 24
+week: 12
+title: "Activity 19 — One-Factor ANOVA: Start to Finish"
+subtitle: "Seven Australian possum sites, eight steps, and the one question F cannot answer"
+author: "Bill Perry"
+date: today
+
+type: activity
+description: >
+  Hands-on companion to the one-factor ANOVA lecture. Students read a
+  possum dataset found on Kaggle, turn site numbers into named groups with
+  factor(), plot before testing, fit with lm(), read car::Anova(type = 2),
+  check assumptions with performance::check_model() and car::leveneTest(),
+  measure the effect with eta-squared, and find which of the seven sites
+  differ using emmeans and a compact letter display. Homework repeats the
+  whole recipe on tail length, plus an optional section where an assumption
+  check fails on purpose.
+categories: [anova, emmeans, car, performance, factors, statistics, kaggle]
+
+format:
+  html: default
+  docx: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# In-class Activity 19: One Factor, Seven Groups 🐾
+
+### Today's Objectives
+
+1.  See why **twenty-one t-tests** is the wrong answer to "do these seven groups differ?"
+2.  Turn group **codes into named, ordered groups** with `factor()`
+3.  **Plot the data before testing it** — and predict the answer
+4.  Fit with `lm()` and read the right table: `car::Anova(type = 2)`
+5.  Check the assumptions **after** the fit — `check_model()`, `leveneTest()`, `shapiro.test()`
+6.  Say **how big** the effect is with eta-squared
+7.  Find **which** groups differ — `emmeans()`, `pairs()`, and a compact letter display
+8.  Do it again on a different measurement for homework
+
+::: callout-important
+## ⚠️ Install these BEFORE class
+
+Five packages, and `performance` drags in about a dozen dependencies. **This is not a two-minute job — do it at home.**
+
+``` r
+install.packages("performance")
+install.packages("see")
+install.packages("emmeans")
+install.packages("multcomp")
+install.packages("effectsize")
+```
+:::
+
+::: callout-tip
+## 📂 Files for today
+
+-   **In-class skeleton:** [`19_anova_one_factor_skeleton.R`](scripts/19_anova_one_factor_skeleton.R) → save it as `scripts/19_anova_one_factor.R`. **All of today's code is already in it.**
+-   **Homework skeleton:** [`19_anova_one_factor_homework.R`](scripts/19_anova_one_factor_homework.R) → save it under that same name. **This one is what you turn in.**
+-   **Data** — this goes in your `data/` folder:
+    -   [`possum.csv`](data/possum.csv) — today in class, and the homework
+:::
+
+::: callout-important
+## What you hand in
+
+-   **Today is a run-it-and-look-at-it day.** Every line is in this activity *and* in the skeleton. You do **not** turn in `scripts/19_anova_one_factor.R`.
+-   The **Q** boxes are **things to think about**. Not graded, not written down.
+-   **You turn in `scripts/19_anova_one_factor_homework.R`** — the same recipe on tail length.
+:::
+
+------------------------------------------------------------------------
+
+# Part 1 · Where the data came from
+
+Your final projects need data, so here is how today's data was actually found.
+
+A search of **kaggle.com/datasets** for `possum` returns one useful hit: **"OpenIntro Possum"**, 104 rows and 8 columns. That uploader mirrored it from **OpenIntro**, a statistics-textbook project. OpenIntro in turn took it from a **1995 paper** in the *Australian Journal of Zoology*.
+
+The trail runs: **Kaggle → textbook → peer-reviewed field study.**
+
+The animals are **mountain brushtail possums**, *Trichosurus cunninghami* — nocturnal, tree-dwelling Australian marsupials. 104 of them were live-trapped at **seven forest sites**, from Victoria in the south up to Queensland, and each one was measured.
+
+Our question:
+
+> **Do possums from different sites differ in total length?**
+
+| Role | Column | What it is |
+|------|--------|------------|
+| Response | `total_l` | total length, cm — a number |
+| Factor | `site` | which forest it was trapped in — seven groups |
+
+: {tbl-colwidths="[18,22,60]"}
+
+One factor, seven levels. That is the entire design, and it is where the test gets its name.
+
+✏️ **Q1:** Kaggle is a *mirror*, not a source — anyone can upload anything. How far back could you trace the data you are using for your final project? If you cannot find who collected it, what should that tell you?
+
+------------------------------------------------------------------------
+
+# Part 2 · Why not just run lots of t-tests?
+
+Seven groups make **21 pairs**. We know how to compare two groups, so why not do it 21 times?
+
+Because each test at $\alpha = 0.05$ carries a 5% chance of a false positive. Run 21 of them on data where **nothing at all is going on**:
+
+$$1 - 0.95^{21} = 0.66$$
+
+A **66% chance** of at least one "significant" result from pure noise. You would find something roughly two times out of three, and it would mean nothing.
+
+ANOVA asks **one** question instead — *is there any difference among these seven means?* — for one p-value and one 5% risk. It answers by comparing two kinds of variation:
+
+$$F = \frac{\text{variation between groups}}{\text{variation within groups}}$$
+
+-   $F \approx 1$ → groups differ about as much as individuals do. Nothing to see.
+-   $F \gg 1$ → groups differ **more** than individuals within them do. Something is going on.
+
+✏️ **Q2:** "More tests" sounds more thorough. Explain to someone who has not taken this class why running more tests makes you *more* likely to be wrong, not less.
+
+------------------------------------------------------------------------
+
+# Part 3 · Read it in
+
+**▶ Run this:**
+
+``` r
+# Load packages ---------------------------------------
+library(tidyverse)
+library(car)          # Anova(), leveneTest()
+library(performance)  # check_model(), check_normality()
+library(emmeans)      # follow-up comparisons
+library(multcomp)     # cld() - the compact letter display
+library(effectsize)   # eta_squared()
+
+# Read the file ---------------------------------------
+possum_raw <- read_csv("data/possum.csv")
+
+dim(possum_raw)
+names(possum_raw)
+```
+
+-   104 rows, 8 columns
+-   `head_l`, `skull_w`, `total_l`, `tail_l` are the measurements; `site`, `pop`, `sex`, `age` describe the animal
+
+------------------------------------------------------------------------
+
+# Part 4 · The `site` column is a trap
+
+**▶ Run this:**
+
+``` r
+possum_raw %>% count(site)
+```
+
+Seven groups, 7 to 33 animals each. But look at **what** those group names are.
+
+They are the integers **1 to 7**. To R, that is a **quantity** — as if site 6 were "twice site 3". It is not. It is a **name** that happens to be written with a digit.
+
+Leave it like that and `lm()` will fit a **straight line through site number**, which is nonsense. There is no error. There is no warning. You get a p-value, and it is meaningless.
+
+✏️ **Q3:** The sites are numbered 1–7 in geographic order, south to north. Does that make `site` a number? What would the model be claiming if you fit a line through it?
+
+------------------------------------------------------------------------
+
+# Part 5 · Fix it with `factor()`
+
+**▶ Run this:**
+
+``` r
+possum_df <- possum_raw %>%
+  filter(!is.na(total_l)) %>%
+  mutate(site_name = factor(site,
+                            levels = 1:7,
+                            labels = c("Cambarville", "Bellbird",
+                                       "Whian Whian", "Byrangery",
+                                       "Conondale", "Allyn River",
+                                       "Bulburin")))
+
+possum_df %>% count(site_name)
+
+levels(possum_df$site_name)
+```
+
+-   `levels` = the values **as they appear in the data**
+-   `labels` = what you want them **called**
+-   The two lists must be the **same length** and in the **same order**
+
+The site names come from the **OpenIntro codebook** — we did not invent them. They sit in three states:
+
+| State | Sites |
+|-------|-------|
+| Victoria | Cambarville, Bellbird |
+| New South Wales | Whian Whian, Byrangery |
+| Queensland / N. NSW | Conondale, Allyn River, Bulburin |
+
+: {tbl-colwidths="[35,65]"}
+
+✏️ **Q4:** Suppose you typed the seven labels in the wrong order. What would R tell you? (Nothing.) What would happen to every result for the rest of the session?
+
+------------------------------------------------------------------------
+
+# Part 6 · Look at it before you test it
+
+**▶ Run this:**
+
+``` r
+ggplot(possum_df, aes(x = site_name, y = total_l)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.5)
+```
+
+-   `outlier.shape = NA` stops the boxplot drawing outlier dots, because `geom_jitter()` is already drawing **every** point
+-   `width = 0.15` keeps the jitter tight enough that you can still tell which group is which
+
+Read it before you test anything:
+
+-   **Bellbird** sits low
+-   **Byrangery** sits high
+-   The middle five **overlap heavily**
+-   The boxes are about **equally tall** — spread looks similar across sites
+-   No wild outliers
+
+✏️ **Q5:** Predict the result **now**, out loud: significant or not? Driven by which sites? Will the middle five separate from each other? Write your prediction down — you will check it in Part 12.
+
+✏️ **Q6:** Why is predicting the answer before you test not cheating? (What would you do if the test came back disagreeing with the picture?)
+
+------------------------------------------------------------------------
+
+# Part 7 · The group means
+
+**▶ Run this:**
+
+``` r
+possum_df %>%
+  group_by(site_name) %>%
+  summarise(n = n(),
+            mean_total = round(mean(total_l), 1),
+            sd_total   = round(sd(total_l), 2))
+```
+
+| Site | n | Mean total length (cm) |
+|------|---|------------------------|
+| Cambarville | 33 | 89.7 |
+| Bellbird | 13 | 81.8 |
+| Whian Whian | 7 | 88.1 |
+| Byrangery | 7 | 92.2 |
+| Conondale | 13 | 86.9 |
+| Allyn River | 13 | 84.5 |
+| Bulburin | 18 | 85.7 |
+
+: {tbl-colwidths="[40,15,45]"}
+
+There is an obvious story here, and it is wrong. Seven sites on a north–south gradient invites:
+
+> *Colder in the south → bigger animals. Bergmann's rule.*
+
+Look again. The two **Victorian** sites are the southernmost, and they are at **opposite extremes** — Cambarville 89.7 cm, Bellbird 81.8 cm. Two forests, same state, **8 cm apart**. Latitude cannot explain that.
+
+✏️ **Q7:** A significant F will tell you the sites **differ**. What will it tell you about *why*? What else would you need to measure to test a latitude explanation?
+
+------------------------------------------------------------------------
+
+# Part 8 · Fit the model
+
+**▶ Run this:**
+
+``` r
+total_model <- lm(total_l ~ site_name, data = possum_df)
+```
+
+`response ~ predictor`, exactly as in regression. The only change is that the predictor is a **factor with seven levels** instead of a number.
+
+There is no separate ANOVA function. **ANOVA is a linear model** — not a simplification, literally the same machinery you used for regression.
+
+------------------------------------------------------------------------
+
+# Part 9 · Do not read `summary()` first
+
+**▶ Run this:**
+
+``` r
+summary(total_model)
+```
+
+You get **six slopes**, with names like `site_nameBellbird`, each comparing one site to **Cambarville** — because Cambarville is level 1, so it became the baseline.
+
+That answers *"is each site different from Cambarville?"*. Nobody asked about Cambarville.
+
+✏️ **Q8:** Change which site is level 1 and all six of those p-values change. Does the real answer depend on which site happens to be listed first? So what does that tell you about this table?
+
+------------------------------------------------------------------------
+
+# Part 10 · The right table
+
+**▶ Run this:**
+
+``` r
+Anova(total_model, type = 2)
+```
+
+**F(6, 97) = 14.58, p = 8.45 × 10⁻¹²**
+
+One line, one p-value, one question answered: the seven site means are **not all the same**.
+
+| In the table | Value | What it is |
+|--------------|-------|------------|
+| `Sum Sq` (site) | 907.6 | variation **explained** by site |
+| `Sum Sq` (resid) | 1006.2 | variation left over **within** sites |
+| `Df` (site) | 6 | 7 groups − 1 |
+| `Df` (resid) | 97 | 104 possums − 7 groups |
+| `F value` | 14.58 | the ratio, after dividing each `Sum Sq` by its `Df` |
+
+: {tbl-colwidths="[25,15,60]"}
+
+Between-site variation is **14 and a half times** within-site variation.
+
+::: callout-note
+## Why `type = 2`?
+
+With **one** factor, Types I, II and III give the **identical** answer — it genuinely does not matter here. We write `type = 2` as a habit, because the moment you add a second factor it starts mattering a great deal.
+:::
+
+------------------------------------------------------------------------
+
+# Part 11 · How big is it? F does not say
+
+**▶ Run this:**
+
+``` r
+eta_squared(Anova(total_model, type = 2), partial = FALSE)
+```
+
+**Eta-squared ($\eta^2$) = 0.47.** Which site a possum came from accounts for **47% of all the variation** in total length. The other 53% is possums being individuals.
+
+✏️ **Q9:** p answers *"is it real?"* and $\eta^2$ answers *"is it big?"*. With a big enough sample, a difference far too small to care about gets a tiny p. Why must a results section report both?
+
+------------------------------------------------------------------------
+
+# Part 12 · Check the assumptions — *after* fitting
+
+ANOVA assumes two things you can test, and one you check by thinking:
+
+1.  **Equal variances** across groups
+2.  **Normal residuals** — what the model *missed* is normally distributed
+3.  **Independence** — each possum is one animal, trapped once, measured once ✅
+
+You cannot check residuals before you have residuals. **Fit first, then check.**
+
+**▶ Run this:**
+
+``` r
+check_model(total_model)
+```
+
+Five panels, read like this:
+
+-   **Posterior predictive check** — simulated data should sit on top of real data
+-   **Linearity** — flat line, no funnel
+-   **Homogeneity of variance** — flat line; a slope or wedge means trouble
+-   **Influential observations** — points inside the dashed contours
+-   **Normality of residuals** — dots hugging the diagonal
+
+All five look healthy here. That is a boring plot, and boring is exactly what you want.
+
+**▶ Then run this:**
+
+``` r
+# Equal variances across sites?
+leveneTest(total_l ~ site_name, data = possum_df)
+
+# Normal residuals?
+shapiro.test(residuals(total_model))
+
+# The same two checks, in English:
+check_homogeneity(total_model)
+check_normality(total_model)
+```
+
+-   Levene **p = 0.805** → no evidence variances differ. **PASS**
+-   Shapiro–Wilk **p = 0.588** → no evidence of non-normality. **PASS**
+
+::: callout-warning
+## ⚠️ These tests run backwards
+
+For the **main** test, a small p was the interesting result. For **assumption** tests it is the opposite — a small p means your test is in trouble.
+
+Say it out loud every time: *"Levene p = 0.805. Big. Variances are fine. Carry on."*
+:::
+
+✏️ **Q10:** With small groups these tests are weak and pass almost anything; with huge samples they are brutal and fail on differences too small to matter. So why look at `check_model()` **as well**, every time?
+
+✏️ **Q11:** Go back to your Part 6 prediction. Did the picture and the test agree?
+
+------------------------------------------------------------------------
+
+# Part 13 · F said "not all equal" — that is all it said
+
+We have **F(6, 97) = 14.58, p \< 0.001**: *at least one* site differs from *at least one* other. It does **not** say which, how many, or in which direction.
+
+For that you need **post-hoc** comparisons — "after the fact".
+
+Running 21 comparisons was wrong **as a first move**. Running them **after** a significant F, **with the p-values adjusted**, is the standard, defensible approach. The gate came first.
+
+**▶ Run this:**
+
+``` r
+site_means <- emmeans(total_model, ~ site_name)
+site_means
+
+pairs(site_means, adjust = "tukey")
+```
+
+`emmeans` gives each site's estimated mean with a standard error and confidence interval. `pairs()` then compares all 21 pairs, and **Tukey** widens every p-value to pay for running 21 tests.
+
+**10 of the 21 pairs come back significant** — the ends separate, the middle mostly does not. Exactly what the boxplot said.
+
+✏️ **Q12:** What would these 21 p-values look like with `adjust = "none"`? Which pairs would flip? Is that the 66% problem from Part 2, back again?
+
+------------------------------------------------------------------------
+
+# Part 14 · The letters
+
+Nobody wants 21 p-values in a results section. They want to know which groups **cluster together**.
+
+**▶ Run this:**
+
+``` r
+cld(site_means, Letters = letters)
+```
+
+**Share a letter → not shown to differ. No letter in common → they differ.**
+
+| Site | Mean (cm) | Letters |
+|------|-----------|---------|
+| Bellbird | 81.8 | a |
+| Allyn River | 84.5 | ab |
+| Bulburin | 85.7 | b |
+| Conondale | 86.9 | bc |
+| Whian Whian | 88.1 | bcd |
+| Cambarville | 89.7 | cd |
+| Byrangery | 92.2 | d |
+
+: {tbl-colwidths="[40,25,35]"}
+
+A clean ladder from 81.8 cm up to 92.2 cm. **Bellbird** (`a`) and **Byrangery** (`d`) share nothing, so they differ. **Allyn River** (`ab`) cannot be told apart from either neighbour.
+
+::: callout-warning
+## ⚠️ Read R's own note
+
+> *"If two or more means share the same grouping symbol, then we cannot show them to be different. **But we also did not show them to be the same.**"*
+
+Sharing a letter is a **failure to detect a difference** — not evidence of equality. Byrangery has n = 7.
+:::
+
+✏️ **Q13:** Byrangery has the highest mean and only 7 animals. If someone trapped 70 more there, what would you expect to happen to its letters — and why?
+
+------------------------------------------------------------------------
+
+# Part 15 · Put the letters on the plot
+
+**▶ Run this:**
+
+``` r
+letters_df <- as.data.frame(cld(site_means, Letters = letters)) %>%
+  mutate(group = trimws(.group))
+
+ggplot(possum_df, aes(x = site_name, y = total_l)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.4) +
+  geom_text(data = letters_df,
+            aes(x = site_name, y = 97, label = group),
+            size = 5)
+```
+
+-   `cld()` returns an object, so `as.data.frame()` makes it plottable
+-   `.group` arrives padded with spaces for alignment, so `trimws()` strips them
+-   `y = 97` just parks the letters above the tallest point
+
+This single figure now carries the whole result: the raw data, the group spread, and which groups differ.
+
+------------------------------------------------------------------------
+
+# Part 16 · Write it up
+
+::: callout-important
+## 📝 The whole result, in three sentences
+
+> Total length differed significantly among the seven trapping sites (one-way ANOVA, **F(6, 97) = 14.58, p \< 0.001**), and site accounted for **47% of the variation** in length (**η² = 0.47**). Residuals were normally distributed (Shapiro–Wilk **p = 0.59**) with homogeneous variances across sites (Levene's test **p = 0.81**). Tukey-adjusted comparisons separated **Bellbird** (mean **81.8 cm**) from **Byrangery** (**92.2 cm**), with the remaining five sites forming an **overlapping middle group**.
+:::
+
+Every number has a job: the **test**, **F with both df** (so a reader can reconstruct your design), **p** written as `p < 0.001` and never `p = 0.000`, the **effect size**, the **assumption checks** so the reader knows you looked, and the **pattern** with real means attached.
+
+✏️ **Q14:** That paragraph never uses the word "proves", and never says two sites are "the same". Find the places where it would have been tempting to say either, and explain what it says instead.
+
+------------------------------------------------------------------------
+
+# Part 17 · Break it on purpose
+
+Remember Part 4 — `site` left as a number. Let us actually do it and compare.
+
+**▶ Run this:**
+
+``` r
+broken_model <- lm(total_l ~ site, data = possum_df)
+
+Anova(broken_model, type = 2)
+Anova(total_model, type = 2)
+```
+
+The broken one reports **Df = 1**, not 6, and comes back **p = 0.0075** — still "significant"!
+
+It fit a single straight line through site **ID** and asked *"does length go up as site number goes up?"* — a question about the order someone typed the sites in. It still prints a p-value. Nothing warns you.
+
+✏️ **Q15:** The broken model is significant. If you had never checked, you would have reported it. What in the output would have given it away?
+
+------------------------------------------------------------------------
+
+# The recipe, for next time
+
+1.  `factor()` the groups — `levels`, `labels`
+2.  **Plot** it, and predict the answer
+3.  `lm()`
+4.  `Anova(type = 2)`
+5.  `check_model()` + `leveneTest()` + `shapiro.test()`
+6.  `eta_squared()`
+7.  `emmeans()` → `pairs()` → `cld()`
+8.  Write the sentence
+
+------------------------------------------------------------------------
+
+# Extension (homework) — the same possums, a different ruler
+
+**This is what you turn in:** `scripts/19_anova_one_factor_homework.R`
+
+The file carries **four** measurements on every animal:
+
+| Column | What it is |
+|--------|------------|
+| `total_l` | total length, cm — what we used today |
+| `tail_l` | tail length, cm — **your homework** |
+| `head_l` | head length, mm |
+| `skull_w` | skull width, mm |
+
+: {tbl-colwidths="[25,75]"}
+
+You run **all eight steps** again on **`tail_l`**. Same 104 animals, same seven sites, same recipe — a different ruler.
+
+The real question is whether the **pattern holds**. Today's letters ran from Bellbird at the bottom to Byrangery at the top. Do the sites with the longest *bodies* also have the longest *tails*? Your last question asks you to put your letters next to ours and say what changed.
+
+::: callout-note
+## 📖 And one part where it breaks
+
+The homework also has an **optional** section on `skull_w`, where one of the two assumptions **fails**.
+
+That is there on purpose. Every assumption check you have run so far has passed, which makes it easy to think the check is a formality. It is not — and it is much better to meet a failure here, on homework, than in your final project.
+:::
+
+# Next class — New Zealand tree wētā 🦗
+
+**Wellington tree wētā**, *Hemideina crassidens*, is a large flightless relative of crickets found only in New Zealand. Its adult males come in **three distinct forms**: small-jawed sneaks, intermediates, and huge-jawed fighters that hold harems.
+
+We will find the three forms differ enormously in **ear size** — wētā hear through a membrane on the foreleg. Then we will divide ear size **by body size**, run the identical test, and watch the answer **change**.
+
+ANOVA answers the question you **asked** it. Making sure that is the question you **meant** is the whole job of next class.
+
+::: callout-important
+## Before you hand in
+
+**Session \> Restart R**, then run the whole file top to bottom. It must run clean, and your plots must draw.
+:::
