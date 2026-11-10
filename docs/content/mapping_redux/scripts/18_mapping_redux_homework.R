@@ -280,6 +280,39 @@ invisible(NULL)
 
 
 # And the hex map, faceted by period:
+# In class:
+# ggplot() +
+#   geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+#   geom_sf(data = dove_hex_map, fill = "firebrick",
+#           alpha = 0.75, color = NA) +
+#   coord_sf(xlim = c(-125, -66), ylim = c(24, 50)) +
+#   facet_wrap(~period, nrow = 1) +
+#   theme_void()
+#
+# One flat fill colour, on purpose: a cell is drawn if it
+# holds at least one record, so the map shows exactly what
+# the occupied-hex table counts.
+
+ 
+
+
+# OPTIONAL, and it feeds H-Q9: draw the SAME cells shaded
+# by how many records each one holds. Use the binned scale -
+# a smooth one washes nearly every cell out to the palest
+# shade.
+#
+# ggplot() +
+#   geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+#   geom_sf(data = dove_hex_map, aes(fill = records), color = NA) +
+#   scale_fill_viridis_b(option = "magma", direction = -1,
+#                        breaks = c(1, 3, 10, 30, 100)) +
+#   coord_sf(xlim = c(-125, -66), ylim = c(24, 50)) +
+#   facet_wrap(~period, nrow = 1) +
+#   theme_void()
+#
+# Then ask yourself where the dark cells are. For the dove
+# they are cities and coastlines - a map of observers, not
+# of doves.
 
  
 

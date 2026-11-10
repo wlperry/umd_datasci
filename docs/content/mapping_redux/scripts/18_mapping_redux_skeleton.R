@@ -58,7 +58,7 @@ slf_2025 <- occ_data(
   limit = 1500
 )$data
 
-# If a download fails, jump to section 14 - there is a
+# If a download fails, jump to section 15 - there is a
 # cached copy of all of this in data/.
 
 invisible(NULL)
@@ -292,6 +292,9 @@ invisible(NULL)
 
 # ---- 10 The hex map and its number -----------------------
 # inner_join() DROPS the empty cells, which is the point.
+# One flat fill colour, on purpose: a cell is drawn if it
+# holds at least one record, so the map shows exactly what
+# the occupied_hexes table counts.
 
 slf_hex_map <- hex_grid %>%
   inner_join(slf_hex_counts, by = "hex_id")
@@ -302,8 +305,12 @@ slf_hex_map %>%
 
 ggplot() +
   geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
-  geom_sf(data = slf_hex_map, aes(fill = records), color = NA) +
-  scale_fill_viridis_c(option = "magma", direction = -1) +
+  geom_sf(
+    data = slf_hex_map,
+    fill = "firebrick",
+    alpha = 0.75,
+    color = NA
+  ) +
   coord_sf(xlim = c(-92, -69), ylim = c(33, 45)) +
   facet_wrap(~year) +
   theme_void()
@@ -333,8 +340,12 @@ dove_hex_map %>%
 
 ggplot() +
   geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
-  geom_sf(data = dove_hex_map, aes(fill = records), color = NA) +
-  scale_fill_viridis_c(option = "magma", direction = -1) +
+  geom_sf(
+    data = dove_hex_map,
+    fill = "firebrick",
+    alpha = 0.75,
+    color = NA
+  ) +
   coord_sf(xlim = c(-125, -66), ylim = c(24, 50)) +
   facet_wrap(~period, nrow = 1) +
   theme_void()
@@ -346,7 +357,46 @@ ggplot() +
 invisible(NULL)
 
 
-# ---- 11 Two species on one map ---------------------------
+# ---- 11 Colour by count, and what it really shows --------
+# The records column is still sitting there unused. Put it
+# on the map. scale_fill_viridis_b() - the b is for BINNED -
+# cuts the counts into classes you can read off the legend.
+
+ggplot() +
+  geom_sf(data = states_sf, fill = "grey96", color = "grey80") +
+  geom_sf(data = dove_hex_map, aes(fill = records), color = NA) +
+  scale_fill_viridis_b(
+    option = "magma",
+    direction = -1,
+    breaks = c(1, 3, 10, 30, 100)
+  ) +
+  coord_sf(xlim = c(-125, -66), ylim = c(24, 50)) +
+  facet_wrap(~period, nrow = 1) +
+  theme_void()
+
+# TRY IT: swap viridis_b for viridis_c and drop breaks.
+# Nearly everything goes pale - in the first period 104 of
+# the 116 occupied cells hold under 5% of what the busiest
+# cell holds, so a smooth ramp squashes them into one shade.
+
+# Where are the dark cells? The busiest cell in all four
+# panels is in the FIRST one: 344 records in one hexagon
+# over Miami. By the last panel the busiest is down to 123,
+# while occupied cells climbed from 116 to 267.
+
+dove_hex_map %>%
+  st_drop_geometry() %>%
+  group_by(period) %>%
+  summarise(occupied = n(), busiest_cell = max(records))
+
+# THINK: the range more than doubled while the busiest cell
+# shrank. The doves did not get rarer in Miami. What are the
+# dark cells a map of?
+
+invisible(NULL)
+
+
+# ---- 12 Two species on one map ---------------------------
 # Southern flying squirrel: oak and hickory.
 # Northern flying squirrel: spruce and fir.
 # They meet in a band right over the top of Duluth.
@@ -382,7 +432,7 @@ ggplot() +
 invisible(NULL)
 
 
-# ---- 12 Interactive with ggplotly() ----------------------
+# ---- 13 Interactive with ggplotly() ----------------------
 # ggplotly() does NOT handle geom_sf() well - it throws away
 # custom hover text. So for the interactive version we go
 # back to plain lon/lat columns:
@@ -427,7 +477,7 @@ ggplotly(slf_gg, tooltip = "text")
 invisible(NULL)
 
 
-# ---- 13 A slider instead of an animation -----------------
+# ---- 14 A slider instead of an animation -----------------
 # frame = factor(year) is the only change.
 # Three scatterplots with a slider, not a rendered movie -
 # it runs on any laptop.
@@ -462,7 +512,7 @@ ggplotly(slf_anim, tooltip = "text")
 invisible(NULL)
 
 
-# ---- 14 If there is time: was your download honest? ------
+# ---- 15 If there is time: was your download honest? ------
 # You mapped 1500 records from 2025. GBIF holds about
 # 21000. The cached file is a capped batch from every year,
 # pulled the same way.
