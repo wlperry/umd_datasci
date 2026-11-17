@@ -1,9 +1,9 @@
 # ==========================================================
-# Activity 19 - HOMEWORK: the same possums, a different ruler
+# Activity 24 - HOMEWORK: the same possums, a different ruler
 # Name:
 # Date:
 #
-# Save as scripts/19_anova_one_factor_homework.R
+# Save as scripts/24_anova_one_factor_homework.R
 #
 # *** THIS IS THE FILE YOU TURN IN. ***
 #

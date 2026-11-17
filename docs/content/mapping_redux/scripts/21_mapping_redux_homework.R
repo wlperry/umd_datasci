@@ -1,9 +1,9 @@
 # ==========================================================
-# Activity 18 - HOMEWORK: a species that moves
+# Activity 21 - HOMEWORK: a species that moves
 # Name:
 # Date:
 #
-# Save as scripts/18_mapping_redux_homework.R
+# Save as scripts/21_mapping_redux_homework.R
 #
 # *** THIS IS THE FILE YOU TURN IN. ***
 #

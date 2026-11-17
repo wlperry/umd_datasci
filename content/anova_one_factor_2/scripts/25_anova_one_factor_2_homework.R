@@ -1,9 +1,9 @@
 # ==========================================================
-# Activity 20 - HOMEWORK: the hind leg, raw and relative
+# Activity 25 - HOMEWORK: the hind leg, raw and relative
 # Name:
 # Date:
 #
-# Save as scripts/20_anova_one_factor_2_homework.R
+# Save as scripts/25_anova_one_factor_2_homework.R
 #
 # *** THIS IS THE FILE YOU TURN IN. ***
 #

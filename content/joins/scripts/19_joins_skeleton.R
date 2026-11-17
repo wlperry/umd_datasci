@@ -1,9 +1,9 @@
 # ==========================================================
-# Activity 16 - Joins: two fisher tables into one
+# Activity 19 - Joins: two fisher tables into one
 # Name:
 # Date:
 #
-# Save as scripts/16_joins.R
+# Save as scripts/19_joins.R
 #
 # The code is written for you through section 10. Section
 # 11 is yours to type - the code is on the activity page.
@@ -253,6 +253,6 @@ invisible(NULL)
 
 
 # ==========================================================
-# End of Activity 16. Run the whole script top to bottom
+# End of Activity 19. Run the whole script top to bottom
 # (Ctrl/Cmd + Shift + Enter). It must run clean.
 # ==========================================================

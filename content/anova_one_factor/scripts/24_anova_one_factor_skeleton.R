@@ -1,9 +1,9 @@
 # ==========================================================
-# Activity 19 - One-Factor ANOVA, start to finish
+# Activity 24 - One-Factor ANOVA, start to finish
 # Name:
 # Date:
 #
-# Save as scripts/19_anova_one_factor.R
+# Save as scripts/24_anova_one_factor.R
 #
 # ALL the code is written for you today. Run it chunk by
 # chunk, read what comes out, then change things and see
@@ -13,7 +13,7 @@
 #
 # YOU DO NOT TURN THIS FILE IN.
 # The homework is a separate file:
-#   19_anova_one_factor_homework.R
+#   24_anova_one_factor_homework.R
 #
 # ----------------------------------------------------------
 # About the invisible(NULL) lines
@@ -405,7 +405,7 @@ invisible(NULL)
 # End of the in-class script.
 #
 # THE HOMEWORK IS A SEPARATE FILE:
-#   19_anova_one_factor_homework.R
+#   24_anova_one_factor_homework.R
 #
 # Same possums, EAR length. Open it now and read the top.
 # ==========================================================

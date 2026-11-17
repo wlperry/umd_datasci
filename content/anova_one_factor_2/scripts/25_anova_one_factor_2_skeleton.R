@@ -1,9 +1,9 @@
 # ==========================================================
-# Activity 20 - ANOVA II: weta, and correcting for size
+# Activity 25 - ANOVA II: weta, and correcting for size
 # Name:
 # Date:
 #
-# Save as scripts/20_anova_one_factor_2.R
+# Save as scripts/25_anova_one_factor_2.R
 #
 # ALL the code is written for you today. Run it chunk by
 # chunk, read what comes out, then change things and see
@@ -13,7 +13,7 @@
 #
 # YOU DO NOT TURN THIS FILE IN.
 # The homework is a separate file:
-#   20_anova_one_factor_2_homework.R
+#   25_anova_one_factor_2_homework.R
 #
 # ----------------------------------------------------------
 # THE ANIMALS
@@ -378,7 +378,7 @@ invisible(NULL)
 # End of the in-class script.
 #
 # THE HOMEWORK IS A SEPARATE FILE:
-#   20_anova_one_factor_2_homework.R
+#   25_anova_one_factor_2_homework.R
 #
 # The hind leg - raw, then relative. Open it now.
 # ==========================================================

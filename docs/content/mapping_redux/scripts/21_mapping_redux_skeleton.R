@@ -1,9 +1,9 @@
 # ==========================================================
-# Activity 18 - Mapping Redux: ranges that move
+# Activity 21 - Mapping Redux: ranges that move
 # Name:
 # Date:
 #
-# Save as scripts/18_mapping_redux.R
+# Save as scripts/21_mapping_redux.R
 #
 # ALL the code is written for you today. Run it section by
 # section, look at what comes out, then change things and
@@ -13,7 +13,7 @@
 #
 # YOU DO NOT TURN THIS FILE IN.
 # The homework is a separate file:
-#   18_mapping_redux_homework.R
+#   21_mapping_redux_homework.R
 # ==========================================================
 
 # Install this ONCE, from the Console, BEFORE class:
@@ -534,5 +534,5 @@ invisible(NULL)
 
 # ==========================================================
 # Done. The homework is a SEPARATE file:
-#   18_mapping_redux_homework.R
+#   21_mapping_redux_homework.R
 # ==========================================================

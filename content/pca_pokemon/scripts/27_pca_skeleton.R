@@ -1,9 +1,9 @@
 # ==========================================================
-# Activity 21 - PCA I: many measurements, few axes
+# Activity 27 - PCA I: many measurements, few axes
 # Name:
 # Date:
 #
-# Save as scripts/21_pca.R
+# Save as scripts/27_pca.R
 #
 # EVERY LINE OF CODE IS ALREADY WRITTEN. You do not have to
 # write any of it. Run it one chunk at a time, top to
@@ -20,7 +20,7 @@
 #
 # YOU DO NOT TURN THIS FILE IN.
 # The homework is a separate file:
-#   21_pca_homework.R
+#   27_pca_homework.R
 #
 # ----------------------------------------------------------
 # TODAY HAS NO P-VALUES
@@ -473,7 +473,7 @@ invisible(NULL)
 # All three are next class.
 #
 # THE HOMEWORK IS A SEPARATE FILE:
-#   21_pca_homework.R
+#   27_pca_homework.R
 #
 # All 1,025 Pokemon instead of 151. Open it now.
 # ==========================================================

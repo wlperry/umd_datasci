@@ -1,9 +1,9 @@
 # ==========================================================
-# Activity 22 - HOMEWORK: all 1,025 Pokemon, interpreted
+# Activity 28 - HOMEWORK: all 1,025 Pokemon, interpreted
 # Name:
 # Date:
 #
-# Save as scripts/22_pca_2_homework.R
+# Save as scripts/28_pca_2_homework.R
 #
 # *** THIS IS THE FILE YOU TURN IN. ***
 #

@@ -1,9 +1,9 @@
 # ==========================================================
-# Activity 22 - PCA II: loadings, scores, and the biplot
+# Activity 28 - PCA II: loadings, scores, and the biplot
 # Name:
 # Date:
 #
-# Save as scripts/22_pca_2.R
+# Save as scripts/28_pca_2.R
 #
 # EVERY LINE OF CODE IS ALREADY WRITTEN. You do not have to
 # write any of it. Run it one chunk at a time, top to
@@ -18,7 +18,7 @@
 #
 # YOU DO NOT TURN THIS FILE IN.
 # The homework is a separate file:
-#   22_pca_2_homework.R
+#   28_pca_2_homework.R
 #
 # ----------------------------------------------------------
 # STILL NO P-VALUES
@@ -442,7 +442,7 @@ invisible(NULL)
 # End of the in-class script.
 #
 # THE HOMEWORK IS A SEPARATE FILE:
-#   22_pca_2_homework.R
+#   28_pca_2_homework.R
 #
 # All 1,025 Pokemon, and you name PC2 yourself. Open it now.
 # ==========================================================

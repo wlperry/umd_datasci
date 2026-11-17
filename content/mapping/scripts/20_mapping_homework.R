@@ -1,9 +1,9 @@
 # ==========================================================
-# Activity 17 - HOMEWORK: map a species of your own
+# Activity 20 - HOMEWORK: map a species of your own
 # Name:
 # Date:
 #
-# Save as scripts/17_mapping_homework.R
+# Save as scripts/20_mapping_homework.R
 #
 # *** THIS IS THE FILE YOU TURN IN. ***
 #

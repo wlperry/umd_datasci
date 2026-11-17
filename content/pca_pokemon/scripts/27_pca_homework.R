@@ -1,9 +1,9 @@
 # ==========================================================
-# Activity 21 - HOMEWORK: all 1,025 Pokemon
+# Activity 27 - HOMEWORK: all 1,025 Pokemon
 # Name:
 # Date:
 #
-# Save as scripts/21_pca_homework.R
+# Save as scripts/27_pca_homework.R
 #
 # *** THIS IS THE FILE YOU TURN IN. ***
 #

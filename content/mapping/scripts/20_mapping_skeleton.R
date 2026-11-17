@@ -1,9 +1,9 @@
 # ==========================================================
-# Activity 17 - Mapping: Bigfoot, moose, and live maps
+# Activity 20 - Mapping: Bigfoot, moose, and live maps
 # Name:
 # Date:
 #
-# Save as scripts/17_mapping.R
+# Save as scripts/20_mapping.R
 #
 # ALL the code is written for you today. Run it chunk by
 # chunk, look at what comes out, then change things and see
@@ -12,7 +12,7 @@
 # The THINK lines are to talk about, not to answer here.
 #
 # YOU DO NOT TURN THIS FILE IN.
-# The homework is a separate file: 17_mapping_homework.R
+# The homework is a separate file: 20_mapping_homework.R
 # ==========================================================
 
 # Install these ONCE, from the Console, BEFORE class:
@@ -337,7 +337,7 @@ invisible(NULL)
 # End of the in-class script.
 #
 # THE HOMEWORK IS A SEPARATE FILE:
-#   17_mapping_homework.R
+#   20_mapping_homework.R
 #
 # Open it now and read the top of it.
 # ==========================================================
