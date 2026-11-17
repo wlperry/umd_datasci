@@ -63,13 +63,13 @@ options(width = 65)   # printed R output wraps at 65 too
 
 Eight steps, and you now know all of them:
 
-1. `factor()` the groups
+1. Name the groups, then `as.factor()`
 2. **Plot** it, and predict the answer
 3. `lm()`
 4. `Anova(type = 2)`
 5. `check_model()` + `leveneTest()` + `shapiro.test()`
 6. `eta_squared()`
-7. `emmeans()` → `pairs()` → `cld()`
+7. `emmeans()` → `pairs()` → `multcomp::cld()`
 8. Write the sentence
 
 ::: callout-note
@@ -94,7 +94,7 @@ Today we run that exact recipe on a different animal — and it hands us an answ
 **Tools today:**
 
 - Nothing new 🎉
-- Same five packages as last class
+- Same packages as last class
 
 **Data:** 🦗 313 wētā, Te Pākeka / Maud Island, New Zealand
 
@@ -165,7 +165,6 @@ library(tidyverse)
 library(car)          # Anova(), leveneTest()
 library(performance)  # check_model()
 library(emmeans)      # follow-up comparisons
-library(multcomp)     # cld()
 library(effectsize)   # eta_squared()
 
 # Read the file ---------------------------------------
@@ -230,18 +229,17 @@ Nothing in R will stop you. `Anova()` will hand you `p < 2e-16` and a gold star.
 ```{r build-weta}
 weta_df <- weta_raw %>%
   filter(sex == "m", !is.na(foretibia)) %>%
-  mutate(morph = factor(morph,
-                        levels = c("eighth", "ninth", "tenth")))
+  mutate(morph = as.factor(morph))
 
 weta_df %>% count(morph)
 ```
 
 ::: callout-note
-**🧠 `levels` with no `labels` this time**
+**🧠 No `case_when()` this time**
 
-The groups are already **words**, so `factor()` only needs `levels` — to fix the **order**.
-
-Left alone R sorts alphabetically: *eighth, ninth, tenth*. That happens to be right. **Do not rely on luck** — say it out loud in the code.
+- The groups are already **words**, so there is nothing to rename — just `as.factor()`
+- `as.factor()` sorts alphabetically: *eighth, ninth, tenth*. That happens to be the order we want
+- When it is **not**, `fct_relevel()` fixes it — we will need that in Chunk 4
 :::
 
 # Look Before You Test
@@ -302,7 +300,7 @@ Remember the inversion: for these two, a **big** p is the good outcome.
 # Which Morphs Differ?
 
 ```{r weta-cld}
-cld(emmeans(fore_model, ~ morph), Letters = letters)
+multcomp::cld(emmeans(fore_model, ~ morph), Letters = letters)
 ```
 
 ::: callout-note
@@ -356,7 +354,7 @@ eta_squared(Anova(ear_model, type = 2), partial = FALSE)
 # And the Letters
 
 ```{r ear-cld}
-cld(emmeans(ear_model, ~ morph), Letters = letters)
+multcomp::cld(emmeans(ear_model, ~ morph), Letters = letters)
 ```
 
 ::: callout-important
@@ -504,7 +502,7 @@ eta_squared(Anova(ear_rel_model, type = 2), partial = FALSE)
 # And the Letters
 
 ```{r ear-rel-cld}
-cld(emmeans(ear_rel_model, ~ morph), Letters = letters)
+multcomp::cld(emmeans(ear_rel_model, ~ morph), Letters = letters)
 ```
 
 ::: callout-note
@@ -610,9 +608,9 @@ Both are **lengths** in mm, so no square root this time. Just divide.
 ```{r four-group}
 weta_all <- weta_raw %>%
   filter(!is.na(foretibia)) %>%
-  mutate(morph = factor(morph,
-                        levels = c("female", "eighth", "ninth", "tenth")),
-         fore_rel = foretibia / pronotum)
+  mutate(morph = as.factor(morph)) %>%
+  mutate(morph = fct_relevel(morph, "female")) %>%
+  mutate(fore_rel = foretibia / pronotum)
 
 weta_all %>% count(morph)
 
@@ -640,7 +638,7 @@ Anova(fore_rel_model, type = 2)
 # The Ladder Stops Short
 
 ```{r four-group-cld}
-cld(emmeans(fore_rel_model, ~ morph), Letters = letters)
+multcomp::cld(emmeans(fore_rel_model, ~ morph), Letters = letters)
 ```
 
 ::: callout-important

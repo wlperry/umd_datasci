@@ -56,8 +56,9 @@ library(tidyverse)
 library(car)          # Anova(), leveneTest()
 library(performance)  # check_model()
 library(emmeans)      # follow-up comparisons
-library(multcomp)     # cld()
 library(effectsize)   # eta_squared()
+
+# NOT loaded on purpose: multcomp. We call multcomp::cld().
 
 invisible(NULL)
 
@@ -104,15 +105,15 @@ invisible(NULL)
 
 
 # ---- 3 Males only, foreleg length ------------------------
-# The groups are already WORDS, so factor() only needs
-# levels - to fix the ORDER. Left alone R sorts
-# alphabetically: eighth, ninth, tenth. That happens to be
-# right. Do not rely on luck - say it.
+# The groups are already WORDS, so there is nothing to
+# rename - no case_when() this time, just as.factor().
+# as.factor() sorts alphabetically: eighth, ninth, tenth.
+# That happens to be the order we want. When it is not,
+# fct_relevel() fixes it (see the females section).
 
 weta_df <- weta_raw %>%
   filter(sex == "m", !is.na(foretibia)) %>%
-  mutate(morph = factor(morph,
-                        levels = c("eighth", "ninth", "tenth")))
+  mutate(morph = as.factor(morph))
 
 weta_df %>% count(morph)
 
@@ -181,7 +182,7 @@ invisible(NULL)
 
 # ---- 8 Which morphs differ? ------------------------------
 
-cld(emmeans(fore_model, ~ morph), Letters = letters)
+multcomp::cld(emmeans(fore_model, ~ morph), Letters = letters)
 
 # a, b, c - all three separate. Morph explains 74% of the
 # variation in foreleg length.
@@ -210,7 +211,7 @@ Anova(ear_model, type = 2)
 
 eta_squared(Anova(ear_model, type = 2), partial = FALSE)
 
-cld(emmeans(ear_model, ~ morph), Letters = letters)
+multcomp::cld(emmeans(ear_model, ~ morph), Letters = letters)
 
 # F(2, 192) = 122.2, p < 2.2e-16, eta-squared = 0.56.
 # All three separate: a, b, c.
@@ -276,7 +277,7 @@ Anova(ear_rel_model, type = 2)
 
 eta_squared(Anova(ear_rel_model, type = 2), partial = FALSE)
 
-cld(emmeans(ear_rel_model, ~ morph), Letters = letters)
+multcomp::cld(emmeans(ear_rel_model, ~ morph), Letters = letters)
 
 # F(2, 192) = 0.80, p = 0.449, eta-squared = 0.008.
 # All three share the letter a.
@@ -313,11 +314,15 @@ invisible(NULL)
 # with it. Both foretibia and pronotum are LENGTHS in mm, so
 # no square root this time. Just divide.
 
+# Alphabetical order would put "eighth" first and "female"
+# second. fct_relevel(morph, "female") moves female to the
+# front and leaves the rest alone.
+
 weta_all <- weta_raw %>%
   filter(!is.na(foretibia)) %>%
-  mutate(morph = factor(morph,
-                        levels = c("female", "eighth", "ninth", "tenth")),
-         fore_rel = foretibia / pronotum)
+  mutate(morph = as.factor(morph)) %>%
+  mutate(morph = fct_relevel(morph, "female")) %>%
+  mutate(fore_rel = foretibia / pronotum)
 
 weta_all %>% count(morph)
 
@@ -329,7 +334,7 @@ shapiro.test(residuals(fore_rel_model))
 
 Anova(fore_rel_model, type = 2)
 
-cld(emmeans(fore_rel_model, ~ morph), Letters = letters)
+multcomp::cld(emmeans(fore_rel_model, ~ morph), Letters = letters)
 
 # F(3, 309) = 266.3, p < 2.2e-16, eta-squared = 0.72.
 # Letters: a | b | c | c

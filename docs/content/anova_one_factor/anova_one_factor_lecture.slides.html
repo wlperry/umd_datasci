@@ -11,7 +11,7 @@
   <meta name="generator" content="quarto-1.11.9">
 
   <meta name="author" content="Bill Perry">
-  <meta name="dcterms.date" content="2026-11-10">
+  <meta name="dcterms.date" content="2026-11-16">
   <title>UMD DAta Science Biology – Lecture — One-Factor ANOVA: Start to Finish</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -198,7 +198,7 @@
     }
   </style>
 <meta property="og:title" content="Lecture — One-Factor ANOVA: Start to Finish – UMD DAta Science Biology">
-<meta property="og:description" content="One factor, more than two groups, done properly from end to end on real data found on Kaggle: 104 Australian brushtail possums trapped at seven forest sites. Why one test instead of twenty-one t-tests, naming and ordering groups with factor(), fitting lm() and reading car::Anova(type = 2), checking the assumptions AFTER the fit with performance::check_model() and car::leveneTest(), measuring how big the effect is with eta-squared, and finding out WHICH sites differ with emmeans and compact letter displays.">
+<meta property="og:description" content="One factor, more than two groups, done properly from end to end on real field data: 104 Australian brushtail possums trapped at seven forest sites. Why one test instead of twenty-one t-tests, naming the groups with case_when() and making them a factor (plus a side trip on ordering them north to south with fct_relevel()), fitting lm() and reading car::Anova(type = 2), checking the assumptions AFTER the fit with performance::check_model() and car::leveneTest(), measuring how big the effect is with eta-squared, and finding out WHICH sites differ with emmeans and a compact letter display from multcomp::cld().">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 <body class="quarto-light">
@@ -217,7 +217,7 @@ Bill Perry
 </div>
 </div>
 
-  <p class="date">2026-11-10</p>
+  <p class="date">2026-11-16</p>
 </section>
 <section id="where-we-left-off-two-groups" class="title-slide slide level1 center">
 <h1>Where We Left Off — Two Groups</h1>
@@ -250,7 +250,7 @@ Bill Perry
 <ul>
 <li>See <strong>why</strong> twenty-one t-tests is the wrong answer</li>
 <li><strong>Look</strong> at the data before testing anything</li>
-<li>Use <code>factor()</code> to give groups <strong>names and an order</strong></li>
+<li>Name the groups with <code>case_when()</code>, then make them a <strong>factor</strong></li>
 <li>Fit with <code>lm()</code>, test with <code>car::Anova(type = 2)</code></li>
 <li>Check the assumptions <strong>after</strong> the fit:
 <ul>
@@ -268,9 +268,9 @@ Bill Perry
 <li><code>car</code> — <code>Anova()</code>, <code>leveneTest()</code></li>
 <li><code>performance</code> — <code>check_model()</code></li>
 <li><code>emmeans</code> — follow-up tests</li>
-<li><code>multcomp</code> — the letters</li>
+<li><code>multcomp::cld()</code> — the letters</li>
 </ul>
-<p><strong>Data:</strong> 🐾 104 brushtail possums, 7 sites, <strong>off Kaggle</strong></p>
+<p><strong>Data:</strong> 🐾 104 brushtail possums, 7 sites, from a <strong>1995 field study</strong></p>
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
 <div class="callout-title">
@@ -304,11 +304,11 @@ Bill Perry
 </div>
 <div class="callout-content">
 <p><strong>⚠️ Install first</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a aria-label="1"></a><span class="fu">install.packages</span>(<span class="st">"performance"</span>)</span>
-<span id="cb1-2"><a aria-label="2"></a><span class="fu">install.packages</span>(<span class="st">"see"</span>)</span>
-<span id="cb1-3"><a aria-label="3"></a><span class="fu">install.packages</span>(<span class="st">"emmeans"</span>)</span>
-<span id="cb1-4"><a aria-label="4"></a><span class="fu">install.packages</span>(<span class="st">"multcomp"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><code>performance</code> pulls in a dozen dependencies. <strong>Do it before class, not during.</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a aria-label="1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">"performance"</span>, <span class="st">"see"</span>,</span>
+<span id="cb1-2"><a aria-label="2"></a>                   <span class="st">"emmeans"</span>, <span class="st">"multcomp"</span>,</span>
+<span id="cb1-3"><a aria-label="3"></a>                   <span class="st">"multcompView"</span>, <span class="st">"Hmisc"</span>,</span>
+<span id="cb1-4"><a aria-label="4"></a>                   <span class="st">"effectsize"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Lots of dependencies. <strong>Do it before class, not during.</strong> Windows machines especially need <code>multcompView</code> and <code>Hmisc</code> installed by hand.</p>
 </div>
 </div>
 </div>
@@ -334,18 +334,18 @@ Bill Perry
 <p><strong>We will cover:</strong> where the data came from, and the one arithmetic fact that kills the obvious approach.</p>
 </section>
 
-<section id="finding-data-a-real-search" class="title-slide slide level1 center">
-<h1>Finding Data: A Real Search</h1>
+<section id="where-the-data-came-from" class="title-slide slide level1 center">
+<h1>Where the Data Came From</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p>Your final projects need data. So here is how today’s data was actually found.</p>
-<p>Searched <strong>kaggle.com/datasets</strong> for <code>possum</code>. One hit:</p>
+<p>Your final projects need data. So here is the trail behind today’s.</p>
 <ul>
-<li><strong>“OpenIntro Possum”</strong> — 104 rows, 8 columns</li>
-<li>Uploaded by a user who mirrored it from <strong>OpenIntro</strong>, a statistics-textbook project</li>
-<li>OpenIntro got it from a <strong>1995 paper</strong> in the <em>Australian Journal of Zoology</em></li>
+<li><strong>Collected by</strong> four field biologists, who live-trapped and measured every animal</li>
+<li><strong>Published in</strong> the <em>Australian Journal of Zoology</em> — <a href="https://doi.org/10.1071/ZO9950449">Lindenmayer et al.&nbsp;1995</a></li>
+<li><strong>Shared as</strong> the <code>possum</code> data set in the R package <a href="https://cran.r-project.org/package=DAAG"><code>DAAG</code></a></li>
+<li><strong>Our file</strong>, <code>possum.csv</code>, is that data set with shorter column names</li>
 </ul>
-<p>So the trail runs: Kaggle → textbook → <strong>peer-reviewed field study</strong>.</p>
+<p>So the trail runs: our file → R package → <strong>peer-reviewed field study</strong>.</p>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-tip callout-titled callout-style-default">
 <div class="callout-body">
@@ -357,7 +357,7 @@ Bill Perry
 </div>
 <div class="callout-content">
 <p><strong>📖 Always walk the trail back</strong></p>
-<p>Kaggle is a <strong>mirror</strong>, not a source. Anyone can upload anything.</p>
+<p>A file on the internet is a <strong>copy</strong>, not a source. Anyone can upload anything.</p>
 <p>Before you trust a dataset, find out who <strong>collected</strong> it. If you cannot, that is your answer.</p>
 </div>
 </div>
@@ -369,11 +369,11 @@ Bill Perry
 <h1>The Animals</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p><strong>Mountain brushtail possum</strong>, <em>Trichosurus cunninghami</em> 🐾</p>
+<p><strong>Mountain brushtail possum</strong>, genus <em>Trichosurus</em> 🐾</p>
 <ul>
 <li>A nocturnal, tree-dwelling Australian marsupial</li>
 <li>104 animals <strong>live-trapped at seven forest sites</strong>, from Victoria in the south up to Queensland</li>
-<li>Each animal measured: head length, skull width, <strong>total length</strong>, tail length, plus age and sex</li>
+<li>Each animal measured nine ways — head, skull, <strong>total length</strong>, tail, foot, ear and more — plus age and sex</li>
 </ul>
 <p>Our question today:</p>
 <blockquote>
@@ -468,7 +468,7 @@ Bill Perry
 
 <section id="chunk-2-of-5-look-at-it-first" class="title-slide slide level1 center">
 <h1>🧩 Chunk 2 of 5 · Look at It First</h1>
-<p><strong>We will cover:</strong> reading the file, turning site numbers into real names with <code>factor()</code>, and plotting before testing.</p>
+<p><strong>We will cover:</strong> reading the file, turning site numbers into real names with <code>case_when()</code>, making them a factor, and plotting before testing.</p>
 </section>
 
 <section id="read-it-in" class="title-slide slide level1 center">
@@ -479,57 +479,27 @@ Bill Perry
 <span id="cb2-3"><a aria-label="3"></a><span class="fu">library</span>(car)          <span class="co"># Anova(), leveneTest()</span></span>
 <span id="cb2-4"><a aria-label="4"></a><span class="fu">library</span>(performance)  <span class="co"># check_model()</span></span>
 <span id="cb2-5"><a aria-label="5"></a><span class="fu">library</span>(emmeans)      <span class="co"># follow-up comparisons</span></span>
-<span id="cb2-6"><a aria-label="6"></a><span class="fu">library</span>(multcomp)     <span class="co"># the compact letter display</span></span>
-<span id="cb2-7"><a aria-label="7"></a></span>
-<span id="cb2-8"><a aria-label="8"></a><span class="co"># Read the file ---------------------------------------</span></span>
-<span id="cb2-9"><a aria-label="9"></a>possum_raw <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/possum.csv"</span>)</span>
-<span id="cb2-10"><a aria-label="10"></a></span>
-<span id="cb2-11"><a aria-label="11"></a><span class="fu">dim</span>(possum_raw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-6"><a aria-label="6"></a></span>
+<span id="cb2-7"><a aria-label="7"></a><span class="co"># Read the file ---------------------------------------</span></span>
+<span id="cb2-8"><a aria-label="8"></a>possum_raw <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/possum.csv"</span>)</span>
+<span id="cb2-9"><a aria-label="9"></a></span>
+<span id="cb2-10"><a aria-label="10"></a><span class="fu">dim</span>(possum_raw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 104   8</code></pre>
+<pre><code>[1] 104  14</code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a aria-label="1"></a><span class="fu">names</span>(possum_raw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "site"    "pop"     "sex"     "age"     "head_l"  "skull_w"
-[7] "total_l" "tail_l" </code></pre>
+<pre><code> [1] "animal"  "site"    "pop"     "sex"     "age"     "head_l" 
+ [7] "skull_w" "total_l" "tail_l"  "foot_l"  "ear_l"   "eye"    
+[13] "chest"   "belly"  </code></pre>
 </div>
 </div>
-</section>
-
-<section id="one-side-effect-of-loading-multcomp" class="title-slide slide level1 center">
-<h1>⚠️ One Side Effect of Loading <code>multcomp</code></h1>
-<div class="columns">
-<div class="column" style="width:58%;">
-<p><code>multcomp</code> loads <strong><code>MASS</code></strong>, and <code>MASS</code> has its own <code>select()</code>. It <strong>masks</strong> the <code>dplyr</code> one.</p>
-<p>So after today’s <code>library()</code> block, this quietly breaks:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a aria-label="1"></a>possum_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(site, total_l)</span>
-<span id="cb6-2"><a aria-label="2"></a><span class="co">#&gt; Error: unused arguments</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The fix is to say which one you mean:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a aria-label="1"></a>possum_df <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(site, total_l)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div><div class="column" style="width:42%;">
-<div class="callout callout-warning callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Warning</strong></p>
-</div>
-<div class="callout-content">
-<p><strong>⚠️ Watch the startup messages</strong></p>
-<p>R told you this when you loaded the package. Nobody reads it.</p>
-<p><code>select()</code> is the usual casualty. <code>filter()</code> is the other one.</p>
-<p>None of today’s code uses <code>select()</code> — but <strong>your</strong> code might.</p>
-</div>
-</div>
-</div>
-</div></div>
 </section>
 
 <section id="the-site-column-is-a-problem" class="title-slide slide level1 center">
 <h1>The Site Column Is a Problem</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a aria-label="1"></a>possum_raw <span class="sc">%&gt;%</span> <span class="fu">count</span>(site)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a aria-label="1"></a>possum_raw <span class="sc">%&gt;%</span> <span class="fu">count</span>(site)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 7 × 2
    site     n
@@ -560,47 +530,83 @@ Bill Perry
 </div>
 </section>
 
-<section id="fix-it-with-factor" class="title-slide slide level1 center">
-<h1>Fix It With <code>factor()</code></h1>
+<section id="name-the-sites-with-case_when" class="title-slide slide level1 center">
+<h1>Name the Sites With <code>case_when()</code></h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a aria-label="1"></a>possum_df <span class="ot">&lt;-</span> possum_raw <span class="sc">%&gt;%</span></span>
-<span id="cb10-2"><a aria-label="2"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(total_l)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">site_name =</span> <span class="fu">factor</span>(site,</span>
-<span id="cb10-4"><a aria-label="4"></a>                            <span class="at">levels =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">7</span>,</span>
-<span id="cb10-5"><a aria-label="5"></a>                            <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Cambarville"</span>, <span class="st">"Bellbird"</span>,</span>
-<span id="cb10-6"><a aria-label="6"></a>                                       <span class="st">"Whian Whian"</span>, <span class="st">"Byrangery"</span>,</span>
-<span id="cb10-7"><a aria-label="7"></a>                                       <span class="st">"Conondale"</span>, <span class="st">"Allyn River"</span>,</span>
-<span id="cb10-8"><a aria-label="8"></a>                                       <span class="st">"Bulburin"</span>)))</span>
-<span id="cb10-9"><a aria-label="9"></a></span>
-<span id="cb10-10"><a aria-label="10"></a>possum_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(site_name)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 7 × 2
-  site_name       n
-  &lt;fct&gt;       &lt;int&gt;
-1 Cambarville    33
-2 Bellbird       13
-3 Whian Whian     7
-4 Byrangery       7
-5 Conondale      13
-6 Allyn River    13
-7 Bulburin       18</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a aria-label="1"></a>possum_df <span class="ot">&lt;-</span> possum_raw <span class="sc">%&gt;%</span></span>
+<span id="cb8-2"><a aria-label="2"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(total_l)) <span class="sc">%&gt;%</span></span>
+<span id="cb8-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">site_name =</span> <span class="fu">case_when</span>(</span>
+<span id="cb8-4"><a aria-label="4"></a>    site <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"Cambarville"</span>,</span>
+<span id="cb8-5"><a aria-label="5"></a>    site <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"Bellbird"</span>,</span>
+<span id="cb8-6"><a aria-label="6"></a>    site <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"Whian Whian"</span>,</span>
+<span id="cb8-7"><a aria-label="7"></a>    site <span class="sc">==</span> <span class="dv">4</span> <span class="sc">~</span> <span class="st">"Byrangery"</span>,</span>
+<span id="cb8-8"><a aria-label="8"></a>    site <span class="sc">==</span> <span class="dv">5</span> <span class="sc">~</span> <span class="st">"Conondale"</span>,</span>
+<span id="cb8-9"><a aria-label="9"></a>    site <span class="sc">==</span> <span class="dv">6</span> <span class="sc">~</span> <span class="st">"Allyn River"</span>,</span>
+<span id="cb8-10"><a aria-label="10"></a>    site <span class="sc">==</span> <span class="dv">7</span> <span class="sc">~</span> <span class="st">"Bulburin"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>🧠 Read each line as a sentence</strong></p>
+<p>“<strong>When</strong> <code>site</code> is 1, call it Cambarville.” One line per site. We keep <code>site</code> and add a <strong>new</strong> column, <code>site_name</code>.</p>
+</div>
 </div>
 </div>
 </section>
 
-<section id="what-just-happened" class="title-slide slide level1 center">
+<section id="then-make-the-names-a-factor" class="title-slide slide level1 center">
+<h1>Then Make the Names a Factor</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a aria-label="1"></a>possum_df <span class="ot">&lt;-</span> possum_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">site_name =</span> <span class="fu">as.factor</span>(site_name))</span>
+<span id="cb9-3"><a aria-label="3"></a></span>
+<span id="cb9-4"><a aria-label="4"></a><span class="fu">levels</span>(possum_df<span class="sc">$</span>site_name)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Allyn River" "Bellbird"    "Bulburin"    "Byrangery"  
+[5] "Cambarville" "Conondale"   "Whian Whian"</code></pre>
+</div>
+</div>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>🧠 What a factor is</strong></p>
+<ul>
+<li>A column of <strong>group names</strong> that R knows are <em>groups</em> — not numbers, not free text</li>
+<li>The groups are its <strong>levels</strong></li>
+<li><code>as.factor()</code> puts the levels in <strong>alphabetical order</strong> unless you say otherwise</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<section id="what-just-happened" class="title-slide slide level1 center scrollable">
 <h1>What Just Happened</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a aria-label="1"></a><span class="fu">factor</span>(site,</span>
-<span id="cb12-2"><a aria-label="2"></a>       <span class="at">levels =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">7</span>,</span>
-<span id="cb12-3"><a aria-label="3"></a>       <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Cambarville"</span>, ...))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Two small steps:</p>
+<ol type="1">
+<li><code>case_when()</code> — swap each <strong>code</strong> for a <strong>name</strong>
 <ul>
-<li><code>levels</code> = the values <strong>as they appear in the data</strong></li>
-<li><code>labels</code> = what you want them <strong>called</strong></li>
-</ul>
-<p>The two lists must be the <strong>same length</strong> and in the <strong>same order</strong>. Get the order wrong and every single result is quietly mislabelled — no error, no warning.</p>
-<p>The site names come from the <strong>OpenIntro codebook</strong>. We did not invent them.</p>
+<li>left of the <code>~</code> is the test, right of it is the name</li>
+<li>a site you forget to list becomes <code>NA</code></li>
+</ul></li>
+<li><code>as.factor()</code> — tell R those names are <strong>groups</strong></li>
+</ol>
+<p>Get a name on the wrong line and every result is quietly mislabelled — no error, no warning.</p>
+<p>The site names come from the <strong>original study</strong>. We did not invent them.</p>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
@@ -613,9 +619,9 @@ Bill Perry
 <div class="callout-content">
 <p><strong>📋 The seven sites</strong></p>
 <ul>
+<li><strong>Queensland:</strong> Bulburin, Conondale</li>
+<li><strong>New South Wales:</strong> Whian Whian, Byrangery, Allyn River</li>
 <li><strong>Victoria:</strong> Cambarville, Bellbird</li>
-<li><strong>New South Wales:</strong> Whian Whian, Byrangery</li>
-<li><strong>Queensland / N. NSW:</strong> Conondale, Allyn River, Bulburin</li>
 </ul>
 </div>
 </div>
@@ -635,6 +641,43 @@ Bill Perry
 </div>
 </div>
 </div></div>
+</section>
+
+<section id="side-trip-put-the-sites-in-your-order" class="title-slide slide level1 center">
+<h1>🧭 Side Trip: Put the Sites in <em>Your</em> Order</h1>
+<p>Alphabetical means nothing here. <strong>North to south</strong> does.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a aria-label="1"></a>possum_df <span class="ot">&lt;-</span> possum_df <span class="sc">%&gt;%</span></span>
+<span id="cb11-2"><a aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">site_name =</span> <span class="fu">fct_relevel</span>(site_name,</span>
+<span id="cb11-3"><a aria-label="3"></a>                                 <span class="st">"Bulburin"</span>, <span class="st">"Conondale"</span>,</span>
+<span id="cb11-4"><a aria-label="4"></a>                                 <span class="st">"Whian Whian"</span>, <span class="st">"Byrangery"</span>,</span>
+<span id="cb11-5"><a aria-label="5"></a>                                 <span class="st">"Allyn River"</span>, <span class="st">"Cambarville"</span>,</span>
+<span id="cb11-6"><a aria-label="6"></a>                                 <span class="st">"Bellbird"</span>))</span>
+<span id="cb11-7"><a aria-label="7"></a></span>
+<span id="cb11-8"><a aria-label="8"></a><span class="fu">levels</span>(possum_df<span class="sc">$</span>site_name)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Bulburin"    "Conondale"   "Whian Whian" "Byrangery"  
+[5] "Allyn River" "Cambarville" "Bellbird"   </code></pre>
+</div>
+</div>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Tip</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>🎯 <code>fct_relevel()</code> changes the order, never the data</strong></p>
+<ul>
+<li>List the levels in the order you want</li>
+<li>Plots and tables now run north → south</li>
+<li>The <strong>first</strong> level (Bulburin) also becomes the model’s <strong>baseline</strong> — that matters in a few slides</li>
+</ul>
+</div>
+</div>
+</div>
 </section>
 
 <section id="look-before-you-test" class="title-slide slide level1 center">
@@ -691,13 +734,13 @@ Bill Perry
 <pre><code># A tibble: 7 × 4
   site_name       n mean_total sd_total
   &lt;fct&gt;       &lt;int&gt;      &lt;dbl&gt;    &lt;dbl&gt;
-1 Cambarville    33       89.7     2.99
-2 Bellbird       13       81.8     3.9 
+1 Bulburin       18       85.7     3.12
+2 Conondale      13       86.9     3.01
 3 Whian Whian     7       88.1     3.35
 4 Byrangery       7       92.2     2.48
-5 Conondale      13       86.9     3.01
-6 Allyn River    13       84.5     3.65
-7 Bulburin       18       85.7     3.12</code></pre>
+5 Allyn River    13       84.5     3.65
+6 Cambarville    33       89.7     2.99
+7 Bellbird       13       81.8     3.9 </code></pre>
 </div>
 </div>
 </section>
@@ -706,11 +749,11 @@ Bill Perry
 <h1>A Warning About the Obvious Story</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p>Seven sites on a <strong>north–south gradient</strong>. Tempting story:</p>
+<p>Our plot now runs <strong>north → south</strong>. Tempting story:</p>
 <blockquote>
 <p>Colder in the south → bigger animals. <strong>Bergmann’s rule.</strong></p>
 </blockquote>
-<p>Look again. The two <strong>Victorian</strong> sites are the southernmost — and they are at <strong>opposite extremes</strong>:</p>
+<p>Look again. No steady climb — and the two <strong>Victorian</strong> sites, the southernmost, are at <strong>opposite extremes</strong>:</p>
 <ul>
 <li>Cambarville <strong>89.7 cm</strong></li>
 <li>Bellbird <strong>81.8 cm</strong></li>
@@ -765,12 +808,29 @@ Bill Perry
 <section id="do-not-read-summary-first" class="title-slide slide level1 center">
 <h1>Do Not Read <code>summary()</code> First</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a aria-label="1"></a><span class="fu">summary</span>(total_model)   <span class="co"># six rows of "site_nameBellbird" etc.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a aria-label="1"></a><span class="fu">summary</span>(total_model)   <span class="co"># try it - here is its Estimate column:</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>         (Intercept)   site_nameConondale site_nameWhian Whian 
+                85.7                  1.2                  2.4 
+  site_nameByrangery site_nameAllyn River site_nameCambarville 
+                 6.5                 -1.2                  4.0 
+   site_nameBellbird 
+                -3.9 </code></pre>
+</div>
 </div>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p><code>summary()</code> gives you <strong>six slopes</strong>, each comparing one site to Cambarville — because Cambarville is level 1, so it became the baseline.</p>
-<p>That answers <em>“is each site different from Cambarville?”</em>, which is <strong>not the question</strong>. Nobody asked about Cambarville.</p>
+<p>These are <strong>not slopes</strong> — there is no line. They are <strong>means</strong>:</p>
+<ul>
+<li><code>(Intercept)</code> <strong>85.7</strong> = the mean of <strong>Bulburin</strong>, the first level</li>
+<li>every other row = that site’s mean <strong>minus Bulburin’s</strong>
+<ul>
+<li>Byrangery <strong>+6.5</strong> → 85.7 + 6.5 = 92.2 cm</li>
+<li>Bellbird <strong>−3.9</strong> → 85.7 − 3.9 = 81.8 cm</li>
+</ul></li>
+</ul>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-warning callout-titled callout-style-default">
 <div class="callout-body">
@@ -782,8 +842,8 @@ Bill Perry
 </div>
 <div class="callout-content">
 <p><strong>⚠️ The wrong table</strong></p>
-<p>Six p-values, all against an <strong>arbitrary</strong> reference group. Change which site is level 1 and all six change.</p>
-<p>We want <strong>one</strong> p-value for <code>site_name</code> as a whole.</p>
+<p>Its six p-values each ask <em>“is this site different from Bulburin?”</em> Nobody asked about Bulburin.</p>
+<p>Put a different site first and all six change. We want <strong>one</strong> p-value for <code>site_name</code> as a whole.</p>
 </div>
 </div>
 </div>
@@ -793,7 +853,7 @@ Bill Perry
 <section id="the-right-table-caranova" class="title-slide slide level1 center">
 <h1>The Right Table: <code>car::Anova()</code></h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a aria-label="1"></a><span class="fu">Anova</span>(total_model, <span class="at">type =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a aria-label="1"></a><span class="fu">Anova</span>(total_model, <span class="at">type =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Anova Table (Type II tests)
 
@@ -857,7 +917,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <section id="how-big-is-it-f-does-not-tell-you" class="title-slide slide level1 center">
 <h1>How Big Is It? F Does Not Tell You</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a aria-label="1"></a>effectsize<span class="sc">::</span><span class="fu">eta_squared</span>(<span class="fu">Anova</span>(total_model, <span class="at">type =</span> <span class="dv">2</span>), <span class="at">partial =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a aria-label="1"></a>effectsize<span class="sc">::</span><span class="fu">eta_squared</span>(<span class="fu">Anova</span>(total_model, <span class="at">type =</span> <span class="dv">2</span>), <span class="at">partial =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># Effect Size for ANOVA (Type II)
 
@@ -870,7 +930,7 @@ site_name | 0.47 | [0.34, 1.00]
 </div>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p><strong>Eta-squared (<span class="math inline">\(\eta^2\)</span>) = 0.47.</strong></p>
+<p><strong>Eta-squared (</strong><span class="math inline">\(\eta^2\)</span>) = 0.47.</p>
 <p>Which site a possum came from accounts for <strong>47% of all the variation</strong> in total length.</p>
 <p>The other 53% is possums being individuals.</p>
 </div><div class="column" style="width:42%;">
@@ -932,7 +992,7 @@ site_name | 0.47 | [0.34, 1.00]
 <section id="the-visual-check-check_model" class="title-slide slide level1 center">
 <h1>The Visual Check — <code>check_model()</code></h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a aria-label="1"></a><span class="fu">check_model</span>(total_model, <span class="at">check =</span> <span class="fu">c</span>(<span class="st">"homogeneity"</span>, <span class="st">"qq"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a aria-label="1"></a><span class="fu">check_model</span>(total_model, <span class="at">check =</span> <span class="fu">c</span>(<span class="st">"homogeneity"</span>, <span class="st">"qq"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
 <img data-src="anova_one_factor_lecture_files/figure-revealjs/check-model-1.png" class="r-stretch"></section>
@@ -983,8 +1043,8 @@ site_name | 0.47 | [0.34, 1.00]
 <li><strong>Drag the Plots pane bigger</strong> and run it again, or</li>
 <li><strong>Ask for fewer panels</strong>, as we did above:</li>
 </ul>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a aria-label="1"></a><span class="fu">check_model</span>(total_model,</span>
-<span id="cb23-2"><a aria-label="2"></a>            <span class="at">check =</span> <span class="fu">c</span>(<span class="st">"homogeneity"</span>, <span class="st">"qq"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a aria-label="1"></a><span class="fu">check_model</span>(total_model,</span>
+<span id="cb24-2"><a aria-label="2"></a>            <span class="at">check =</span> <span class="fu">c</span>(<span class="st">"homogeneity"</span>, <span class="st">"qq"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-warning callout-titled callout-style-default">
 <div class="callout-body">
@@ -1007,16 +1067,16 @@ site_name | 0.47 | [0.34, 1.00]
 <section id="the-formal-tests" class="title-slide slide level1 center">
 <h1>The Formal Tests</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a aria-label="1"></a><span class="co"># Equal variances across sites</span></span>
-<span id="cb24-2"><a aria-label="2"></a><span class="fu">leveneTest</span>(total_l <span class="sc">~</span> site_name, <span class="at">data =</span> possum_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a aria-label="1"></a><span class="co"># Equal variances across sites</span></span>
+<span id="cb25-2"><a aria-label="2"></a><span class="fu">leveneTest</span>(total_l <span class="sc">~</span> site_name, <span class="at">data =</span> possum_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Levene's Test for Homogeneity of Variance (center = median)
       Df F value Pr(&gt;F)
 group  6  0.5032 0.8046
       97               </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a aria-label="1"></a><span class="co"># Normal residuals</span></span>
-<span id="cb26-2"><a aria-label="2"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(total_model))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a aria-label="1"></a><span class="co"># Normal residuals</span></span>
+<span id="cb27-2"><a aria-label="2"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(total_model))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Shapiro-Wilk normality test
@@ -1030,11 +1090,11 @@ W = 0.98939, p-value = 0.588</code></pre>
 <section id="same-two-checks-said-in-english" class="title-slide slide level1 center">
 <h1>Same Two Checks, Said in English</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a aria-label="1"></a><span class="fu">check_homogeneity</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a aria-label="1"></a><span class="fu">check_homogeneity</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>OK: There is not clear evidence for different variances across groups (Bartlett Test, p = 0.867).</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a aria-label="1"></a><span class="fu">check_normality</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a aria-label="1"></a><span class="fu">check_normality</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>OK: residuals appear as normally distributed (p = 0.602).</code></pre>
 </div>
@@ -1091,7 +1151,7 @@ W = 0.98939, p-value = 0.588</code></pre>
 
 <section id="chunk-5-of-5-which-sites-actually-differ" class="title-slide slide level1 center">
 <h1>🧩 Chunk 5 of 5 · Which Sites Actually Differ?</h1>
-<p><strong>We will cover:</strong> why F is not the end, <code>emmeans</code>, Tukey adjustment, and reading a compact letter display.</p>
+<p><strong>We will cover:</strong> why F is not the end, <code>emmeans</code>, Tukey adjustment, and reading a compact letter display from <code>multcomp::cld()</code>.</p>
 </section>
 
 <section id="f-said-not-all-equal-that-is-all-it-said" class="title-slide slide level1 center">
@@ -1130,17 +1190,17 @@ W = 0.98939, p-value = 0.588</code></pre>
 <section id="estimated-means-with-emmeans" class="title-slide slide level1 center">
 <h1>Estimated Means With <code>emmeans</code></h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a aria-label="1"></a>site_means <span class="ot">&lt;-</span> <span class="fu">emmeans</span>(total_model, <span class="sc">~</span> site_name)</span>
-<span id="cb32-2"><a aria-label="2"></a>site_means</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a aria-label="1"></a>site_means <span class="ot">&lt;-</span> <span class="fu">emmeans</span>(total_model, <span class="sc">~</span> site_name)</span>
+<span id="cb33-2"><a aria-label="2"></a>site_means</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> site_name   emmean    SE df lower.CL upper.CL
- Cambarville   89.7 0.561 97     88.6     90.8
- Bellbird      81.8 0.893 97     80.0     83.5
+ Bulburin      85.7 0.759 97     84.2     87.2
+ Conondale     86.9 0.893 97     85.2     88.7
  Whian Whian   88.1 1.220 97     85.7     90.5
  Byrangery     92.2 1.220 97     89.8     94.7
- Conondale     86.9 0.893 97     85.2     88.7
  Allyn River   84.5 0.893 97     82.8     86.3
- Bulburin      85.7 0.759 97     84.2     87.2
+ Cambarville   89.7 0.561 97     88.6     90.8
+ Bellbird      81.8 0.893 97     80.0     83.5
 
 Confidence level used: 0.95 </code></pre>
 </div>
@@ -1150,19 +1210,19 @@ Confidence level used: 0.95 </code></pre>
 <section id="all-21-pairs-honestly-adjusted" class="title-slide slide level1 center">
 <h1>All 21 Pairs, Honestly Adjusted</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a aria-label="1"></a><span class="fu">pairs</span>(site_means, <span class="at">adjust =</span> <span class="st">"tukey"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a aria-label="1"></a><span class="fu">pairs</span>(site_means, <span class="at">adjust =</span> <span class="st">"tukey"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>                   contrast estimate t.ratio p.value
-1    Cambarville - Bellbird     7.94    7.53 &lt; 1e-04
-2 Cambarville - Whian Whian     1.64    1.22 0.88310
-3   Cambarville - Byrangery    -2.53   -1.89 0.49301
-4   Cambarville - Conondale     2.79    2.64 0.12429
-5 Cambarville - Allyn River     5.17    4.91 &lt; 1e-04
-6    Cambarville - Bulburin     4.02    4.26 0.00092
-7    Bellbird - Whian Whian    -6.30   -4.17 0.00124
-8      Bellbird - Byrangery   -10.47   -6.94 &lt; 1e-04</code></pre>
+<pre><code>                 contrast estimate t.ratio p.value
+1    Bulburin - Conondale    -1.23   -1.05 0.94123
+2  Bulburin - Whian Whian    -2.38   -1.66 0.64603
+3    Bulburin - Byrangery    -6.55   -4.56 0.00029
+4  Bulburin - Allyn River     1.16    0.99 0.95590
+5  Bulburin - Cambarville    -4.02   -4.26 0.00092
+6     Bulburin - Bellbird     3.93    3.35 0.01922
+7 Conondale - Whian Whian    -1.15   -0.76 0.98806
+8   Conondale - Byrangery    -5.32   -3.52 0.01125</code></pre>
 </div>
 </div>
 <div class="callout callout-note callout-titled callout-style-default">
@@ -1210,10 +1270,41 @@ Confidence level used: 0.95 </code></pre>
 </div></div>
 </section>
 
+<section id="where-the-letters-come-from-multcompcld" class="title-slide slide level1 center">
+<h1>Where the Letters Come From: <code>multcomp::cld()</code></h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<p>The function that makes the letters is <code>cld()</code>, and it lives in the <strong><code>multcomp</code></strong> package — not in <code>emmeans</code>.</p>
+<p>We do <strong>not</strong> write <code>library(multcomp)</code>. We borrow the one function:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a aria-label="1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(site_means, <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>package::function()</code> means <em>“use this one function from that package”</em></li>
+<li><code>multcomp</code> only has to be <strong>installed</strong>, not loaded</li>
+</ul>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-warning callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Warning</strong></p>
+</div>
+<div class="callout-content">
+<p><strong>⚠️ Why never load it</strong></p>
+<p><code>library(multcomp)</code> drags in a package called <code>MASS</code>, which has its own <code>select()</code>.</p>
+<p>That <strong>hides</strong> the <code>select()</code> you have used all semester, and your old code starts failing with strange errors.</p>
+<p><code>multcomp::cld()</code> gets the letters with no side effects.</p>
+</div>
+</div>
+</div>
+</div></div>
+</section>
+
 <section id="compact-letter-display" class="title-slide slide level1 center">
 <h1>Compact Letter Display</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a aria-label="1"></a><span class="fu">cld</span>(site_means, <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a aria-label="1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(site_means, <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> site_name   emmean    SE df lower.CL upper.CL .group
  Bellbird      81.8 0.893 97     80.0     83.5  a    
@@ -1270,15 +1361,15 @@ NOTE: If two or more means share the same grouping symbol,
 <section id="put-the-letters-on-the-plot" class="title-slide slide level1 center">
 <h1>Put the Letters on the Plot</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a aria-label="1"></a>letters_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">cld</span>(site_means, <span class="at">Letters =</span> letters)) <span class="sc">%&gt;%</span></span>
-<span id="cb38-2"><a aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">group =</span> <span class="fu">trimws</span>(.group))</span>
-<span id="cb38-3"><a aria-label="3"></a></span>
-<span id="cb38-4"><a aria-label="4"></a><span class="fu">ggplot</span>(possum_df, <span class="fu">aes</span>(<span class="at">x =</span> site_name, <span class="at">y =</span> total_l)) <span class="sc">+</span></span>
-<span id="cb38-5"><a aria-label="5"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb38-6"><a aria-label="6"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
-<span id="cb38-7"><a aria-label="7"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> letters_df,</span>
-<span id="cb38-8"><a aria-label="8"></a>            <span class="fu">aes</span>(<span class="at">x =</span> site_name, <span class="at">y =</span> <span class="dv">97</span>, <span class="at">label =</span> group),</span>
-<span id="cb38-9"><a aria-label="9"></a>            <span class="at">size =</span> <span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a aria-label="1"></a>letters_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(multcomp<span class="sc">::</span><span class="fu">cld</span>(site_means, <span class="at">Letters =</span> letters)) <span class="sc">%&gt;%</span></span>
+<span id="cb40-2"><a aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">group =</span> <span class="fu">trimws</span>(.group))</span>
+<span id="cb40-3"><a aria-label="3"></a></span>
+<span id="cb40-4"><a aria-label="4"></a><span class="fu">ggplot</span>(possum_df, <span class="fu">aes</span>(<span class="at">x =</span> site_name, <span class="at">y =</span> total_l)) <span class="sc">+</span></span>
+<span id="cb40-5"><a aria-label="5"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb40-6"><a aria-label="6"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb40-7"><a aria-label="7"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> letters_df,</span>
+<span id="cb40-8"><a aria-label="8"></a>            <span class="fu">aes</span>(<span class="at">x =</span> site_name, <span class="at">y =</span> <span class="dv">97</span>, <span class="at">label =</span> group),</span>
+<span id="cb40-9"><a aria-label="9"></a>            <span class="at">size =</span> <span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 </div>
 <img data-src="anova_one_factor_lecture_files/figure-revealjs/letter-plot-1.png" class="r-stretch"></section>
@@ -1341,12 +1432,13 @@ NOTE: If two or more means share the same grouping symbol,
 <div class="column" style="width:55%;">
 <ul>
 <li><strong>Grouping variable left as a number</strong> → you fit a line through site IDs</li>
-<li><strong>Reading <code>summary()</code> instead of <code>Anova()</code></strong> → six wrong p-values</li>
+<li><strong>Reading <code>summary()</code> instead of <code>Anova()</code></strong> → six comparisons to the first level, not the test</li>
 <li><strong>Checking assumptions before fitting</strong> → there are no residuals yet</li>
 <li><strong>Expecting a small p for Levene</strong> → backwards</li>
 <li><strong>Stopping at a significant F</strong> → F never says which groups</li>
 <li><strong>Unadjusted pairwise tests</strong> → the 66% problem, straight back</li>
 <li><strong>Calling shared letters “the same”</strong> → they are undetected, not equal</li>
+<li><strong><code>library(multcomp)</code></strong> → <code>select()</code> breaks; use <code>multcomp::cld()</code></li>
 </ul>
 </div><div class="column" style="width:45%;">
 <div class="callout callout-tip callout-titled callout-style-default">
@@ -1360,13 +1452,13 @@ NOTE: If two or more means share the same grouping symbol,
 <div class="callout-content">
 <p><strong>🎯 The recipe, memorised</strong></p>
 <ol type="1">
-<li><code>factor()</code> the groups</li>
+<li><code>case_when()</code> → <code>as.factor()</code></li>
 <li><strong>Plot</strong> it</li>
 <li><code>lm()</code></li>
 <li><code>Anova(type = 2)</code></li>
 <li><code>check_model()</code> + <code>leveneTest()</code></li>
 <li><code>eta_squared()</code></li>
-<li><code>emmeans()</code> → <code>pairs()</code> → <code>cld()</code></li>
+<li><code>emmeans()</code> → <code>pairs()</code> → <code>multcomp::cld()</code></li>
 <li>Write the sentence</li>
 </ol>
 </div>
@@ -1379,9 +1471,9 @@ NOTE: If two or more means share the same grouping symbol,
 <h1>Your Homework: The Same Possums, a Different Ruler</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p>The file has <strong>four</strong> measurements on every animal. We used <code>total_l</code>. For homework you run the whole recipe again on <strong><code>tail_l</code></strong> — tail length.</p>
-<p>Same 104 animals, same seven sites, same eight steps. A different ruler.</p>
-<p>The question is whether the <strong>pattern holds</strong>: do the sites that had the longest <em>bodies</em> also have the longest <em>tails</em>?</p>
+<p>The file has <strong>nine</strong> measurements on every animal. We used <code>total_l</code>. For homework you run the whole recipe again on <strong><code>ear_l</code></strong> — ear length.</p>
+<p>Same 104 animals, same seven sites, same steps. A different ruler.</p>
+<p>The question is whether ears tell the <strong>same story</strong> as total length — a ladder from Bellbird up to Byrangery — or a <strong>different</strong> one.</p>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
@@ -1393,8 +1485,8 @@ NOTE: If two or more means share the same grouping symbol,
 </div>
 <div class="callout-content">
 <p><strong>📂 What you will do</strong></p>
-<p>All eight steps on <code>tail_l</code>, then one paragraph comparing your letters to the ones we got today.</p>
-<p>Plus one optional part where an assumption <strong>fails</strong> on purpose.</p>
+<p>All eight steps on <code>ear_l</code>, then compare your letters to the ones we got today.</p>
+<p>One assumption check will <strong>fail</strong>. You will find out why, and whether it matters.</p>
 </div>
 </div>
 </div>
@@ -1432,11 +1524,11 @@ NOTE: If two or more means share the same grouping symbol,
 <ul>
 <li><strong>Many t-tests inflate error</strong> — 7 groups, 21 pairs, 66% false-positive risk</li>
 <li><strong>ANOVA asks one question</strong>: between-group variation vs within-group variation</li>
-<li><code>factor(levels =, labels =)</code> turns group codes into <strong>named, ordered groups</strong></li>
-<li><strong><code>lm()</code> fits it</strong> — ANOVA <em>is</em> a linear model; <code>car::Anova(type = 2)</code> gives the one right table</li>
+<li><code>case_when()</code> names the groups, <code>as.factor()</code> makes them <strong>groups</strong>, <code>fct_relevel()</code> <strong>orders</strong> them</li>
+<li><strong><code>lm()</code> fits it</strong> — ANOVA <em>is</em> a linear model; <code>summary()</code> shows <strong>means and differences from the first level</strong>, <code>car::Anova(type = 2)</code> gives the one right table</li>
 <li><strong>Check after fitting</strong> — <code>check_model()</code>, <code>leveneTest()</code>, <code>shapiro.test()</code>; here a <strong>big p is good</strong></li>
 <li><strong>η²</strong> says how big; <strong>F</strong> only says whether</li>
-<li><strong><code>emmeans()</code> → <code>pairs()</code> → <code>cld()</code></strong> says which — with p-values adjusted</li>
+<li><strong><code>emmeans()</code> → <code>pairs()</code> → <code>multcomp::cld()</code></strong> says which — with p-values adjusted</li>
 <li>Shared letters mean <strong>not shown to differ</strong>, never <em>shown to be the same</em></li>
 </ul>
 <div class="callout callout-note callout-titled callout-style-default">
@@ -1449,7 +1541,7 @@ NOTE: If two or more means share the same grouping symbol,
 </div>
 <div class="callout-content">
 <p><strong>✅ Next</strong></p>
-<p>Open the activity and run all of it. Homework is <code>tail_l</code>. Next class, the wētā. 🦗</p>
+<p>Open the activity and run all of it. Homework is <code>ear_l</code>. Next class, the wētā. 🦗</p>
 </div>
 </div>
 </div>

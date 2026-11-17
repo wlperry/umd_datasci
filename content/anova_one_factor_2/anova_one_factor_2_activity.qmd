@@ -40,7 +40,7 @@ execute:
 ::: callout-tip
 ## 📦 Nothing new to install 🎉
 
-Same five packages as last class: `performance`, `see`, `emmeans`, `multcomp`, `effectsize`. If they worked last time they will work today.
+Same packages as last class: `performance`, `see`, `emmeans`, `multcomp`, `multcompView`, `effectsize`. If they worked last time they will work today. As before, `multcomp` is **installed but never loaded** — we call `multcomp::cld()`.
 :::
 
 ::: callout-tip
@@ -94,7 +94,6 @@ library(tidyverse)
 library(car)          # Anova(), leveneTest()
 library(performance)  # check_model()
 library(emmeans)      # follow-up comparisons
-library(multcomp)     # cld()
 library(effectsize)   # eta_squared()
 
 # Read the file ---------------------------------------
@@ -152,8 +151,7 @@ Nothing in R will stop you. `Anova()` will hand you `p < 2e-16` and a gold star.
 ``` r
 weta_df <- weta_raw %>%
   filter(sex == "m", !is.na(foretibia)) %>%
-  mutate(morph = factor(morph,
-                        levels = c("eighth", "ninth", "tenth")))
+  mutate(morph = as.factor(morph))
 
 weta_df %>% count(morph)
 
@@ -163,11 +161,11 @@ levels(weta_df$morph)
 -   `eighth` 78, `ninth` 79, `tenth` 38
 
 ::: callout-note
-## `levels` with no `labels` this time
+## No `case_when()` this time
 
-Last class the groups arrived as the integers 1–7, so `factor()` needed both `levels` and `labels`. Here the groups are already **words**, so it only needs `levels` — to fix the **order**.
+Last class the groups arrived as the integers 1–7, so we needed `case_when()` to give them names. Here the groups are already **words**, so there is nothing to rename — just `as.factor()`.
 
-Left alone, R sorts alphabetically: *eighth, ninth, tenth*. That happens to be right. **Do not rely on luck** — say it out loud in the code.
+`as.factor()` sorts alphabetically: *eighth, ninth, tenth*. That happens to be the order we want. When it is **not**, `fct_relevel()` fixes it — you will need that in Part 11, when the females come back.
 :::
 
 ✏️ **Q2:** `tenth` has n = 38, less than half of either other group. What does that do to your ability to detect a difference involving that morph?
@@ -219,7 +217,7 @@ leveneTest(foretibia ~ morph, data = weta_df)
 
 shapiro.test(residuals(fore_model))
 
-cld(emmeans(fore_model, ~ morph), Letters = letters)
+multcomp::cld(emmeans(fore_model, ~ morph), Letters = letters)
 ```
 
 -   **F(2, 192) = 268.5, p \< 0.001, η² = 0.74**
@@ -253,7 +251,7 @@ Anova(ear_model, type = 2)
 
 eta_squared(Anova(ear_model, type = 2), partial = FALSE)
 
-cld(emmeans(ear_model, ~ morph), Letters = letters)
+multcomp::cld(emmeans(ear_model, ~ morph), Letters = letters)
 ```
 
 -   **F(2, 192) = 122.2, p \< 0.001, η² = 0.56**
@@ -337,7 +335,7 @@ Anova(ear_rel_model, type = 2)
 
 eta_squared(Anova(ear_rel_model, type = 2), partial = FALSE)
 
-cld(emmeans(ear_rel_model, ~ morph), Letters = letters)
+multcomp::cld(emmeans(ear_rel_model, ~ morph), Letters = letters)
 ```
 
 -   **F(2, 192) = 0.80, p = 0.449, η² = 0.008**
@@ -402,9 +400,9 @@ Both `foretibia` and `pronotum` are **lengths** in mm, so **no square root** thi
 ``` r
 weta_all <- weta_raw %>%
   filter(!is.na(foretibia)) %>%
-  mutate(morph = factor(morph,
-                        levels = c("female", "eighth", "ninth", "tenth")),
-         fore_rel = foretibia / pronotum)
+  mutate(morph = as.factor(morph)) %>%
+  mutate(morph = fct_relevel(morph, "female")) %>%
+  mutate(fore_rel = foretibia / pronotum)
 
 weta_all %>% count(morph)
 
@@ -416,7 +414,7 @@ shapiro.test(residuals(fore_rel_model))
 
 Anova(fore_rel_model, type = 2)
 
-cld(emmeans(fore_rel_model, ~ morph), Letters = letters)
+multcomp::cld(emmeans(fore_rel_model, ~ morph), Letters = letters)
 ```
 
 -   **F(3, 309) = 266.3, p \< 0.001, η² = 0.72**
@@ -488,9 +486,14 @@ There is also an **optional** section on `eye`, where the **raw** analysis fails
 
 Real archived research data, released under **CC BY 4.0** — free to reuse **with credit**:
 
-> trait_data.csv. Zenodo, doi:10.5281/zenodo.22959939. Data creator: Clint D. Kelly, Université du Québec à Montréal.
+> trait_data.csv. Zenodo, doi:10.5281/zenodo.22959939. Data creator: Clint D. Kelly, Université du Québec à Montréal. <https://doi.org/10.5281/zenodo.22959939>
 
 Our copy, `weta_traits.csv`, is that file with the numbers rounded to 4 decimal places. Nothing else was changed. Saying so is part of the credit.
+
+That record is a **data archive, not yet a peer-reviewed paper**. Published papers on the three male morphs, by the same researcher:
+
+-   Kelly & Adams (2010). Sexual selection, ontogenetic acceleration, and hypermorphosis generates male trimorphism in Wellington tree weta. *Evolutionary Biology* 37: 200–209. <https://doi.org/10.1007/s11692-010-9096-1>
+-   Kelly (2024). Alternative mating strategies in the Wellington tree weta expressed via genetic polymorphism for precocial male maturation. *Royal Society Open Science* 11: 240100. <https://doi.org/10.1098/rsos.240100>
 :::
 
 ::: callout-important

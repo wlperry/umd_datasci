@@ -8,16 +8,16 @@
 # *** THIS IS THE FILE YOU TURN IN. ***
 #
 # In class we ran a one-factor ANOVA on possum TOTAL LENGTH
-# across seven trapping sites. Here you run the same eight
-# steps on TAIL LENGTH.
+# across seven trapping sites. Here you run the same recipe
+# on EAR LENGTH (ear_l, in mm).
 #
 # Same 104 animals. Same seven sites. Same recipe. A
 # different ruler.
 #
-# The real question is whether the PATTERN HOLDS. In class
-# the letters ran from Bellbird at the bottom to Byrangery
-# at the top. Do the sites with the longest BODIES also have
-# the longest TAILS?
+# In class the sites formed a ladder: Bellbird at the
+# bottom, Byrangery at the top, everything else overlapping
+# in the middle. The question here is whether ears tell the
+# SAME story as total length - or a different one.
 #
 # HOW THIS WORKS
 # 1. ALL the graded questions are in the ANSWERS block right
@@ -33,11 +33,12 @@
 # plots should draw.
 #
 # ----------------------------------------------------------
-# THE FOUR MEASUREMENTS IN THE FILE
-#   total_l   total length, cm  - what we used in class
-#   tail_l    tail length, cm   - YOUR HOMEWORK
-#   head_l    head length, mm
-#   skull_w   skull width, mm   - the optional section at the end
+# WHERE THE DATA CAME FROM
+#   Lindenmayer, Viggers, Cunningham & Donnelly (1995).
+#   Australian Journal of Zoology 43: 449-458.
+#   https://doi.org/10.1071/ZO9950449
+#   Data: the `possum` data set in the R package DAAG.
+#   https://cran.r-project.org/package=DAAG
 # ==========================================================
 
 
@@ -46,73 +47,87 @@
 # ==========================================================
 
 # H-Q1. (section H2 - answer BEFORE you run any test)
-#       From the boxplot alone: which site looks like it has
-#       the longest tails? The shortest? Do the boxes look
-#       about equally tall? Predict whether the ANOVA will
-#       come back significant.
+#       From the boxplot alone: do the seven sites look like
+#       a ladder, the way total length did - or do they fall
+#       into GROUPS? Which sites sit together? Is there any
+#       single point that looks out of place?
 # ANSWER:
 #
 #
-# H-Q2. (section H3) Give n and the mean tail length for all
+# H-Q2. (section H3) Give n and the mean ear length for all
 #       seven sites.
 # ANSWER:
 #
 #
 # H-Q3. (section H5) Report F, BOTH degrees of freedom, p,
-#       and eta-squared. In one sentence, what does
-#       eta-squared mean here?
+#       and eta-squared. In class eta-squared for total
+#       length was 0.47. In one sentence, what does YOUR
+#       eta-squared say about how much site matters for ears
+#       compared with total length?
 # ANSWER:
 #
 #
 # H-Q4. (section H6) Give the Levene p-value and the
-#       Shapiro-Wilk p-value. Did each one PASS or FAIL -
-#       and explain why a BIG p-value is the good outcome
-#       for these two tests.
+#       Shapiro-Wilk p-value. Which one PASSES and which one
+#       FAILS? Remember which direction is the good one.
 # ANSWER:
 #
 #
-# H-Q5. (section H7) Write out the letters from cld(). Which
-#       sites can you tell apart, and which can you not?
+# H-Q5. (section H7) Which animal is the odd one out? Give
+#       its animal number, its site, and its ear length, and
+#       say how it compares with the other possums at that
+#       site.
 # ANSWER:
 #
 #
-# H-Q6. (section H7) Put your tail-length letters next to
-#       the total-length letters from class:
-#
-#         Bellbird a | Allyn River ab | Bulburin b |
-#         Conondale bc | Whian Whian bcd | Cambarville cd |
-#         Byrangery d
-#
-#       What is the SAME, and what MOVED? Is Bellbird still
-#       at the bottom and Byrangery still at the top?
+# H-Q6. (section H7) You ran the model again WITHOUT that
+#       animal. What happened to the Shapiro-Wilk p-value?
+#       What happened to F and to eta-squared? Did the
+#       CONCLUSION change?
 # ANSWER:
 #
 #
-# H-Q7. (section H7) In class, 10 of the 21 pairs were
-#       significant. How many are significant for tail
-#       length? If it is fewer, does that mean tails vary
-#       LESS between sites, or that we are worse at
-#       detecting it? (Look at eta-squared before you
-#       answer.)
+# H-Q7. (section H7) We do not get to delete an animal just
+#       because it is inconvenient. So why was it still
+#       worth running the model both ways? What would you
+#       have had to say if the answer HAD changed?
 # ANSWER:
 #
 #
-# H-Q8. Three or four sentences, written as the results
-#       paragraph of a report. Include the test, F with both
-#       df, p, eta-squared, your two assumption checks, and
-#       which sites differed - with means attached.
+# H-Q8. (section H8 - use ALL 104 animals) Write out the
+#       letters from multcomp::cld(). Which sites share a
+#       letter with each other, and which sites share
+#       nothing with anybody else?
 # ANSWER:
 #
 #
-# H-Q9. (OPTIONAL section H8) Give the Levene and
-#       Shapiro-Wilk p-values for skull_w. Which one FAILS?
+# H-Q9. (section H8) Look at the two sites that stand apart.
+#       Find them in the table of sites and states in the
+#       activity. What do they have in common that the other
+#       five do not?
 # ANSWER:
 #
 #
-# H-Q10. (OPTIONAL section H8) That failure does not mean
-#        you delete the data or give up. In one or two
-#        sentences: what does it mean about how much you
-#        should trust the p-value from that model?
+# H-Q10. Here are the class results for TOTAL length:
+#
+#          Bellbird a | Allyn River ab | Bulburin b |
+#          Conondale bc | Whian Whian bcd | Cambarville cd |
+#          Byrangery d
+#
+#        For total length, Cambarville and Bellbird were at
+#        OPPOSITE ends. For ear length, where are they? So
+#        do these two sites differ from the rest in overall
+#        SIZE, or in SHAPE? Explain in two or three
+#        sentences.
+# ANSWER:
+#
+#
+# H-Q11. Three or four sentences, written as the results
+#        paragraph of a report. Include the test, F with
+#        both df, p, eta-squared, your two assumption checks
+#        (including the one that failed and what you did
+#        about it), and which sites differed - with means
+#        attached.
 # ANSWER:
 #
 #
@@ -127,39 +142,40 @@ library(tidyverse)
 library(car)          # Anova(), leveneTest()
 library(performance)  # check_model()
 library(emmeans)      # follow-up comparisons
-library(multcomp)     # cld()
 library(effectsize)   # eta_squared()
+
+# NOT loaded on purpose: multcomp. Use multcomp::cld().
 
 invisible(NULL)
 
 
-# ---- H1 Read it in and build the factor ------------------
-# Identical to class, except we drop NA on tail_l instead of
+# ---- H1 Read it in, name the sites, make the factor ------
+# Identical to class, except we drop NA on ear_l instead of
 # total_l. Nothing else changes - the sites are the sites.
 #
-# In class:
-#   possum_df <- possum_raw %>%
-#     filter(!is.na(total_l)) %>%
-#     mutate(site_name = factor(site,
-#                               levels = 1:7,
-#                               labels = c("Cambarville", "Bellbird",
-#                                          "Whian Whian", "Byrangery",
-#                                          "Conondale", "Allyn River",
-#                                          "Bulburin")))
+# This one is written for you. Uncomment it and run it.
+# (Select the lines, then Ctrl/Cmd + Shift + C.)
 
-# YOUR CODE:
 # possum_raw <- read_csv("data/possum.csv")
 #
-# tail_df <- possum_raw %>%
-#   filter(!is.na(tail_l)) %>%
-#   mutate(site_name = factor(site,
-#                             levels = 1:7,
-#                             labels = c("Cambarville", "Bellbird",
-#                                        "Whian Whian", "Byrangery",
-#                                        "Conondale", "Allyn River",
-#                                        "Bulburin")))
+# ear_df <- possum_raw %>%
+#   filter(!is.na(ear_l)) %>%
+#   mutate(site_name = case_when(
+#     site == 1 ~ "Cambarville",
+#     site == 2 ~ "Bellbird",
+#     site == 3 ~ "Whian Whian",
+#     site == 4 ~ "Byrangery",
+#     site == 5 ~ "Conondale",
+#     site == 6 ~ "Allyn River",
+#     site == 7 ~ "Bulburin")) %>%
+#   mutate(site_name = as.factor(site_name)) %>%
+#   mutate(site_name = fct_relevel(site_name,
+#                                  "Bulburin", "Conondale",
+#                                  "Whian Whian", "Byrangery",
+#                                  "Allyn River", "Cambarville",
+#                                  "Bellbird"))
 #
-# tail_df %>% count(site_name)
+# ear_df %>% count(site_name)
 
 invisible(NULL)
 
@@ -197,7 +213,7 @@ invisible(NULL)
 #   total_model <- lm(total_l ~ site_name, data = possum_df)
 
 # YOUR CODE:
-# tail_model <- lm(tail_l ~ site_name, data = tail_df)
+# ear_model <- lm(ear_l ~ site_name, data = ear_df)
 
 invisible(NULL)
 
@@ -220,7 +236,7 @@ invisible(NULL)
 # If check_model() errors about the plot being too small,
 # that is your RStudio Plots pane, not your model. Drag the
 # pane bigger, or ask for fewer panels:
-#   check_model(tail_model, check = c("homogeneity", "qq"))
+#   check_model(ear_model, check = c("homogeneity", "qq"))
 #
 # In class:
 #   check_model(total_model)
@@ -232,15 +248,58 @@ invisible(NULL)
 invisible(NULL)
 
 
-# ---- H7 Which sites differ? ------------------------------
-# -> then answer H-Q5, H-Q6 and H-Q7 at the top. H-Q8 is the
-#    write-up - do it last.
+# ---- H7 One of those checks failed. Find out why. --------
+# -> then answer H-Q5, H-Q6 and H-Q7 at the top.
+#
+# In class both checks passed. Here one does not. That is
+# NOT a reason to delete data or give up. It is a reason to
+# LOOK.
+#
+# Step 1. Sort the possums by ear length and look at the
+# smallest few. Compare the top row with the mean for its
+# own site from H3.
+
+# YOUR CODE:
+# ear_df %>%
+#   arrange(ear_l) %>%
+#   head(5)
+
+# Step 2. Build a second data set WITHOUT that one animal,
+# fit the same model to it, and run the same checks. Put
+# the animal's number where the blank is.
+
+# YOUR CODE:
+# ear_check_df <- ear_df %>%
+#   filter(animal != ____)
+#
+# ear_check_model <- lm(ear_l ~ site_name, data = ear_check_df)
+#
+# shapiro.test(residuals(ear_check_model))
+# Anova(ear_check_model, type = 2)
+# eta_squared(Anova(ear_check_model, type = 2), partial = FALSE)
+# multcomp::cld(emmeans(ear_check_model, ~ site_name), Letters = letters)
+
+# We are NOT throwing the animal away. It is a real possum
+# that somebody trapped and measured. We ran the model both
+# ways to find out whether ONE animal is deciding the
+# answer. If the conclusion is the same with it and without
+# it, you can report the full data set and say so.
+
+invisible(NULL)
+
+
+# ---- H8 Which sites differ? ------------------------------
+# -> then answer H-Q8, H-Q9 and H-Q10 at the top. H-Q11 is
+#    the write-up - do it last.
+#
+# Go back to ALL 104 animals - ear_model, not
+# ear_check_model.
 #
 # In class:
 #   site_means <- emmeans(total_model, ~ site_name)
 #   site_means
 #   pairs(site_means, adjust = "tukey")
-#   cld(site_means, Letters = letters)
+#   multcomp::cld(site_means, Letters = letters)
 
 # YOUR CODE:
 
@@ -248,43 +307,20 @@ invisible(NULL)
 
 
 # ==========================================================
-# OPTIONAL - what a FAILED assumption looks like
+# WHEN YOU ARE DONE - and not before
 #
-# Everything you have checked so far has passed. That makes
-# it easy to treat the assumption check as a formality. It
-# is not.
+# The people who collected these possums asked the same
+# question you just did. What they found changed how these
+# animals are classified:
 #
-# Run the same recipe on skull_w. One of the two checks
-# fails. Find out which.
+#   Lindenmayer, Dubach & Viggers (2002). Geographic
+#   dimorphism in the mountain brushtail possum (Trichosurus
+#   caninus): the case for a new species. Australian Journal
+#   of Zoology 50: 369-393.
+#   https://doi.org/10.1071/ZO01047
+#
+# Read the abstract. Then read your answer to H-Q10 again.
 # ==========================================================
-
-# ---- H8 skull_w ------------------------------------------
-# -> then answer H-Q9 and H-Q10 at the top.
-
-# YOUR CODE:
-# skull_df <- possum_raw %>%
-#   filter(!is.na(skull_w)) %>%
-#   mutate(site_name = factor(site,
-#                             levels = 1:7,
-#                             labels = c("Cambarville", "Bellbird",
-#                                        "Whian Whian", "Byrangery",
-#                                        "Conondale", "Allyn River",
-#                                        "Bulburin")))
-#
-# skull_model <- lm(skull_w ~ site_name, data = skull_df)
-#
-# leveneTest(skull_w ~ site_name, data = skull_df)
-# shapiro.test(residuals(skull_model))
-
-invisible(NULL)
-
-# A failed assumption is NOT a reason to delete data or give
-# up. It is a reason to say so out loud, and to trust the
-# exact p-value less. Real options, for later courses:
-# transform the response, use a test that does not assume
-# equal variances, or report the result with the caveat
-# attached. What you must never do is notice and say
-# nothing.
 
 
 # ==========================================================

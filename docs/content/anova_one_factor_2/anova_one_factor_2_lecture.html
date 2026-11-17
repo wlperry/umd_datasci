@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-11-10">
+<meta name="dcterms.date" content="2026-11-16">
 <meta name="description" content="A second pass at one-factor ANOVA on New Zealand tree wētā, whose adult males come in three discrete morphs. We re-run last class’s eight-step recipe on foreleg length, meet two traps the possums never showed us — a circular response variable and a grouping variable confounded with body size — and then watch a hugely significant result on ear size collapse to nothing once ear is measured relative to body size. Finishes by bringing the females back as a fourth group, and on how to report a non-significant ANOVA honestly.">
 
 <title>Lecture — One-Factor ANOVA II: Wētā, and Correcting for Size – UMD DAta Science Biology</title>
@@ -446,7 +446,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 10, 2026</p>
+      <p class="date">November 16, 2026</p>
     </div>
   </div>
   
@@ -462,13 +462,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1>Where We Left Off — Possums</h1>
 <p>Eight steps, and you now know all of them:</p>
 <ol type="1">
-<li><code>factor()</code> the groups</li>
+<li>Name the groups, then <code>as.factor()</code></li>
 <li><strong>Plot</strong> it, and predict the answer</li>
 <li><code>lm()</code></li>
 <li><code>Anova(type = 2)</code></li>
 <li><code>check_model()</code> + <code>leveneTest()</code> + <code>shapiro.test()</code></li>
 <li><code>eta_squared()</code></li>
-<li><code>emmeans()</code> → <code>pairs()</code> → <code>cld()</code></li>
+<li><code>emmeans()</code> → <code>pairs()</code> → <code>multcomp::cld()</code></li>
 <li>Write the sentence</li>
 </ol>
 <div class="callout callout-style-default callout-note callout-titled">
@@ -502,7 +502,7 @@ Note
 <p><strong>Tools today:</strong></p>
 <ul>
 <li>Nothing new 🎉</li>
-<li>Same five packages as last class</li>
+<li>Same packages as last class</li>
 </ul>
 <p><strong>Data:</strong> 🦗 313 wētā, Te Pākeka / Maud Island, New Zealand</p>
 <div class="callout callout-style-default callout-tip callout-titled">
@@ -596,13 +596,12 @@ Tip
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car)          <span class="co"># Anova(), leveneTest()</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(performance)  <span class="co"># check_model()</span></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(emmeans)      <span class="co"># follow-up comparisons</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(multcomp)     <span class="co"># cld()</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(effectsize)   <span class="co"># eta_squared()</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the file ---------------------------------------</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>weta_raw <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/weta_traits.csv"</span>)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(weta_raw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(effectsize)   <span class="co"># eta_squared()</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the file ---------------------------------------</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>weta_raw <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/weta_traits.csv"</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(weta_raw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 313  14</code></pre>
 </div>
@@ -681,10 +680,9 @@ Important
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>weta_df <span class="ot">&lt;-</span> weta_raw <span class="sc">%&gt;%</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(sex <span class="sc">==</span> <span class="st">"m"</span>, <span class="sc">!</span><span class="fu">is.na</span>(foretibia)) <span class="sc">%&gt;%</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">morph =</span> <span class="fu">factor</span>(morph,</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"eighth"</span>, <span class="st">"ninth"</span>, <span class="st">"tenth"</span>)))</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>weta_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(morph)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">morph =</span> <span class="fu">as.factor</span>(morph))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>weta_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(morph)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 3 × 2
   morph      n
@@ -704,9 +702,12 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>🧠 <code>levels</code> with no <code>labels</code> this time</strong></p>
-<p>The groups are already <strong>words</strong>, so <code>factor()</code> only needs <code>levels</code> — to fix the <strong>order</strong>.</p>
-<p>Left alone R sorts alphabetically: <em>eighth, ninth, tenth</em>. That happens to be right. <strong>Do not rely on luck</strong> — say it out loud in the code.</p>
+<p><strong>🧠 No <code>case_when()</code> this time</strong></p>
+<ul>
+<li>The groups are already <strong>words</strong>, so there is nothing to rename — just <code>as.factor()</code></li>
+<li><code>as.factor()</code> sorts alphabetically: <em>eighth, ninth, tenth</em>. That happens to be the order we want</li>
+<li>When it is <strong>not</strong>, <code>fct_relevel()</code> fixes it — we will need that in Chunk 4</li>
+</ul>
 </div>
 </div>
 </section>
@@ -827,7 +828,7 @@ Important
 <section id="which-morphs-differ" class="level1">
 <h1>Which Morphs Differ?</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cld</span>(<span class="fu">emmeans</span>(fore_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(<span class="fu">emmeans</span>(fore_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> morph  emmean     SE  df lower.CL upper.CL .group
  eighth   11.8 0.0644 192     11.7     11.9  a    
@@ -923,7 +924,7 @@ morph     | 0.56 | [0.49, 1.00]
 <section id="and-the-letters" class="level1">
 <h1>And the Letters</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cld</span>(<span class="fu">emmeans</span>(ear_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(<span class="fu">emmeans</span>(ear_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> morph  emmean     SE  df lower.CL upper.CL .group
  eighth   2.50 0.0348 192     2.44     2.57  a    
@@ -1152,7 +1153,7 @@ Important
 <section id="and-the-letters-1" class="level1">
 <h1>And the Letters</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cld</span>(<span class="fu">emmeans</span>(ear_rel_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(<span class="fu">emmeans</span>(ear_rel_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> morph  emmean      SE  df lower.CL upper.CL .group
  tenth   0.246 0.00205 192    0.242    0.250  a    
@@ -1301,9 +1302,9 @@ Tip
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>weta_all <span class="ot">&lt;-</span> weta_raw <span class="sc">%&gt;%</span></span>
 <span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(foretibia)) <span class="sc">%&gt;%</span></span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">morph =</span> <span class="fu">factor</span>(morph,</span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"female"</span>, <span class="st">"eighth"</span>, <span class="st">"ninth"</span>, <span class="st">"tenth"</span>)),</span>
-<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">fore_rel =</span> foretibia <span class="sc">/</span> pronotum)</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">morph =</span> <span class="fu">as.factor</span>(morph)) <span class="sc">%&gt;%</span></span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">morph =</span> <span class="fu">fct_relevel</span>(morph, <span class="st">"female"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">fore_rel =</span> foretibia <span class="sc">/</span> pronotum)</span>
 <span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>weta_all <span class="sc">%&gt;%</span> <span class="fu">count</span>(morph)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
@@ -1372,7 +1373,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <section id="the-ladder-stops-short" class="level1">
 <h1>The Ladder Stops Short</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cld</span>(<span class="fu">emmeans</span>(fore_rel_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(<span class="fu">emmeans</span>(fore_rel_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> morph  emmean      SE  df lower.CL upper.CL .group
  female   1.65 0.00654 309     1.64     1.67  a    

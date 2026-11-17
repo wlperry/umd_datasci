@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-11-10">
+<meta name="dcterms.date" content="2026-11-16">
 <meta name="description" content="Hands-on companion to the second ANOVA lecture. Students re-run the eight-step recipe on New Zealand tree weta, meet a circular response variable and a grouping variable confounded with body size, watch a hugely significant ear-size result collapse to p = 0.449 after one mutate(), learn to report a non-significant ANOVA, and bring the females back as a fourth group. Homework is the hind leg, raw and relative.">
 
 <title>Activity 20 — ANOVA II: Wētā, and Correcting for Size – UMD DAta Science Biology</title>
@@ -443,7 +443,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 10, 2026</p>
+      <p class="date">November 16, 2026</p>
     </div>
   </div>
   
@@ -478,7 +478,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Same five packages as last class: <code>performance</code>, <code>see</code>, <code>emmeans</code>, <code>multcomp</code>, <code>effectsize</code>. If they worked last time they will work today.</p>
+<p>Same packages as last class: <code>performance</code>, <code>see</code>, <code>emmeans</code>, <code>multcomp</code>, <code>multcompView</code>, <code>effectsize</code>. If they worked last time they will work today. As before, <code>multcomp</code> is <strong>installed but never loaded</strong> — we call <code>multcomp::cld()</code>.</p>
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
@@ -569,15 +569,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car)          <span class="co"># Anova(), leveneTest()</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(performance)  <span class="co"># check_model()</span></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(emmeans)      <span class="co"># follow-up comparisons</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(multcomp)     <span class="co"># cld()</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(effectsize)   <span class="co"># eta_squared()</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the file ---------------------------------------</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>weta_raw <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/weta_traits.csv"</span>)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(weta_raw)</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>weta_raw <span class="sc">%&gt;%</span> <span class="fu">count</span>(morph)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(effectsize)   <span class="co"># eta_squared()</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the file ---------------------------------------</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>weta_raw <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/weta_traits.csv"</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(weta_raw)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>weta_raw <span class="sc">%&gt;%</span> <span class="fu">count</span>(morph)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>313 rows, 14 columns — and <strong>four</strong> groups, not three. 118 of the 313 animals are <strong>female</strong>.</p>
 <hr>
 </section>
@@ -642,12 +641,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><strong>▶ Run this:</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>weta_df <span class="ot">&lt;-</span> weta_raw <span class="sc">%&gt;%</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(sex <span class="sc">==</span> <span class="st">"m"</span>, <span class="sc">!</span><span class="fu">is.na</span>(foretibia)) <span class="sc">%&gt;%</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">morph =</span> <span class="fu">factor</span>(morph,</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"eighth"</span>, <span class="st">"ninth"</span>, <span class="st">"tenth"</span>)))</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>weta_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(morph)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">levels</span>(weta_df<span class="sc">$</span>morph)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">morph =</span> <span class="fu">as.factor</span>(morph))</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>weta_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(morph)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">levels</span>(weta_df<span class="sc">$</span>morph)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li><code>eighth</code> 78, <code>ninth</code> 79, <code>tenth</code> 38</li>
 </ul>
@@ -657,12 +655,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span><code>levels</code> with no <code>labels</code> this time
+<span class="screen-reader-only">Note</span>No <code>case_when()</code> this time
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Last class the groups arrived as the integers 1–7, so <code>factor()</code> needed both <code>levels</code> and <code>labels</code>. Here the groups are already <strong>words</strong>, so it only needs <code>levels</code> — to fix the <strong>order</strong>.</p>
-<p>Left alone, R sorts alphabetically: <em>eighth, ninth, tenth</em>. That happens to be right. <strong>Do not rely on luck</strong> — say it out loud in the code.</p>
+<p>Last class the groups arrived as the integers 1–7, so we needed <code>case_when()</code> to give them names. Here the groups are already <strong>words</strong>, so there is nothing to rename — just <code>as.factor()</code>.</p>
+<p><code>as.factor()</code> sorts alphabetically: <em>eighth, ninth, tenth</em>. That happens to be the order we want. When it is <strong>not</strong>, <code>fct_relevel()</code> fixes it — you will need that in Part 11, when the females come back.</p>
 </div>
 </div>
 <p>✏️ <strong>Q2:</strong> <code>tenth</code> has n = 38, less than half of either other group. What does that do to your ability to detect a difference involving that morph?</p>
@@ -734,7 +732,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(fore_model))</span>
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="fu">cld</span>(<span class="fu">emmeans</span>(fore_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(<span class="fu">emmeans</span>(fore_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li><strong>F(2, 192) = 268.5, p &lt; 0.001, η² = 0.74</strong></li>
 <li>Levene <strong>p = 0.233</strong> → <strong>PASS</strong>; Shapiro–Wilk <strong>p = 0.542</strong> → <strong>PASS</strong></li>
@@ -770,7 +768,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">eta_squared</span>(<span class="fu">Anova</span>(ear_model, <span class="at">type =</span> <span class="dv">2</span>), <span class="at">partial =</span> <span class="cn">FALSE</span>)</span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="fu">cld</span>(<span class="fu">emmeans</span>(ear_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(<span class="fu">emmeans</span>(ear_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li><strong>F(2, 192) = 122.2, p &lt; 0.001, η² = 0.56</strong></li>
 <li>Letters: <strong><code>a</code> | <code>b</code> | <code>c</code></strong> — all three separate</li>
@@ -877,7 +875,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="fu">eta_squared</span>(<span class="fu">Anova</span>(ear_rel_model, <span class="at">type =</span> <span class="dv">2</span>), <span class="at">partial =</span> <span class="cn">FALSE</span>)</span>
 <span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="fu">cld</span>(<span class="fu">emmeans</span>(ear_rel_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(<span class="fu">emmeans</span>(ear_rel_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li><strong>F(2, 192) = 0.80, p = 0.449, η² = 0.008</strong></li>
 <li>Levene <strong>p = 0.59</strong> → <strong>PASS</strong>; Shapiro–Wilk <strong>p = 0.50</strong> → <strong>PASS</strong></li>
@@ -948,9 +946,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><strong>▶ Run this:</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>weta_all <span class="ot">&lt;-</span> weta_raw <span class="sc">%&gt;%</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(foretibia)) <span class="sc">%&gt;%</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">morph =</span> <span class="fu">factor</span>(morph,</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"female"</span>, <span class="st">"eighth"</span>, <span class="st">"ninth"</span>, <span class="st">"tenth"</span>)),</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">fore_rel =</span> foretibia <span class="sc">/</span> pronotum)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">morph =</span> <span class="fu">as.factor</span>(morph)) <span class="sc">%&gt;%</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">morph =</span> <span class="fu">fct_relevel</span>(morph, <span class="st">"female"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">fore_rel =</span> foretibia <span class="sc">/</span> pronotum)</span>
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>weta_all <span class="sc">%&gt;%</span> <span class="fu">count</span>(morph)</span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
@@ -962,7 +960,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(fore_rel_model, <span class="at">type =</span> <span class="dv">2</span>)</span>
 <span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="fu">cld</span>(<span class="fu">emmeans</span>(fore_rel_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(<span class="fu">emmeans</span>(fore_rel_model, <span class="sc">~</span> morph), <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li><strong>F(3, 309) = 266.3, p &lt; 0.001, η² = 0.72</strong></li>
 <li>Levene <strong>p = 0.086</strong> → <strong>PASS</strong>; Shapiro–Wilk <strong>p = 0.53</strong> → <strong>PASS</strong></li>
@@ -1037,9 +1035,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="callout-body-container callout-body">
 <p>Real archived research data, released under <strong>CC BY 4.0</strong> — free to reuse <strong>with credit</strong>:</p>
 <blockquote class="blockquote">
-<p>trait_data.csv. Zenodo, doi:10.5281/zenodo.22959939. Data creator: Clint D. Kelly, Université du Québec à Montréal.</p>
+<p>trait_data.csv. Zenodo, doi:10.5281/zenodo.22959939. Data creator: Clint D. Kelly, Université du Québec à Montréal. <a href="https://doi.org/10.5281/zenodo.22959939" class="uri">https://doi.org/10.5281/zenodo.22959939</a></p>
 </blockquote>
 <p>Our copy, <code>weta_traits.csv</code>, is that file with the numbers rounded to 4 decimal places. Nothing else was changed. Saying so is part of the credit.</p>
+<p>That record is a <strong>data archive, not yet a peer-reviewed paper</strong>. Published papers on the three male morphs, by the same researcher:</p>
+<ul>
+<li>Kelly &amp; Adams (2010). Sexual selection, ontogenetic acceleration, and hypermorphosis generates male trimorphism in Wellington tree weta. <em>Evolutionary Biology</em> 37: 200–209. <a href="https://doi.org/10.1007/s11692-010-9096-1" class="uri">https://doi.org/10.1007/s11692-010-9096-1</a></li>
+<li>Kelly (2024). Alternative mating strategies in the Wellington tree weta expressed via genetic polymorphism for precocial male maturation. <em>Royal Society Open Science</em> 11: 240100. <a href="https://doi.org/10.1098/rsos.240100" class="uri">https://doi.org/10.1098/rsos.240100</a></li>
+</ul>
 </div>
 </div>
 <div class="callout callout-style-default callout-important callout-titled">

@@ -11,14 +11,15 @@ week: 12
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
   One factor, more than two groups, done properly from end to end on real
-  data found on Kaggle: 104 Australian brushtail possums trapped at seven
-  forest sites. Why one test instead of twenty-one t-tests, naming and
-  ordering groups with factor(), fitting lm() and reading
+  field data: 104 Australian brushtail possums trapped at seven
+  forest sites. Why one test instead of twenty-one t-tests, naming the
+  groups with case_when() and making them a factor (plus a side trip
+  on ordering them north to south with fct_relevel()), fitting lm() and reading
   car::Anova(type = 2), checking the assumptions AFTER the fit with
   performance::check_model() and car::leveneTest(), measuring how big the
   effect is with eta-squared, and finding out WHICH sites differ with
-  emmeans and compact letter displays.
-categories: [anova, emmeans, car, performance, factors, statistics, kaggle]
+  emmeans and a compact letter display from multcomp::cld().
+categories: [anova, emmeans, car, performance, factors, statistics]
 
 format:
   revealjs:
@@ -78,7 +79,7 @@ Today the question is the same shape — *do these groups differ?* — but there
 ::: {.column width="58%"}
 - See **why** twenty-one t-tests is the wrong answer
 - **Look** at the data before testing anything
-- Use `factor()` to give groups **names and an order**
+- Name the groups with `case_when()`, then make them a **factor**
 - Fit with `lm()`, test with `car::Anova(type = 2)`
 - Check the assumptions **after** the fit:
   - `performance::check_model()`
@@ -95,9 +96,9 @@ Today the question is the same shape — *do these groups differ?* — but there
 - `car` — `Anova()`, `leveneTest()`
 - `performance` — `check_model()`
 - `emmeans` — follow-up tests
-- `multcomp` — the letters
+- `multcomp::cld()` — the letters
 
-**Data:** 🐾 104 brushtail possums, 7 sites, **off Kaggle**
+**Data:** 🐾 104 brushtail possums, 7 sites, from a **1995 field study**
 
 ::: callout-tip
 **Five chunks:** why → look → test → check → which.
@@ -119,13 +120,13 @@ Five short chunks. After each one you switch to the **activity** and run the cod
 **⚠️ Install first**
 
 ``` r
-install.packages("performance")
-install.packages("see")
-install.packages("emmeans")
-install.packages("multcomp")
+install.packages(c("performance", "see",
+                   "emmeans", "multcomp",
+                   "multcompView", "Hmisc",
+                   "effectsize"))
 ```
 
-`performance` pulls in a dozen dependencies. **Do it before class, not during.**
+Lots of dependencies. **Do it before class, not during.** Windows machines especially need `multcompView` and `Hmisc` installed by hand.
 :::
 
 ::: callout-note
@@ -140,26 +141,25 @@ install.packages("multcomp")
 
 **We will cover:** where the data came from, and the one arithmetic fact that kills the obvious approach.
 
-# Finding Data: A Real Search
+# Where the Data Came From
 
 :::::: columns
 ::: {.column width="58%"}
-Your final projects need data. So here is how today's data was actually found.
+Your final projects need data. So here is the trail behind today's.
 
-Searched **kaggle.com/datasets** for `possum`. One hit:
+- **Collected by** four field biologists, who live-trapped and measured every animal
+- **Published in** the *Australian Journal of Zoology* — [Lindenmayer et al. 1995](https://doi.org/10.1071/ZO9950449)
+- **Shared as** the `possum` data set in the R package [`DAAG`](https://cran.r-project.org/package=DAAG)
+- **Our file**, `possum.csv`, is that data set with shorter column names
 
-- **"OpenIntro Possum"** — 104 rows, 8 columns
-- Uploaded by a user who mirrored it from **OpenIntro**, a statistics-textbook project
-- OpenIntro got it from a **1995 paper** in the *Australian Journal of Zoology*
-
-So the trail runs: Kaggle → textbook → **peer-reviewed field study**.
+So the trail runs: our file → R package → **peer-reviewed field study**.
 :::
 
 :::: {.column width="42%"}
 ::: callout-tip
 **📖 Always walk the trail back**
 
-Kaggle is a **mirror**, not a source. Anyone can upload anything.
+A file on the internet is a **copy**, not a source. Anyone can upload anything.
 
 Before you trust a dataset, find out who **collected** it. If you cannot, that is your answer.
 :::
@@ -170,11 +170,11 @@ Before you trust a dataset, find out who **collected** it. If you cannot, that i
 
 :::::: columns
 ::: {.column width="58%"}
-**Mountain brushtail possum**, *Trichosurus cunninghami* 🐾
+**Mountain brushtail possum**, genus *Trichosurus* 🐾
 
 - A nocturnal, tree-dwelling Australian marsupial
 - 104 animals **live-trapped at seven forest sites**, from Victoria in the south up to Queensland
-- Each animal measured: head length, skull width, **total length**, tail length, plus age and sex
+- Each animal measured nine ways — head, skull, **total length**, tail, foot, ear and more — plus age and sex
 
 Our question today:
 
@@ -251,7 +251,7 @@ $$F = \frac{\text{variation between groups}}{\text{variation within groups}}$$
 
 # 🧩 Chunk 2 of 5 · Look at It First
 
-**We will cover:** reading the file, turning site numbers into real names with `factor()`, and plotting before testing.
+**We will cover:** reading the file, turning site numbers into real names with `case_when()`, making them a factor, and plotting before testing.
 
 # Read It In
 
@@ -261,7 +261,6 @@ library(tidyverse)
 library(car)          # Anova(), leveneTest()
 library(performance)  # check_model()
 library(emmeans)      # follow-up comparisons
-library(multcomp)     # the compact letter display
 
 # Read the file ---------------------------------------
 possum_raw <- read_csv("data/possum.csv")
@@ -269,39 +268,6 @@ possum_raw <- read_csv("data/possum.csv")
 dim(possum_raw)
 names(possum_raw)
 ```
-
-# ⚠️ One Side Effect of Loading `multcomp`
-
-:::::: columns
-::: {.column width="58%"}
-`multcomp` loads **`MASS`**, and `MASS` has its own `select()`. It **masks** the `dplyr` one.
-
-So after today's `library()` block, this quietly breaks:
-
-``` r
-possum_df %>% select(site, total_l)
-#> Error: unused arguments
-```
-
-The fix is to say which one you mean:
-
-``` r
-possum_df %>% dplyr::select(site, total_l)
-```
-:::
-
-:::: {.column width="42%"}
-::: callout-warning
-**⚠️ Watch the startup messages**
-
-R told you this when you loaded the package. Nobody reads it.
-
-`select()` is the usual casualty. `filter()` is the other one.
-
-None of today's code uses `select()` — but **your** code might.
-:::
-::::
-::::::
 
 # The Site Column Is a Problem
 
@@ -317,46 +283,67 @@ possum_raw %>% count(site)
 Leave it like this and `lm()` will fit a *straight line through site number*, which is nonsense.
 :::
 
-# Fix It With `factor()`
+# Name the Sites With `case_when()`
 
-```{r make-factor}
+```{r name-sites}
 possum_df <- possum_raw %>%
   filter(!is.na(total_l)) %>%
-  mutate(site_name = factor(site,
-                            levels = 1:7,
-                            labels = c("Cambarville", "Bellbird",
-                                       "Whian Whian", "Byrangery",
-                                       "Conondale", "Allyn River",
-                                       "Bulburin")))
-
-possum_df %>% count(site_name)
+  mutate(site_name = case_when(
+    site == 1 ~ "Cambarville",
+    site == 2 ~ "Bellbird",
+    site == 3 ~ "Whian Whian",
+    site == 4 ~ "Byrangery",
+    site == 5 ~ "Conondale",
+    site == 6 ~ "Allyn River",
+    site == 7 ~ "Bulburin"))
 ```
+
+::: callout-note
+**🧠 Read each line as a sentence**
+
+"**When** `site` is 1, call it Cambarville." One line per site. We keep `site` and add a **new** column, `site_name`.
+:::
+
+# Then Make the Names a Factor
+
+```{r make-factor}
+possum_df <- possum_df %>%
+  mutate(site_name = as.factor(site_name))
+
+levels(possum_df$site_name)
+```
+
+::: callout-note
+**🧠 What a factor is**
+
+- A column of **group names** that R knows are *groups* — not numbers, not free text
+- The groups are its **levels**
+- `as.factor()` puts the levels in **alphabetical order** unless you say otherwise
+:::
 
 # What Just Happened
 
-:::::: columns
+::::::: columns
 ::: {.column width="58%"}
-``` r
-factor(site,
-       levels = 1:7,
-       labels = c("Cambarville", ...))
-```
+Two small steps:
 
-- `levels` = the values **as they appear in the data**
-- `labels` = what you want them **called**
+1.  `case_when()` — swap each **code** for a **name**
+    -   left of the `~` is the test, right of it is the name
+    -   a site you forget to list becomes `NA`
+2.  `as.factor()` — tell R those names are **groups**
 
-The two lists must be the **same length** and in the **same order**. Get the order wrong and every single result is quietly mislabelled — no error, no warning.
+Get a name on the wrong line and every result is quietly mislabelled — no error, no warning.
 
-The site names come from the **OpenIntro codebook**. We did not invent them.
+The site names come from the **original study**. We did not invent them.
 :::
 
-:::: {.column width="42%"}
+::::: {.column width="42%"}
 ::: callout-note
 **📋 The seven sites**
 
+- **Queensland:** Bulburin, Conondale
+- **New South Wales:** Whian Whian, Byrangery, Allyn River
 - **Victoria:** Cambarville, Bellbird
-- **New South Wales:** Whian Whian, Byrangery
-- **Queensland / N. NSW:** Conondale, Allyn River, Bulburin
 :::
 
 ::: callout-warning
@@ -364,8 +351,31 @@ The site names come from the **OpenIntro codebook**. We did not invent them.
 
 33 possums at Cambarville, 7 at Byrangery. That is fine for ANOVA — but it is why we will not hand-calculate anything.
 :::
-::::
-::::::
+:::::
+:::::::
+
+# 🧭 Side Trip: Put the Sites in *Your* Order
+
+Alphabetical means nothing here. **North to south** does.
+
+```{r relevel-sites}
+possum_df <- possum_df %>%
+  mutate(site_name = fct_relevel(site_name,
+                                 "Bulburin", "Conondale",
+                                 "Whian Whian", "Byrangery",
+                                 "Allyn River", "Cambarville",
+                                 "Bellbird"))
+
+levels(possum_df$site_name)
+```
+
+::: callout-tip
+**🎯 `fct_relevel()` changes the order, never the data**
+
+- List the levels in the order you want
+- Plots and tables now run north → south
+- The **first** level (Bulburin) also becomes the model's **baseline** — that matters in a few slides
+:::
 
 # Look Before You Test
 
@@ -417,11 +427,11 @@ possum_df %>%
 
 :::::: columns
 ::: {.column width="58%"}
-Seven sites on a **north–south gradient**. Tempting story:
+Our plot now runs **north → south**. Tempting story:
 
 > Colder in the south → bigger animals. **Bergmann's rule.**
 
-Look again. The two **Victorian** sites are the southernmost — and they are at **opposite extremes**:
+Look again. No steady climb — and the two **Victorian** sites, the southernmost, are at **opposite extremes**:
 
 - Cambarville **89.7 cm**
 - Bellbird **81.8 cm**
@@ -462,23 +472,31 @@ total_model <- lm(total_l ~ site_name, data = possum_df)
 
 ```{r bad-summary}
 #| output: false
-summary(total_model)   # six rows of "site_nameBellbird" etc.
+summary(total_model)   # try it - here is its Estimate column:
+```
+
+```{r coef-table}
+#| echo: false
+round(coef(total_model), 1)
 ```
 
 :::::: columns
 ::: {.column width="58%"}
-`summary()` gives you **six slopes**, each comparing one site to Cambarville — because Cambarville is level 1, so it became the baseline.
+These are **not slopes** — there is no line. They are **means**:
 
-That answers *"is each site different from Cambarville?"*, which is **not the question**. Nobody asked about Cambarville.
+- `(Intercept)` **85.7** = the mean of **Bulburin**, the first level
+- every other row = that site's mean **minus Bulburin's**
+  - Byrangery **+6.5** → 85.7 + 6.5 = 92.2 cm
+  - Bellbird **−3.9** → 85.7 − 3.9 = 81.8 cm
 :::
 
 :::: {.column width="42%"}
 ::: callout-warning
 **⚠️ The wrong table**
 
-Six p-values, all against an **arbitrary** reference group. Change which site is level 1 and all six change.
+Its six p-values each ask *"is this site different from Bulburin?"* Nobody asked about Bulburin.
 
-We want **one** p-value for `site_name` as a whole.
+Put a different site first and all six change. We want **one** p-value for `site_name` as a whole.
 :::
 ::::
 ::::::
@@ -530,7 +548,7 @@ effectsize::eta_squared(Anova(total_model, type = 2), partial = FALSE)
 
 :::::: columns
 ::: {.column width="58%"}
-**Eta-squared ($\eta^2$) = 0.47.**
+**Eta-squared (**$\eta^2$) = 0.47.
 
 Which site a possum came from accounts for **47% of all the variation** in total length.
 
@@ -541,8 +559,7 @@ The other 53% is possums being individuals.
 ::: callout-tip
 **🎯 p ≠ size**
 
-p answers *"is it real?"*
-$\eta^2$ answers *"is it big?"*
+p answers *"is it real?"* $\eta^2$ answers *"is it big?"*
 
 With a big enough sample, a trivial difference gets a tiny p. **Always report both.**
 :::
@@ -557,12 +574,12 @@ With a big enough sample, a trivial difference gets a tiny p. **Always report bo
 
 :::::: columns
 ::: {.column width="58%"}
-1. **Equal variances** across groups — each site is about equally spread
-2. **Normal residuals** — what the model *missed* is normally distributed
+1.  **Equal variances** across groups — each site is about equally spread
+2.  **Normal residuals** — what the model *missed* is normally distributed
 
 Plus one you check by **thinking**, not testing:
 
-3. **Independence** — each possum is one animal, trapped once, measured once ✅
+3.  **Independence** — each possum is one animal, trapped once, measured once ✅
 :::
 
 :::: {.column width="42%"}
@@ -697,13 +714,13 @@ Look at `check_model()` **as well**, always.
 
 # 🧩 Chunk 5 of 5 · Which Sites Actually Differ?
 
-**We will cover:** why F is not the end, `emmeans`, Tukey adjustment, and reading a compact letter display.
+**We will cover:** why F is not the end, `emmeans`, Tukey adjustment, and reading a compact letter display from `multcomp::cld()`.
 
 # F Said "Not All Equal" — That Is All It Said
 
 :::::: columns
 ::: {.column width="58%"}
-We have **F(6, 97) = 14.58, p < 0.001**.
+We have **F(6, 97) = 14.58, p \< 0.001**.
 
 That is: *at least one* site differs from *at least one* other.
 
@@ -781,10 +798,39 @@ They want to know **which groups cluster together**. That is what letters do.
 ::::
 ::::::
 
+# Where the Letters Come From: `multcomp::cld()`
+
+:::::: columns
+::: {.column width="58%"}
+The function that makes the letters is `cld()`, and it lives in the **`multcomp`** package — not in `emmeans`.
+
+We do **not** write `library(multcomp)`. We borrow the one function:
+
+``` r
+multcomp::cld(site_means, Letters = letters)
+```
+
+- `package::function()` means *"use this one function from that package"*
+- `multcomp` only has to be **installed**, not loaded
+:::
+
+:::: {.column width="42%"}
+::: callout-warning
+**⚠️ Why never load it**
+
+`library(multcomp)` drags in a package called `MASS`, which has its own `select()`.
+
+That **hides** the `select()` you have used all semester, and your old code starts failing with strange errors.
+
+`multcomp::cld()` gets the letters with no side effects.
+:::
+::::
+::::::
+
 # Compact Letter Display
 
 ```{r cld}
-cld(site_means, Letters = letters)
+multcomp::cld(site_means, Letters = letters)
 ```
 
 # How to Read Letters
@@ -817,7 +863,7 @@ Sharing a letter is **failure to detect a difference** — not evidence of equal
 ```{r letter-plot}
 #| fig-width: 8
 #| fig-height: 3.4
-letters_df <- as.data.frame(cld(site_means, Letters = letters)) %>%
+letters_df <- as.data.frame(multcomp::cld(site_means, Letters = letters)) %>%
   mutate(group = trimws(.group))
 
 ggplot(possum_df, aes(x = site_name, y = total_l)) +
@@ -833,13 +879,7 @@ ggplot(possum_df, aes(x = site_name, y = total_l)) +
 ::: callout-important
 **📝 The whole result, in three sentences**
 
-> Total length differed significantly among the seven trapping sites
-> (one-way ANOVA, **F(6, 97) = 14.58, p < 0.001**), and site accounted for
-> **47% of the variation** in length (**η² = 0.47**). Residuals were normally
-> distributed (Shapiro–Wilk **p = 0.59**) with homogeneous variances across
-> sites (Levene's test **p = 0.81**). Tukey-adjusted comparisons separated
-> **Bellbird** (mean **81.8 cm**) from **Byrangery** (**92.2 cm**), with the
-> remaining five sites forming an **overlapping middle group**.
+> Total length differed significantly among the seven trapping sites (one-way ANOVA, **F(6, 97) = 14.58, p \< 0.001**), and site accounted for **47% of the variation** in length (**η² = 0.47**). Residuals were normally distributed (Shapiro–Wilk **p = 0.59**) with homogeneous variances across sites (Levene's test **p = 0.81**). Tukey-adjusted comparisons separated **Bellbird** (mean **81.8 cm**) from **Byrangery** (**92.2 cm**), with the remaining five sites forming an **overlapping middle group**.
 :::
 
 # What Belongs in That Sentence
@@ -862,7 +902,7 @@ Every number has a job:
 
 Software rounds. Probability does not reach zero.
 
-Write **p < 0.001** and move on.
+Write **p \< 0.001** and move on.
 :::
 ::::
 ::::::
@@ -872,26 +912,27 @@ Write **p < 0.001** and move on.
 :::::: columns
 ::: {.column width="55%"}
 - **Grouping variable left as a number** → you fit a line through site IDs
-- **Reading `summary()` instead of `Anova()`** → six wrong p-values
+- **Reading `summary()` instead of `Anova()`** → six comparisons to the first level, not the test
 - **Checking assumptions before fitting** → there are no residuals yet
 - **Expecting a small p for Levene** → backwards
 - **Stopping at a significant F** → F never says which groups
 - **Unadjusted pairwise tests** → the 66% problem, straight back
 - **Calling shared letters "the same"** → they are undetected, not equal
+- **`library(multcomp)`** → `select()` breaks; use `multcomp::cld()`
 :::
 
 :::: {.column width="45%"}
 ::: callout-tip
 **🎯 The recipe, memorised**
 
-1. `factor()` the groups
-2. **Plot** it
-3. `lm()`
-4. `Anova(type = 2)`
-5. `check_model()` + `leveneTest()`
-6. `eta_squared()`
-7. `emmeans()` → `pairs()` → `cld()`
-8. Write the sentence
+1.  `case_when()` → `as.factor()`
+2.  **Plot** it
+3.  `lm()`
+4.  `Anova(type = 2)`
+5.  `check_model()` + `leveneTest()`
+6.  `eta_squared()`
+7.  `emmeans()` → `pairs()` → `multcomp::cld()`
+8.  Write the sentence
 :::
 ::::
 ::::::
@@ -900,20 +941,20 @@ Write **p < 0.001** and move on.
 
 :::::: columns
 ::: {.column width="58%"}
-The file has **four** measurements on every animal. We used `total_l`. For homework you run the whole recipe again on **`tail_l`** — tail length.
+The file has **nine** measurements on every animal. We used `total_l`. For homework you run the whole recipe again on **`ear_l`** — ear length.
 
-Same 104 animals, same seven sites, same eight steps. A different ruler.
+Same 104 animals, same seven sites, same steps. A different ruler.
 
-The question is whether the **pattern holds**: do the sites that had the longest *bodies* also have the longest *tails*?
+The question is whether ears tell the **same story** as total length — a ladder from Bellbird up to Byrangery — or a **different** one.
 :::
 
 :::: {.column width="42%"}
 ::: callout-note
 **📂 What you will do**
 
-All eight steps on `tail_l`, then one paragraph comparing your letters to the ones we got today.
+All eight steps on `ear_l`, then compare your letters to the ones we got today.
 
-Plus one optional part where an assumption **fails** on purpose.
+One assumption check will **fail**. You will find out why, and whether it matters.
 :::
 ::::
 ::::::
@@ -944,15 +985,15 @@ Making sure that is the question you **meant** is the whole job of next class.
 
 - **Many t-tests inflate error** — 7 groups, 21 pairs, 66% false-positive risk
 - **ANOVA asks one question**: between-group variation vs within-group variation
-- `factor(levels =, labels =)` turns group codes into **named, ordered groups**
-- **`lm()` fits it** — ANOVA *is* a linear model; `car::Anova(type = 2)` gives the one right table
+- `case_when()` names the groups, `as.factor()` makes them **groups**, `fct_relevel()` **orders** them
+- **`lm()` fits it** — ANOVA *is* a linear model; `summary()` shows **means and differences from the first level**, `car::Anova(type = 2)` gives the one right table
 - **Check after fitting** — `check_model()`, `leveneTest()`, `shapiro.test()`; here a **big p is good**
 - **η²** says how big; **F** only says whether
-- **`emmeans()` → `pairs()` → `cld()`** says which — with p-values adjusted
+- **`emmeans()` → `pairs()` → `multcomp::cld()`** says which — with p-values adjusted
 - Shared letters mean **not shown to differ**, never *shown to be the same*
 
 ::: callout-note
 **✅ Next**
 
-Open the activity and run all of it. Homework is `tail_l`. Next class, the wētā. 🦗
+Open the activity and run all of it. Homework is `ear_l`. Next class, the wētā. 🦗
 :::

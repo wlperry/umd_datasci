@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-11-10">
-<meta name="description" content="Hands-on companion to the one-factor ANOVA lecture. Students read a possum dataset found on Kaggle, turn site numbers into named groups with factor(), plot before testing, fit with lm(), read car::Anova(type = 2), check assumptions with performance::check_model() and car::leveneTest(), measure the effect with eta-squared, and find which of the seven sites differ using emmeans and a compact letter display. Homework repeats the whole recipe on tail length, plus an optional section where an assumption check fails on purpose.">
+<meta name="dcterms.date" content="2026-11-16">
+<meta name="description" content="Hands-on companion to the one-factor ANOVA lecture. Students read a possum dataset from a published field study, turn site numbers into named groups with case_when() and as.factor(), order them north to south with fct_relevel(), plot before testing, fit with lm(), read car::Anova(type = 2), check assumptions with performance::check_model() and car::leveneTest(), measure the effect with eta-squared, and find which of the seven sites differ using emmeans and a compact letter display from multcomp::cld(). Homework repeats the whole recipe on ear length, where one assumption check fails because of a single animal and students test whether the conclusion depends on it.">
 
 <title>Activity 19 — One-Factor ANOVA: Start to Finish – UMD DAta Science Biology</title>
 <style>
@@ -150,7 +150,7 @@ window.Quarto = {
 
 <link rel="stylesheet" href="../../css/main.css">
 <meta property="og:title" content="Activity 19 — One-Factor ANOVA: Start to Finish – UMD DAta Science Biology">
-<meta property="og:description" content="Hands-on companion to the one-factor ANOVA lecture. Students read a possum dataset found on Kaggle, turn site numbers into named groups with factor(), plot before testing, fit with lm(), read car::Anova(type = 2), check assumptions with performance::check_model() and car::leveneTest(), measure the effect with eta-squared, and find which of the seven sites differ using emmeans and a compact letter display. Homework repeats the whole recipe on tail length, plus an optional section where an assumption check fails on purpose.">
+<meta property="og:description" content="Hands-on companion to the one-factor ANOVA lecture. Students read a possum dataset from a published field study, turn site numbers into named groups with case_when() and as.factor(), order them north to south with fct_relevel(), plot before testing, fit with lm(), read car::Anova(type = 2), check assumptions with performance::check_model() and car::leveneTest(), measure the effect with eta-squared, and find which of the seven sites differ using emmeans and a compact letter display from multcomp::cld(). Homework repeats the whole recipe on ear length, where one assumption check fails because of a single animal and students test whether the conclusion depends on it.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 
@@ -449,13 +449,12 @@ window.Quarto = {
     <div class="quarto-category">performance</div>
     <div class="quarto-category">factors</div>
     <div class="quarto-category">statistics</div>
-    <div class="quarto-category">kaggle</div>
   </div>
   </div>
 
 <div>
   <div class="description">
-    <p>Hands-on companion to the one-factor ANOVA lecture. Students read a possum dataset found on Kaggle, turn site numbers into named groups with factor(), plot before testing, fit with lm(), read car::Anova(type = 2), check assumptions with performance::check_model() and car::leveneTest(), measure the effect with eta-squared, and find which of the seven sites differ using emmeans and a compact letter display. Homework repeats the whole recipe on tail length, plus an optional section where an assumption check fails on purpose.</p>
+    <p>Hands-on companion to the one-factor ANOVA lecture. Students read a possum dataset from a published field study, turn site numbers into named groups with case_when() and as.factor(), order them north to south with fct_relevel(), plot before testing, fit with lm(), read car::Anova(type = 2), check assumptions with performance::check_model() and car::leveneTest(), measure the effect with eta-squared, and find which of the seven sites differ using emmeans and a compact letter display from multcomp::cld(). Homework repeats the whole recipe on ear length, where one assumption check fails because of a single animal and students test whether the conclusion depends on it.</p>
   </div>
 </div>
 
@@ -472,7 +471,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 10, 2026</p>
+      <p class="date">November 16, 2026</p>
     </div>
   </div>
   
@@ -490,12 +489,12 @@ window.Quarto = {
 <h3 class="anchored" data-anchor-id="todays-objectives">Today’s Objectives</h3>
 <ol type="1">
 <li>See why <strong>twenty-one t-tests</strong> is the wrong answer to “do these seven groups differ?”</li>
-<li>Turn group <strong>codes into named, ordered groups</strong> with <code>factor()</code></li>
+<li>Turn group <strong>codes into named groups</strong> with <code>case_when()</code>, then make them a <strong>factor</strong></li>
 <li><strong>Plot the data before testing it</strong> — and predict the answer</li>
 <li>Fit with <code>lm()</code> and read the right table: <code>car::Anova(type = 2)</code></li>
 <li>Check the assumptions <strong>after</strong> the fit — <code>check_model()</code>, <code>leveneTest()</code>, <code>shapiro.test()</code></li>
 <li>Say <strong>how big</strong> the effect is with eta-squared</li>
-<li>Find <strong>which</strong> groups differ — <code>emmeans()</code>, <code>pairs()</code>, and a compact letter display</li>
+<li>Find <strong>which</strong> groups differ — <code>emmeans()</code>, <code>pairs()</code>, and a compact letter display from <code>multcomp::cld()</code></li>
 <li>Do it again on a different measurement for homework</li>
 </ol>
 <div class="callout callout-style-default callout-important callout-titled">
@@ -508,12 +507,15 @@ window.Quarto = {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Five packages, and <code>performance</code> drags in about a dozen dependencies. <strong>This is not a two-minute job — do it at home.</strong></p>
+<p>Seven packages, and <code>performance</code> drags in about a dozen dependencies. <strong>This is not a two-minute job — do it at home.</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"performance"</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"see"</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"emmeans"</span>)</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"multcomp"</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"effectsize"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"multcompView"</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"Hmisc"</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"effectsize"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>multcomp</code>, <code>multcompView</code> and <code>Hmisc</code> only need to be <strong>installed</strong> — we never <code>library()</code> them. Windows machines in particular do not always pull the last two in on their own.</p>
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
@@ -549,7 +551,7 @@ window.Quarto = {
 <ul>
 <li><strong>Today is a run-it-and-look-at-it day.</strong> Every line is in this activity <em>and</em> in the skeleton. You do <strong>not</strong> turn in <code>scripts/19_anova_one_factor.R</code>.</li>
 <li>The <strong>Q</strong> boxes are <strong>things to think about</strong>. Not graded, not written down.</li>
-<li><strong>You turn in <code>scripts/19_anova_one_factor_homework.R</code></strong> — the same recipe on tail length.</li>
+<li><strong>You turn in <code>scripts/19_anova_one_factor_homework.R</code></strong> — the same recipe on ear length.</li>
 </ul>
 </div>
 </div>
@@ -559,9 +561,9 @@ window.Quarto = {
 <section id="part-1-where-the-data-came-from" class="level1">
 <h1>Part 1 · Where the data came from</h1>
 <p>Your final projects need data, so here is how today’s data was actually found.</p>
-<p>A search of <strong>kaggle.com/datasets</strong> for <code>possum</code> returns one useful hit: <strong>“OpenIntro Possum”</strong>, 104 rows and 8 columns. That uploader mirrored it from <strong>OpenIntro</strong>, a statistics-textbook project. OpenIntro in turn took it from a <strong>1995 paper</strong> in the <em>Australian Journal of Zoology</em>.</p>
-<p>The trail runs: <strong>Kaggle → textbook → peer-reviewed field study.</strong></p>
-<p>The animals are <strong>mountain brushtail possums</strong>, <em>Trichosurus cunninghami</em> — nocturnal, tree-dwelling Australian marsupials. 104 of them were live-trapped at <strong>seven forest sites</strong>, from Victoria in the south up to Queensland, and each one was measured.</p>
+<p>The measurements were made by four field biologists, who live-trapped every animal and published the work in the <em>Australian Journal of Zoology</em>: <a href="https://doi.org/10.1071/ZO9950449">Lindenmayer, Viggers, Cunningham &amp; Donnelly (1995)</a>. The data were later shared as the <code>possum</code> data set in the R package <a href="https://cran.r-project.org/package=DAAG"><code>DAAG</code></a>. Our file, <code>possum.csv</code>, is that data set with shorter column names — nothing else was changed.</p>
+<p>The trail runs: <strong>our file → R package → peer-reviewed field study.</strong></p>
+<p>The animals are <strong>mountain brushtail possums</strong>, genus <em>Trichosurus</em> — nocturnal, tree-dwelling Australian marsupials. 104 of them were live-trapped at <strong>seven forest sites</strong>, from Victoria in the south up to Queensland, and each one was measured.</p>
 <p>Our question:</p>
 <blockquote class="blockquote">
 <p><strong>Do possums from different sites differ in total length?</strong></p>
@@ -593,7 +595,7 @@ window.Quarto = {
 </tbody>
 </table>
 <p>One factor, seven levels. That is the entire design, and it is where the test gets its name.</p>
-<p>✏️ <strong>Q1:</strong> Kaggle is a <em>mirror</em>, not a source — anyone can upload anything. How far back could you trace the data you are using for your final project? If you cannot find who collected it, what should that tell you?</p>
+<p>✏️ <strong>Q1:</strong> A file on the internet is a <em>copy</em>, not a source — anyone can upload anything. How far back could you trace the data you are using for your final project? If you cannot find who collected it, what should that tell you?</p>
 <hr>
 </section>
 <section id="part-2-why-not-just-run-lots-of-t-tests" class="level1">
@@ -619,17 +621,20 @@ window.Quarto = {
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car)          <span class="co"># Anova(), leveneTest()</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(performance)  <span class="co"># check_model(), check_normality()</span></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(emmeans)      <span class="co"># follow-up comparisons</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(multcomp)     <span class="co"># cld() - the compact letter display</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(effectsize)   <span class="co"># eta_squared()</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the file ---------------------------------------</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>possum_raw <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/possum.csv"</span>)</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(possum_raw)</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(possum_raw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(effectsize)   <span class="co"># eta_squared()</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># NOT loaded on purpose: multcomp. We call multcomp::cld()</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># later instead - see Part 14.</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the file ---------------------------------------</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>possum_raw <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/possum.csv"</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(possum_raw)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(possum_raw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
-<li>104 rows, 8 columns</li>
-<li><code>head_l</code>, <code>skull_w</code>, <code>total_l</code>, <code>tail_l</code> are the measurements; <code>site</code>, <code>pop</code>, <code>sex</code>, <code>age</code> describe the animal</li>
+<li>104 rows, 14 columns</li>
+<li><code>head_l</code>, <code>skull_w</code>, <code>total_l</code>, <code>tail_l</code>, <code>foot_l</code>, <code>ear_l</code>, <code>eye</code>, <code>chest</code>, <code>belly</code> are the measurements</li>
+<li><code>animal</code>, <code>site</code>, <code>pop</code>, <code>sex</code>, <code>age</code> describe the animal</li>
 </ul>
 <hr>
 </section>
@@ -640,30 +645,43 @@ window.Quarto = {
 <p>Seven groups, 7 to 33 animals each. But look at <strong>what</strong> those group names are.</p>
 <p>They are the integers <strong>1 to 7</strong>. To R, that is a <strong>quantity</strong> — as if site 6 were “twice site 3”. It is not. It is a <strong>name</strong> that happens to be written with a digit.</p>
 <p>Leave it like that and <code>lm()</code> will fit a <strong>straight line through site number</strong>, which is nonsense. There is no error. There is no warning. You get a p-value, and it is meaningless.</p>
-<p>✏️ <strong>Q3:</strong> The sites are numbered 1–7 in geographic order, south to north. Does that make <code>site</code> a number? What would the model be claiming if you fit a line through it?</p>
+<p>✏️ <strong>Q3:</strong> Somebody numbered the sites 1–7 when they typed the data in. Does that make <code>site</code> a number? What would the model be claiming if you fit a line through it?</p>
 <hr>
 </section>
-<section id="part-5-fix-it-with-factor" class="level1">
-<h1>Part 5 · Fix it with <code>factor()</code></h1>
+<section id="part-5-name-the-sites-then-make-them-a-factor" class="level1">
+<h1>Part 5 · Name the sites, then make them a factor</h1>
+<p>Two small steps. First, swap each <strong>code</strong> for a <strong>name</strong> with <code>case_when()</code>.</p>
 <p><strong>▶ Run this:</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>possum_df <span class="ot">&lt;-</span> possum_raw <span class="sc">%&gt;%</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(total_l)) <span class="sc">%&gt;%</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">site_name =</span> <span class="fu">factor</span>(site,</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                            <span class="at">levels =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">7</span>,</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                            <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Cambarville"</span>, <span class="st">"Bellbird"</span>,</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"Whian Whian"</span>, <span class="st">"Byrangery"</span>,</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"Conondale"</span>, <span class="st">"Allyn River"</span>,</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"Bulburin"</span>)))</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>possum_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(site_name)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">site_name =</span> <span class="fu">case_when</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    site <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"Cambarville"</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    site <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"Bellbird"</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    site <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"Whian Whian"</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    site <span class="sc">==</span> <span class="dv">4</span> <span class="sc">~</span> <span class="st">"Byrangery"</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    site <span class="sc">==</span> <span class="dv">5</span> <span class="sc">~</span> <span class="st">"Conondale"</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    site <span class="sc">==</span> <span class="dv">6</span> <span class="sc">~</span> <span class="st">"Allyn River"</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    site <span class="sc">==</span> <span class="dv">7</span> <span class="sc">~</span> <span class="st">"Bulburin"</span>))</span>
 <span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="fu">levels</span>(possum_df<span class="sc">$</span>site_name)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>possum_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(site, site_name)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
-<li><code>levels</code> = the values <strong>as they appear in the data</strong></li>
-<li><code>labels</code> = what you want them <strong>called</strong></li>
-<li>The two lists must be the <strong>same length</strong> and in the <strong>same order</strong></li>
+<li>Read each line as a sentence: “<strong>when</strong> <code>site</code> is 1, call it Cambarville”</li>
+<li>Left of the <code>~</code> is the test, right of it is the name</li>
+<li>We keep <code>site</code> and add a <strong>new</strong> column, <code>site_name</code></li>
+<li>A site you forget to list becomes <code>NA</code> — which is why we <code>count()</code> to check</li>
 </ul>
-<p>The site names come from the <strong>OpenIntro codebook</strong> — we did not invent them. They sit in three states:</p>
+<p>Second, tell R those names are <strong>groups</strong>.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>possum_df <span class="ot">&lt;-</span> possum_df <span class="sc">%&gt;%</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">site_name =</span> <span class="fu">as.factor</span>(site_name))</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">levels</span>(possum_df<span class="sc">$</span>site_name)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li>A <strong>factor</strong> is a column of group names that R knows are <em>groups</em> — not numbers, not free text</li>
+<li>The groups are its <strong>levels</strong></li>
+<li><code>as.factor()</code> puts the levels in <strong>alphabetical order</strong> unless you say otherwise</li>
+</ul>
+<p>The site names come from the <strong>original study</strong> — we did not invent them. They sit in three states:</p>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 35%">
@@ -677,28 +695,97 @@ window.Quarto = {
 </thead>
 <tbody>
 <tr class="odd">
-<td>Victoria</td>
-<td>Cambarville, Bellbird</td>
+<td>Queensland</td>
+<td>Bulburin, Conondale</td>
 </tr>
 <tr class="even">
 <td>New South Wales</td>
-<td>Whian Whian, Byrangery</td>
+<td>Whian Whian, Byrangery, Allyn River</td>
 </tr>
 <tr class="odd">
-<td>Queensland / N. NSW</td>
-<td>Conondale, Allyn River, Bulburin</td>
+<td>Victoria</td>
+<td>Cambarville, Bellbird</td>
 </tr>
 </tbody>
 </table>
-<p>✏️ <strong>Q4:</strong> Suppose you typed the seven labels in the wrong order. What would R tell you? (Nothing.) What would happen to every result for the rest of the session?</p>
+<p>✏️ <strong>Q4:</strong> Suppose you typed two of the names on the wrong lines. What would R tell you? (Nothing.) What would happen to every result for the rest of the session?</p>
+<section id="side-trip-put-the-sites-in-your-order" class="level3">
+<h3 class="anchored" data-anchor-id="side-trip-put-the-sites-in-your-order">🧭 Side trip · put the sites in <em>your</em> order</h3>
+<p>Alphabetical order means nothing here. <strong>North to south</strong> does. <code>fct_relevel()</code> lets you list the levels in the order you want.</p>
+<p><strong>▶ Run this:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>possum_df <span class="ot">&lt;-</span> possum_df <span class="sc">%&gt;%</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">site_name =</span> <span class="fu">fct_relevel</span>(site_name,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"Bulburin"</span>, <span class="st">"Conondale"</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"Whian Whian"</span>, <span class="st">"Byrangery"</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"Allyn River"</span>, <span class="st">"Cambarville"</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"Bellbird"</span>))</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="fu">levels</span>(possum_df<span class="sc">$</span>site_name)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li>It changes the <strong>order</strong> of the groups and nothing else — not one number in the data moves</li>
+<li>Every plot and table from here on runs <strong>north → south</strong></li>
+<li>The <strong>first</strong> level (Bulburin) also becomes the model’s <strong>baseline</strong> — you will see that in Part 9</li>
+</ul>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 35%">
+<col style="width: 40%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Site</th>
+<th>State</th>
+<th>Latitude</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Bulburin</td>
+<td>Queensland</td>
+<td>24.6° S</td>
+</tr>
+<tr class="even">
+<td>Conondale</td>
+<td>Queensland</td>
+<td>26.4° S</td>
+</tr>
+<tr class="odd">
+<td>Whian Whian</td>
+<td>New South Wales</td>
+<td>28.6° S</td>
+</tr>
+<tr class="even">
+<td>Byrangery</td>
+<td>New South Wales</td>
+<td>28.6° S</td>
+</tr>
+<tr class="odd">
+<td>Allyn River</td>
+<td>New South Wales</td>
+<td>32.1° S</td>
+</tr>
+<tr class="even">
+<td>Cambarville</td>
+<td>Victoria</td>
+<td>37.6° S</td>
+</tr>
+<tr class="odd">
+<td>Bellbird</td>
+<td>Victoria</td>
+<td>37.6° S</td>
+</tr>
+</tbody>
+</table>
 <hr>
+</section>
 </section>
 <section id="part-6-look-at-it-before-you-test-it" class="level1">
 <h1>Part 6 · Look at it before you test it</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(possum_df, <span class="fu">aes</span>(<span class="at">x =</span> site_name, <span class="at">y =</span> total_l)) <span class="sc">+</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(possum_df, <span class="fu">aes</span>(<span class="at">x =</span> site_name, <span class="at">y =</span> total_l)) <span class="sc">+</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li><code>outlier.shape = NA</code> stops the boxplot drawing outlier dots, because <code>geom_jitter()</code> is already drawing <strong>every</strong> point</li>
 <li><code>width = 0.15</code> keeps the jitter tight enough that you can still tell which group is which</li>
@@ -718,11 +805,11 @@ window.Quarto = {
 <section id="part-7-the-group-means" class="level1">
 <h1>Part 7 · The group means</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>possum_df <span class="sc">%&gt;%</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(site_name) <span class="sc">%&gt;%</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(),</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">mean_total =</span> <span class="fu">round</span>(<span class="fu">mean</span>(total_l), <span class="dv">1</span>),</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">sd_total   =</span> <span class="fu">round</span>(<span class="fu">sd</span>(total_l), <span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>possum_df <span class="sc">%&gt;%</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(site_name) <span class="sc">%&gt;%</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">mean_total =</span> <span class="fu">round</span>(<span class="fu">mean</span>(total_l), <span class="dv">1</span>),</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">sd_total   =</span> <span class="fu">round</span>(<span class="fu">sd</span>(total_l), <span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 40%">
@@ -738,14 +825,14 @@ window.Quarto = {
 </thead>
 <tbody>
 <tr class="odd">
-<td>Cambarville</td>
-<td>33</td>
-<td>89.7</td>
+<td>Bulburin</td>
+<td>18</td>
+<td>85.7</td>
 </tr>
 <tr class="even">
-<td>Bellbird</td>
+<td>Conondale</td>
 <td>13</td>
-<td>81.8</td>
+<td>86.9</td>
 </tr>
 <tr class="odd">
 <td>Whian Whian</td>
@@ -758,34 +845,34 @@ window.Quarto = {
 <td>92.2</td>
 </tr>
 <tr class="odd">
-<td>Conondale</td>
-<td>13</td>
-<td>86.9</td>
-</tr>
-<tr class="even">
 <td>Allyn River</td>
 <td>13</td>
 <td>84.5</td>
 </tr>
+<tr class="even">
+<td>Cambarville</td>
+<td>33</td>
+<td>89.7</td>
+</tr>
 <tr class="odd">
-<td>Bulburin</td>
-<td>18</td>
-<td>85.7</td>
+<td>Bellbird</td>
+<td>13</td>
+<td>81.8</td>
 </tr>
 </tbody>
 </table>
-<p>There is an obvious story here, and it is wrong. Seven sites on a north–south gradient invites:</p>
+<p>There is an obvious story here, and it is wrong. Seven sites listed north to south invites:</p>
 <blockquote class="blockquote">
 <p><em>Colder in the south → bigger animals. Bergmann’s rule.</em></p>
 </blockquote>
-<p>Look again. The two <strong>Victorian</strong> sites are the southernmost, and they are at <strong>opposite extremes</strong> — Cambarville 89.7 cm, Bellbird 81.8 cm. Two forests, same state, <strong>8 cm apart</strong>. Latitude cannot explain that.</p>
+<p>Look again. The means do not climb steadily down that table, and the two <strong>Victorian</strong> sites — the southernmost — are at <strong>opposite extremes</strong> — Cambarville 89.7 cm, Bellbird 81.8 cm. Two forests, same state, <strong>8 cm apart</strong>. Latitude cannot explain that.</p>
 <p>✏️ <strong>Q7:</strong> A significant F will tell you the sites <strong>differ</strong>. What will it tell you about <em>why</em>? What else would you need to measure to test a latitude explanation?</p>
 <hr>
 </section>
 <section id="part-8-fit-the-model" class="level1">
 <h1>Part 8 · Fit the model</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>total_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(total_l <span class="sc">~</span> site_name, <span class="at">data =</span> possum_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>total_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(total_l <span class="sc">~</span> site_name, <span class="at">data =</span> possum_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><code>response ~ predictor</code>, exactly as in regression. The only change is that the predictor is a <strong>factor with seven levels</strong> instead of a number.</p>
 <p>There is no separate ANOVA function. <strong>ANOVA is a linear model</strong> — not a simplification, literally the same machinery you used for regression.</p>
 <hr>
@@ -793,16 +880,68 @@ window.Quarto = {
 <section id="part-9-do-not-read-summary-first" class="level1">
 <h1>Part 9 · Do not read <code>summary()</code> first</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>You get <strong>six slopes</strong>, with names like <code>site_nameBellbird</code>, each comparing one site to <strong>Cambarville</strong> — because Cambarville is level 1, so it became the baseline.</p>
-<p>That answers <em>“is each site different from Cambarville?”</em>. Nobody asked about Cambarville.</p>
-<p>✏️ <strong>Q8:</strong> Change which site is level 1 and all six of those p-values change. Does the real answer depend on which site happens to be listed first? So what does that tell you about this table?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Look at the <code>Estimate</code> column. These are <strong>not slopes</strong> — there is no line here. They are <strong>means</strong>:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 14%">
+<col style="width: 54%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Row</th>
+<th>Estimate</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>(Intercept)</code></td>
+<td>85.7</td>
+<td>the <strong>mean of Bulburin</strong>, the first level</td>
+</tr>
+<tr class="even">
+<td><code>site_nameConondale</code></td>
+<td>1.2</td>
+<td>Conondale’s mean <strong>minus</strong> Bulburin’s</td>
+</tr>
+<tr class="odd">
+<td><code>site_nameWhian Whian</code></td>
+<td>2.4</td>
+<td>Whian Whian’s mean minus Bulburin’s</td>
+</tr>
+<tr class="even">
+<td><code>site_nameByrangery</code></td>
+<td>6.5</td>
+<td>Byrangery’s mean minus Bulburin’s → 85.7 + 6.5 = 92.2 cm</td>
+</tr>
+<tr class="odd">
+<td><code>site_nameAllyn River</code></td>
+<td>−1.2</td>
+<td>Allyn River’s mean minus Bulburin’s</td>
+</tr>
+<tr class="even">
+<td><code>site_nameCambarville</code></td>
+<td>4.0</td>
+<td>Cambarville’s mean minus Bulburin’s</td>
+</tr>
+<tr class="odd">
+<td><code>site_nameBellbird</code></td>
+<td>−3.9</td>
+<td>Bellbird’s mean minus Bulburin’s → 85.7 − 3.9 = 81.8 cm</td>
+</tr>
+</tbody>
+</table>
+<p>Check them against the table of means in Part 7 — they match.</p>
+<p>So each of the six p-values asks <em>“is this site different from <strong>Bulburin</strong>?”</em> — only because Bulburin is the first level. Nobody asked about Bulburin.</p>
+<p>✏️ <strong>Q8:</strong> Put a different site first with <code>fct_relevel()</code> and all six of those p-values change. Does the real answer depend on which site happens to be listed first? So what does that tell you about this table?</p>
 <hr>
 </section>
 <section id="part-10-the-right-table" class="level1">
 <h1>Part 10 · The right table</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(total_model, <span class="at">type =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(total_model, <span class="at">type =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>F(6, 97) = 14.58, p = 8.45 × 10⁻¹²</strong></p>
 <p>One line, one p-value, one question answered: the seven site means are <strong>not all the same</strong>.</p>
 <table class="caption-top table">
@@ -865,7 +1004,7 @@ window.Quarto = {
 <section id="part-11-how-big-is-it-f-does-not-say" class="level1">
 <h1>Part 11 · How big is it? F does not say</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">eta_squared</span>(<span class="fu">Anova</span>(total_model, <span class="at">type =</span> <span class="dv">2</span>), <span class="at">partial =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">eta_squared</span>(<span class="fu">Anova</span>(total_model, <span class="at">type =</span> <span class="dv">2</span>), <span class="at">partial =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>Eta-squared (<span class="math inline">\(\eta^2\)</span>) = 0.47.</strong> Which site a possum came from accounts for <strong>47% of all the variation</strong> in total length. The other 53% is possums being individuals.</p>
 <p>✏️ <strong>Q9:</strong> p answers <em>“is it real?”</em> and <span class="math inline">\(\eta^2\)</span> answers <em>“is it big?”</em>. With a big enough sample, a difference far too small to care about gets a tiny p.&nbsp;Why must a results section report both?</p>
 <hr>
@@ -880,7 +1019,7 @@ window.Quarto = {
 </ol>
 <p>You cannot check residuals before you have residuals. <strong>Fit first, then check.</strong></p>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">check_model</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">check_model</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Five panels, read like this:</p>
 <ul>
 <li><strong>Posterior predictive check</strong> — simulated data should sit on top of real data</li>
@@ -891,15 +1030,15 @@ window.Quarto = {
 </ul>
 <p>All five look healthy here. That is a boring plot, and boring is exactly what you want.</p>
 <p><strong>▶ Then run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Equal variances across sites?</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(total_l <span class="sc">~</span> site_name, <span class="at">data =</span> possum_df)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Normal residuals?</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(total_model))</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># The same two checks, in English:</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="fu">check_homogeneity</span>(total_model)</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">check_normality</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Equal variances across sites?</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">leveneTest</span>(total_l <span class="sc">~</span> site_name, <span class="at">data =</span> possum_df)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Normal residuals?</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(total_model))</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co"># The same two checks, in English:</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="fu">check_homogeneity</span>(total_model)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="fu">check_normality</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li>Levene <strong>p = 0.805</strong> → no evidence variances differ. <strong>PASS</strong></li>
 <li>Shapiro–Wilk <strong>p = 0.588</strong> → no evidence of non-normality. <strong>PASS</strong></li>
@@ -928,10 +1067,10 @@ window.Quarto = {
 <p>For that you need <strong>post-hoc</strong> comparisons — “after the fact”.</p>
 <p>Running 21 comparisons was wrong <strong>as a first move</strong>. Running them <strong>after</strong> a significant F, <strong>with the p-values adjusted</strong>, is the standard, defensible approach. The gate came first.</p>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>site_means <span class="ot">&lt;-</span> <span class="fu">emmeans</span>(total_model, <span class="sc">~</span> site_name)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>site_means</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="fu">pairs</span>(site_means, <span class="at">adjust =</span> <span class="st">"tukey"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>site_means <span class="ot">&lt;-</span> <span class="fu">emmeans</span>(total_model, <span class="sc">~</span> site_name)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>site_means</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="fu">pairs</span>(site_means, <span class="at">adjust =</span> <span class="st">"tukey"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><code>emmeans</code> gives each site’s estimated mean with a standard error and confidence interval. <code>pairs()</code> then compares all 21 pairs, and <strong>Tukey</strong> widens every p-value to pay for running 21 tests.</p>
 <p><strong>10 of the 21 pairs come back significant</strong> — the ends separate, the middle mostly does not. Exactly what the boxplot said.</p>
 <p>✏️ <strong>Q12:</strong> What would these 21 p-values look like with <code>adjust = "none"</code>? Which pairs would flip? Is that the 66% problem from Part 2, back again?</p>
@@ -940,8 +1079,23 @@ window.Quarto = {
 <section id="part-14-the-letters" class="level1">
 <h1>Part 14 · The letters</h1>
 <p>Nobody wants 21 p-values in a results section. They want to know which groups <strong>cluster together</strong>.</p>
+<p>The function that makes the letters is <code>cld()</code>, and it lives in the <strong><code>multcomp</code></strong> package — not in <code>emmeans</code>. We do <strong>not</strong> load <code>multcomp</code>. We borrow the one function with <code>multcomp::</code>.</p>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cld</span>(site_means, <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>multcomp<span class="sc">::</span><span class="fu">cld</span>(site_means, <span class="at">Letters =</span> letters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Why <code>multcomp::cld()</code> and never <code>library(multcomp)</code>
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>package::function()</code> means <em>“use this one function from that package”</em>. The package only has to be <strong>installed</strong>.</p>
+<p><code>library(multcomp)</code> drags in another package, <code>MASS</code>, which has its own <code>select()</code>. That hides the <code>select()</code> you have used all semester, and code that worked last week starts failing with strange errors. <code>multcomp::cld()</code> gets the letters with no side effects.</p>
+</div>
+</div>
 <p><strong>Share a letter → not shown to differ. No letter in common → they differ.</strong></p>
 <table class="caption-top table">
 <colgroup>
@@ -1017,17 +1171,17 @@ window.Quarto = {
 <section id="part-15-put-the-letters-on-the-plot" class="level1">
 <h1>Part 15 · Put the letters on the plot</h1>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>letters_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">cld</span>(site_means, <span class="at">Letters =</span> letters)) <span class="sc">%&gt;%</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">group =</span> <span class="fu">trimws</span>(.group))</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(possum_df, <span class="fu">aes</span>(<span class="at">x =</span> site_name, <span class="at">y =</span> total_l)) <span class="sc">+</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> letters_df,</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>            <span class="fu">aes</span>(<span class="at">x =</span> site_name, <span class="at">y =</span> <span class="dv">97</span>, <span class="at">label =</span> group),</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">size =</span> <span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>letters_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(multcomp<span class="sc">::</span><span class="fu">cld</span>(site_means, <span class="at">Letters =</span> letters)) <span class="sc">%&gt;%</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">group =</span> <span class="fu">trimws</span>(.group))</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(possum_df, <span class="fu">aes</span>(<span class="at">x =</span> site_name, <span class="at">y =</span> total_l)) <span class="sc">+</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> letters_df,</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>            <span class="fu">aes</span>(<span class="at">x =</span> site_name, <span class="at">y =</span> <span class="dv">97</span>, <span class="at">label =</span> group),</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">size =</span> <span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
-<li><code>cld()</code> returns an object, so <code>as.data.frame()</code> makes it plottable</li>
+<li><code>multcomp::cld()</code> returns an object, so <code>as.data.frame()</code> makes it plottable</li>
 <li><code>.group</code> arrives padded with spaces for alignment, so <code>trimws()</code> strips them</li>
 <li><code>y = 97</code> just parks the letters above the tallest point</li>
 </ul>
@@ -1059,10 +1213,10 @@ window.Quarto = {
 <h1>Part 17 · Break it on purpose</h1>
 <p>Remember Part 4 — <code>site</code> left as a number. Let us actually do it and compare.</p>
 <p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>broken_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(total_l <span class="sc">~</span> site, <span class="at">data =</span> possum_df)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(broken_model, <span class="at">type =</span> <span class="dv">2</span>)</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(total_model, <span class="at">type =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>broken_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(total_l <span class="sc">~</span> site, <span class="at">data =</span> possum_df)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(broken_model, <span class="at">type =</span> <span class="dv">2</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(total_model, <span class="at">type =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The broken one reports <strong>Df = 1</strong>, not 6, and comes back <strong>p = 0.0075</strong> — still “significant”!</p>
 <p>It fit a single straight line through site <strong>ID</strong> and asked <em>“does length go up as site number goes up?”</em> — a question about the order someone typed the sites in. It still prints a p-value. Nothing warns you.</p>
 <p>✏️ <strong>Q15:</strong> The broken model is significant. If you had never checked, you would have reported it. What in the output would have given it away?</p>
@@ -1071,13 +1225,13 @@ window.Quarto = {
 <section id="the-recipe-for-next-time" class="level1">
 <h1>The recipe, for next time</h1>
 <ol type="1">
-<li><code>factor()</code> the groups — <code>levels</code>, <code>labels</code></li>
+<li><code>case_when()</code> the names → <code>as.factor()</code> (→ <code>fct_relevel()</code> if the order matters)</li>
 <li><strong>Plot</strong> it, and predict the answer</li>
 <li><code>lm()</code></li>
 <li><code>Anova(type = 2)</code></li>
 <li><code>check_model()</code> + <code>leveneTest()</code> + <code>shapiro.test()</code></li>
 <li><code>eta_squared()</code></li>
-<li><code>emmeans()</code> → <code>pairs()</code> → <code>cld()</code></li>
+<li><code>emmeans()</code> → <code>pairs()</code> → <code>multcomp::cld()</code></li>
 <li>Write the sentence</li>
 </ol>
 <hr>
@@ -1085,7 +1239,7 @@ window.Quarto = {
 <section id="extension-homework-the-same-possums-a-different-ruler" class="level1">
 <h1>Extension (homework) — the same possums, a different ruler</h1>
 <p><strong>This is what you turn in:</strong> <code>scripts/19_anova_one_factor_homework.R</code></p>
-<p>The file carries <strong>four</strong> measurements on every animal:</p>
+<p>The file carries <strong>nine</strong> measurements on every animal. The ones that matter to you:</p>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 25%">
@@ -1103,33 +1257,47 @@ window.Quarto = {
 <td>total length, cm — what we used today</td>
 </tr>
 <tr class="even">
-<td><code>tail_l</code></td>
-<td>tail length, cm — <strong>your homework</strong></td>
+<td><code>ear_l</code></td>
+<td>ear length, mm — <strong>your homework</strong></td>
 </tr>
 <tr class="odd">
-<td><code>head_l</code></td>
-<td>head length, mm</td>
-</tr>
-<tr class="even">
-<td><code>skull_w</code></td>
-<td>skull width, mm</td>
+<td><code>animal</code></td>
+<td>the animal’s ID number, 1–104 — you will need it</td>
 </tr>
 </tbody>
 </table>
-<p>You run <strong>all eight steps</strong> again on <strong><code>tail_l</code></strong>. Same 104 animals, same seven sites, same recipe — a different ruler.</p>
-<p>The real question is whether the <strong>pattern holds</strong>. Today’s letters ran from Bellbird at the bottom to Byrangery at the top. Do the sites with the longest <em>bodies</em> also have the longest <em>tails</em>? Your last question asks you to put your letters next to ours and say what changed.</p>
+<p>You run <strong>all eight steps</strong> again on <strong><code>ear_l</code></strong>. Same 104 animals, same seven sites, same recipe — a different ruler.</p>
+<p>Today the sites formed a <strong>ladder</strong>: Bellbird at the bottom, Byrangery at the top, everything else overlapping in the middle. The question is whether ears tell the <strong>same story</strong> — or a different one.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>📖 And one part where it breaks
+<span class="screen-reader-only">Note</span>📖 One check will fail — on purpose
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The homework also has an <strong>optional</strong> section on <code>skull_w</code>, where one of the two assumptions <strong>fails</strong>.</p>
-<p>That is there on purpose. Every assumption check you have run so far has passed, which makes it easy to think the check is a formality. It is not — and it is much better to meet a failure here, on homework, than in your final project.</p>
+<p>Every assumption check you ran today passed, which makes it easy to think the check is a formality. It is not.</p>
+<p>In the homework, one of the two checks <strong>fails</strong>. You will track down <strong>why</strong>, run the model a second way, and find out whether the conclusion depends on it. That is what a failed check is for: it tells you where to look.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>📖 The data and the papers behind it
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>The data:</strong> the <code>possum</code> data set in the R package <code>DAAG</code> — <a href="https://cran.r-project.org/package=DAAG" class="uri">https://cran.r-project.org/package=DAAG</a> (<a href="https://vincentarelbundock.github.io/Rdatasets/doc/DAAG/possum.html">description of every column</a>)</li>
+<li><strong>Where the measurements came from:</strong> Lindenmayer, Viggers, Cunningham &amp; Donnelly (1995). Morphological variation among populations of the mountain brushtail possum, <em>Trichosurus caninus</em> Ogilby (Phalangeridae: Marsupialia). <em>Australian Journal of Zoology</em> 43: 449–458. <a href="https://doi.org/10.1071/ZO9950449" class="uri">https://doi.org/10.1071/ZO9950449</a></li>
+<li><strong>Read this one after you finish the homework:</strong> Lindenmayer, Dubach &amp; Viggers (2002). Geographic dimorphism in the mountain brushtail possum (<em>Trichosurus caninus</em>): the case for a new species. <em>Australian Journal of Zoology</em> 50: 369–393. <a href="https://doi.org/10.1071/ZO01047" class="uri">https://doi.org/10.1071/ZO01047</a></li>
+</ul>
+<p>The same researchers asked the question you are asking — do these sites differ? — and what they found changed how these animals are classified.</p>
 </div>
 </div>
 </section>

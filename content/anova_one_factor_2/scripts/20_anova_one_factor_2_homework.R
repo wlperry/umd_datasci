@@ -138,8 +138,9 @@ library(tidyverse)
 library(car)          # Anova(), leveneTest()
 library(performance)  # check_model()
 library(emmeans)      # follow-up comparisons
-library(multcomp)     # cld()
 library(effectsize)   # eta_squared()
+
+# NOT loaded on purpose: multcomp. Use multcomp::cld().
 
 invisible(NULL)
 
@@ -150,16 +151,14 @@ invisible(NULL)
 # In class:
 #   weta_df <- weta_raw %>%
 #     filter(sex == "m", !is.na(foretibia)) %>%
-#     mutate(morph = factor(morph,
-#                           levels = c("eighth", "ninth", "tenth")))
+#     mutate(morph = as.factor(morph))
 
 # YOUR CODE:
 # weta_raw <- read_csv("data/weta_traits.csv")
 #
 # hind_df <- weta_raw %>%
 #   filter(sex == "m", !is.na(hindtibia)) %>%
-#   mutate(morph = factor(morph,
-#                         levels = c("eighth", "ninth", "tenth")))
+#   mutate(morph = as.factor(morph))
 #
 # hind_df %>% count(morph)
 
@@ -206,7 +205,7 @@ invisible(NULL)
 #   eta_squared(Anova(fore_model, type = 2), partial = FALSE)
 #   leveneTest(foretibia ~ morph, data = weta_df)
 #   shapiro.test(residuals(fore_model))
-#   cld(emmeans(fore_model, ~ morph), Letters = letters)
+#   multcomp::cld(emmeans(fore_model, ~ morph), Letters = letters)
 
 # YOUR CODE:
 
@@ -266,9 +265,8 @@ invisible(NULL)
 # YOUR CODE:
 # eye_df <- weta_raw %>%
 #   filter(sex == "m", !is.na(eye)) %>%
-#   mutate(morph   = factor(morph,
-#                           levels = c("eighth", "ninth", "tenth")),
-#          eye_rel = eye / pronotum)
+#   mutate(morph = as.factor(morph)) %>%
+#   mutate(eye_rel = eye / pronotum)
 #
 # eye_raw_model <- lm(eye ~ morph, data = eye_df)
 # eye_rel_model <- lm(eye_rel ~ morph, data = eye_df)
@@ -277,7 +275,7 @@ invisible(NULL)
 # shapiro.test(residuals(eye_rel_model))
 #
 # Anova(eye_rel_model, type = 2)
-# cld(emmeans(eye_rel_model, ~ morph), Letters = letters)
+# multcomp::cld(emmeans(eye_rel_model, ~ morph), Letters = letters)
 
 invisible(NULL)
 

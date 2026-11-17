@@ -36,35 +36,45 @@
 # install.packages("see")
 # install.packages("emmeans")
 # install.packages("multcomp")
+# install.packages("multcompView")
+# install.packages("Hmisc")
 # install.packages("effectsize")
+#
+# multcomp, multcompView and Hmisc only need to be INSTALLED.
+# We never library() them. (Windows machines do not always
+# pull the last two in on their own.)
 
 # ---- Libraries -------------------------------------------
 library(tidyverse)
 library(car)          # Anova(), leveneTest()
 library(performance)  # check_model(), check_normality()
 library(emmeans)      # follow-up comparisons
-library(multcomp)     # cld() - the compact letter display
 library(effectsize)   # eta_squared()
+
+# NOT loaded on purpose: multcomp. Loading it hides dplyr's
+# select(). We call multcomp::cld() in step 14 instead.
 
 invisible(NULL)
 
 
 # ---- 1 Read the possums in --------------------------------
-# 104 mountain brushtail possums (Trichosurus cunninghami),
+# 104 mountain brushtail possums (genus Trichosurus),
 # live-trapped at seven forest sites in Australia.
 #
-# Found on Kaggle: "OpenIntro Possum". Kaggle mirrored it
-# from the OpenIntro textbook project, which took it from
-# Lindenmayer et al. 1995, Australian Journal of Zoology.
+# Collected and published by Lindenmayer, Viggers,
+# Cunningham & Donnelly (1995), Australian Journal of
+# Zoology 43: 449-458. https://doi.org/10.1071/ZO9950449
+# Shared as the `possum` data set in the R package DAAG.
+# https://cran.r-project.org/package=DAAG
 
 possum_raw <- read_csv("data/possum.csv")
 
 dim(possum_raw)
 names(possum_raw)
 
-# THINK: Kaggle is a MIRROR, not a source. Anyone can upload
-# anything there. How far back could you trace YOUR final
-# project data?
+# THINK: a file on the internet is a COPY, not a source.
+# Anyone can upload anything. How far back could you trace
+# YOUR final project data?
 
 invisible(NULL)
 
@@ -83,30 +93,62 @@ possum_raw %>% count(site)
 invisible(NULL)
 
 
-# ---- 3 Fix it with factor() ------------------------------
-# levels = the values AS THEY APPEAR in the data
-# labels = what you want them CALLED
-# Same length, same order. Get the order wrong and every
-# result below is quietly mislabelled.
+# ---- 3 Name the sites, then make them a factor -----------
+# Step one: case_when() swaps each CODE for a NAME.
+# Read each line as a sentence: "when site is 1, call it
+# Cambarville". We keep site and add a new column.
 #
-# The names come from the OpenIntro codebook.
+# The names come from the original study.
 
 possum_df <- possum_raw %>%
   filter(!is.na(total_l)) %>%
-  mutate(site_name = factor(site,
-                            levels = 1:7,
-                            labels = c("Cambarville", "Bellbird",
-                                       "Whian Whian", "Byrangery",
-                                       "Conondale", "Allyn River",
-                                       "Bulburin")))
+  mutate(site_name = case_when(
+    site == 1 ~ "Cambarville",
+    site == 2 ~ "Bellbird",
+    site == 3 ~ "Whian Whian",
+    site == 4 ~ "Byrangery",
+    site == 5 ~ "Conondale",
+    site == 6 ~ "Allyn River",
+    site == 7 ~ "Bulburin"))
 
-possum_df %>% count(site_name)
+possum_df %>% count(site, site_name)
+
+# Step two: as.factor() tells R those names are GROUPS.
+# The groups are called LEVELS, and they come out in
+# alphabetical order.
+
+possum_df <- possum_df %>%
+  mutate(site_name = as.factor(site_name))
 
 levels(possum_df$site_name)
 
 # THINK: 33 possums at Cambarville, 7 at Byrangery. Does
 # unequal group size stop us doing ANOVA? (No.) Does it
 # change how much we should trust the Byrangery mean? (Yes.)
+
+invisible(NULL)
+
+
+# ---- 3b Side trip: put the sites in YOUR order ------------
+# Alphabetical means nothing here. North to south does.
+# fct_relevel() changes the ORDER of the levels and nothing
+# else - not one number in the data moves.
+#
+# Bulburin 24.6 S, Conondale 26.4 S, Whian Whian 28.6 S,
+# Byrangery 28.6 S, Allyn River 32.1 S, Cambarville 37.6 S,
+# Bellbird 37.6 S
+
+possum_df <- possum_df %>%
+  mutate(site_name = fct_relevel(site_name,
+                                 "Bulburin", "Conondale",
+                                 "Whian Whian", "Byrangery",
+                                 "Allyn River", "Cambarville",
+                                 "Bellbird"))
+
+levels(possum_df$site_name)
+
+# Plots and tables now run north -> south. The FIRST level
+# (Bulburin) also becomes the model's baseline - see step 7.
 
 invisible(NULL)
 
@@ -132,8 +174,9 @@ possum_df %>%
             mean_total = round(mean(total_l), 1),
             sd_total   = round(sd(total_l), 2))
 
-# THINK: the two VICTORIAN sites are the southernmost, and
-# they sit at opposite extremes - Cambarville 89.7 cm,
+# THINK: the table runs north -> south, and the means do not
+# climb steadily. The two VICTORIAN sites are the
+# southernmost, and they sit at opposite extremes - Cambarville 89.7 cm,
 # Bellbird 81.8 cm. So much for "it gets colder going south,
 # so animals get bigger." What else could differ between two
 # forests in the same state?
@@ -156,16 +199,27 @@ invisible(NULL)
 
 summary(total_model)
 
-# Six slopes, each comparing one site to CAMBARVILLE -
-# because Cambarville is level 1, so it became the baseline.
+# Look at the Estimate column. These are NOT slopes - there
+# is no line here. They are MEANS:
 #
-# That answers "is each site different from Cambarville?",
-# which is not the question. Nobody asked about Cambarville.
+#   (Intercept)          85.7  = the mean of BULBURIN, the
+#                                first level
+#   site_nameByrangery   +6.5  = Byrangery's mean MINUS
+#                                Bulburin's (85.7 + 6.5 = 92.2)
+#   site_nameBellbird    -3.9  = Bellbird's mean MINUS
+#                                Bulburin's (85.7 - 3.9 = 81.8)
+#   ...and so on for the other four.
 #
-# THINK: change which site is level 1 and all six of those
-# p-values change. Does the real answer depend on which site
-# we happened to list first? Obviously not. So this is the
-# wrong table.
+# Check them against the means in step 5 - they match.
+#
+# So each p-value asks "is this site different from
+# Bulburin?", only because Bulburin is the first level.
+# Nobody asked about Bulburin.
+#
+# THINK: put a different site first in step 3b and all six
+# of those p-values change. Does the real answer depend on
+# which site we happened to list first? Obviously not. So
+# this is the wrong table.
 
 invisible(NULL)
 
@@ -277,8 +331,11 @@ invisible(NULL)
 #
 # Share a letter -> not shown to differ.
 # No letter in common -> differ.
+#
+# cld() lives in the multcomp package, which we did NOT
+# load. multcomp::cld() borrows that one function.
 
-cld(site_means, Letters = letters)
+multcomp::cld(site_means, Letters = letters)
 
 # Bellbird    a    - alone at the bottom, 81.8 cm
 # Allyn River ab   - not distinguishable from either neighbour
@@ -294,7 +351,7 @@ invisible(NULL)
 
 # ---- 15 Put the letters on the plot ----------------------
 
-letters_df <- as.data.frame(cld(site_means, Letters = letters)) %>%
+letters_df <- as.data.frame(multcomp::cld(site_means, Letters = letters)) %>%
   mutate(group = trimws(.group))
 
 ggplot(possum_df, aes(x = site_name, y = total_l)) +
@@ -350,5 +407,5 @@ invisible(NULL)
 # THE HOMEWORK IS A SEPARATE FILE:
 #   19_anova_one_factor_homework.R
 #
-# New Zealand tree weta. Open it now and read the top.
+# Same possums, EAR length. Open it now and read the top.
 # ==========================================================
