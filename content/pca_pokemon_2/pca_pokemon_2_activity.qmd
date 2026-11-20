@@ -2,20 +2,20 @@
 order: 28
 week: 14
 title: "Activity 28 — PCA II: Loadings, Scores, and the Biplot"
-subtitle: "What PC2 means, labelling the interesting points, and reading arrows"
+subtitle: "What PC2 means, finding the interesting points, and reading arrows"
 author: "Bill Perry"
 date: today
 
 type: activity
 description: >
-  Hands-on companion to the second PCA lecture, written for students with
-  no previous statistics. Reading a loadings table, the mixed-signs rule,
-  naming PC2 and then confirming it from the Pokemon at each end, plotting
-  the scores, colouring by a variable that was deliberately kept out of the
-  PCA, labelling only the extremes with ggrepel, building a biplot from the
-  loadings, and writing up a PCA with no p-value. Homework is the full
-  1,025-Pokemon interpretation.
-categories: [pca, multivariate, prcomp, biplot, ggplot, pokemon]
+  Hands-on companion to the second PCA lecture, on all 1,025 Pokemon,
+  written for students with no previous statistics. Reading a loadings
+  table, the mixed-signs rule, naming PC2 and confirming it from Shuckle
+  and Regieleki, the scores plot coloured by legendary status, hovering
+  versus labelling extremes with ggrepel, building a biplot from the
+  loadings, and writing up a PCA with no p-value. Homework adds height and
+  weight and has students name the axes themselves.
+categories: [pca, multivariate, prcomp, biplot, ggplot, plotly, pokemon]
 
 format:
   html: default
@@ -33,8 +33,8 @@ execute:
 1.  Read a **loadings** table properly
 2.  Learn the one rule that matters: **mixed signs mean a trade-off**
 3.  **Name PC2** from its loadings — then prove it from the data
-4.  Plot the Pokémon in **PC space**: the picture, at last
-5.  **Label** only the interesting points, with `ggrepel`
+4.  Plot the Pokémon in **PC space**, coloured by status
+5.  **Hover** to explore, and **label** only the interesting points with `ggrepel`
 6.  Build a **biplot** by hand, so the arrows are not magic
 7.  **Write up** a PCA when there is no p-value to lean on
 
@@ -51,42 +51,39 @@ install.packages("ggrepel")
 ::: callout-tip
 ## 📂 Files for today
 
--   **In-class skeleton:** [`28_pca_2_skeleton.R`](scripts/28_pca_2_skeleton.R) → save it as `scripts/28_pca_2.R`. **Every line of code is already written.**
--   **Homework skeleton:** [`28_pca_2_homework.R`](scripts/28_pca_2_homework.R) → save it under that same name. **This one is what you turn in**, and its code is written too.
--   **Data** — both go in your `data/` folder:
-    -   [`pokemon_151.csv`](data/pokemon_151.csv) — today, in class
-    -   [`pokemon_1025.csv`](data/pokemon_1025.csv) — the homework
+-   **In-class skeleton:** [`28_pca_2_skeleton.R`](scripts/28_pca_2_skeleton.R) → save it as `scripts/28_pca_2.R`
+-   **Homework:** [`28_pca_2_homework.R`](scripts/28_pca_2_homework.R) → save it under that same name. **This is what you turn in.**
+-   **Data:** [`pokemon_1025.csv`](data/pokemon_1025.csv) — the same file as last class, in your `data/` folder.
 :::
 
 ::: callout-important
-## What you hand in
+## How today works
 
--   **Today is a run-it-and-read-it day.** You do **not** turn in `scripts/28_pca_2.R`.
--   The **Q** boxes are **things to think about**. Not graded.
--   **You turn in `scripts/28_pca_2_homework.R`** — all 1,025 Pokémon, and you name the axes yourself.
-:::
-
-::: callout-note
-## Still no p-values
-
-Today the whole job is **interpretation** — looking at numbers and deciding what they mean. There is no output that will tell you whether you got it right. That is not a flaw in the method; it is what the method is for.
+-   Same as last class. The skeleton has a **numbered section for every Part** below.
+-   **▶ Type this** — type the code into that section, then run it.
+-   **▶ Already in your skeleton** — written for you. Just run it.
+-   The explanations live **here**, not in the script. **💭 Think** lines are for talking over — nothing to write down.
+-   You do **not** turn in `scripts/28_pca_2.R`. You turn in the **homework**.
 :::
 
 ------------------------------------------------------------------------
 
 # Part 1 · Where we left off, and starting again
 
-Last class: six correlated stats, impossible to plot. PCA found new axes by blending them. **PC1 = 39.6%**, **PC2 = 21.5%**, together **61.1%**. PC1 had all-positive loadings, so we called it *overall power*, and checked it — **Magikarp** at the bottom, **Mewtwo** at the top.
+Last class: six correlated stats on 1,025 Pokémon, impossible to plot. PCA found new axes along the directions of most spread. **PC1 = 44.1%**, **PC2 = 18.4%**, together **62.5%**. PC1 had all-positive loadings, so we called it *overall power* — and checked it against Magikarp and the legendaries.
 
-Three things were missing: what **PC2** means, a **picture**, and a way to see the original stats **on** that picture.
-
-**▶ Run this:**
+**▶ Already in your skeleton (section 1) — just run it:**
 
 ``` r
 library(tidyverse)
+library(plotly)
 library(ggrepel)
 
-pokemon <- read_csv("data/pokemon_151.csv")
+pokemon <- read_csv("data/pokemon_1025.csv") %>%
+  mutate(status = case_when(
+    is_legendary ~ "legendary",
+    is_mythical  ~ "mythical",
+    TRUE         ~ "regular"))
 
 poke_stats <- pokemon %>%
   select(hp, attack, defense, sp_attack, sp_defense, speed)
@@ -96,105 +93,84 @@ poke_pca <- prcomp(poke_stats, center = TRUE, scale. = TRUE)
 summary(poke_pca)
 ```
 
-::: callout-note
-## 🧠 Every script starts from the raw data
-
-Nothing today depends on objects left over in last class's session. Restart R, run from the top, get the same answer.
-
-If a script only works because of something you ran yesterday, it is **broken** — you just cannot see it yet.
-:::
+This is last class's code, so it is written for you. Nothing today depends on objects left over from last time — **restart R, run from the top, get the same answer.**
 
 ------------------------------------------------------------------------
 
 # Part 2 · The loadings table
 
-**▶ Run this:**
+**▶ Type this (section 2):**
 
 ``` r
 round(poke_pca$rotation[, 1:3], 2)
 ```
 
-One row per original stat, one column per PC. A **loading** is how much that stat contributes to that axis:
-
--   **big number** → matters a lot to that axis
--   **near zero** → barely involved
--   the **sign** → which direction
+One row per original stat, one column per PC. A **loading** is how much that stat contributes to that axis: a **big** number matters a lot, **near zero** is barely involved, and the **sign** gives the direction.
 
 ### PC1 — all the same sign
 
 | Stat | PC1 loading |
 |------|-------------|
-| `sp_defense` | **0.54** |
-| `sp_attack` | 0.45 |
-| `attack` | 0.42 |
-| `hp` | 0.38 |
-| `speed` | 0.32 |
-| `defense` | 0.28 |
+| `sp_defense` | **0.44** |
+| `attack` | 0.43 |
+| `sp_attack` | 0.43 |
+| `hp` | 0.42 |
+| `defense` | 0.39 |
+| `speed` | 0.31 |
 
 : {tbl-colwidths="[50,50]"}
 
-Every one **positive**, none of them tiny. To score high on PC1 you must be high on **everything**.
+Every one **positive**, all about the same size. To score high on PC1 you must be high on **everything**.
 
 ::: callout-important
 ## ✅ The rule for all-positive loadings
 
-An axis where every loading shares a sign is a **"total" axis** — overall size, overall strength, overall abundance.
-
-You will see this constantly. **PC1 is very often a total**, because the single biggest way things differ is usually just *how much* of them there is.
+An axis where every loading shares a sign is a **"total" axis** — overall size, overall strength, overall abundance. **PC1 is very often a total**, because the biggest way things differ is usually just *how much* of them there is.
 :::
 
 ------------------------------------------------------------------------
 
 # Part 3 · PC2 has mixed signs
 
+No new code — read the PC2 column of the table you just printed.
+
 | Stat | PC2 loading | |
 |------|-------------|---|
-| `defense` | **+0.59** | ⬆️ |
-| `attack` | +0.43 | ⬆️ |
-| `hp` | +0.19 | |
-| `sp_defense` | −0.17 | |
-| `sp_attack` | −0.33 | ⬇️ |
-| `speed` | **−0.54** | ⬇️ |
+| `defense` | **+0.58** | ⬆️ |
+| `sp_defense` | +0.16 | |
+| `hp` | +0.10 | |
+| `attack` | +0.07 | |
+| `sp_attack` | −0.36 | ⬇️ |
+| `speed` | **−0.70** | ⬇️ |
 
 : {tbl-colwidths="[40,40,20]"}
-
-Two big **positives** and two big **negatives** on the same axis.
 
 ::: callout-important
 ## ✅ The rule for mixed signs
 
-Mixed signs mean a **trade-off**, not a total.
+Mixed signs mean a **trade-off**, not a total. PC2 does not measure *how much*; it measures **which kind** — strong one way **instead of** another.
 
-PC2 is not measuring *how much*. It is measuring **which kind** — being strong in one way **instead of** another.
-
--   **High PC2** = `defense` + `attack`
--   **Low PC2** = `speed` + `sp_attack`
+-   **High PC2** = high `defense`
+-   **Low PC2** = high `speed` and `sp_attack`
 :::
 
 ### Naming it
 
-High PC2 means tough and hard-hitting but **slow**. Low PC2 means fast and special-attacking but **fragile**. Anyone who has played the game already has names for these:
-
--   **High PC2** → a **tank**
--   **Low PC2** → a **glass cannon**
-
-PC2 is a **"tank ↔ glass cannon"** axis, and it carries **21.5%** of all the variation in six columns.
+High PC2 is tough but **slow**. Low PC2 is fast and special-attacking but **fragile**. Players already have names for these: a **tank** and a **glass cannon**. So PC2 is a **"tank ↔ glass cannon"** axis, carrying **18.4%** of all the variation.
 
 ::: callout-warning
 ## ⚠️ You named it. The maths did not.
 
-`prcomp()` returned a column of numbers labelled `PC2`. It has no idea what a tank is.
-
-**Naming an axis is interpretation, and it is your responsibility.** It is also the single most valuable thing you do in a PCA — and the easiest place to fool yourself.
+`prcomp()` returned a column labelled `PC2`. It has no idea what a tank is. **Naming an axis is interpretation, and it is your job** — and the easiest place to fool yourself. So next, check it.
 :::
 
-✏️ **Q1:** `hp` loads +0.19 on PC2 — small but positive. Does that fit the tank story? Would you mention `hp` if you were describing this axis in one sentence?
+💭 **Think:** `hp` and `attack` are near zero on PC2. What does that say about them — are they part of the trade-off, or not?
 
 ------------------------------------------------------------------------
 
 # Part 4 · Prove the name from the data
 
-**▶ Run this:**
+**▶ Type this (section 4):**
 
 ``` r
 poke_scores <- pokemon %>%
@@ -214,12 +190,12 @@ poke_scores %>%
 
 | End of PC2 | Who is there | Defence | Speed |
 |------------|--------------|---------|-------|
-| **Top** | Rhydon, Golem, Cloyster, Rhyhorn | 95 – **180** | 25 – 70 |
-| **Bottom** | Abra, Kadabra, **Alakazam**, Jynx | 15 – 45 | 90 – **120** |
+| **Top** | Shuckle, Stakataka, Steelix, Avalugg | 184 – **230** | **5** – 30 |
+| **Bottom** | Regieleki, Pheromosa, Deoxys, Accelgor | 37 – 50 | 145 – **200** |
 
 : {tbl-colwidths="[18,42,20,20]"}
 
-Alakazam is the fastest, most fragile special attacker in the game. Golem is a literal boulder. They sit at **opposite ends** of an axis built from nothing but six columns of numbers.
+Shuckle is a turtle that lives inside a rock: defence 230, speed 5. Regieleki is living electricity: speed 200. They sit at **opposite ends** of an axis built from nothing but six columns of numbers.
 
 ::: callout-important
 ## ✅ The two-step, every time
@@ -227,134 +203,115 @@ Alakazam is the fastest, most fragile special attacker in the game. Golem is a l
 1.  **Read the loadings** → form a guess about what the axis means
 2.  **Look at the extremes** → check the guess against things you already know
 
-Do them in that order. **If step 2 disagrees with step 1, believe step 2.**
+**If step 2 disagrees with step 1, believe step 2.**
 :::
 
 ------------------------------------------------------------------------
 
-# Part 5 · Finally, the picture
+# Part 5 · The picture, coloured by status
 
-**▶ Run this:**
-
-``` r
-ggplot(poke_scores, aes(x = PC1, y = PC2)) +
-  geom_point(alpha = 0.7)
-```
-
-Every dot is **one Pokémon**. Neither axis is a thing anyone measured — both were invented by `prcomp()`.
-
--   **Left ↔ right** = weak ↔ strong *(PC1, 39.6%)*
--   **Bottom ↔ top** = glass cannon ↔ tank *(PC2, 21.5%)*
-
-Two dots close together = two Pokémon with **similar stat profiles overall**. That is the question we could not answer with 15 pairwise scatterplots. And this one flat picture holds **61%** of six columns.
-
-::: callout-note
-## 🧠 The origin is average
-
-The scores were centred, so **(0, 0)** is the **average** Pokémon — not zero power.
-
-A dot at the far left is not "no stats". It is **well below average**. Scores are in standard deviations, which is why they run roughly −3.5 to +3.5.
-:::
-
-✏️ **Q2:** Find roughly where you would expect a Pokémon with *every stat exactly average* to sit. Now where would one with *every stat slightly above average* sit?
-
-------------------------------------------------------------------------
-
-# Part 6 · Colour by something you know
-
-**▶ Run this:**
+**▶ Type this (section 5):**
 
 ``` r
-ggplot(poke_scores, aes(x = PC1, y = PC2, color = is_legendary)) +
-  geom_point(alpha = 0.7, size = 2)
+ggplot(poke_scores, aes(x = PC1, y = PC2, color = status)) +
+  geom_point(alpha = 0.6)
 ```
 
-The four legendaries sit in a cluster at the **far right** — high PC1 — and slightly **low** on PC2. So the game's strongest Pokémon are not just powerful; they lean a little towards the **fast, special-attacking** side rather than the tank side.
+-   Every dot is **one Pokémon**. Left ↔ right is weak ↔ strong (PC1, 44.1%). Bottom ↔ top is glass cannon ↔ tank (PC2, 18.4%)
+-   **(0, 0)** is the **average** Pokémon, not zero power — the scores were centred
+-   The legendaries and mythicals sit on the **far right**, and a little **below** the middle on PC2. The strongest Pokémon lean slightly towards *fast* rather than *tank*
 
 ::: callout-important
-## ✅ `is_legendary` was never in the PCA
+## ✅ `status` was never in the PCA
 
-Look back at Part 1: `poke_stats` has **six** columns, and `is_legendary` is not one of them. `prcomp()` never saw it. We only used it to **colour** the finished result.
+Look back at Part 1: `poke_stats` has **six** columns, and `status` is not one of them. `prcomp()` never saw it; we only used it to **colour** the finished result.
 
-**That is the right way round.** Build the axes from the **measurements** only, *then* colour by the thing you care about and see whether it lines up.
-
-Put the grouping variable **into** the PCA and you have built the answer you wanted — the same circular trap as the wētā's `head_length`.
+**That is the right way round.** Build the axes from the **measurements** only, *then* colour by the thing you care about. Put the group **into** the PCA and you have built the answer you wanted — the same circular trap as the wētā's `head_length`.
 :::
 
-✏️ **Q3:** Suppose you were studying skull measurements from two species and put "species" into the PCA as a 0/1 column. What would go wrong, and how would you know?
+💭 **Think:** Suppose you were studying skulls from two species and put "species" into the PCA as a 0/1 column. What would go wrong?
+
+------------------------------------------------------------------------
+
+# Part 6 · Hover to explore
+
+**▶ Type this (section 6):**
+
+``` r
+pca_plot <- ggplot(poke_scores,
+                   aes(x = PC1, y = PC2, color = status, text = name)) +
+  geom_point(alpha = 0.6)
+
+ggplotly(pca_plot, tooltip = "text")
+```
+
+The same plot as last class — now that you know what **both** axes mean.
+
+-   Hover to find **Shuckle** alone at the top and **Regieleki** at the bottom
+-   `text = name` is ignored by ggplot (it may warn — that is expected) and picked up by `ggplotly()`
+
+💭 **Think:** Find two dots right next to each other and hover over both. Look up their six stats. Are they similar Pokémon?
 
 ------------------------------------------------------------------------
 
 # Part 7 · Label only the interesting ones
 
-Labelling all 151 gives you a solid black rectangle. So label only the **extremes** — the ones furthest from the centre, which are the ones a reader will ask about.
+Hovering is for **you**, exploring. A figure in a report or poster **cannot be hovered** — it needs names printed on it. But 1,025 labels is a solid black rectangle, so label only the **extremes**.
 
 -   `abs(PC1)` is distance from the centre, ignoring direction
--   `quantile(abs(PC1), 0.97)` is the value only 3% of Pokémon exceed
--   Together: *"far from average on PC1, either way"*
+-   `quantile(abs(PC1), 0.99)` is the value only 1% of Pokémon exceed
+-   The `|` means **OR** — a Pokémon is kept if it is extreme on **either** axis
 
-**▶ Run this:**
+**▶ Type this (section 7):**
 
 ``` r
 extremes <- poke_scores %>%
-  filter(abs(PC1) > quantile(abs(PC1), 0.97) |
-         abs(PC2) > quantile(abs(PC2), 0.97))
+  filter(abs(PC1) > quantile(abs(PC1), 0.99) |
+         abs(PC2) > quantile(abs(PC2), 0.99))
 
 nrow(extremes)
 
-extremes %>%
-  select(name, PC1, PC2)
-
 ggplot(poke_scores, aes(x = PC1, y = PC2)) +
-  geom_point(color = "grey70") +
+  geom_point(color = "grey75") +
   geom_point(data = extremes, color = "firebrick") +
   geom_text_repel(data = extremes, aes(label = name), size = 3)
 ```
 
-The `|` in the filter means **OR**, so a Pokémon qualifies by being extreme on **either** axis, not both.
+**22 Pokémon** make the cut. Three layers, and the **order matters** — later layers draw on top:
 
-Three layers, and the **order matters** — later layers draw on top:
-
-1.  all 151 points, grey, in the background
-2.  the extremes, on top, in red
+1.  all 1,025 points, grey, in the background
+2.  the 22 extremes, on top, in red
 3.  names, **only** for the extremes
 
-`geom_text_repel()` is `ggrepel`'s version of `geom_text()`: it nudges labels apart so they do not overlap, and draws a little line back to the dot.
+`geom_text_repel()` is `ggrepel`'s version of `geom_text()`: it nudges labels apart and draws a little line back to each dot.
 
 ::: callout-tip
 ## 🎯 `data =` inside a layer
 
-Each `geom_` can take its **own** `data =`. Give it one and that layer ignores the data in `ggplot()`.
-
-That is how you draw two different subsets on one plot — and it works for every geom, not just these.
+Each `geom_` can take its **own** `data =`. Give it one and that layer ignores the data in `ggplot()`. That is how you draw two subsets on one plot — and it works for every geom.
 :::
 
-✏️ **Q4:** Change `0.97` to `0.90` and re-run, then to `0.99`. There is no correct value. How did you decide which looked best, and what does that tell you about the choice?
+💭 **Think:** Change `0.99` to `0.97` in both places and re-run. There is no correct value — how would you decide?
 
 ------------------------------------------------------------------------
 
 # Part 8 · The biplot
 
-Our plot shows **where Pokémon sit**. It does not show **which direction each original stat points**.
+Our plot shows **where Pokémon sit**. It does not show **which way each original stat points**. A **biplot** draws both: **points** = the Pokémon (scores), **arrows** = the stats (loadings).
 
-A **biplot** draws both at once:
-
--   **Points** = the Pokémon (the **scores**)
--   **Arrows** = the original stats (the **loadings**)
-
-R has a built-in `biplot(poke_pca)`, but it is ugly and hard to control. Building ours from the loadings means you know exactly what the arrows **are**.
-
-**▶ Run this:**
+**▶ The `arrows_df` block is already in your skeleton (section 8). Type the `ggplot()` under it:**
 
 ``` r
 arrows_df <- as_tibble(poke_pca$rotation[, 1:2], rownames = "stat") %>%
-  mutate(PC1 = PC1 * 4,
-         PC2 = PC2 * 4)
+  mutate(PC1 = PC1 * 5,
+         PC2 = PC2 * 5)
 
 arrows_df
+```
 
+``` r
 ggplot(poke_scores, aes(x = PC1, y = PC2)) +
-  geom_point(color = "grey75", alpha = 0.7) +
+  geom_point(color = "grey80") +
   geom_segment(data = arrows_df,
                aes(x = 0, y = 0, xend = PC1, yend = PC2),
                arrow = arrow(length = unit(0.2, "cm"))) +
@@ -362,23 +319,21 @@ ggplot(poke_scores, aes(x = PC1, y = PC2)) +
                   fontface = "bold", size = 3.4)
 ```
 
+-   `arrows_df` is the loadings table turned into a data frame, one row per stat — each row becomes one arrow from (0, 0)
+-   `geom_segment()` draws a line from `(x, y)` to `(xend, yend)`; `arrow =` puts a head on it
+
 ::: callout-warning
-## ⚠️ Why `* 4`
+## ⚠️ Why `* 5`
 
-Loadings run about −0.6 to +0.6. The scores run about −3.5 to +3.5. Draw the arrows at their true length and they **vanish into a dot** at the centre.
-
-Multiplying by 4 is **purely cosmetic**. It changes the arrows' **lengths on screen**, never their **directions** — and the directions are the part you interpret. Try 2, or 6, and see.
+Loadings run about −0.7 to +0.6; the scores run about −4 to +6. At true length the arrows vanish into a dot. Multiplying by 5 is **purely cosmetic** — it changes the arrows' **lengths on screen**, never their **directions**, and the directions are what you read.
 :::
 
 ### Reading the arrows
 
--   **Every arrow points right** — all six stats increase with PC1; the all-positive loadings, now visible
--   **`defense` points up-right**, **`speed` points down-right** — nearly opposite vertically, which is the trade-off
--   `attack` sits with `defense`; `sp_attack` and `sp_defense` lean with `speed`
--   **`defense` has the longest arrow**, **`hp` the shortest** — so `hp` is the stat least involved in these two axes
-
-::: callout-important
-## ✅ Read angles, not positions
+-   **Every arrow points right** — all six stats increase with PC1 (the all-positive loadings, made visible)
+-   **`defense` points up-right**, **`speed` points down-right** — nearly opposite vertically, which is the trade-off. `sp_attack` leans with `speed`
+-   `hp` and `attack` point almost **straight right** — they are about power, not the trade-off
+-   **`speed` has the longest arrow**; `hp` and `attack` the shortest
 
 | Arrows | Meaning |
 |--------|---------|
@@ -387,29 +342,22 @@ Multiplying by 4 is **purely cosmetic**. It changes the arrows' **lengths on scr
 | opposite | trade-off |
 
 : {tbl-colwidths="[35,65]"}
-:::
 
 ------------------------------------------------------------------------
 
 # Part 9 · A trap worth naming
 
-Last class the correlation between `speed` and `defense` was **−0.05** — essentially **unrelated**.
+Last class, the correlation between `speed` and `defense` was **0.01** — completely **unrelated**. But on this biplot their arrows point in nearly **opposite** directions, which *looks* like a strong trade-off.
 
-But on this biplot their arrows point in nearly **opposite** directions, which *looks* like a strong trade-off.
-
-**Both are true.** The biplot is a **shadow**. Two arrows can look opposed in the shadow while being unrelated in the full six dimensions.
+**Both are true.** The biplot is a **shadow** — two of six dimensions. Two arrows can look opposed in the shadow while being unrelated in the full six.
 
 ::: callout-warning
 ## ⚠️ So always say how much you are showing
 
-> *"PC1 and PC2, which together explain **61.1%** of the variance"*
+> *"PC1 and PC2, which together explain **62.5%** of the variance"*
 
-Without that number, a reader cannot tell whether your biplot is the whole story or **three-fifths** of it.
-
-**Never show a biplot without its percentages.**
+Without that number a reader cannot tell whether your biplot is the whole story or two-thirds of it. **Never show a biplot without its percentages.**
 :::
-
-✏️ **Q5:** Go back to the correlation matrix from last class. Find another pair whose biplot arrows and actual correlation disagree. Why is PC3 relevant here?
 
 ------------------------------------------------------------------------
 
@@ -420,62 +368,51 @@ There is no p-value, so the structure is different from everything else this ter
 ::: callout-important
 ## 📝 The model paragraph
 
-> Six battle statistics for the 151 original Pokémon were standardised and reduced by principal component analysis. The first two components explained **61.1%** of the total variance (**PC1 39.6%**, **PC2 21.5%**). **PC1** loaded positively on all six statistics (0.28 to 0.54) and is interpreted as **overall power**: the four legendary Pokémon averaged **PC1 = 3.00** against **−0.08** for all others, and Magikarp held the lowest score. **PC2** contrasted `defense` (**+0.59**) and `attack` (+0.43) against `speed` (**−0.54**) and `sp_attack` (−0.33), separating durable, slow-moving species such as Golem and Cloyster from fast, fragile ones such as Alakazam.
+> Six battle statistics for all 1,025 Pokémon were standardised and reduced by principal component analysis. The first two components explained **62.5%** of the total variance (**PC1 44.1%**, **PC2 18.4%**). **PC1** loaded positively on all six statistics (0.31 to 0.44) and is interpreted as **overall power**: the 71 legendary Pokémon averaged **PC1 = 2.38** against **−0.24** for regular Pokémon, and Magikarp sat among the lowest scores. **PC2** contrasted `defense` (**+0.58**) against `speed` (**−0.70**) and `sp_attack` (−0.36), separating slow, durable species such as Shuckle and Steelix from fast, fragile ones such as Regieleki and Pheromosa.
 :::
 
 What that paragraph does:
 
--   Says **what went in** — six stats, 151 Pokémon
--   Says it was **standardised** (`scale. = TRUE`)
+-   Says **what went in** — six stats, 1,025 Pokémon — and that it was **standardised**
 -   Gives **variance explained**, per axis **and** cumulative
--   **Names each axis**, and gives the loadings that justify the name
+-   **Names each axis**, with the loadings that justify the name
 -   Gives **evidence from the data** — real Pokémon at each end
 -   Never says "significant", because nothing was tested
 
 ::: callout-warning
 ## ⚠️ The two failure modes
 
-**Too little:** *"We ran a PCA and PC1 explained 39.6%."* Explained of what? Meaning what?
+**Too little:** *"We ran a PCA and PC1 explained 44.1%."* Of what? Meaning what?
 
-**Too much:** *"PC1 proves power is one-dimensional."* PCA **proves** nothing. It **describes**.
-
-Describe, name, justify. Stop there.
+**Too much:** *"PC1 proves power is one-dimensional."* PCA **describes**; it proves nothing.
 :::
 
-✏️ **Q6:** The paragraph names two Pokémon for PC2 and two for PC1. Why is naming actual data points more convincing than just quoting the loadings?
+💭 **Think:** Why is naming actual Pokémon more convincing than just quoting the loadings?
 
 ------------------------------------------------------------------------
 
-# Extension (homework) — all 1,025 Pokémon, interpreted
+# Homework — add the body, name the axes yourself
 
 **This is what you turn in:** `scripts/28_pca_2_homework.R`
 
-Last homework you ran the PCA on all 1,025 Pokémon and read the numbers. Now you **interpret** it:
-
--   Read the loadings and **name PC2 yourself** — no answer is printed anywhere
--   **Confirm** it from the extremes, and if they disagree with your name, change it *and say that you changed it*
--   Draw the **scores plot**, coloured by legendary status — **71** of them this time, not 4
--   Draw the **biplot**
--   Write a full **PCA results paragraph**
+So far PCA has only seen the six battle stats. The file also has two **real physical measurements**: `height_m` and `weight_kg`. The homework puts all **eight** into the PCA — and this time **no answer is printed anywhere**. You read the loadings, you name the axes, you check them against the extremes, and you write it up.
 
 ::: callout-important
-## The code is already written
+## How the homework file works
 
-Open the file and press **Ctrl/Cmd + Shift + Enter**. Everything runs.
-
-Nearly all of the marks are for **naming the axes** and for the **write-up**. The only code you write is one number, in the optional section at the bottom.
+-   **The questions are at the top**, with answer boxes. Answer in `#` comments.
+-   **Helper code is written for you** where something is new — the main one is the `select()` with eight columns.
+-   Where it says **`YOUR CODE`**, copy the matching section from today's `scripts/28_pca_2.R`. Same code, new PCA.
 :::
 
 ::: callout-tip
 ## 🎯 One thing to watch for
 
-With 1,025 Pokémon your scores plot has **1,025 dots** and your labelled plot is crowded.
-
-One of the questions asks what you would change to make it readable — and *"label fewer things"* is a perfectly good answer, as long as you say what you lose by doing it.
+One Pokémon lands **so far** out on PC1 that it squashes the whole plot. Hover to find out who — then look at its height and weight.
 :::
 
 ::: callout-important
 ## Before you hand in
 
-**Session \> Restart R**, then run the whole file top to bottom. It must run clean, and all four plots must draw.
+**Session \> Restart R**, then run the whole file top to bottom. It must run clean, and every plot must draw.
 :::

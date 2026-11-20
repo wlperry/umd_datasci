@@ -1,6 +1,6 @@
 ---
 title: "Lecture 27 — PCA I: Many Measurements, Few Axes"
-subtitle: "Six numbers per Pokémon, one picture, and what 'variance explained' means"
+subtitle: "Six numbers per Pokémon, where the new axes come from, and what 'variance explained' means"
 author: "Bill Perry"
 date: today
 
@@ -10,14 +10,14 @@ order: 27
 week: 14
 type: lecture             # lecture | activity | homework | assignment | common_code
 description: >
-  A first, gentle pass at principal component analysis, assuming no
-  statistics background at all. Why six correlated measurements are hard to
-  look at, what PCA actually does (the shadow analogy), why you must scale
-  first, running prcomp(), reading summary() for variance explained,
-  building a scree plot, deciding how many components to keep, and checking
-  that PC1 means something real by looking at which Pokemon sit at each end
-  of it.
-categories: [pca, multivariate, prcomp, ggplot, pokemon]
+  A first, gentle pass at principal component analysis on all 1,025
+  Pokemon, assuming no statistics background at all. Three stats in an
+  interactive 3-D plot (and why six cannot be drawn), the correlation
+  table, why correlated columns are not dropped, where PC1 comes from
+  using two stats, the shadow analogy, scaling, running prcomp(), variance
+  explained, the scree plot, checking PC1 against who sits at each end,
+  and a hover-to-name plot of the new axes.
+categories: [pca, multivariate, prcomp, ggplot, plotly, pokemon]
 
 format:
   revealjs:
@@ -28,6 +28,7 @@ format:
     transition: fade
     background-transition: none
     scrollable: true
+    auto-stretch: false   # bare figures under a heading otherwise collapse to 0 height
     smaller: true
     width: 1280
     height: 720
@@ -50,42 +51,38 @@ execute:
   echo: true
   warning: false
   message: false
+  cache: false          # small data; a stale knitr cache hid the `status` column
 ---
 
 ```{r setup}
 #| echo: false
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 options(width = 65)   # printed R output wraps at 65 too
+is_html <- knitr::is_html_output()   # interactive plots only in HTML / slides
 ```
 
 # Something Completely Different
 
-Everything this term had **one** response variable.
-
-- A t-test: one measurement, two groups
-- Regression: one measurement against one other
-- ANOVA: one measurement across several groups
-
-::: callout-note
-**✅ Transition**
-
-Today: **six measurements at once**, and no groups to compare. Not "is A different from B?" but *"what is the **shape** of this whole dataset?"* 🔴
-:::
+- Everything this term had **one** response variable
+  - t-test: one measurement, two groups
+  - regression: one measurement against one other
+  - ANOVA: one measurement across several groups
+- Today: **six measurements at once**, and no groups to compare
+  - not *"is A different from B?"*
+  - but *"what is the **shape** of this whole dataset?"* 🔴
 
 # Today Has No p-Values
 
 :::::: columns
 ::: {.column width="58%"}
-PCA is not a test. There is **nothing to reject**.
-
-- No null hypothesis
-- No p-value
-- No assumptions to check
-- Nothing passes or fails
-
-It is a way of **looking** at data that has too many columns to plot.
-
-So the question today is never *"is it significant?"* It is always **"does this make sense?"**
+- PCA is **not a test**
+  - no null hypothesis
+  - no p-value
+  - no assumptions to check
+  - nothing passes or fails
+- It is a way of **looking** at data that has too many columns to plot
+- The question is never *"is it significant?"*
+  - it is always **"does this make sense?"**
 :::
 
 :::: {.column width="42%"}
@@ -95,8 +92,6 @@ So the question today is never *"is it significant?"* It is always **"does this 
 For nine weeks, "did it work?" meant "is p small?"
 
 Today you judge your result by whether you can **explain what the axes mean**.
-
-That is a harder standard, not an easier one.
 :::
 ::::
 ::::::
@@ -105,22 +100,23 @@ That is a harder standard, not an easier one.
 
 :::::: columns
 ::: {.column width="58%"}
-- See **why** six columns are hard to look at
+- **See** the data in 3-D — and why six columns cannot be drawn
 - Notice that the columns are **correlated**
-- Understand what PCA does — **in words, not algebra**
+- See **where a principal component comes from**
 - Know why you must **scale** first
 - Run it: `prcomp()`
-- Read **variance explained** from `summary()`
-- Draw a **scree plot** and decide how many axes to keep
-- **Sanity-check** PC1 against things you already know
+- Read **variance explained**, draw a **scree plot**
+- **Check** PC1 against Pokémon you already know
+- **Hover** over the new picture to find them
 :::
 
 :::: {.column width="42%"}
 **Tools today:**
 
-- `tidyverse` — that is it
+- `tidyverse`
+- `plotly` — you installed it for the mapping weeks
 
-**Data:** 🔴 the original **151 Pokémon**, six battle stats each
+**Data:** 🔴 **all 1,025 Pokémon**, six battle stats each
 
 ::: callout-tip
 **No new packages.** `prcomp()` is built into R.
@@ -132,13 +128,13 @@ That is a harder standard, not an easier one.
 
 :::::: columns
 ::: {.column width="58%"}
-Because you can **check the answer.**
-
-PCA will hand back new axes it invented, and you have to decide whether they mean anything. That is nearly impossible to judge on unfamiliar data.
-
-But if an axis puts **Magikarp** at one end and **Mewtwo** at the other, you know *exactly* what it found.
-
-The method is the same one used on gene expression, soil chemistry, and skull measurements. Only the checking is easier.
+- Because you can **check the answer**
+  - PCA hands back new axes that it **invented**
+  - you have to decide whether they mean anything
+  - that is nearly impossible on data you do not know
+- If an axis puts **Magikarp** at one end and **Mewtwo** at the other, you know *exactly* what it found
+- 1,025 is plenty of data — and **hovering** tells you who any dot is
+- Same method as gene expression, soil chemistry, skull measurements
 :::
 
 :::: {.column width="42%"}
@@ -157,46 +153,114 @@ Game-design numbers, but they behave exactly like six measurements off an animal
 ::::
 ::::::
 
-# 🧩 Chunk 1 of 4 · The Problem With Six Columns
+# 🧩 Chunk 1 of 4 · Look at the Data First
 
-**We will cover:** reading the data, and why you cannot just plot it.
+**We will cover:**
+
+- reading the data and marking the legendaries
+- three stats in 3-D — and why six is impossible
 
 # Read It In
 
+:::::: columns
+::: {.column width="58%"}
 ```{r read-pokemon}
 library(tidyverse)
+library(plotly)
 
-pokemon <- read_csv("data/pokemon_151.csv")
+pokemon <- read_csv("data/pokemon_1025.csv") %>%
+  mutate(status = case_when(
+    is_legendary ~ "legendary",
+    is_mythical  ~ "mythical",
+    TRUE         ~ "regular"))
 
-dim(pokemon)
-
-pokemon %>%
-  select(name, hp, attack, defense, sp_attack, sp_defense, speed) %>%
-  head(4)
+pokemon %>% count(status)
 ```
+:::
+
+:::: {.column width="42%"}
+- 1,025 rows — one per Pokémon
+- `status` is **one** column built from two TRUE/FALSE ones
+  - first matching line wins
+  - `TRUE ~` catches everything left over
+- We will **colour** by `status` — PCA never sees it
+
+::: callout-note
+**🧠 Mythical?**
+
+A second "rare and special" group in the game — Mew is mythical, Mewtwo is legendary.
+:::
+::::
+::::::
+
+# Three Stats, in 3-D
+
+```{r plot-3d}
+#| eval: !expr is_html
+#| fig-width: 9
+#| fig-height: 4.6
+plot_ly(pokemon, x = ~attack, y = ~defense, z = ~speed,
+        color = ~status, text = ~name,
+        colors = c("firebrick", "darkorange", "grey60"),
+        type = "scatter3d", mode = "markers", marker = list(size = 3))
+```
+
+```{r plot-3d-static}
+#| echo: false
+#| eval: !expr '!is_html'
+#| fig-width: 6
+#| fig-height: 3.5
+ggplot(pokemon, aes(attack, defense, color = status)) +
+  geom_point(alpha = 0.6) +
+  scale_color_manual(values = c("firebrick", "darkorange", "grey60")) +
+  labs(caption = "Static view - the HTML slides have a 3-D plot you can rotate")
+```
+
+# What That Plot Shows
+
+:::::: columns
+::: {.column width="58%"}
+- **Drag to rotate it** — every dot is one Pokémon
+  - from some angles: a shapeless blob
+  - from others: a long, spread-out cloud
+  - same data, **different amount you can see**
+- **Hover** — the name pops up
+  - red / orange (legendary, mythical) sit out at the **big** end
+- But this is only **3 of the 6 stats**
+  - `hp`, `sp_attack`, `sp_defense` are missing
+:::
+
+:::: {.column width="42%"}
+::: callout-important
+**✅ Hold on to this**
+
+Rotating to find the angle that shows the **most spread** is exactly what PCA does.
+
+It just does it in **six** dimensions, where we cannot rotate anything by hand.
+:::
+::::
+::::::
 
 # Six Columns Is Too Many to Plot
 
 :::::: columns
 ::: {.column width="58%"}
-One measurement → a histogram.
-
-Two → a scatterplot.
-
-Three → an awkward 3-D scatterplot nobody can read.
-
-**Six → nothing.** There is no six-dimensional plot, and there never will be.
-
-You could draw all the pairs instead. Six columns make **15 pairwise scatterplots**, and no one can hold 15 plots in their head at once.
+- One measurement → a histogram
+- Two → a scatterplot
+- Three → the 3-D plot you just spun
+- **Six → nothing**
+  - there is no six-dimensional plot, and never will be
+- All the pairs instead? **15 scatterplots**
+  - nobody can hold 15 plots in their head
 :::
 
 :::: {.column width="42%"}
 ::: callout-warning
 **⚠️ The real problem**
 
-It is not that drawing is hard.
+**"Which Pokémon are similar to each other?"** is a question about all six numbers **at the same time**.
 
-It is that **"which Pokémon are similar to each other?"** is a question about all six numbers **at the same time**, and looking at them two at a time cannot answer it.
+Looking at them two at a time cannot answer it.
 :::
 ::::
 ::::::
@@ -213,10 +277,19 @@ dim(poke_stats)
 ::: callout-note
 **🧠 Why a separate table**
 
-PCA needs **numbers only** — no names, no types. `poke_stats` is 151 rows and exactly 6 numeric columns.
-
-The rows stay in the **same order** as `pokemon`, which is what lets us glue the results back on later.
+- PCA needs **numbers only** — no names, no types, no `status`
+- The rows stay in the **same order** as `pokemon`
+  - that is what lets us glue the results back on later
+  - **never sort one and not the other**
 :::
+
+# 🧩 Chunk 2 of 4 · Where the New Axes Come From
+
+**We will cover:**
+
+- the correlation table — the raw material
+- why you do **not** drop correlated columns
+- PC1 drawn with just two stats, then the shadow analogy
 
 # Do the Stats Move Together?
 
@@ -230,85 +303,143 @@ poke_stats %>%
 
 :::::: columns
 ::: {.column width="58%"}
-The diagonal is all `1.00` — every column correlates perfectly with itself. Ignore it.
-
-Everything else is the interesting part:
-
-- `sp_attack` and `sp_defense`: **0.53**
-- `hp` and `sp_defense`: **0.49**
-- `attack` and `defense`: **0.48**
-- `speed` and `defense`: **−0.05** — nothing at all
-
-So the six columns are **not** six independent facts. They overlap. Knowing one tells you something about the others.
+- The diagonal is all `1.00` — each column against itself. Ignore it
+- The strongest pairs:
+  - `defense` & `sp_defense`: **0.50**
+  - `sp_attack` & `sp_defense`: **0.49**
+  - `hp` & `attack`: **0.48**
+  - `attack` & `defense`: **0.47**
+- And one that is nothing at all:
+  - `speed` & `defense`: **0.01**
+- So six columns are **not** six independent facts
+  - they **overlap** — knowing one tells you something about another
 :::
 
 :::: {.column width="42%"}
 ::: callout-important
 **✅ This is what makes PCA work**
 
-If all six columns were completely unrelated, PCA would have nothing to do — six axes in, six equally useless axes out.
+**Correlation is redundancy.**
 
-**Correlation is redundancy.** PCA's whole job is to squeeze the redundancy out.
+PCA's whole job is to squeeze the redundancy out.
+
+If all six were completely unrelated, there would be nothing to squeeze — six axes in, six equally useless axes out.
 :::
 ::::
 ::::::
 
-# 🧩 Chunk 2 of 4 · What PCA Actually Does
-
-**We will cover:** the shadow analogy, and why scaling comes first.
-
-# The Shadow Analogy 🔦
+# "Shouldn't I Drop the Correlated Ones?"
 
 :::::: columns
 ::: {.column width="58%"}
-Hold your hand up in front of a lamp and look at the shadow on the wall.
-
-Your hand is **3-D**. The shadow is **2-D**. You have lost a dimension — but you can still tell it is a hand.
-
-Now **rotate** your hand. Some angles give a shadow you can recognise instantly. Others give a shapeless blob.
-
-**Same hand. Same wall. Different amount of information kept.**
+- **No.** That rule is from **regression**
+  - there, two correlated predictors fight over one slope
+- In PCA, correlation is the **fuel**, not a problem
+  - correlated stats simply **land on the same axis**
+  - that is the redundancy being squeezed out
+- PCA is **built from this correlation table**
+  - with `scale. = TRUE`, that table is literally the input
 :::
 
 :::: {.column width="42%"}
-::: callout-tip
-**🎯 That is PCA**
+::: callout-warning
+**⚠️ The one real caution**
 
-Your data is a cloud of 151 points in **6-D** space.
+Do not put in the **same thing twice**.
 
-PCA finds the angle that casts the **most informative shadow** — the one where the points stay as spread out as possible.
+A "total stats" column next to the six stats it was added up from would count everything twice.
 
-Then it reports what that shadow is made of.
+Here the biggest correlation is **0.50** — nowhere near a duplicate.
 :::
 ::::
 ::::::
 
-# Said Without the Analogy
+# Where PC1 Comes From — With Two Stats
+
+::::: columns
+::: {.column width="55%"}
+```{r two-stat-demo}
+#| echo: false
+#| fig-width: 5
+#| fig-height: 4.2
+two_df <- pokemon %>%
+  transmute(attack  = as.numeric(scale(attack)),
+            defense = as.numeric(scale(defense)))
+
+ggplot(two_df, aes(attack, defense)) +
+  geom_point(alpha = 0.25, color = "grey40") +
+  geom_abline(slope = 1, intercept = 0,
+              color = "firebrick", linewidth = 1.3) +
+  geom_abline(slope = -1, intercept = 0,
+              color = "steelblue", linewidth = 1.3, linetype = "dashed") +
+  annotate("text", x = 3.2, y = 3.7, label = "PC1",
+           color = "firebrick", fontface = "bold", size = 5) +
+  annotate("text", x = -2.6, y = 3.4, label = "PC2",
+           color = "steelblue", fontface = "bold", size = 5) +
+  coord_equal(xlim = c(-3, 4), ylim = c(-3, 4)) +
+  labs(x = "attack (scaled)", y = "defense (scaled)")
+```
+:::
+
+::: {.column width="45%"}
+- `attack` vs `defense`, r = 0.47
+  - the cloud is **stretched along a diagonal**
+- **PC1** (red) = the line along the **longest** stretch
+  - it holds **73%** of the spread in these two stats
+- **PC2** (blue) = **right angles** to PC1
+  - it holds the leftover 27%
+- Strong correlation → long, thin cloud → PC1 holds a lot
+:::
+:::::
+
+# The Same Idea, in Six Dimensions
 
 :::::: columns
 ::: {.column width="58%"}
-PCA builds **new measurements** by blending the old ones:
+- Your data is a cloud of 1,025 points in **6-D** space
+- **PC1** = the direction through that cloud with the **most spread**
+- **PC2** = the most spread that is **left**, at right angles to PC1
+- **PC3** = the next leftover, and so on
+- Six columns in → six PCs out, in **order of usefulness**
+- Each PC is a **blend** of the old columns:
 
 $$\text{PC1} = a_1\,\text{hp} + a_2\,\text{attack} + \ldots$$
-
-It picks the weights so that:
-
-- **PC1** captures as much of the spread between Pokémon as any single blend can
-- **PC2** captures as much of what is **left over** as possible — and is at right angles to PC1
-- **PC3** takes the next-biggest leftover, and so on
-
-Six columns in, six PCs out — but they come in **order of usefulness**.
 :::
 
 :::: {.column width="42%"}
 ::: callout-note
 **🧠 Two words you need**
 
-**Loading** — how much an original stat contributes to a PC. *What the axis is made of.*
+**Loading** — how much an original stat contributes to a PC. *What the axis is made of* — the $a$'s.
 
 **Score** — where one Pokémon sits along that PC. *Its new measurement.*
 
-Loadings describe the **axis**. Scores describe the **Pokémon**. That is all of Chunk 2 of next class.
+Loadings describe the **axis**. Scores describe the **Pokémon**.
+:::
+::::
+::::::
+
+# The Shadow Analogy 🔦
+
+:::::: columns
+::: {.column width="58%"}
+- Hold your hand in front of a lamp
+  - your hand is **3-D**, the shadow is **2-D**
+  - you lost a dimension — but it still looks like a hand
+- **Rotate** your hand
+  - some angles: you recognise it instantly
+  - others: a shapeless blob
+- **Same hand. Same wall. Different amount kept**
+- That is the 3-D plot you spun — now in six dimensions
+:::
+
+:::: {.column width="42%"}
+::: callout-tip
+**🎯 That is PCA**
+
+PCA finds the angle that casts the **most informative shadow** of the 6-D cloud — the one where the points stay as spread out as possible.
+
+Then it reports what that shadow is made of.
 :::
 ::::
 ::::::
@@ -320,23 +451,25 @@ Loadings describe the **axis**. Scores describe the **Pokémon**. That is all of
 ```{r scale-why}
 poke_stats %>%
   summarise(across(everything(),
-                   ~ round(sd(.x), 1)))
+                   ~ sd(.x)))
 ```
 
-`hp` varies more than `defense` does — in raw points.
-
-PCA chases **spread**. Hand it unscaled columns and it will decide the most important thing in the data is whichever column happens to use the **biggest numbers**.
+- PCA chases **spread**
+  - unscaled, the column with the **biggest numbers** wins by default
+- Pokémon stats happen to be on similar scales (sd 27–30)
+  - real data almost never is
 :::
 
 :::: {.column width="42%"}
 ::: callout-warning
 **⚠️ A worked disaster**
 
-Imagine measuring animals in **grams** and **kilometres**.
+Measure animals in **grams** and **kilometres**.
 
-Body mass in grams: thousands. Home range in km: maybe 0.4.
+- body mass in grams: thousands
+- home range in km: maybe 0.4
 
-Unscaled, PC1 would be **entirely mass**, and would tell you nothing except which unit you typed.
+Unscaled, PC1 would be **entirely mass** — it would only tell you which unit you typed.
 :::
 ::::
 ::::::
@@ -345,14 +478,11 @@ Unscaled, PC1 would be **entirely mass**, and would tell you nothing except whic
 
 :::::: columns
 ::: {.column width="58%"}
-`scale. = TRUE` converts every column to **standard deviations from its own mean** before doing anything else.
-
-After scaling, every column has:
-
-- mean **0**
-- standard deviation **1**
-
-Now all six compete **fairly**, and the units cancel out entirely.
+- `scale. = TRUE` turns every column into **standard deviations from its own mean**
+- After scaling, every column has
+  - mean **0**
+  - standard deviation **1**
+- All six compete **fairly**, and the units cancel out
 :::
 
 :::: {.column width="42%"}
@@ -365,7 +495,7 @@ The argument is **`scale.`** — with a dot:
 prcomp(poke_stats, scale. = TRUE)
 ```
 
-The dot is there because `scale` was already an R function. Leave it off and you get an error.
+`scale` was already an R function. Leave the dot off and you get an error.
 
 **Almost always use `scale. = TRUE`.**
 :::
@@ -387,8 +517,8 @@ poke_pca <- prcomp(poke_stats, center = TRUE, scale. = TRUE)
 
 - `center = TRUE` — subtract each column's mean
 - `scale. = TRUE` — divide by each column's standard deviation
-
-Everything from here on is **reading the result**, which is the part that takes judgement.
+- Nothing prints — the result is stored in `poke_pca`
+- Everything from here on is **reading the result** — the part that takes judgement
 :::
 
 # What Came Back
@@ -397,34 +527,28 @@ Everything from here on is **reading the result**, which is the part that takes 
 summary(poke_pca)
 ```
 
-# Reading `summary()` — the Only Row That Matters
+# Reading `summary()`
 
 :::::: columns
 ::: {.column width="58%"}
-Ignore the first row. Read these two:
-
-**`Proportion of Variance`** — how much of the total spread each PC captures:
-
-- **PC1: 39.6%**
-- **PC2: 21.5%**
-- PC3: 16.5%
-
-**`Cumulative Proportion`** — the running total:
-
-- PC1 alone: **39.6%**
-- PC1 + PC2: **61.1%**
-- All six: 100%, always
+- Ignore the first row (`Standard deviation`)
+- **`Proportion of Variance`** — share of the total spread each PC holds
+  - **PC1: 44.1%**
+  - **PC2: 18.4%**
+  - PC3: 14.7%
+- **`Cumulative Proportion`** — the running total
+  - PC1 alone: **44.1%**
+  - PC1 + PC2: **62.5%**
+  - all six: 100%, always
 :::
 
 :::: {.column width="42%"}
 ::: callout-important
 **✅ The headline**
 
-**Two** invented axes carry **61%** of everything in six columns.
+**Two** invented axes carry **62.5%** of everything in six columns.
 
-So a flat scatterplot of PC1 against PC2 — which we draw next class — shows you about **three-fifths** of the whole dataset.
-
-That is the payoff.
+So one flat scatterplot of PC1 against PC2 shows you nearly **two-thirds** of the whole dataset.
 :::
 ::::
 ::::::
@@ -433,24 +557,22 @@ That is the payoff.
 
 :::::: columns
 ::: {.column width="58%"}
-**Variance** here just means *how spread out things are*.
-
-Total variance = every way these 151 Pokémon differ from each other across all six stats.
-
-PC1 captures 39.6% of that. Meaning: if you threw away all six stats and kept **only** each Pokémon's PC1 score, you would still have about **40%** of the information about how they differ.
-
-One number instead of six, for 40% of the picture.
+- **Variance** = how spread out things are
+- Total variance = every way these 1,025 Pokémon differ, across all six stats
+- PC1 holds 44.1% of that
+  - throw away all six stats
+  - keep **only** each Pokémon's PC1 score
+  - you still have **44%** of how they differ
+- **One number instead of six**, for 44% of the picture
 :::
 
 :::: {.column width="42%"}
 ::: callout-warning
-**⚠️ Not 39.6% of the Pokémon**
+**⚠️ Not 44% of the Pokémon**
 
-And not 39.6% accuracy.
+And not 44% accuracy.
 
-It is 39.6% of the **total variation** — of the differences between them.
-
-If every Pokémon had identical stats there would be no variance at all, and PCA would have nothing to find.
+It is 44% of the **total variation** — of the differences between them.
 :::
 ::::
 ::::::
@@ -469,9 +591,9 @@ var_df
 ::: callout-note
 **🧠 Where that came from**
 
-`poke_pca$sdev` is each PC's standard deviation. Squaring it gives variance; dividing by the total turns it into a share; times 100 is a percent.
-
-It is the same numbers `summary()` printed — but now in a **data frame**, which means we can plot them.
+- `poke_pca$sdev` = each PC's standard deviation
+- square it → variance; ÷ total → a share; × 100 → a percent
+- Same numbers `summary()` printed — but in a **data frame**, so we can plot them
 :::
 
 # The Scree Plot
@@ -488,24 +610,24 @@ ggplot(var_df, aes(x = PC, y = percent)) +
 
 :::::: columns
 ::: {.column width="58%"}
-A **scree plot** is variance explained, per axis, in order. ("Scree" is the loose rubble at the foot of a cliff — the shape the bars make.)
-
-You are looking for the **elbow**: where the bars stop dropping steeply and flatten into rubble.
-
-Here PC1 and PC2 stand up; from PC3 on the bars settle down and get similar. So the honest answer is **keep two**, and know you are holding 61%.
+- **Scree** = the rubble at the foot of a cliff — the shape the bars make
+- Look for the **elbow**: where the bars stop dropping steeply
+- Here:
+  - PC1 stands **way** above the rest
+  - PC2 onwards step down gently
+- **Keep two**: the big one, plus the one we will learn to name
+  - and know you are holding 62.5%
 :::
 
 :::: {.column width="42%"}
 ::: callout-warning
 **⚠️ There is no rule**
 
-Nothing tells you where the elbow is. People argue about it constantly.
+People argue about the elbow constantly. Rough guides:
 
-Common rough guides:
-
-- Keep PCs until the cumulative total passes ~70–80%
-- Keep the ones **before** the flat part
-- Keep the ones you can **interpret**
+- keep PCs until the cumulative total passes \~70–80%
+- keep the ones **before** the flat part
+- keep the ones you can **interpret**
 
 That last one is the most useful.
 :::
@@ -514,20 +636,24 @@ That last one is the most useful.
 
 # 🧩 Chunk 4 of 4 · Does PC1 Mean Anything?
 
-**We will cover:** the only check that matters — looking at who sits at each end.
+**We will cover:**
 
-# A Quick Look at What PC1 Is Made Of
+- what PC1 is made of
+- who sits at each end of it
+- the picture, with names on hover
+
+# What PC1 Is Made Of
 
 ```{r loadings-peek}
 round(poke_pca$rotation[, 1:2], 2)
 ```
 
 ::: callout-important
-**✅ Look at the PC1 column: every single number is positive**
+**✅ Look at the PC1 column: every number is positive (0.31 to 0.44)**
 
-So a Pokémon scores high on PC1 by being high on **all six stats at once**.
-
-PC1 is an **"overall power"** axis. We will take this table apart properly next class — for now, notice that PC2 has **minus signs**, which means it is doing something completely different.
+- A Pokémon scores high on PC1 by being high on **all six stats at once**
+- PC1 is an **"overall power"** axis
+- PC2 has **minus signs** — it is doing something different. Next class
 :::
 
 # Where Does Each Pokémon Sit?
@@ -545,7 +671,9 @@ poke_scores %>%
 ::: callout-note
 **🧠 `poke_pca$x` holds the scores**
 
-One row per Pokémon, one column per PC — in the **same row order** as the data we put in. That is why we could glue it straight on with `mutate()`.
+- one row per Pokémon, one column per PC, **same row order** as the data
+- that is why `mutate()` can glue them straight on
+- scores are in **standard deviations**: 0 = average, negative = below average
 :::
 
 # The Top of PC1
@@ -553,7 +681,7 @@ One row per Pokémon, one column per PC — in the **same row order** as the dat
 ```{r top-pc1}
 poke_scores %>%
   arrange(desc(PC1)) %>%
-  select(name, is_legendary, PC1) %>%
+  select(name, status, PC1) %>%
   head(6)
 ```
 
@@ -562,19 +690,21 @@ poke_scores %>%
 ```{r bottom-pc1}
 poke_scores %>%
   arrange(PC1) %>%
-  select(name, PC1) %>%
+  select(name, status, PC1) %>%
   head(6)
 ```
 
-# That Is the Whole Validation 🎣
+# That Is the Validation 🎣
 
 :::::: columns
 ::: {.column width="58%"}
-**Top of PC1:** Mewtwo, Dragonite, Mew, Articuno, Zapdos, Moltres — **every legendary in the game**, plus the two strongest non-legendaries.
-
-**Bottom of PC1:** **Magikarp**, Caterpie, Weedle, Metapod, Kakuna, Zubat.
-
-Nobody told PCA which Pokémon were strong. There is no "power" column in the file. It was handed six columns of numbers and it **sorted them by overall strength** on its own.
+- **Top of PC1:** Arceus, Ho-Oh, Giratina, Lunala, Eternatus, Reshiram
+  - **every one a legendary or mythical**
+- **Bottom of PC1:** Wishiwashi, Blipbug, Sunkern, **Magikarp**, Snom, Weedle
+  - the famously useless ones
+- Nobody told PCA which Pokémon were strong
+  - there is **no "power" column** in the file
+  - it sorted them by overall strength **on its own**
 :::
 
 :::: {.column width="42%"}
@@ -585,7 +715,7 @@ This is the check you run on **every** PCA.
 
 You cannot test whether an axis is "real". But you *can* look at what sits at each end and ask whether it lines up with something you already know.
 
-If it does, the axis is measuring something. If it does not, be very careful.
+If it does not, be very careful.
 :::
 ::::
 ::::::
@@ -594,16 +724,67 @@ If it does, the axis is measuring something. If it does not, be very careful.
 
 ```{r legendary-mean}
 poke_scores %>%
-  group_by(is_legendary) %>%
+  group_by(status) %>%
   summarise(n = n(),
             mean_PC1 = round(mean(PC1), 2))
 ```
 
 ::: callout-note
-**The four legendaries average PC1 = 3.00; everyone else averages −0.08.**
+**🧠 Reading it**
 
-PC1 scores are in **standard deviations**, so the legendaries sit about **three standard deviations** above the crowd — on an axis that was built without ever being told they existed.
+- 71 legendaries average **PC1 = 2.38**; 23 mythicals **2.25**; the other 931 **−0.24**
+- Scores are in standard deviations → the rare ones sit about **2.5 sd above** the crowd
+- On an axis built **without ever being told** they existed
 :::
+
+# The Picture — Hover Over It
+
+```{r pca-plotly}
+#| eval: !expr is_html
+#| fig-width: 9
+#| fig-height: 4.3
+pca_plot <- ggplot(poke_scores,
+                   aes(x = PC1, y = PC2, color = status, text = name)) +
+  geom_point(alpha = 0.6)
+
+ggplotly(pca_plot, tooltip = "text")
+```
+
+```{r pca-plotly-static}
+#| echo: false
+#| eval: !expr '!is_html'
+#| fig-width: 6.5
+#| fig-height: 3.4
+ggplot(poke_scores, aes(x = PC1, y = PC2, color = status)) +
+  geom_point(alpha = 0.6) +
+  labs(caption = "Static view - in the HTML slides you can hover for names")
+```
+
+# Reading That Picture
+
+:::::: columns
+::: {.column width="58%"}
+- Every dot is one Pokémon, on **two invented axes**
+  - **left ↔ right** = weak ↔ strong *(PC1, 44.1%)*
+  - **up ↔ down** = something else *(PC2, 18.4%)*
+- Legendaries and mythicals pile up on the **right**
+- **Hover** to check:
+  - Magikarp on the far left
+  - Mewtwo on the far right
+  - who is that one **way** up at the top?
+- `text = name` is not a real ggplot aesthetic — `ggplotly()` picks it up for the hover
+:::
+
+:::: {.column width="42%"}
+::: callout-tip
+**🎯 Close dots = similar Pokémon**
+
+Two dots near each other have **similar stat profiles overall** — the all-six-at-once question we could not answer with 15 scatterplots.
+
+And this one plot holds **62.5%** of the six columns.
+:::
+::::
+::::::
 
 # What We Have, and What Is Missing
 
@@ -611,25 +792,25 @@ PC1 scores are in **standard deviations**, so the legendaries sit about **three 
 ::: {.column width="58%"}
 **We have:**
 
-- Two axes holding 61% of six columns
-- PC1 identified as "overall power", checked against Magikarp and Mewtwo
+- two axes holding 62.5% of six columns
+- PC1 = **"overall power"**, checked against Magikarp and the legendaries
+- a picture you can hover over
 
 **We do not have:**
 
-- Any idea what **PC2** means
-- A **picture** — we have not plotted a single Pokémon yet
-- Any way to see the original six stats **on** that picture
+- any idea what **PC2** means
+- a way to see the six original stats **on** the picture
 
-All three are next class.
+Both are next class.
 :::
 
 :::: {.column width="42%"}
 ::: callout-tip
 **🎯 A hint about PC2**
 
-Look back at the loadings. In PC2, `defense` is **+0.59** and `speed` is **−0.54**.
+In PC2, `defense` is **+0.58** and `speed` is **−0.70**.
 
-A big positive and a big negative on the same axis means PC2 is a **trade-off**, not a total.
+A big positive and a big negative on the same axis means a **trade-off**, not a total.
 
 Which trade-off? Next class.
 :::
@@ -640,38 +821,39 @@ Which trade-off? Next class.
 
 :::::: columns
 ::: {.column width="58%"}
-Do today again on **all 1,025 Pokémon** instead of the original 151.
-
-`data/pokemon_1025.csv` has the identical columns, so the homework is mostly **changing one filename** and re-reading your output.
-
-The real question: **does PC1 still mean the same thing?** Twenty-five years of new Pokémon, nine generations — or is "overall power" just a quirk of the first 151?
+- Same analysis, on **only the original 151** (Generation I)
+- One line is new — a `filter()` right after you read the file
+- The question: **does Gen 1 alone tell the same story?**
+  - does PC1 still mean overall power?
+  - how much does it hold — more or less than 44%?
+  - what changes when there are only **4** legendaries?
 :::
 
 :::: {.column width="42%"}
 ::: callout-note
-**📂 What you will do**
+**📂 How it works**
 
-The whole chunk-1-to-4 sequence on the bigger file, then compare your percentages and your top/bottom lists to today's.
-
-All the code is in the homework file. Most of the marks are for **reading** what comes out.
+- The questions are at the **top** of the homework file
+- Helper code is written along the way
+- Where it says `YOUR CODE`, copy the matching section from today's script
 :::
 ::::
 ::::::
 
 # Recap
 
-- PCA is **not a test** — no p-value, no assumptions, nothing to reject
-- It exists because **six columns cannot be plotted**, and pairs cannot answer "who is similar to whom"
-- It works because the columns are **correlated** — correlation is redundancy
-- Think **shadows**: a lower-dimensional view, taken from the most informative angle
-- **Always `scale. = TRUE`**, or the column with the biggest numbers wins by default
-- `prcomp()` is one line; **reading it** is the work
-- **PC1 = 39.6%, PC2 = 21.5%, together 61.1%** of everything in six columns
-- The **scree plot** shows where to stop; there is no rule, only judgement
-- **Validate by looking at the ends.** Magikarp at one end, Mewtwo at the other ✅
+- PCA is **not a test** — no p-value, nothing to reject
+- Six columns **cannot be plotted**; three in 3-D already need rotating
+- PCA works **because** the columns are correlated — **do not drop** them
+- **PC1** = the direction of most spread; **PC2** = most of what is left, at right angles
+- Think **shadows**: the most informative angle on a cloud you cannot see
+- **Always `scale. = TRUE`**
+- **PC1 = 44.1%, PC2 = 18.4%, together 62.5%**
+- The **scree plot** shows where to stop — judgement, not a rule
+- **Validate by looking at the ends** — Magikarp at one end, the legendaries at the other ✅
 
 ::: callout-note
 **✅ Next**
 
-Open the activity and run it. Next class: what PC2 means, and the picture. 🔴
+Open the activity and type it in. Next class: what PC2 means, and the biplot. 🔴
 :::

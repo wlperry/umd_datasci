@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-11-17">
-<meta name="description" content="A first, gentle pass at principal component analysis, assuming no statistics background at all. Why six correlated measurements are hard to look at, what PCA actually does (the shadow analogy), why you must scale first, running prcomp(), reading summary() for variance explained, building a scree plot, deciding how many components to keep, and checking that PC1 means something real by looking at which Pokemon sit at each end of it.">
+<meta name="dcterms.date" content="2026-11-20">
+<meta name="description" content="A first, gentle pass at principal component analysis on all 1,025 Pokemon, assuming no statistics background at all. Three stats in an interactive 3-D plot (and why six cannot be drawn), the correlation table, why correlated columns are not dropped, where PC1 comes from using two stats, the shadow analogy, scaling, running prcomp(), variance explained, the scree plot, checking PC1 against who sits at each end, and a hover-to-name plot of the new axes.">
 
 <title>Lecture 27 — PCA I: Many Measurements, Few Axes – UMD DAta Science Biology</title>
 <style>
@@ -117,6 +117,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<link href="../../site_libs/htmltools-fill-0.5.9/fill.css" rel="stylesheet">
+<script src="../../site_libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+<script src="../../site_libs/plotly-binding-4.12.1/plotly.js"></script>
+<script src="../../site_libs/typedarray-0.1/typedarray.min.js"></script>
+<script src="../../site_libs/jquery-3.5.1/jquery.min.js"></script>
+<link href="../../site_libs/crosstalk-1.2.2/css/crosstalk.min.css" rel="stylesheet">
+<script src="../../site_libs/crosstalk-1.2.2/js/crosstalk.min.js"></script>
+<link href="../../site_libs/plotly-htmlwidgets-css-2.25.2/plotly-htmlwidgets.css" rel="stylesheet">
+<script src="../../site_libs/plotly-main-2.25.2/plotly-latest.min.js"></script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
@@ -150,11 +159,11 @@ window.Quarto = {
 
 <link rel="stylesheet" href="../../css/main.css">
 <meta property="og:title" content="Lecture 27 — PCA I: Many Measurements, Few Axes – UMD DAta Science Biology">
-<meta property="og:description" content="A first, gentle pass at principal component analysis, assuming no statistics background at all. Why six correlated measurements are hard to look at, what PCA actually does (the shadow analogy), why you must scale first, running prcomp(), reading summary() for variance explained, building a scree plot, deciding how many components to keep, and checking that PC1 means something real by looking at which Pokemon sit at each end of it.">
-<meta property="og:image" content="https://wlperry.github.io/umd_datasci/content/pca_pokemon/pca_pokemon_lecture_files/figure-revealjs/scree-1.png">
+<meta property="og:description" content="A first, gentle pass at principal component analysis on all 1,025 Pokemon, assuming no statistics background at all. Three stats in an interactive 3-D plot (and why six cannot be drawn), the correlation table, why correlated columns are not dropped, where PC1 comes from using two stats, the shadow analogy, scaling, running prcomp(), variance explained, the scree plot, checking PC1 against who sits at each end, and a hover-to-name plot of the new axes.">
+<meta property="og:image" content="https://wlperry.github.io/umd_datasci/content/pca_pokemon/pca_pokemon_lecture_files/figure-revealjs/two-stat-demo-1.png">
 <meta property="og:site_name" content="UMD DAta Science Biology">
-<meta property="og:image:height" content="307">
-<meta property="og:image:width" content="672">
+<meta property="og:image:height" content="403">
+<meta property="og:image:width" content="480">
 </head>
 
 <body class="nav-sidebar docked quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a><script id="quarto-html-before-body" type="application/javascript">
@@ -444,19 +453,20 @@ window.Quarto = {
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Lecture 27 — PCA I: Many Measurements, Few Axes</h1>
-<p class="subtitle lead">Six numbers per Pokémon, one picture, and what ‘variance explained’ means</p>
+<p class="subtitle lead">Six numbers per Pokémon, where the new axes come from, and what ‘variance explained’ means</p>
   <div class="quarto-categories">
     <div class="quarto-category">pca</div>
     <div class="quarto-category">multivariate</div>
     <div class="quarto-category">prcomp</div>
     <div class="quarto-category">ggplot</div>
+    <div class="quarto-category">plotly</div>
     <div class="quarto-category">pokemon</div>
   </div>
   </div>
 
 <div>
   <div class="description">
-    <p>A first, gentle pass at principal component analysis, assuming no statistics background at all. Why six correlated measurements are hard to look at, what PCA actually does (the shadow analogy), why you must scale first, running prcomp(), reading summary() for variance explained, building a scree plot, deciding how many components to keep, and checking that PC1 means something real by looking at which Pokemon sit at each end of it.</p>
+    <p>A first, gentle pass at principal component analysis on all 1,025 Pokemon, assuming no statistics background at all. Three stats in an interactive 3-D plot (and why six cannot be drawn), the correlation table, why correlated columns are not dropped, where PC1 comes from using two stats, the shadow analogy, scaling, running prcomp(), variance explained, the scree plot, checking PC1 against who sits at each end, and a hover-to-name plot of the new axes.</p>
   </div>
 </div>
 
@@ -473,7 +483,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 17, 2026</p>
+      <p class="date">November 20, 2026</p>
     </div>
   </div>
   
@@ -487,40 +497,38 @@ window.Quarto = {
 
 <section id="something-completely-different" class="level1">
 <h1>Something Completely Different</h1>
-<p>Everything this term had <strong>one</strong> response variable.</p>
 <ul>
-<li>A t-test: one measurement, two groups</li>
-<li>Regression: one measurement against one other</li>
+<li>Everything this term had <strong>one</strong> response variable
+<ul>
+<li>t-test: one measurement, two groups</li>
+<li>regression: one measurement against one other</li>
 <li>ANOVA: one measurement across several groups</li>
+</ul></li>
+<li>Today: <strong>six measurements at once</strong>, and no groups to compare
+<ul>
+<li>not <em>“is A different from B?”</em></li>
+<li>but <em>“what is the <strong>shape</strong> of this whole dataset?”</em> 🔴</li>
+</ul></li>
 </ul>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>✅ Transition</strong></p>
-<p>Today: <strong>six measurements at once</strong>, and no groups to compare. Not “is A different from B?” but <em>“what is the <strong>shape</strong> of this whole dataset?”</em> 🔴</p>
-</div>
-</div>
 </section>
 <section id="today-has-no-p-values" class="level1">
 <h1>Today Has No p-Values</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p>PCA is not a test. There is <strong>nothing to reject</strong>.</p>
 <ul>
-<li>No null hypothesis</li>
-<li>No p-value</li>
-<li>No assumptions to check</li>
-<li>Nothing passes or fails</li>
+<li>PCA is <strong>not a test</strong>
+<ul>
+<li>no null hypothesis</li>
+<li>no p-value</li>
+<li>no assumptions to check</li>
+<li>nothing passes or fails</li>
+</ul></li>
+<li>It is a way of <strong>looking</strong> at data that has too many columns to plot</li>
+<li>The question is never <em>“is it significant?”</em>
+<ul>
+<li>it is always <strong>“does this make sense?”</strong></li>
+</ul></li>
 </ul>
-<p>It is a way of <strong>looking</strong> at data that has too many columns to plot.</p>
-<p>So the question today is never <em>“is it significant?”</em> It is always <strong>“does this make sense?”</strong></p>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -535,7 +543,6 @@ Important
 <p><strong>⚠️ Set down one habit</strong></p>
 <p>For nine weeks, “did it work?” meant “is p small?”</p>
 <p>Today you judge your result by whether you can <strong>explain what the axes mean</strong>.</p>
-<p>That is a harder standard, not an easier one.</p>
 </div>
 </div>
 </div>
@@ -546,21 +553,22 @@ Important
 <div class="columns">
 <div class="column" style="width:58%;">
 <ul>
-<li>See <strong>why</strong> six columns are hard to look at</li>
+<li><strong>See</strong> the data in 3-D — and why six columns cannot be drawn</li>
 <li>Notice that the columns are <strong>correlated</strong></li>
-<li>Understand what PCA does — <strong>in words, not algebra</strong></li>
+<li>See <strong>where a principal component comes from</strong></li>
 <li>Know why you must <strong>scale</strong> first</li>
 <li>Run it: <code>prcomp()</code></li>
-<li>Read <strong>variance explained</strong> from <code>summary()</code></li>
-<li>Draw a <strong>scree plot</strong> and decide how many axes to keep</li>
-<li><strong>Sanity-check</strong> PC1 against things you already know</li>
+<li>Read <strong>variance explained</strong>, draw a <strong>scree plot</strong></li>
+<li><strong>Check</strong> PC1 against Pokémon you already know</li>
+<li><strong>Hover</strong> over the new picture to find them</li>
 </ul>
 </div><div class="column" style="width:42%;">
 <p><strong>Tools today:</strong></p>
 <ul>
-<li><code>tidyverse</code> — that is it</li>
+<li><code>tidyverse</code></li>
+<li><code>plotly</code> — you installed it for the mapping weeks</li>
 </ul>
-<p><strong>Data:</strong> 🔴 the original <strong>151 Pokémon</strong>, six battle stats each</p>
+<p><strong>Data:</strong> 🔴 <strong>all 1,025 Pokémon</strong>, six battle stats each</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -581,10 +589,17 @@ Tip
 <h1>Why Pokémon</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p>Because you can <strong>check the answer.</strong></p>
-<p>PCA will hand back new axes it invented, and you have to decide whether they mean anything. That is nearly impossible to judge on unfamiliar data.</p>
-<p>But if an axis puts <strong>Magikarp</strong> at one end and <strong>Mewtwo</strong> at the other, you know <em>exactly</em> what it found.</p>
-<p>The method is the same one used on gene expression, soil chemistry, and skull measurements. Only the checking is easier.</p>
+<ul>
+<li>Because you can <strong>check the answer</strong>
+<ul>
+<li>PCA hands back new axes that it <strong>invented</strong></li>
+<li>you have to decide whether they mean anything</li>
+<li>that is nearly impossible on data you do not know</li>
+</ul></li>
+<li>If an axis puts <strong>Magikarp</strong> at one end and <strong>Mewtwo</strong> at the other, you know <em>exactly</em> what it found</li>
+<li>1,025 is plenty of data — and <strong>hovering</strong> tells you who any dot is</li>
+<li>Same method as gene expression, soil chemistry, skull measurements</li>
+</ul>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -611,32 +626,114 @@ Note
 </div>
 </div>
 </section>
-<section id="chunk-1-of-4-the-problem-with-six-columns" class="level1">
-<h1>🧩 Chunk 1 of 4 · The Problem With Six Columns</h1>
-<p><strong>We will cover:</strong> reading the data, and why you cannot just plot it.</p>
+<section id="chunk-1-of-4-look-at-the-data-first" class="level1">
+<h1>🧩 Chunk 1 of 4 · Look at the Data First</h1>
+<p><strong>We will cover:</strong></p>
+<ul>
+<li>reading the data and marking the legendaries</li>
+<li>three stats in 3-D — and why six is impossible</li>
+</ul>
 </section>
 <section id="read-it-in" class="level1">
 <h1>Read It In</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>pokemon <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/pokemon_151.csv"</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(pokemon)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(plotly)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>pokemon <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/pokemon_1025.csv"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">status =</span> <span class="fu">case_when</span>(</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    is_legendary <span class="sc">~</span> <span class="st">"legendary"</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    is_mythical  <span class="sc">~</span> <span class="st">"mythical"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span>         <span class="sc">~</span> <span class="st">"regular"</span>))</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>pokemon <span class="sc">%&gt;%</span> <span class="fu">count</span>(status)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 151  15</code></pre>
+<pre><code># A tibble: 3 × 2
+  status        n
+  &lt;chr&gt;     &lt;int&gt;
+1 legendary    71
+2 mythical     23
+3 regular     931</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>pokemon <span class="sc">%&gt;%</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, hp, attack, defense, sp_attack, sp_defense, speed) <span class="sc">%&gt;%</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 4 × 7
-  name          hp attack defense sp_attack sp_defense speed
-  &lt;chr&gt;      &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;
-1 bulbasaur     45     49      49        65         65    45
-2 ivysaur       60     62      63        80         80    60
-3 venusaur      80     82      83       100        100    80
-4 charmander    39     52      43        60         50    65</code></pre>
+</div>
+</div><div class="column" style="width:42%;">
+<ul>
+<li>1,025 rows — one per Pokémon</li>
+<li><code>status</code> is <strong>one</strong> column built from two TRUE/FALSE ones
+<ul>
+<li>first matching line wins</li>
+<li><code>TRUE ~</code> catches everything left over</li>
+</ul></li>
+<li>We will <strong>colour</strong> by <code>status</code> — PCA never sees it</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🧠 Mythical?</strong></p>
+<p>A second “rare and special” group in the game — Mew is mythical, Mewtwo is legendary.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="three-stats-in-3-d" class="level1">
+<h1>Three Stats, in 3-D</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_ly</span>(pokemon, <span class="at">x =</span> <span class="sc">~</span>attack, <span class="at">y =</span> <span class="sc">~</span>defense, <span class="at">z =</span> <span class="sc">~</span>speed,</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>        <span class="at">color =</span> <span class="sc">~</span>status, <span class="at">text =</span> <span class="sc">~</span>name,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"firebrick"</span>, <span class="st">"darkorange"</span>, <span class="st">"grey60"</span>),</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">type =</span> <span class="st">"scatter3d"</span>, <span class="at">mode =</span> <span class="st">"markers"</span>, <span class="at">marker =</span> <span class="fu">list</span>(<span class="at">size =</span> <span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div class="plotly html-widget html-fill-item" id="htmlwidget-626ca2310fd850023a1f" style="width:864px;height:441.6px;"></div>
+<script type="application/json" data-for="htmlwidget-626ca2310fd850023a1f">{"x":{"visdat":{"ef1f241e1326":["function () ","plotlyVisDat"]},"cur_data":"ef1f241e1326","attrs":{"ef1f241e1326":{"x":{},"y":{},"z":{},"text":{},"mode":"markers","marker":{"size":3},"color":{},"colors":["firebrick","darkorange","grey60"],"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter3d"}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"scene":{"xaxis":{"title":"attack"},"yaxis":{"title":"defense"},"zaxis":{"title":"speed"}},"hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":[85,90,100,110,85,115,75,90,130,100,50,75,80,90,100,150,150,75,105,125,120,120,90,160,100,70,90,129,90,115,115,120,150,125,130,131,131,100,95,95,115,85,130,75,29,29,137,113,107,120,120,85,90,130,100,100,145,65,80,115,85,120,110,80,135,85,128,75,91,120,65],"y":[100,85,90,90,75,85,115,130,90,200,100,150,90,80,90,140,90,130,105,70,120,100,106,110,120,110,129,90,72,70,70,100,120,90,90,95,95,121,95,95,85,75,115,115,31,131,107,89,101,115,115,95,60,100,50,50,130,60,80,70,100,80,125,80,115,100,115,66,82,84,85],"z":[85,100,90,130,115,100,85,110,90,50,50,50,110,110,90,90,95,95,80,115,90,100,77,100,90,85,108,108,108,111,111,90,90,101,95,99,99,95,59,95,130,95,75,85,37,37,97,97,79,138,138,130,72,97,200,80,30,130,80,106,70,135,45,100,135,135,80,106,99,110,60],"text":["articuno","zapdos","moltres","mewtwo","raikou","entei","suicune","lugia","ho-oh","regirock","regice","registeel","latias","latios","kyogre","groudon","rayquaza","uxie","mesprit","azelf","dialga","palkia","heatran","regigigas","giratina-altered","cresselia","cobalion","terrakion","virizion","tornadus-incarnate","thundurus-incarnate","reshiram","zekrom","landorus-incarnate","kyurem","xerneas","yveltal","zygarde-50","type-null","silvally","tapu-koko","tapu-lele","tapu-bulu","tapu-fini","cosmog","cosmoem","solgaleo","lunala","necrozma","zacian","zamazenta","eternatus","kubfu","urshifu-single-strike","regieleki","regidrago","glastrier","spectrier","calyrex","enamorus-incarnate","wo-chien","chien-pao","ting-lu","chi-yu","koraidon","miraidon","okidogi","munkidori","fezandipiti","ogerpon","terapagos"],"mode":"markers","marker":{"color":"rgba(178,34,34,1)","size":3,"line":{"color":"rgba(178,34,34,1)"}},"type":"scatter3d","name":"legendary","textfont":{"color":"rgba(178,34,34,1)"},"error_y":{"color":"rgba(178,34,34,1)"},"error_x":{"color":"rgba(178,34,34,1)"},"line":{"color":"rgba(178,34,34,1)"},"frame":null},{"x":[100,100,100,150,80,100,90,100,120,100,72,77,120,100,110,110,95,125,112,65,143,120,88],"y":[100,100,100,50,80,100,90,100,120,100,90,77,95,150,60,120,115,80,75,65,143,105,160],"z":[100,100,100,150,80,100,125,100,120,100,108,90,99,50,70,70,65,125,143,34,34,105,88],"text":["mew","celebi","jirachi","deoxys-normal","phione","manaphy","darkrai","shaymin-land","arceus","victini","keldeo-ordinary","meloetta-aria","genesect","diancie","hoopa","volcanion","magearna","marshadow","zeraora","meltan","melmetal","zarude","pecharunt"],"mode":"markers","marker":{"color":"rgba(255,140,0,1)","size":3,"line":{"color":"rgba(255,140,0,1)"}},"type":"scatter3d","name":"mythical","textfont":{"color":"rgba(255,140,0,1)"},"error_y":{"color":"rgba(255,140,0,1)"},"error_x":{"color":"rgba(255,140,0,1)"},"line":{"color":"rgba(255,140,0,1)"},"frame":null},{"x":[49,62,82,52,64,84,48,63,83,30,20,45,35,25,90,45,60,80,56,81,60,90,60,95,55,90,75,100,47,62,92,57,72,102,45,70,41,76,45,70,45,80,50,65,80,70,95,55,65,55,100,45,70,52,82,80,105,70,110,50,65,95,20,35,50,80,100,130,75,90,105,40,70,80,95,120,85,100,65,75,35,60,90,85,110,45,70,80,105,65,95,35,50,65,45,48,73,105,130,30,50,40,95,50,80,120,105,55,65,90,85,130,5,55,95,40,65,67,92,45,75,45,110,50,83,95,125,100,10,125,85,48,55,65,65,130,60,40,60,80,115,105,110,64,84,134,49,62,82,52,64,84,65,80,105,46,76,30,50,20,35,60,90,90,38,58,40,25,30,20,40,50,75,40,55,75,80,20,50,100,75,35,45,55,70,30,75,65,45,85,65,65,85,75,60,72,33,80,65,90,70,75,85,80,120,95,130,10,125,95,80,130,40,50,50,100,55,65,105,55,40,80,60,90,95,60,120,80,95,20,35,95,30,63,75,80,10,64,84,134,45,65,85,60,85,120,70,85,110,55,90,30,70,45,35,70,35,50,30,50,70,40,70,100,55,85,30,50,25,35,65,30,60,40,130,60,80,160,45,90,90,51,71,91,60,120,20,45,45,65,75,85,70,90,110,40,60,45,75,50,40,73,47,60,43,73,90,120,70,90,60,100,85,25,45,60,100,70,100,85,115,40,70,115,100,55,95,48,78,80,120,40,70,41,81,95,125,15,60,70,90,75,115,40,70,68,50,130,23,50,80,40,60,80,64,104,84,90,30,75,95,135,55,75,135,68,89,109,58,78,104,51,66,86,55,75,120,45,85,25,85,65,85,120,30,70,125,165,42,52,29,59,94,30,80,45,65,105,35,60,48,83,100,50,80,66,76,60,125,55,82,30,63,93,24,89,80,25,5,65,92,70,90,130,85,70,110,72,112,50,90,61,106,100,49,69,20,62,92,120,70,85,140,100,123,95,50,76,110,60,95,130,80,125,55,100,80,50,45,60,75,63,93,123,55,75,100,55,85,60,80,110,50,88,53,98,53,98,53,98,25,55,55,77,115,60,100,75,105,135,45,57,85,135,60,80,105,140,50,65,95,100,125,53,63,103,45,55,100,27,67,35,60,92,72,82,117,90,140,86,65,105,75,90,58,30,50,78,108,112,140,50,95,65,105,50,95,30,45,55,30,40,65,44,87,50,65,95,60,100,75,75,135,55,85,40,60,75,47,77,50,94,55,80,100,55,85,115,55,75,30,40,55,87,117,147,70,130,50,40,70,66,85,125,120,74,124,85,125,110,83,123,55,65,97,109,65,85,105,85,60,61,78,107,45,59,69,56,63,95,36,56,50,73,81,35,22,52,50,68,38,45,65,65,100,82,124,80,48,48,80,110,50,52,72,48,80,54,92,52,105,60,75,53,73,38,55,89,121,59,77,65,92,58,50,50,75,100,80,70,110,66,90,69,117,30,70,55,75,107,65,85,115,54,69,74,75,85,120,70,110,62,82,70,82,132,70,45,55,65,115,20,53,63,100,125,40,70,55,105,35,45,44,64,75,125,30,40,120,52,60,120,35,125,55,75,60,60,115,78,98,90,105,60,131,55,75,110,53,139,137,89,101,181,101,73,73,131,127,65,85,125,71,86,116,40,60,85,55,95,47,67,87,20,35,45,28,58,40,50,40,80,64,115,45,90,40,60,80,40,110,85,57,107,85,63,123,38,98,65,115,68,118,45,65,30,40,90,45,60,120,90,110,95,135,85,95,40,60,100,101,25,65,125,80,65,95,80,130,100,100,90,90,95,60,80,120,105,135,140,112,130,115,61,80,110,45,55,75,65,85,120,45,100,41,79,46,102,50,75,115,50,75,55,80,35,53,69,96,55,60,100,50,60,125,31,64,40,70,78,120,65,95,65,115,40,70,100,62,108,50,50,35,60,45,55,75,55,100,103,45,70,70,119,95,85,35,55,61,101,115,68,113,102,100,50,115,75,90,100,135,131,65,127,55,135,81,112,80,140,80,70,134,75,95,145,30,60,139,130,83,130,80,45,60,105,80,115,73,120,72],"y":[49,63,83,43,58,78,65,80,100,35,55,50,30,50,40,40,55,75,35,60,30,65,44,69,40,55,85,110,52,67,87,40,57,77,48,73,40,75,20,45,35,70,55,70,85,55,80,50,60,25,50,35,60,48,78,35,60,45,80,40,65,95,15,30,45,50,70,80,35,50,65,35,65,100,115,130,55,70,65,110,70,95,55,45,70,55,80,50,75,100,180,30,45,60,160,45,70,90,115,50,70,80,85,95,110,53,79,75,95,120,95,120,5,115,80,70,95,60,65,55,85,65,80,35,57,57,100,95,55,79,80,48,50,60,60,60,70,100,125,90,105,65,65,45,65,95,65,80,100,43,58,78,64,80,100,34,64,30,50,30,50,40,70,80,38,58,15,28,15,65,85,45,70,40,55,85,95,50,80,115,75,40,50,70,55,30,55,45,45,85,60,110,42,80,60,48,58,65,90,140,70,105,200,50,75,85,100,230,75,55,50,75,40,120,40,80,95,35,75,45,70,140,30,50,95,60,120,90,62,35,35,95,15,37,37,105,10,50,70,110,35,45,65,40,60,70,50,70,90,35,70,41,61,35,55,50,55,70,30,50,70,50,40,60,30,60,30,100,25,35,65,32,62,60,80,60,80,100,90,45,45,23,43,63,30,60,40,135,45,65,75,85,100,140,180,55,75,40,60,40,50,75,75,45,53,83,20,40,35,45,40,70,140,35,65,60,45,50,80,40,60,60,90,60,60,65,85,43,73,65,85,55,105,77,97,50,100,20,79,70,70,35,65,90,130,83,80,60,48,50,80,50,70,90,85,105,105,130,55,60,100,80,80,100,130,64,85,105,44,52,71,53,68,88,30,50,70,40,60,41,51,34,49,79,35,65,40,60,118,168,45,85,50,42,102,70,35,55,45,70,48,68,66,34,44,44,84,60,52,42,64,50,47,67,86,116,95,45,5,45,108,45,65,95,40,40,70,78,118,90,110,40,65,72,56,76,50,50,75,65,115,95,130,125,67,67,95,86,130,110,125,80,70,65,145,135,70,77,55,75,95,45,55,65,45,60,85,39,69,45,65,90,37,50,48,63,48,63,48,63,45,85,50,62,80,32,63,85,105,130,43,55,40,60,86,55,85,95,40,55,75,85,75,70,90,80,59,99,89,60,85,50,75,65,35,45,80,45,55,67,85,125,70,115,80,85,145,103,133,45,65,62,82,40,60,40,60,50,70,95,40,50,75,50,63,50,65,85,50,70,60,45,105,45,70,50,70,80,50,60,91,131,70,95,115,40,70,80,55,75,55,60,90,60,70,90,40,80,50,85,40,84,50,60,90,50,80,70,100,95,50,75,75,105,66,112,50,70,90,55,65,65,95,122,40,58,72,40,52,67,38,77,43,55,71,40,60,50,58,72,39,47,68,48,62,62,78,60,54,76,100,150,140,60,72,66,86,53,88,67,115,60,90,62,88,33,52,77,119,50,72,65,75,57,150,35,53,70,91,48,76,70,122,85,184,35,80,55,75,75,40,50,90,54,69,74,30,50,75,30,60,45,95,90,57,77,70,40,60,40,65,20,62,152,70,100,52,92,35,90,55,80,40,60,50,80,38,48,98,90,80,90,40,140,80,110,130,100,65,135,63,80,70,85,100,65,90,125,47,139,37,71,103,131,53,67,73,211,53,50,70,90,40,60,75,40,55,65,55,95,35,55,105,20,80,110,28,58,60,90,55,100,50,90,50,60,50,90,120,80,80,80,75,125,55,40,60,35,70,45,65,60,90,45,65,45,65,95,30,45,65,101,100,50,95,75,145,40,75,100,95,35,60,135,110,55,58,49,69,90,90,100,100,115,30,50,75,72,95,105,65,60,95,54,63,70,59,78,100,45,65,80,40,75,45,92,40,78,20,40,70,45,70,70,115,45,60,90,51,75,100,130,40,100,80,41,91,35,60,60,90,35,65,30,70,35,65,115,40,65,60,85,30,60,45,55,77,25,50,85,40,72,63,90,65,145,42,90,60,100,74,45,65,73,115,60,80,60,70,80,120,131,99,99,55,79,97,120,114,108,86,60,110,45,66,92,70,95,71,90,91,88,110,45,106,130,110,121,91,80,100],"z":[45,60,80,65,80,100,43,58,78,45,30,70,50,35,75,56,71,101,72,97,70,100,55,80,90,110,40,65,41,56,76,50,65,85,35,60,65,100,20,45,55,90,30,40,50,25,30,45,90,95,120,90,115,55,85,70,95,60,95,90,90,70,90,105,120,35,45,55,40,55,70,70,100,20,35,45,90,105,15,30,45,70,60,75,110,45,70,25,50,40,70,80,95,110,70,42,67,50,75,100,150,40,55,35,45,87,76,30,35,60,25,40,50,60,90,60,85,63,68,85,115,90,105,95,105,93,85,110,80,81,60,48,55,65,130,65,40,35,55,55,80,130,30,50,70,80,45,60,80,65,80,100,43,58,78,20,90,50,70,55,85,30,40,130,67,67,60,15,15,20,40,70,95,35,45,55,50,40,50,30,70,50,80,110,85,30,30,95,15,35,110,65,91,30,85,48,33,85,15,40,45,85,30,30,45,85,65,5,85,115,40,55,20,30,50,50,35,65,45,75,70,70,65,95,85,40,50,60,85,75,35,70,65,95,83,100,55,41,51,61,70,95,120,45,55,80,40,50,60,35,70,60,100,20,15,65,15,65,30,50,70,30,60,80,85,125,85,65,40,50,80,65,80,35,70,30,90,100,40,160,40,28,48,68,25,50,20,30,50,90,50,50,30,40,50,60,80,65,105,95,95,85,85,65,40,55,65,95,60,60,35,40,20,60,80,60,10,70,100,35,55,50,80,90,65,70,70,60,60,35,55,55,75,23,43,75,45,80,81,70,40,45,65,25,25,51,65,75,23,50,80,25,45,65,32,52,52,55,97,50,50,100,30,50,70,31,36,56,61,81,108,40,50,60,60,80,100,31,71,25,65,45,60,70,55,90,58,58,30,30,36,36,66,70,40,95,85,115,35,85,34,39,115,70,80,85,105,105,71,85,112,45,74,84,23,33,10,60,30,91,35,42,82,102,5,60,90,32,47,65,95,50,85,46,66,91,50,40,60,125,60,50,40,50,95,83,80,95,95,65,95,80,90,80,40,45,110,91,63,83,113,45,55,65,45,60,70,42,77,55,60,80,66,106,64,101,64,101,64,101,24,29,43,65,93,76,116,15,20,25,72,114,68,88,50,35,40,45,64,69,74,45,85,42,42,92,57,47,112,66,116,30,90,98,65,74,92,50,95,60,55,45,48,58,97,30,30,22,32,70,110,65,75,65,105,75,115,45,55,65,20,30,30,55,98,44,59,79,75,95,103,60,20,15,30,40,60,65,65,108,10,20,30,50,90,60,40,50,30,40,20,55,80,57,67,97,40,50,105,25,145,32,65,105,48,35,55,60,70,55,60,80,60,80,65,109,38,58,98,60,100,38,57,64,60,73,104,71,97,122,57,78,62,84,126,35,29,89,72,106,42,52,75,52,68,43,58,102,68,104,28,35,60,23,29,49,72,45,73,50,68,30,44,44,59,70,109,48,71,46,58,60,118,101,50,40,60,80,75,38,56,51,84,28,28,55,123,42,52,70,70,90,60,40,50,60,65,75,60,45,45,46,36,43,63,43,93,84,124,60,112,40,45,35,45,35,27,42,35,45,15,30,77,117,50,60,32,62,72,100,60,80,80,40,15,35,5,60,65,36,96,96,92,36,40,45,65,85,103,79,151,83,61,109,43,73,121,13,107,65,80,85,69,94,119,70,90,120,25,20,57,77,67,45,30,90,50,90,10,60,48,88,44,74,26,121,30,50,30,20,70,30,46,71,85,66,136,40,75,45,65,32,42,50,70,39,49,29,50,70,60,95,50,30,65,70,30,34,64,75,15,20,65,70,50,95,97,40,30,75,55,75,55,85,82,102,142,65,85,50,78,120,85,65,83,123,36,49,66,50,65,85,35,65,20,35,45,92,60,85,105,75,111,65,95,30,33,39,92,25,35,35,35,75,85,45,45,70,125,51,85,75,110,60,90,70,100,75,50,75,30,45,75,105,58,78,94,95,120,82,75,100,47,90,121,65,60,86,34,68,90,43,73,70,35,82,90,20,60,55,50,87,111,55,135,81,101,106,136,50,108,110,72,55,62,87,10,84,119,116,109,104,40,50,70,85,44,91,75,124,98],"text":["bulbasaur","ivysaur","venusaur","charmander","charmeleon","charizard","squirtle","wartortle","blastoise","caterpie","metapod","butterfree","weedle","kakuna","beedrill","pidgey","pidgeotto","pidgeot","rattata","raticate","spearow","fearow","ekans","arbok","pikachu","raichu","sandshrew","sandslash","nidoran-f","nidorina","nidoqueen","nidoran-m","nidorino","nidoking","clefairy","clefable","vulpix","ninetales","jigglypuff","wigglytuff","zubat","golbat","oddish","gloom","vileplume","paras","parasect","venonat","venomoth","diglett","dugtrio","meowth","persian","psyduck","golduck","mankey","primeape","growlithe","arcanine","poliwag","poliwhirl","poliwrath","abra","kadabra","alakazam","machop","machoke","machamp","bellsprout","weepinbell","victreebel","tentacool","tentacruel","geodude","graveler","golem","ponyta","rapidash","slowpoke","slowbro","magnemite","magneton","farfetchd","doduo","dodrio","seel","dewgong","grimer","muk","shellder","cloyster","gastly","haunter","gengar","onix","drowzee","hypno","krabby","kingler","voltorb","electrode","exeggcute","exeggutor","cubone","marowak","hitmonlee","hitmonchan","lickitung","koffing","weezing","rhyhorn","rhydon","chansey","tangela","kangaskhan","horsea","seadra","goldeen","seaking","staryu","starmie","mr-mime","scyther","jynx","electabuzz","magmar","pinsir","tauros","magikarp","gyarados","lapras","ditto","eevee","vaporeon","jolteon","flareon","porygon","omanyte","omastar","kabuto","kabutops","aerodactyl","snorlax","dratini","dragonair","dragonite","chikorita","bayleef","meganium","cyndaquil","quilava","typhlosion","totodile","croconaw","feraligatr","sentret","furret","hoothoot","noctowl","ledyba","ledian","spinarak","ariados","crobat","chinchou","lanturn","pichu","cleffa","igglybuff","togepi","togetic","natu","xatu","mareep","flaaffy","ampharos","bellossom","marill","azumarill","sudowoodo","politoed","hoppip","skiploom","jumpluff","aipom","sunkern","sunflora","yanma","wooper","quagsire","espeon","umbreon","murkrow","slowking","misdreavus","unown","wobbuffet","girafarig","pineco","forretress","dunsparce","gligar","steelix","snubbull","granbull","qwilfish","scizor","shuckle","heracross","sneasel","teddiursa","ursaring","slugma","magcargo","swinub","piloswine","corsola","remoraid","octillery","delibird","mantine","skarmory","houndour","houndoom","kingdra","phanpy","donphan","porygon2","stantler","smeargle","tyrogue","hitmontop","smoochum","elekid","magby","miltank","blissey","larvitar","pupitar","tyranitar","treecko","grovyle","sceptile","torchic","combusken","blaziken","mudkip","marshtomp","swampert","poochyena","mightyena","zigzagoon","linoone","wurmple","silcoon","beautifly","cascoon","dustox","lotad","lombre","ludicolo","seedot","nuzleaf","shiftry","taillow","swellow","wingull","pelipper","ralts","kirlia","gardevoir","surskit","masquerain","shroomish","breloom","slakoth","vigoroth","slaking","nincada","ninjask","shedinja","whismur","loudred","exploud","makuhita","hariyama","azurill","nosepass","skitty","delcatty","sableye","mawile","aron","lairon","aggron","meditite","medicham","electrike","manectric","plusle","minun","volbeat","illumise","roselia","gulpin","swalot","carvanha","sharpedo","wailmer","wailord","numel","camerupt","torkoal","spoink","grumpig","spinda","trapinch","vibrava","flygon","cacnea","cacturne","swablu","altaria","zangoose","seviper","lunatone","solrock","barboach","whiscash","corphish","crawdaunt","baltoy","claydol","lileep","cradily","anorith","armaldo","feebas","milotic","castform","kecleon","shuppet","banette","duskull","dusclops","tropius","chimecho","absol","wynaut","snorunt","glalie","spheal","sealeo","walrein","clamperl","huntail","gorebyss","relicanth","luvdisc","bagon","shelgon","salamence","beldum","metang","metagross","turtwig","grotle","torterra","chimchar","monferno","infernape","piplup","prinplup","empoleon","starly","staravia","staraptor","bidoof","bibarel","kricketot","kricketune","shinx","luxio","luxray","budew","roserade","cranidos","rampardos","shieldon","bastiodon","burmy","wormadam-plant","mothim","combee","vespiquen","pachirisu","buizel","floatzel","cherubi","cherrim","shellos","gastrodon","ambipom","drifloon","drifblim","buneary","lopunny","mismagius","honchkrow","glameow","purugly","chingling","stunky","skuntank","bronzor","bronzong","bonsly","mime-jr","happiny","chatot","spiritomb","gible","gabite","garchomp","munchlax","riolu","lucario","hippopotas","hippowdon","skorupi","drapion","croagunk","toxicroak","carnivine","finneon","lumineon","mantyke","snover","abomasnow","weavile","magnezone","lickilicky","rhyperior","tangrowth","electivire","magmortar","togekiss","yanmega","leafeon","glaceon","gliscor","mamoswine","porygon-z","gallade","probopass","dusknoir","froslass","rotom","snivy","servine","serperior","tepig","pignite","emboar","oshawott","dewott","samurott","patrat","watchog","lillipup","herdier","stoutland","purrloin","liepard","pansage","simisage","pansear","simisear","panpour","simipour","munna","musharna","pidove","tranquill","unfezant","blitzle","zebstrika","roggenrola","boldore","gigalith","woobat","swoobat","drilbur","excadrill","audino","timburr","gurdurr","conkeldurr","tympole","palpitoad","seismitoad","throh","sawk","sewaddle","swadloon","leavanny","venipede","whirlipede","scolipede","cottonee","whimsicott","petilil","lilligant","basculin-red-striped","sandile","krokorok","krookodile","darumaka","darmanitan-standard","maractus","dwebble","crustle","scraggy","scrafty","sigilyph","yamask","cofagrigus","tirtouga","carracosta","archen","archeops","trubbish","garbodor","zorua","zoroark","minccino","cinccino","gothita","gothorita","gothitelle","solosis","duosion","reuniclus","ducklett","swanna","vanillite","vanillish","vanilluxe","deerling","sawsbuck","emolga","karrablast","escavalier","foongus","amoonguss","frillish-male","jellicent-male","alomomola","joltik","galvantula","ferroseed","ferrothorn","klink","klang","klinklang","tynamo","eelektrik","eelektross","elgyem","beheeyem","litwick","lampent","chandelure","axew","fraxure","haxorus","cubchoo","beartic","cryogonal","shelmet","accelgor","stunfisk","mienfoo","mienshao","druddigon","golett","golurk","pawniard","bisharp","bouffalant","rufflet","braviary","vullaby","mandibuzz","heatmor","durant","deino","zweilous","hydreigon","larvesta","volcarona","chespin","quilladin","chesnaught","fennekin","braixen","delphox","froakie","frogadier","greninja","bunnelby","diggersby","fletchling","fletchinder","talonflame","scatterbug","spewpa","vivillon","litleo","pyroar-male","flabebe","floette","florges","skiddo","gogoat","pancham","pangoro","furfrou","espurr","meowstic-male","honedge","doublade","aegislash-shield","spritzee","aromatisse","swirlix","slurpuff","inkay","malamar","binacle","barbaracle","skrelp","dragalge","clauncher","clawitzer","helioptile","heliolisk","tyrunt","tyrantrum","amaura","aurorus","sylveon","hawlucha","dedenne","carbink","goomy","sliggoo","goodra","klefki","phantump","trevenant","pumpkaboo-average","gourgeist-average","bergmite","avalugg","noibat","noivern","rowlet","dartrix","decidueye","litten","torracat","incineroar","popplio","brionne","primarina","pikipek","trumbeak","toucannon","yungoos","gumshoos","grubbin","charjabug","vikavolt","crabrawler","crabominable","oricorio-baile","cutiefly","ribombee","rockruff","lycanroc-midday","wishiwashi-solo","mareanie","toxapex","mudbray","mudsdale","dewpider","araquanid","fomantis","lurantis","morelull","shiinotic","salandit","salazzle","stufful","bewear","bounsweet","steenee","tsareena","comfey","oranguru","passimian","wimpod","golisopod","sandygast","palossand","pyukumuku","minior-red-meteor","komala","turtonator","togedemaru","mimikyu-disguised","bruxish","drampa","dhelmise","jangmo-o","hakamo-o","kommo-o","nihilego","buzzwole","pheromosa","xurkitree","celesteela","kartana","guzzlord","poipole","naganadel","stakataka","blacephalon","grookey","thwackey","rillaboom","scorbunny","raboot","cinderace","sobble","drizzile","inteleon","skwovet","greedent","rookidee","corvisquire","corviknight","blipbug","dottler","orbeetle","nickit","thievul","gossifleur","eldegoss","wooloo","dubwool","chewtle","drednaw","yamper","boltund","rolycoly","carkol","coalossal","applin","flapple","appletun","silicobra","sandaconda","cramorant","arrokuda","barraskewda","toxel","toxtricity-amped","sizzlipede","centiskorch","clobbopus","grapploct","sinistea","polteageist","hatenna","hattrem","hatterene","impidimp","morgrem","grimmsnarl","obstagoon","perrserker","cursola","sirfetchd","mr-rime","runerigus","milcery","alcremie","falinks","pincurchin","snom","frosmoth","stonjourner","eiscue-ice","indeedee-male","morpeko-full-belly","cufant","copperajah","dracozolt","arctozolt","dracovish","arctovish","duraludon","dreepy","drakloak","dragapult","wyrdeer","kleavor","ursaluna","basculegion-male","sneasler","overqwil","sprigatito","floragato","meowscarada","fuecoco","crocalor","skeledirge","quaxly","quaxwell","quaquaval","lechonk","oinkologne-male","tarountula","spidops","nymble","lokix","pawmi","pawmo","pawmot","tandemaus","maushold-family-of-four","fidough","dachsbun","smoliv","dolliv","arboliva","squawkabilly-green-plumage","nacli","naclstack","garganacl","charcadet","armarouge","ceruledge","tadbulb","bellibolt","wattrel","kilowattrel","maschiff","mabosstiff","shroodle","grafaiai","bramblin","brambleghast","toedscool","toedscruel","klawf","capsakid","scovillain","rellor","rabsca","flittle","espathra","tinkatink","tinkatuff","tinkaton","wiglett","wugtrio","bombirdier","finizen","palafin-zero","varoom","revavroom","cyclizar","orthworm","glimmet","glimmora","greavard","houndstone","flamigo","cetoddle","cetitan","veluza","dondozo","tatsugiri-curly","annihilape","clodsire","farigiraf","dudunsparce-two-segment","kingambit","great-tusk","scream-tail","brute-bonnet","flutter-mane","slither-wing","sandy-shocks","iron-treads","iron-bundle","iron-hands","iron-jugulis","iron-moth","iron-thorns","frigibax","arctibax","baxcalibur","gimmighoul","gholdengo","roaring-moon","iron-valiant","walking-wake","iron-leaves","dipplin","poltchageist","sinistcha","archaludon","hydrapple","gouging-fire","raging-bolt","iron-boulder","iron-crown"],"mode":"markers","marker":{"color":"rgba(153,153,153,1)","size":3,"line":{"color":"rgba(153,153,153,1)"}},"type":"scatter3d","name":"regular","textfont":{"color":"rgba(153,153,153,1)"},"error_y":{"color":"rgba(153,153,153,1)"},"error_x":{"color":"rgba(153,153,153,1)"},"line":{"color":"rgba(153,153,153,1)"},"frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+</section>
+<section id="what-that-plot-shows" class="level1">
+<h1>What That Plot Shows</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<ul>
+<li><strong>Drag to rotate it</strong> — every dot is one Pokémon
+<ul>
+<li>from some angles: a shapeless blob</li>
+<li>from others: a long, spread-out cloud</li>
+<li>same data, <strong>different amount you can see</strong></li>
+</ul></li>
+<li><strong>Hover</strong> — the name pops up
+<ul>
+<li>red / orange (legendary, mythical) sit out at the <strong>big</strong> end</li>
+</ul></li>
+<li>But this is only <strong>3 of the 6 stats</strong>
+<ul>
+<li><code>hp</code>, <code>sp_attack</code>, <code>sp_defense</code> are missing</li>
+</ul></li>
+</ul>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>✅ Hold on to this</strong></p>
+<p>Rotating to find the angle that shows the <strong>most spread</strong> is exactly what PCA does.</p>
+<p>It just does it in <strong>six</strong> dimensions, where we cannot rotate anything by hand.</p>
+</div>
+</div>
 </div>
 </div>
 </section>
@@ -644,11 +741,19 @@ Note
 <h1>Six Columns Is Too Many to Plot</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p>One measurement → a histogram.</p>
-<p>Two → a scatterplot.</p>
-<p>Three → an awkward 3-D scatterplot nobody can read.</p>
-<p><strong>Six → nothing.</strong> There is no six-dimensional plot, and there never will be.</p>
-<p>You could draw all the pairs instead. Six columns make <strong>15 pairwise scatterplots</strong>, and no one can hold 15 plots in their head at once.</p>
+<ul>
+<li>One measurement → a histogram</li>
+<li>Two → a scatterplot</li>
+<li>Three → the 3-D plot you just spun</li>
+<li><strong>Six → nothing</strong>
+<ul>
+<li>there is no six-dimensional plot, and never will be</li>
+</ul></li>
+<li>All the pairs instead? <strong>15 scatterplots</strong>
+<ul>
+<li>nobody can hold 15 plots in their head</li>
+</ul></li>
+</ul>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -661,8 +766,8 @@ Warning
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>⚠️ The real problem</strong></p>
-<p>It is not that drawing is hard.</p>
-<p>It is that <strong>“which Pokémon are similar to each other?”</strong> is a question about all six numbers <strong>at the same time</strong>, and looking at them two at a time cannot answer it.</p>
+<p><strong>“Which Pokémon are similar to each other?”</strong> is a question about all six numbers <strong>at the same time</strong>.</p>
+<p>Looking at them two at a time cannot answer it.</p>
 </div>
 </div>
 </div>
@@ -671,12 +776,12 @@ Warning
 <section id="make-them-a-table-of-their-own" class="level1">
 <h1>Make Them a Table of Their Own</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="ot">&lt;-</span> pokemon <span class="sc">%&gt;%</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(hp, attack, defense, sp_attack, sp_defense, speed)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(poke_stats)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="ot">&lt;-</span> pokemon <span class="sc">%&gt;%</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(hp, attack, defense, sp_attack, sp_defense, speed)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(poke_stats)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 151   6</code></pre>
+<pre><code>[1] 1025    6</code></pre>
 </div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
@@ -690,25 +795,40 @@ Note
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>🧠 Why a separate table</strong></p>
-<p>PCA needs <strong>numbers only</strong> — no names, no types. <code>poke_stats</code> is 151 rows and exactly 6 numeric columns.</p>
-<p>The rows stay in the <strong>same order</strong> as <code>pokemon</code>, which is what lets us glue the results back on later.</p>
+<ul>
+<li>PCA needs <strong>numbers only</strong> — no names, no types, no <code>status</code></li>
+<li>The rows stay in the <strong>same order</strong> as <code>pokemon</code>
+<ul>
+<li>that is what lets us glue the results back on later</li>
+<li><strong>never sort one and not the other</strong></li>
+</ul></li>
+</ul>
 </div>
 </div>
+</section>
+<section id="chunk-2-of-4-where-the-new-axes-come-from" class="level1">
+<h1>🧩 Chunk 2 of 4 · Where the New Axes Come From</h1>
+<p><strong>We will cover:</strong></p>
+<ul>
+<li>the correlation table — the raw material</li>
+<li>why you do <strong>not</strong> drop correlated columns</li>
+<li>PC1 drawn with just two stats, then the shadow analogy</li>
+</ul>
 </section>
 <section id="do-the-stats-move-together" class="level1">
 <h1>Do the Stats Move Together?</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="sc">%&gt;%</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(<span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="sc">%&gt;%</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(<span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>              hp attack defense sp_attack sp_defense speed
-hp          1.00   0.30    0.12      0.24       0.49 -0.04
-attack      0.30   1.00    0.48      0.14       0.37  0.20
-defense     0.12   0.48    1.00      0.19       0.14 -0.05
-sp_attack   0.24   0.14    0.19      1.00       0.53  0.41
-sp_defense  0.49   0.37    0.14      0.53       1.00  0.39
-speed      -0.04   0.20   -0.05      0.41       0.39  1.00</code></pre>
+<pre><code>             hp attack defense sp_attack sp_defense speed
+hp         1.00   0.48    0.30      0.36       0.37  0.18
+attack     0.48   1.00    0.47      0.28       0.23  0.35
+defense    0.30   0.47    1.00      0.21       0.50  0.01
+sp_attack  0.36   0.28    0.21      1.00       0.49  0.42
+sp_defense 0.37   0.23    0.50      0.49       1.00  0.21
+speed      0.18   0.35    0.01      0.42       0.21  1.00</code></pre>
 </div>
 </div>
 </section>
@@ -716,15 +836,24 @@ speed      -0.04   0.20   -0.05      0.41       0.39  1.00</code></pre>
 <h1>Reading That Matrix</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p>The diagonal is all <code>1.00</code> — every column correlates perfectly with itself. Ignore it.</p>
-<p>Everything else is the interesting part:</p>
 <ul>
-<li><code>sp_attack</code> and <code>sp_defense</code>: <strong>0.53</strong></li>
-<li><code>hp</code> and <code>sp_defense</code>: <strong>0.49</strong></li>
-<li><code>attack</code> and <code>defense</code>: <strong>0.48</strong></li>
-<li><code>speed</code> and <code>defense</code>: <strong>−0.05</strong> — nothing at all</li>
+<li>The diagonal is all <code>1.00</code> — each column against itself. Ignore it</li>
+<li>The strongest pairs:
+<ul>
+<li><code>defense</code> &amp; <code>sp_defense</code>: <strong>0.50</strong></li>
+<li><code>sp_attack</code> &amp; <code>sp_defense</code>: <strong>0.49</strong></li>
+<li><code>hp</code> &amp; <code>attack</code>: <strong>0.48</strong></li>
+<li><code>attack</code> &amp; <code>defense</code>: <strong>0.47</strong></li>
+</ul></li>
+<li>And one that is nothing at all:
+<ul>
+<li><code>speed</code> &amp; <code>defense</code>: <strong>0.01</strong></li>
+</ul></li>
+<li>So six columns are <strong>not</strong> six independent facts
+<ul>
+<li>they <strong>overlap</strong> — knowing one tells you something about another</li>
+</ul></li>
 </ul>
-<p>So the six columns are <strong>not</strong> six independent facts. They overlap. Knowing one tells you something about the others.</p>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -737,58 +866,98 @@ Important
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>✅ This is what makes PCA work</strong></p>
-<p>If all six columns were completely unrelated, PCA would have nothing to do — six axes in, six equally useless axes out.</p>
-<p><strong>Correlation is redundancy.</strong> PCA’s whole job is to squeeze the redundancy out.</p>
+<p><strong>Correlation is redundancy.</strong></p>
+<p>PCA’s whole job is to squeeze the redundancy out.</p>
+<p>If all six were completely unrelated, there would be nothing to squeeze — six axes in, six equally useless axes out.</p>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section id="chunk-2-of-4-what-pca-actually-does" class="level1">
-<h1>🧩 Chunk 2 of 4 · What PCA Actually Does</h1>
-<p><strong>We will cover:</strong> the shadow analogy, and why scaling comes first.</p>
-</section>
-<section id="the-shadow-analogy" class="level1">
-<h1>The Shadow Analogy 🔦</h1>
+<section id="shouldnt-i-drop-the-correlated-ones" class="level1">
+<h1>“Shouldn’t I Drop the Correlated Ones?”</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p>Hold your hand up in front of a lamp and look at the shadow on the wall.</p>
-<p>Your hand is <strong>3-D</strong>. The shadow is <strong>2-D</strong>. You have lost a dimension — but you can still tell it is a hand.</p>
-<p>Now <strong>rotate</strong> your hand. Some angles give a shadow you can recognise instantly. Others give a shapeless blob.</p>
-<p><strong>Same hand. Same wall. Different amount of information kept.</strong></p>
+<ul>
+<li><strong>No.</strong> That rule is from <strong>regression</strong>
+<ul>
+<li>there, two correlated predictors fight over one slope</li>
+</ul></li>
+<li>In PCA, correlation is the <strong>fuel</strong>, not a problem
+<ul>
+<li>correlated stats simply <strong>land on the same axis</strong></li>
+<li>that is the redundancy being squeezed out</li>
+</ul></li>
+<li>PCA is <strong>built from this correlation table</strong>
+<ul>
+<li>with <code>scale. = TRUE</code>, that table is literally the input</li>
+</ul></li>
+</ul>
 </div><div class="column" style="width:42%;">
-<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Tip
+Warning
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>🎯 That is PCA</strong></p>
-<p>Your data is a cloud of 151 points in <strong>6-D</strong> space.</p>
-<p>PCA finds the angle that casts the <strong>most informative shadow</strong> — the one where the points stay as spread out as possible.</p>
-<p>Then it reports what that shadow is made of.</p>
+<p><strong>⚠️ The one real caution</strong></p>
+<p>Do not put in the <strong>same thing twice</strong>.</p>
+<p>A “total stats” column next to the six stats it was added up from would count everything twice.</p>
+<p>Here the biggest correlation is <strong>0.50</strong> — nowhere near a duplicate.</p>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section id="said-without-the-analogy" class="level1">
-<h1>Said Without the Analogy</h1>
+<section id="where-pc1-comes-from-with-two-stats" class="level1">
+<h1>Where PC1 Comes From — With Two Stats</h1>
+<div class="columns">
+<div class="column" style="width:55%;">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="pca_pokemon_lecture_files/figure-revealjs/two-stat-demo-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:45%;">
+<ul>
+<li><code>attack</code> vs <code>defense</code>, r = 0.47
+<ul>
+<li>the cloud is <strong>stretched along a diagonal</strong></li>
+</ul></li>
+<li><strong>PC1</strong> (red) = the line along the <strong>longest</strong> stretch
+<ul>
+<li>it holds <strong>73%</strong> of the spread in these two stats</li>
+</ul></li>
+<li><strong>PC2</strong> (blue) = <strong>right angles</strong> to PC1
+<ul>
+<li>it holds the leftover 27%</li>
+</ul></li>
+<li>Strong correlation → long, thin cloud → PC1 holds a lot</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="the-same-idea-in-six-dimensions" class="level1">
+<h1>The Same Idea, in Six Dimensions</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p>PCA builds <strong>new measurements</strong> by blending the old ones:</p>
-<p><span class="math display">\[\text{PC1} = a_1\,\text{hp} + a_2\,\text{attack} + \ldots\]</span></p>
-<p>It picks the weights so that:</p>
 <ul>
-<li><strong>PC1</strong> captures as much of the spread between Pokémon as any single blend can</li>
-<li><strong>PC2</strong> captures as much of what is <strong>left over</strong> as possible — and is at right angles to PC1</li>
-<li><strong>PC3</strong> takes the next-biggest leftover, and so on</li>
+<li>Your data is a cloud of 1,025 points in <strong>6-D</strong> space</li>
+<li><strong>PC1</strong> = the direction through that cloud with the <strong>most spread</strong></li>
+<li><strong>PC2</strong> = the most spread that is <strong>left</strong>, at right angles to PC1</li>
+<li><strong>PC3</strong> = the next leftover, and so on</li>
+<li>Six columns in → six PCs out, in <strong>order of usefulness</strong></li>
+<li>Each PC is a <strong>blend</strong> of the old columns:</li>
 </ul>
-<p>Six columns in, six PCs out — but they come in <strong>order of usefulness</strong>.</p>
+<p><span class="math display">\[\text{PC1} = a_1\,\text{hp} + a_2\,\text{attack} + \ldots\]</span></p>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -801,9 +970,46 @@ Note
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>🧠 Two words you need</strong></p>
-<p><strong>Loading</strong> — how much an original stat contributes to a PC. <em>What the axis is made of.</em></p>
+<p><strong>Loading</strong> — how much an original stat contributes to a PC. <em>What the axis is made of</em> — the <span class="math inline">\(a\)</span>’s.</p>
 <p><strong>Score</strong> — where one Pokémon sits along that PC. <em>Its new measurement.</em></p>
-<p>Loadings describe the <strong>axis</strong>. Scores describe the <strong>Pokémon</strong>. That is all of Chunk 2 of next class.</p>
+<p>Loadings describe the <strong>axis</strong>. Scores describe the <strong>Pokémon</strong>.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="the-shadow-analogy" class="level1">
+<h1>The Shadow Analogy 🔦</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<ul>
+<li>Hold your hand in front of a lamp
+<ul>
+<li>your hand is <strong>3-D</strong>, the shadow is <strong>2-D</strong></li>
+<li>you lost a dimension — but it still looks like a hand</li>
+</ul></li>
+<li><strong>Rotate</strong> your hand
+<ul>
+<li>some angles: you recognise it instantly</li>
+<li>others: a shapeless blob</li>
+</ul></li>
+<li><strong>Same hand. Same wall. Different amount kept</strong></li>
+<li>That is the 3-D plot you spun — now in six dimensions</li>
+</ul>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🎯 That is PCA</strong></p>
+<p>PCA finds the angle that casts the <strong>most informative shadow</strong> of the 6-D cloud — the one where the points stay as spread out as possible.</p>
+<p>Then it reports what that shadow is made of.</p>
 </div>
 </div>
 </div>
@@ -814,18 +1020,26 @@ Note
 <div class="columns">
 <div class="column" style="width:58%;">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="sc">%&gt;%</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">everything</span>(),</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                   <span class="sc">~</span> <span class="fu">round</span>(<span class="fu">sd</span>(.x), <span class="dv">1</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="sc">%&gt;%</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">everything</span>(),</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                   <span class="sc">~</span> <span class="fu">sd</span>(.x)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 1 × 6
      hp attack defense sp_attack sp_defense speed
   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;
-1  28.6   26.8    26.9      28.5       24.2    27</code></pre>
+1  26.6   29.8    29.3      29.7       26.6  28.7</code></pre>
 </div>
 </div>
-<p><code>hp</code> varies more than <code>defense</code> does — in raw points.</p>
-<p>PCA chases <strong>spread</strong>. Hand it unscaled columns and it will decide the most important thing in the data is whichever column happens to use the <strong>biggest numbers</strong>.</p>
+<ul>
+<li>PCA chases <strong>spread</strong>
+<ul>
+<li>unscaled, the column with the <strong>biggest numbers</strong> wins by default</li>
+</ul></li>
+<li>Pokémon stats happen to be on similar scales (sd 27–30)
+<ul>
+<li>real data almost never is</li>
+</ul></li>
+</ul>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -838,9 +1052,12 @@ Warning
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>⚠️ A worked disaster</strong></p>
-<p>Imagine measuring animals in <strong>grams</strong> and <strong>kilometres</strong>.</p>
-<p>Body mass in grams: thousands. Home range in km: maybe 0.4.</p>
-<p>Unscaled, PC1 would be <strong>entirely mass</strong>, and would tell you nothing except which unit you typed.</p>
+<p>Measure animals in <strong>grams</strong> and <strong>kilometres</strong>.</p>
+<ul>
+<li>body mass in grams: thousands</li>
+<li>home range in km: maybe 0.4</li>
+</ul>
+<p>Unscaled, PC1 would be <strong>entirely mass</strong> — it would only tell you which unit you typed.</p>
 </div>
 </div>
 </div>
@@ -850,13 +1067,15 @@ Warning
 <h1>Scaling, In One Argument</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p><code>scale. = TRUE</code> converts every column to <strong>standard deviations from its own mean</strong> before doing anything else.</p>
-<p>After scaling, every column has:</p>
+<ul>
+<li><code>scale. = TRUE</code> turns every column into <strong>standard deviations from its own mean</strong></li>
+<li>After scaling, every column has
 <ul>
 <li>mean <strong>0</strong></li>
 <li>standard deviation <strong>1</strong></li>
+</ul></li>
+<li>All six compete <strong>fairly</strong>, and the units cancel out</li>
 </ul>
-<p>Now all six compete <strong>fairly</strong>, and the units cancel out entirely.</p>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -870,8 +1089,8 @@ Important
 <div class="callout-body-container callout-body">
 <p><strong>⚠️ Mind the full stop</strong></p>
 <p>The argument is <strong><code>scale.</code></strong> — with a dot:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">prcomp</span>(poke_stats, <span class="at">scale. =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The dot is there because <code>scale</code> was already an R function. Leave it off and you get an error.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">prcomp</span>(poke_stats, <span class="at">scale. =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>scale</code> was already an R function. Leave the dot off and you get an error.</p>
 <p><strong>Almost always use <code>scale. = TRUE</code>.</strong></p>
 </div>
 </div>
@@ -885,7 +1104,7 @@ Important
 <section id="one-line" class="level1">
 <h1>One Line</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>poke_pca <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(poke_stats, <span class="at">center =</span> <span class="cn">TRUE</span>, <span class="at">scale. =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>poke_pca <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(poke_stats, <span class="at">center =</span> <span class="cn">TRUE</span>, <span class="at">scale. =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -901,44 +1120,47 @@ Note
 <ul>
 <li><code>center = TRUE</code> — subtract each column’s mean</li>
 <li><code>scale. = TRUE</code> — divide by each column’s standard deviation</li>
+<li>Nothing prints — the result is stored in <code>poke_pca</code></li>
+<li>Everything from here on is <strong>reading the result</strong> — the part that takes judgement</li>
 </ul>
-<p>Everything from here on is <strong>reading the result</strong>, which is the part that takes judgement.</p>
 </div>
 </div>
 </section>
 <section id="what-came-back" class="level1">
 <h1>What Came Back</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(poke_pca)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(poke_pca)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Importance of components:
                           PC1    PC2    PC3    PC4     PC5
-Standard deviation     1.5418 1.1349 0.9943 0.8280 0.58318
-Proportion of Variance 0.3962 0.2147 0.1648 0.1143 0.05668
-Cumulative Proportion  0.3962 0.6109 0.7756 0.8899 0.94655
+Standard deviation     1.6265 1.0509 0.9391 0.8192 0.65141
+Proportion of Variance 0.4409 0.1841 0.1470 0.1119 0.07072
+Cumulative Proportion  0.4409 0.6250 0.7719 0.8838 0.95451
                            PC6
-Standard deviation     0.56630
-Proportion of Variance 0.05345
+Standard deviation     0.52243
+Proportion of Variance 0.04549
 Cumulative Proportion  1.00000</code></pre>
 </div>
 </div>
 </section>
-<section id="reading-summary-the-only-row-that-matters" class="level1">
-<h1>Reading <code>summary()</code> — the Only Row That Matters</h1>
+<section id="reading-summary" class="level1">
+<h1>Reading <code>summary()</code></h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p>Ignore the first row. Read these two:</p>
-<p><strong><code>Proportion of Variance</code></strong> — how much of the total spread each PC captures:</p>
 <ul>
-<li><strong>PC1: 39.6%</strong></li>
-<li><strong>PC2: 21.5%</strong></li>
-<li>PC3: 16.5%</li>
-</ul>
-<p><strong><code>Cumulative Proportion</code></strong> — the running total:</p>
+<li>Ignore the first row (<code>Standard deviation</code>)</li>
+<li><strong><code>Proportion of Variance</code></strong> — share of the total spread each PC holds
 <ul>
-<li>PC1 alone: <strong>39.6%</strong></li>
-<li>PC1 + PC2: <strong>61.1%</strong></li>
-<li>All six: 100%, always</li>
+<li><strong>PC1: 44.1%</strong></li>
+<li><strong>PC2: 18.4%</strong></li>
+<li>PC3: 14.7%</li>
+</ul></li>
+<li><strong><code>Cumulative Proportion</code></strong> — the running total
+<ul>
+<li>PC1 alone: <strong>44.1%</strong></li>
+<li>PC1 + PC2: <strong>62.5%</strong></li>
+<li>all six: 100%, always</li>
+</ul></li>
 </ul>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-style-default callout-important callout-titled">
@@ -952,9 +1174,8 @@ Important
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>✅ The headline</strong></p>
-<p><strong>Two</strong> invented axes carry <strong>61%</strong> of everything in six columns.</p>
-<p>So a flat scatterplot of PC1 against PC2 — which we draw next class — shows you about <strong>three-fifths</strong> of the whole dataset.</p>
-<p>That is the payoff.</p>
+<p><strong>Two</strong> invented axes carry <strong>62.5%</strong> of everything in six columns.</p>
+<p>So one flat scatterplot of PC1 against PC2 shows you nearly <strong>two-thirds</strong> of the whole dataset.</p>
 </div>
 </div>
 </div>
@@ -964,10 +1185,17 @@ Important
 <h1>“Variance Explained”, In Plain Words</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p><strong>Variance</strong> here just means <em>how spread out things are</em>.</p>
-<p>Total variance = every way these 151 Pokémon differ from each other across all six stats.</p>
-<p>PC1 captures 39.6% of that. Meaning: if you threw away all six stats and kept <strong>only</strong> each Pokémon’s PC1 score, you would still have about <strong>40%</strong> of the information about how they differ.</p>
-<p>One number instead of six, for 40% of the picture.</p>
+<ul>
+<li><strong>Variance</strong> = how spread out things are</li>
+<li>Total variance = every way these 1,025 Pokémon differ, across all six stats</li>
+<li>PC1 holds 44.1% of that
+<ul>
+<li>throw away all six stats</li>
+<li>keep <strong>only</strong> each Pokémon’s PC1 score</li>
+<li>you still have <strong>44%</strong> of how they differ</li>
+</ul></li>
+<li><strong>One number instead of six</strong>, for 44% of the picture</li>
+</ul>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -979,10 +1207,9 @@ Warning
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>⚠️ Not 39.6% of the Pokémon</strong></p>
-<p>And not 39.6% accuracy.</p>
-<p>It is 39.6% of the <strong>total variation</strong> — of the differences between them.</p>
-<p>If every Pokémon had identical stats there would be no variance at all, and PCA would have nothing to find.</p>
+<p><strong>⚠️ Not 44% of the Pokémon</strong></p>
+<p>And not 44% accuracy.</p>
+<p>It is 44% of the <strong>total variation</strong> — of the differences between them.</p>
 </div>
 </div>
 </div>
@@ -991,22 +1218,22 @@ Warning
 <section id="how-much-variance-per-axis" class="level1">
 <h1>How Much Variance Per Axis</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>var_df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">PC      =</span> <span class="fu">paste0</span>(<span class="st">"PC"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>),</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">percent =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> poke_pca<span class="sc">$</span>sdev<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> <span class="fu">sum</span>(poke_pca<span class="sc">$</span>sdev<span class="sc">^</span><span class="dv">2</span>), <span class="dv">1</span>)</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>var_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>var_df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">PC      =</span> <span class="fu">paste0</span>(<span class="st">"PC"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>),</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">percent =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> poke_pca<span class="sc">$</span>sdev<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> <span class="fu">sum</span>(poke_pca<span class="sc">$</span>sdev<span class="sc">^</span><span class="dv">2</span>), <span class="dv">1</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>var_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 2
   PC    percent
   &lt;chr&gt;   &lt;dbl&gt;
-1 PC1      39.6
-2 PC2      21.5
-3 PC3      16.5
-4 PC4      11.4
-5 PC5       5.7
-6 PC6       5.3</code></pre>
+1 PC1      44.1
+2 PC2      18.4
+3 PC3      14.7
+4 PC4      11.2
+5 PC5       7.1
+6 PC6       4.5</code></pre>
 </div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
@@ -1020,17 +1247,20 @@ Note
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>🧠 Where that came from</strong></p>
-<p><code>poke_pca$sdev</code> is each PC’s standard deviation. Squaring it gives variance; dividing by the total turns it into a share; times 100 is a percent.</p>
-<p>It is the same numbers <code>summary()</code> printed — but now in a <strong>data frame</strong>, which means we can plot them.</p>
+<ul>
+<li><code>poke_pca$sdev</code> = each PC’s standard deviation</li>
+<li>square it → variance; ÷ total → a share; × 100 → a percent</li>
+<li>Same numbers <code>summary()</code> printed — but in a <strong>data frame</strong>, so we can plot them</li>
+</ul>
 </div>
 </div>
 </section>
 <section id="the-scree-plot" class="level1">
 <h1>The Scree Plot</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(var_df, <span class="fu">aes</span>(<span class="at">x =</span> PC, <span class="at">y =</span> percent)) <span class="sc">+</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>() <span class="sc">+</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> percent), <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(var_df, <span class="fu">aes</span>(<span class="at">x =</span> PC, <span class="at">y =</span> percent)) <span class="sc">+</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>() <span class="sc">+</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> percent), <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1044,9 +1274,19 @@ Note
 <h1>Reading a Scree Plot</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p>A <strong>scree plot</strong> is variance explained, per axis, in order. (“Scree” is the loose rubble at the foot of a cliff — the shape the bars make.)</p>
-<p>You are looking for the <strong>elbow</strong>: where the bars stop dropping steeply and flatten into rubble.</p>
-<p>Here PC1 and PC2 stand up; from PC3 on the bars settle down and get similar. So the honest answer is <strong>keep two</strong>, and know you are holding 61%.</p>
+<ul>
+<li><strong>Scree</strong> = the rubble at the foot of a cliff — the shape the bars make</li>
+<li>Look for the <strong>elbow</strong>: where the bars stop dropping steeply</li>
+<li>Here:
+<ul>
+<li>PC1 stands <strong>way</strong> above the rest</li>
+<li>PC2 onwards step down gently</li>
+</ul></li>
+<li><strong>Keep two</strong>: the big one, plus the one we will learn to name
+<ul>
+<li>and know you are holding 62.5%</li>
+</ul></li>
+</ul>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -1059,12 +1299,11 @@ Warning
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>⚠️ There is no rule</strong></p>
-<p>Nothing tells you where the elbow is. People argue about it constantly.</p>
-<p>Common rough guides:</p>
+<p>People argue about the elbow constantly. Rough guides:</p>
 <ul>
-<li>Keep PCs until the cumulative total passes ~70–80%</li>
-<li>Keep the ones <strong>before</strong> the flat part</li>
-<li>Keep the ones you can <strong>interpret</strong></li>
+<li>keep PCs until the cumulative total passes ~70–80%</li>
+<li>keep the ones <strong>before</strong> the flat part</li>
+<li>keep the ones you can <strong>interpret</strong></li>
 </ul>
 <p>That last one is the most useful.</p>
 </div>
@@ -1074,20 +1313,25 @@ Warning
 </section>
 <section id="chunk-4-of-4-does-pc1-mean-anything" class="level1">
 <h1>🧩 Chunk 4 of 4 · Does PC1 Mean Anything?</h1>
-<p><strong>We will cover:</strong> the only check that matters — looking at who sits at each end.</p>
+<p><strong>We will cover:</strong></p>
+<ul>
+<li>what PC1 is made of</li>
+<li>who sits at each end of it</li>
+<li>the picture, with names on hover</li>
+</ul>
 </section>
-<section id="a-quick-look-at-what-pc1-is-made-of" class="level1">
-<h1>A Quick Look at What PC1 Is Made Of</h1>
+<section id="what-pc1-is-made-of" class="level1">
+<h1>What PC1 Is Made Of</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(poke_pca<span class="sc">$</span>rotation[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(poke_pca<span class="sc">$</span>rotation[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>            PC1   PC2
-hp         0.38  0.19
-attack     0.42  0.43
-defense    0.28  0.59
-sp_attack  0.45 -0.33
-sp_defense 0.54 -0.17
-speed      0.32 -0.54</code></pre>
+hp         0.42  0.10
+attack     0.43  0.07
+defense    0.39  0.58
+sp_attack  0.43 -0.36
+sp_defense 0.44  0.16
+speed      0.31 -0.70</code></pre>
 </div>
 </div>
 <div class="callout callout-style-default callout-important callout-titled">
@@ -1100,29 +1344,32 @@ Important
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>✅ Look at the PC1 column: every single number is positive</strong></p>
-<p>So a Pokémon scores high on PC1 by being high on <strong>all six stats at once</strong>.</p>
-<p>PC1 is an <strong>“overall power”</strong> axis. We will take this table apart properly next class — for now, notice that PC2 has <strong>minus signs</strong>, which means it is doing something completely different.</p>
+<p><strong>✅ Look at the PC1 column: every number is positive (0.31 to 0.44)</strong></p>
+<ul>
+<li>A Pokémon scores high on PC1 by being high on <strong>all six stats at once</strong></li>
+<li>PC1 is an <strong>“overall power”</strong> axis</li>
+<li>PC2 has <strong>minus signs</strong> — it is doing something different. Next class</li>
+</ul>
 </div>
 </div>
 </section>
 <section id="where-does-each-pokémon-sit" class="level1">
 <h1>Where Does Each Pokémon Sit?</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="ot">&lt;-</span> pokemon <span class="sc">%&gt;%</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">PC1 =</span> poke_pca<span class="sc">$</span>x[, <span class="dv">1</span>],</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">PC2 =</span> poke_pca<span class="sc">$</span>x[, <span class="dv">2</span>])</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, hp, attack, speed, PC1, PC2) <span class="sc">%&gt;%</span></span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="ot">&lt;-</span> pokemon <span class="sc">%&gt;%</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">PC1 =</span> poke_pca<span class="sc">$</span>x[, <span class="dv">1</span>],</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">PC2 =</span> poke_pca<span class="sc">$</span>x[, <span class="dv">2</span>])</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, hp, attack, speed, PC1, PC2) <span class="sc">%&gt;%</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 3 × 6
-  name         hp attack speed    PC1    PC2
-  &lt;chr&gt;     &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
-1 bulbasaur    45     49    45 -1.18  -0.417
-2 ivysaur      60     62    60  0.123 -0.384
-3 venusaur     80     82    80  1.91  -0.269</code></pre>
+  name         hp attack speed    PC1     PC2
+  &lt;chr&gt;     &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;
+1 bulbasaur    45     49    45 -1.53  -0.0589
+2 ivysaur      60     62    60 -0.286 -0.152 
+3 venusaur     80     82    80  1.43  -0.244 </code></pre>
 </div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
@@ -1136,57 +1383,73 @@ Note
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>🧠 <code>poke_pca$x</code> holds the scores</strong></p>
-<p>One row per Pokémon, one column per PC — in the <strong>same row order</strong> as the data we put in. That is why we could glue it straight on with <code>mutate()</code>.</p>
+<ul>
+<li>one row per Pokémon, one column per PC, <strong>same row order</strong> as the data</li>
+<li>that is why <code>mutate()</code> can glue them straight on</li>
+<li>scores are in <strong>standard deviations</strong>: 0 = average, negative = below average</li>
+</ul>
 </div>
 </div>
 </section>
 <section id="the-top-of-pc1" class="level1">
 <h1>The Top of PC1</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(PC1)) <span class="sc">%&gt;%</span></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, is_legendary, PC1) <span class="sc">%&gt;%</span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(PC1)) <span class="sc">%&gt;%</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, status, PC1) <span class="sc">%&gt;%</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 3
-  name      is_legendary   PC1
-  &lt;chr&gt;     &lt;lgl&gt;        &lt;dbl&gt;
-1 mewtwo    TRUE          4.00
-2 dragonite FALSE         3.00
-3 mew       FALSE         2.88
-4 articuno  TRUE          2.81
-5 zapdos    TRUE          2.60
-6 moltres   TRUE          2.58</code></pre>
+  name             status      PC1
+  &lt;chr&gt;            &lt;chr&gt;     &lt;dbl&gt;
+1 arceus           mythical   4.17
+2 ho-oh            legendary  3.79
+3 giratina-altered legendary  3.74
+4 lunala           legendary  3.71
+5 eternatus        legendary  3.70
+6 reshiram         legendary  3.70</code></pre>
 </div>
 </div>
 </section>
 <section id="the-bottom-of-pc1" class="level1">
 <h1>The Bottom of PC1</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(PC1) <span class="sc">%&gt;%</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, PC1) <span class="sc">%&gt;%</span></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(PC1) <span class="sc">%&gt;%</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, status, PC1) <span class="sc">%&gt;%</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 2
-  name       PC1
-  &lt;chr&gt;    &lt;dbl&gt;
-1 magikarp -3.43
-2 caterpie -3.34
-3 weedle   -3.32
-4 metapod  -3.21
-5 kakuna   -3.19
-6 zubat    -2.45</code></pre>
+<pre><code># A tibble: 6 × 3
+  name            status    PC1
+  &lt;chr&gt;           &lt;chr&gt;   &lt;dbl&gt;
+1 wishiwashi-solo regular -3.64
+2 blipbug         regular -3.57
+3 sunkern         regular -3.55
+4 magikarp        regular -3.52
+5 snom            regular -3.45
+6 weedle          regular -3.42</code></pre>
 </div>
 </div>
 </section>
-<section id="that-is-the-whole-validation" class="level1">
-<h1>That Is the Whole Validation 🎣</h1>
+<section id="that-is-the-validation" class="level1">
+<h1>That Is the Validation 🎣</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p><strong>Top of PC1:</strong> Mewtwo, Dragonite, Mew, Articuno, Zapdos, Moltres — <strong>every legendary in the game</strong>, plus the two strongest non-legendaries.</p>
-<p><strong>Bottom of PC1:</strong> <strong>Magikarp</strong>, Caterpie, Weedle, Metapod, Kakuna, Zubat.</p>
-<p>Nobody told PCA which Pokémon were strong. There is no “power” column in the file. It was handed six columns of numbers and it <strong>sorted them by overall strength</strong> on its own.</p>
+<ul>
+<li><strong>Top of PC1:</strong> Arceus, Ho-Oh, Giratina, Lunala, Eternatus, Reshiram
+<ul>
+<li><strong>every one a legendary or mythical</strong></li>
+</ul></li>
+<li><strong>Bottom of PC1:</strong> Wishiwashi, Blipbug, Sunkern, <strong>Magikarp</strong>, Snom, Weedle
+<ul>
+<li>the famously useless ones</li>
+</ul></li>
+<li>Nobody told PCA which Pokémon were strong
+<ul>
+<li>there is <strong>no “power” column</strong> in the file</li>
+<li>it sorted them by overall strength <strong>on its own</strong></li>
+</ul></li>
+</ul>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -1201,7 +1464,7 @@ Important
 <p><strong>✅ Why this matters beyond Pokémon</strong></p>
 <p>This is the check you run on <strong>every</strong> PCA.</p>
 <p>You cannot test whether an axis is “real”. But you <em>can</em> look at what sits at each end and ask whether it lines up with something you already know.</p>
-<p>If it does, the axis is measuring something. If it does not, be very careful.</p>
+<p>If it does not, be very careful.</p>
 </div>
 </div>
 </div>
@@ -1210,16 +1473,17 @@ Important
 <section id="put-a-number-on-it" class="level1">
 <h1>Put a Number on It</h1>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(is_legendary) <span class="sc">%&gt;%</span></span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(),</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">mean_PC1 =</span> <span class="fu">round</span>(<span class="fu">mean</span>(PC1), <span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(status) <span class="sc">%&gt;%</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">mean_PC1 =</span> <span class="fu">round</span>(<span class="fu">mean</span>(PC1), <span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 2 × 3
-  is_legendary     n mean_PC1
-  &lt;lgl&gt;        &lt;int&gt;    &lt;dbl&gt;
-1 FALSE          147    -0.08
-2 TRUE             4     3   </code></pre>
+<pre><code># A tibble: 3 × 3
+  status        n mean_PC1
+  &lt;chr&gt;     &lt;int&gt;    &lt;dbl&gt;
+1 legendary    71     2.38
+2 mythical     23     2.25
+3 regular     931    -0.24</code></pre>
 </div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
@@ -1232,8 +1496,64 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>The four legendaries average PC1 = 3.00; everyone else averages −0.08.</strong></p>
-<p>PC1 scores are in <strong>standard deviations</strong>, so the legendaries sit about <strong>three standard deviations</strong> above the crowd — on an axis that was built without ever being told they existed.</p>
+<p><strong>🧠 Reading it</strong></p>
+<ul>
+<li>71 legendaries average <strong>PC1 = 2.38</strong>; 23 mythicals <strong>2.25</strong>; the other 931 <strong>−0.24</strong></li>
+<li>Scores are in standard deviations → the rare ones sit about <strong>2.5 sd above</strong> the crowd</li>
+<li>On an axis built <strong>without ever being told</strong> they existed</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="the-picture-hover-over-it" class="level1">
+<h1>The Picture — Hover Over It</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>pca_plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(poke_scores,</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">aes</span>(<span class="at">x =</span> PC1, <span class="at">y =</span> PC2, <span class="at">color =</span> status, <span class="at">text =</span> name)) <span class="sc">+</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplotly</span>(pca_plot, <span class="at">tooltip =</span> <span class="st">"text"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div class="plotly html-widget html-fill-item" id="htmlwidget-1c2c374148da854e6886" style="width:864px;height:412.8px;"></div>
+<script type="application/json" data-for="htmlwidget-1c2c374148da854e6886">{"x":{"data":[{"x":[2.2589853083733655,2.1441375484397609,2.1659363968620107,3.5011065334691187,2.120556509958178,2.1499484677030352,2.2342464832445161,3.6686196057540714,3.7908078206864952,2.2119563009560324,2.5343843535710651,2.3731703272635483,2.4627551152426621,2.4312694012787786,3.6040276122037493,3.4451614366438226,3.6336774627316912,2.177067570620546,2.2161340610022568,2.0430568142286423,3.6309741664106054,3.6447703480628615,2.5326509238809716,3.4997220707969472,3.7445840723004697,2.2789584474826325,2.0283239130198094,2.1139687635172746,2.2147844528626308,2.0844815114888342,2.0844815114888342,3.6963989172326479,3.6337915873077136,2.4048849093845637,3.3707889093494203,3.6591432970014601,3.6591432970014601,2.4507193972081023,1.6376329428109868,2.0253598328669602,1.8285259404489227,2.0538137600373121,2.0450470011789648,2.0786592683251399,-3.2704508027788455,-0.26497016439955984,3.6502627734959634,3.706891112518115,2.504040773172846,3.1890407058903807,3.1890407058903807,3.6980358040001029,-0.68014297882562746,1.657080944572598,1.7101552968642144,2.3296981269016479,2.4181517391705336,2.0503421874550156,1.0564879681424852,2.0958831227326655,2.1843974156040735,1.8085878088936806,2.2337555511094127,2.0184734541476419,3.325493518656593,3.3698663802779443,1.8152761537167825,1.7761221759803012,1.8620694173269314,1.6747004134543582,0.39586554953031411],"y":[0.22985557969540726,-1.0011475038981168,-0.66530978496668092,-1.8801987307518846,-1.3931054207951357,-0.50919344723324966,0.54340953649492074,0.52748943761898437,0.065165163224841019,3.4715317251700837,1.3508239542101794,2.4111778396901316,-0.77978609656982445,-1.3217851700388326,-0.60402788073336011,0.82258457313355338,-0.89046985007623392,0.78085960218015649,0.21717774455315286,-1.7581209109129927,-0.20075675347362448,-0.75853452297037482,0.014233660913683121,0.40969312068899344,0.67376643071460995,0.72117805669263224,0.0061303679468891611,-0.34867901888562147,-0.78513829353912123,-1.6093406687355576,-1.6093406687355576,-0.47839488031082117,0.23875352859072863,-0.7845340574216868,-0.61711672872694001,-0.57273932421542573,-0.57273932421542573,0.49875754136923234,0.62320343284397395,-0.25120008153252227,-1.4669695941629828,-1.0758788427050066,0.74496797873741671,0.46057171205814373,-0.039725597059917878,2.5537191817494267,-0.063064724914825773,-0.6645472647197852,-0.13707725402110815,-0.54481901583711789,-0.54481901583711789,-1.5720544587048935,-0.28621171211123303,0.08334070841041781,-4.0741818734871362,-0.71250616157249236,2.6199761148451444,-2.5553104712808223,-0.10811693724005159,-1.6294857301979822,0.63582819580596317,-1.6377166280389617,2.2207670645480158,-1.1967779163266798,-0.55872136455080179,-1.4994670964526209,0.96363432899303281,-1.6293767785013631,-0.15445161776797423,-0.39514954888928844,0.61922542903412225],"text":["articuno","zapdos","moltres","mewtwo","raikou","entei","suicune","lugia","ho-oh","regirock","regice","registeel","latias","latios","kyogre","groudon","rayquaza","uxie","mesprit","azelf","dialga","palkia","heatran","regigigas","giratina-altered","cresselia","cobalion","terrakion","virizion","tornadus-incarnate","thundurus-incarnate","reshiram","zekrom","landorus-incarnate","kyurem","xerneas","yveltal","zygarde-50","type-null","silvally","tapu-koko","tapu-lele","tapu-bulu","tapu-fini","cosmog","cosmoem","solgaleo","lunala","necrozma","zacian","zamazenta","eternatus","kubfu","urshifu-single-strike","regieleki","regidrago","glastrier","spectrier","calyrex","enamorus-incarnate","wo-chien","chien-pao","ting-lu","chi-yu","koraidon","miraidon","okidogi","munkidori","fezandipiti","ogerpon","terapagos"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(248,118,109,1)","opacity":0.59999999999999998,"size":5.6692913385826778,"symbol":"circle","line":{"width":1.8897637795275593,"color":"rgba(248,118,109,1)"}},"hoveron":"points","name":"legendary","legendgroup":"legendary","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[2.4545374431579337,2.4545374431579337,2.4545374431579337,2.1475280769461533,0.73782700199403872,2.4545374431579337,2.3066080988922955,2.4545374431579337,4.1712478843218284,2.4545374431579337,2.1086156638127691,2.5756879846898806,2.4129843384639957,2.6221157774542756,2.6474360160137902,2.4945865833302898,2.5715668282842357,2.3497204021407527,2.2624159454606301,-1.8311181484302474,2.6313517292527449,2.428657924806664,2.3887196567964626],"y":[-0.27406127792669854,-0.27406127792669854,-0.27406127792669854,-3.468615796227517,-0.18261649234999436,-0.27406127792669854,-1.7062959416818622,-0.27406127792669854,-0.36550606350340248,-0.27406127792669854,-1.1837485548078921,-0.71876434060392702,-0.68632245150547555,2.0508615492260289,-0.82671740269705107,0.37265260275133494,0.50990593488033142,-1.1951510562427106,-1.9777643065355008,0.51032808484601888,2.4516631872707957,0.10850016995459379,1.2141943420976418],"text":["mew","celebi","jirachi","deoxys-normal","phione","manaphy","darkrai","shaymin-land","arceus","victini","keldeo-ordinary","meloetta-aria","genesect","diancie","hoopa","volcanion","magearna","marshadow","zeraora","meltan","melmetal","zarude","pecharunt"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(0,186,56,1)","opacity":0.59999999999999998,"size":5.6692913385826778,"symbol":"circle","line":{"width":1.8897637795275593,"color":"rgba(0,186,56,1)"}},"hoveron":"points","name":"mythical","legendgroup":"mythical","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[-1.5314102936292444,-0.28644063718410795,1.430269803979787,-1.7706026114866102,-0.3906357675270784,1.4565007023966614,-1.6032406055414374,-0.29904475270606878,1.5009807982700636,-3.3979896126986175,-3.2021244889446336,-0.45587092607873497,-3.4178343443741386,-3.2219692206201547,-0.45204644045719605,-2.6061163577493716,-1.1911191404170716,0.63329321465126032,-2.6445578653809663,-0.33203959430162266,-2.4950853091913716,0.067274033124086058,-2.0351429057901655,0.25660209569690001,-1.7064160979427452,0.69825192679062809,-1.879599612277093,0.26628843917777539,-2.1830266862532901,-0.89549385538036885,1.1337037554401983,-2.2443368615300443,-0.93002046181443276,1.0774647391148209,-1.3849794691489283,0.90582639203910142,-1.8821261383899348,1.064150009753617,-2.0884127230668916,0.27485204298771926,-2.6729892663008847,0.33125400573593111,-1.4531089532214467,-0.37520109397956214,1.0033985896743018,-1.9759601420074524,-0.19039372809461916,-1.7204333585346241,0.26118001926997308,-2.5524599394082448,-0.25977579762214253,-2.1511147579021941,-0.0052267064473255917,-1.5636231670360943,1.011442494709748,-1.8451630556527205,0.30072499580214812,-1.1352809068862644,1.7861168254878321,-2.0112273607793685,-0.74777308815424426,1.2308301724236153,-1.8306774533186685,-0.54314462244574757,0.91101842805164879,-1.7098817583998751,-0.24934750926898352,1.2231258456806517,-1.8245997846785547,-0.53706695380563363,0.91709609669176251,-1.2947479332471556,1.2730179919484348,-1.83561087209075,-0.54807804121782888,1.001647470754951,-0.36165071287818346,0.92588211799473774,-1.4687592641096001,1.0569738341737733,-1.5049203073995054,0.47433752443088822,-0.73139341566110661,-1.8307612406325362,0.42282872472676947,-1.39726191061969,0.74862614083517864,-1.3358489549267956,1.2266146455892601,-1.8642613476168908,1.1993506422306828,-1.8447712784330481,-0.47392333774788953,0.89692460293726917,-0.83381347450093335,-1.2951216082296095,0.92322534809183987,-1.5968850972634407,0.54900295419142819,-1.5939994586894182,0.60159073886660563,-1.4681108080529299,1.5621273229862922,-1.5410790413810791,0.0092094406209397729,0.40483702833113877,0.41576589294294147,-0.44610411091970348,-1.275103589752921,0.87078446170194768,-1.1384684299322667,0.87988357832492292,0.78947392096210078,0.010812270208847032,0.88296930969968457,-2.0529589031959676,0.009614038446663295,-1.6123934685446999,0.36535956442742884,-1.4117617508655322,1.16330391088031,0.45318739013293424,0.92302762944459704,0.3773406626850031,0.80452392987449195,0.92276887809438501,0.94794945394933972,0.72755670999769328,-3.5156962382227142,1.6739822285019874,1.7144082988756721,-2.0089097038681931,-1.453307561676243,1.5710041916694921,1.2354184920658822,1.5159948417332949,-0.36846432745854929,-1.0510686354398406,0.96074024749645925,-1.1396626469432818,0.8804530372677003,1.0669514509979767,1.9931693251157339,-1.843395286580255,-0.12668484541636002,2.524690888585003,-1.5490102384607769,-0.30514057856761106,1.411569862596284,-1.7706026114866102,-0.3906357675270784,1.4565007023966614,-1.6266363223025702,-0.3257117070083036,1.4639272091716902,-2.9726432812428336,-0.27120505644606935,-2.340364567020623,0.46302070874015172,-2.2931518752570441,-0.52716192198402823,-2.5115818941737929,-0.29683786996998623,1.3569409533523715,-1.4046201339089024,0.57467792866878808,-3.2894196438857755,-2.8626007858217677,-2.9821082495385087,-2.5310066901493098,-0.19120019027014248,-1.6416037274697943,0.50428432398507417,-2.0648394785294939,-0.83115760460879118,1.2957757010883371,1.0141110340459079,-2.4986038868038705,0.0059757568662592488,-0.17412107389340592,1.1277464230231107,-2.5629992584123924,-1.3299097269473479,0.37035808798010023,-1.0835465972989646,-3.5539491009156987,0.15753873953015016,-0.68277840510826715,-3.0532875873971377,0.16472946712177811,1.3098502837233308,1.5415534419968349,-0.45905712156097611,1.1551109604068373,0.069241418985327027,-1.3110502804313322,-0.043583790880988849,0.32644318984830251,-1.927060600551677,0.55362206143682569,-0.067565568805149898,-0.087527103383480478,1.1873549427426686,-1.7672891837474984,0.41357360570952262,0.059556508095854735,1.0517695623181511,1.4468773884768404,1.0513494024884857,-0.13499694612279112,-1.3480392404854251,1.1344545136826114,-2.4762442789431409,0.12367480281379105,-2.5942525626805293,0.40200006777829639,-0.11702432911060508,-1.9293414696153375,0.85786792928583011,-1.5076179588309462,0.9922260030313198,0.44833497020186858,-1.4425763396274855,0.99857147790490319,1.5989969528140766,-1.3393918764713331,1.0700548616222822,1.3482461137053456,0.4803935016882489,-2.6448347888820938,-3.1247714906247248,0.41955634530960761,-1.7586197217409649,-1.1160326267426024,-0.99778767852270933,0.78071970639076127,2.142439414380326,-1.802429557087301,-0.19342102982784332,2.5918725483869731,-1.7542787319414521,-0.44359588073749068,1.3269655173786226,-1.6689801329560672,-0.30579749670867784,1.4554601674843839,-1.6532266735918457,-0.2620644310816479,1.6516619591347124,-2.9888316052391479,-0.14036234788115018,-2.7727761025212874,-0.23028696733567752,-3.2818287527869394,-3.1448919347529931,-0.5000523570907236,-3.1448919347529931,-0.58199873889611797,-2.9164403688593641,-1.1997299276954692,0.82852854282606203,-2.9809259793823704,-1.2747921337392927,0.73269306718996097,-2.4376157162865781,0.13656787126474493,-2.4399635670341686,0.13862449829451901,-3.3173088563369522,-2.1474056063973683,1.3623041434213827,-2.3344562476930877,0.36889216266242197,-1.8296877434616661,0.41765281338686988,-2.0808592542772582,0.066658842504385071,3.4706668851699907,-2.4080216483748211,0.039214802600711689,-2.8322871214131435,-2.6335224904235237,-0.91681204925962889,0.96652861152874092,-2.6459589885927488,0.83709678547604327,-3.3332167445991194,-0.71186827927954799,-2.4444481009110834,-0.51233383193831461,-0.67047963010122158,-0.70225286521320684,-1.402887395786651,0.0030783074678546571,1.4090440107223603,-2.1886984398422071,-0.31265751560408933,-1.9911160962236563,0.53602122532185559,-0.40337952519381559,-0.39360622112124566,-0.01129021510153734,-0.013731979879031145,-0.37230805343044593,-1.7396575201921667,0.67385527069701989,-1.8561907072175139,0.33866164915328828,-0.32416545747975672,1.1952540581857818,-1.6934603369279877,0.58446433367367445,0.7145492610321198,-1.3459991258340696,0.67125937916775358,-0.9788834391698561,-1.8411597435312212,-1.3301209318785348,1.2449447298673075,-1.2816279352676321,0.72585726566162145,-1.6571852677796328,0.91788039396620946,0.35356515571703062,0.44519618484028728,0.52462825417513048,0.46296006454923216,-2.0603849483585153,0.66956642089668528,-1.7218205817803551,0.57643937891425712,-1.83327358428349,1.0758558081595491,-0.86685672671064462,1.141567614517645,-1.1362106511160956,1.0604792156300318,-3.4007333541346214,1.722158841286537,-0.12052821858790867,0.37698274507816532,-1.9178005184967408,0.39117188656947754,-1.8179852078823713,0.57519229291386531,0.59407328868819798,0.44304497372789642,0.50071003804903458,-2.2562481175938336,-1.8372386597518038,0.73782700199403872,-1.8612305235300666,-0.14452008236617161,1.5721903587977233,-1.1660677914271362,0.84235654980115326,0.84047826920308111,0.84552169097808094,-1.5622984608070225,-1.8965219309770791,-0.12737962919515122,2.4291932087908168,-1.7880374579537082,-0.071327016789813374,2.4859344685581721,-1.501323357730675,-0.22973633735650695,1.4869741038073876,-1.7620738747919271,-0.40602111023354642,1.4030263336794981,-1.5829926579855553,-0.25726896261572385,1.5799724841891327,-2.7068705010476704,-1.3813733307785236,0.71439215880692641,-2.4893281148572028,-0.26549994582003855,-3.311053229376919,-0.63248044823168115,-2.3777641450666844,-0.94484393431108415,1.4008747964343404,-2.1020484130094332,1.2488399262580649,-1.1433020850893201,1.0264256260040607,-1.0600870862969216,1.1389605370141691,-2.9082528497184561,0.10802070979305313,-0.066845688388679755,-2.7624837686924364,0.80889460374551037,-0.40428037706548636,-1.5510506903368355,0.79686495273669522,-2.1403106817334576,0.27483215448250364,-1.34985869449247,0.88045674007414221,0.61622945034742882,-1.1538417724290864,1.0827153830546945,-1.2145688600909308,0.65313246590923957,0.90774130550947363,1.1366724663600833,-1.8429743430467074,0.17218657420189454,-2.0450920437057865,-1.5025789830287166,0.71586527014454615,-1.6905438347152171,1.2232508825188992,-1.890831515057301,-1.6827729942930338,-2.7722436509243433,-0.35422442862936476,0.96564123066603336,-1.7994137460037054,-0.33817798946279604,2.4343731914850295,-0.1527187263391348,-2.1150781072948655,1.3304335531489808,-1.3556575287570576,1.4969605394520034,-1.5058654047696418,0.91450914317046916,-1.8498005844626821,0.85483376403524125,0.47223546360163227,-1.4462821736736682,0.40759433425468289,-1.0431454042810215,-1.270050159239112,1.047039556683329,1.0218089410445641,1.5771674641161133,1.4164632802763888,1.6305368850024333,1.562589195780169,1.5734981433865209,1.6372400354350032,1.7436751673730462,1.1387776771510623,1.2277632705001846,1.4218524172045337,1.050602911444118,1.4669249523955841,1.5050091569422834,1.3679389852155992,1.5881346250395434,1.5305651491419878,0.60105419679519811,0.067949103418021184,-1.7720047611768621,-0.28034694143275823,1.3190127922157828,-1.6852127938363759,-0.078771233978956703,1.5204639892079315,-1.7003767794166667,-0.1877913271239543,1.4669332825004349,-2.4781165422178297,-0.16065455299768405,-2.2297645505563666,-0.81952478998228884,1.0483988233996067,-2.1990255152608125,0.093898821525319143,-1.6593331651235699,0.8967986387094119,-1.6593331651235699,0.8967986387094119,-1.6593331651235699,0.8967986387094119,-1.8049302907389679,1.1056769428910949,-2.3758468973441862,-1.063278206762583,0.7543865515215683,-2.0320084900134527,0.8266708420528166,-2.0800453604467313,-0.46955228659006271,1.4070985438347781,-1.5721519393867758,-0.23343260631618934,-1.4806139800289169,1.1516587604542399,0.37996069012348083,-1.7081754044891979,-0.26127601270544742,1.2229751237578159,-1.9870040441235202,-0.64784264408081305,1.212502359332847,0.71559111894295435,0.49350591196926308,-1.6697602490845846,-0.61855887856914571,0.97795723248314415,-2.5060395624443794,-0.96144397815752036,0.63046435427646808,-2.2141923740926379,0.55744736023425001,-2.0612575346797626,0.67896393004037758,0.32993598860507123,-2.0229993091809488,-1.1754142799894447,1.2617288041856114,-1.5926362594595966,0.69688857246880842,0.51634592498428389,-1.5632118670406558,0.86812066988334136,-1.1104172543760824,0.95244990619182546,0.80588154148763991,-1.7444362782637595,0.91563777066034846,-0.99674755792537006,1.0369535733128998,-0.44032778876557138,1.8693240977526457,-1.4599459220227951,0.67303546339137932,-1.4820254815595197,1.0316383069439665,-1.9337845070246893,0.43543104189515364,-1.9400645240022354,-0.48364971329598777,0.97044541277601393,-1.8685934337476873,-0.70598992035835539,1.1270097881509638,-1.7666559789697325,0.54463582879618633,-1.7409155501741613,-0.45338271930124002,1.5541024816280133,-1.4077142516174517,0.60071008961083772,-0.15926831126985055,-1.6600862124189986,1.1960328007987779,-1.749723872988119,0.75251061059343827,-1.2105497988659222,0.90448684998353079,0.69477775463387392,-1.6180004070915943,0.48156894171309705,-1.5914989585970352,1.1062804495984631,-1.7770374924340004,0.23533436053153797,1.2256916046405879,-2.2686109641471117,-0.23205487192345456,1.3671803512634335,-1.2425624050224384,0.98954218095229207,-2.0844075550108028,-0.81723596212040484,1.2970374878685762,-1.6084567930066005,-0.29905718928603514,1.5118816327402711,-1.7291916861595014,1.2380839253198881,1.3016003265525324,-1.6786104200944545,0.71293629570424011,0.86337282206811183,-1.1723928004529882,1.0407229242125697,0.93952197707796903,-1.7227141303641265,0.89144570780851229,-1.3424150032025164,0.85885548795926492,1.0162896487651207,-1.1179409972457788,1.2000878589756987,-0.82566626957905564,1.2194784418058555,0.8454234226890337,0.55420405218560309,-1.788288339640568,-0.071577898476673035,2.4402076094287413,-0.9890981472785999,1.7539289075490239,-1.6218619269958663,-0.35529916804688144,1.4789712413376219,-1.7551819568468734,-0.29478961442346202,1.4750504257630945,-1.7269425096083133,-0.47270296339259577,1.2907466462283457,-2.8120794078029414,-0.079022667677873318,-2.2262781688355395,-0.75714893584207743,0.82520541712389661,-3.2925778910067351,-3.0841309380001531,-0.33036711736274504,-0.90200054386615069,1.0182669933326121,-1.6986992217758681,-0.7029503334909788,1.9694237266897663,-1.0782251224296278,1.6073908615168742,-1.1056176929177137,1.045488738946085,0.57652378764451429,-1.0727595150782225,0.44054229261413641,-1.4806840408263757,0.26980411965703427,1.1347263117682136,-1.0804807583762435,0.72463245629579187,-1.2246479282211156,0.75302606906774916,-1.9998175790077399,0.78298008602283553,-1.7673027799736643,1.0376669751453824,-1.4613196639573902,1.1349639774557021,-1.3648477767303158,1.1029283949708177,-2.0773533600196266,0.67729929960557345,-0.95666838625023598,1.2837214117414935,-0.85587630392600655,1.5104126102853914,1.6096612347498815,0.85307553694646054,-0.074152443103412485,1.168241978627482,-1.7364481275857646,0.49007500778438917,2.6561185074900115,0.58146671634303848,-1.6464517437429054,0.75896069189686532,-1.3448302842180186,0.84808964744798898,-1.7594743559525934,1.2609422074787535,-2.6743979767494386,1.3811137998344063,-1.4967179242189261,-0.047039880033691292,1.5482098931702359,-1.6383449025365122,-0.22218252521054602,1.5724662877471187,-1.5011840286102371,-0.035619366869009801,1.6210490130584261,-2.4409708855681691,-1.12273711807407,0.88311803752840923,-2.5221735603966513,-0.037485112124280587,-1.8309053572495921,-0.31808300807471823,1.1382423232599221,-1.3504638992197247,0.85100118564568383,0.61262129218225969,-1.9314002695383874,0.31132288849298156,-2.180800245640433,0.70019058997402028,-3.6428002713243961,-1.7547475415265366,1.1332578788757426,-0.5644520070220248,1.217041904623648,-2.1735543491698994,0.58393132533984315,-2.5360156344234763,0.86673025917270829,-1.8914000807721962,-0.15166460980717222,-1.6620444222422763,0.55990546619681503,-1.2263942233894445,1.1205464180450921,-3.1007736873754004,-2.0270146389845789,1.2138619702486875,0.74556503383102357,1.0348482258015792,0.86090193430313311,-3.0331762634342345,1.5640120454229416,-1.4533275995696768,0.86817919823953105,0.018173810484644781,0.22330881618185816,0.82438738988869076,0.89537906835233994,0.0097241218551096173,0.63950292644948081,0.59504922049969888,0.98765870136131317,1.4129759023575532,-1.8527236315836728,-0.14506964157503671,2.4586250349937893,2.1427849797288419,1.9667407216877206,1.7241726121081924,2.026450349180879,2.1595673710512786,1.7508892620752785,2.3589359277605948,-0.13894878056061549,1.4365037068870443,2.1703358402855972,1.9346327781536168,-1.7684483932044881,-0.1780478138593925,1.4441472053622477,-1.7717713018368484,-0.22626252514052617,1.3152987398185474,-1.7784042263467326,-0.21917415377233315,1.2835406975959953,-2.1152671252780784,0.702990008087645,-2.6939833570206919,-0.9628602425157351,1.0135408825407464,-3.5743498412716739,-1.2031535014707129,1.0846430357755992,-2.6222229891615125,0.37209261584640324,-2.4176034943712046,0.56663008065147957,-2.2933743764629386,0.84115443524326938,-2.0715177132785527,0.81326025135625801,-2.1701721031049113,0.69381994971008654,-2.6620782134744827,-0.19954063466101105,1.3796104781728127,-2.3753263312888104,0.79248173046276293,1.0400729761769447,-1.6289355677423034,1.1258680228439244,0.69288557465779188,-2.2307950904252132,0.60785272038965599,-2.6721543686327287,1.0590258028174839,-1.7392631137624528,1.5161056854359762,-1.6346417505083815,0.87181617375982046,-1.722001708739475,1.240900849854965,-2.3049082219499453,-0.776504076526635,1.3636100860050704,-2.3518393794898151,-0.85833144526098348,1.2780315373926128,1.2604213262237594,0.19278344728157007,1.4728052201192658,1.1519939253461491,1.4041085094474075,0.91986390200601065,-2.1857085161947429,1.0857727226243146,0.52635165993967625,0.27780807768419397,-3.4502438531297654,0.74908289801165762,0.47240229641111342,0.6860630564087099,0.63937872488993353,-0.016944932260017413,-1.3318152769133116,1.2671873413228567,1.1023080527694171,1.1984522543181793,1.1120813568419867,1.2082255583907489,1.3996259357266383,-2.443276585397717,-0.40790517808537596,2.2560326423370745,1.4792217564384931,0.9615949136787606,1.914097652312597,1.5361589154806576,1.0504124804132211,1.1153972478797858,-1.7767805039273907,-0.33335766966645541,1.2887276057854082,-1.6477990001871916,-0.1932105001661614,1.5157830147040174,-1.6890620250853603,-0.26164179708961355,1.4439147956665015,-2.4425974810203015,0.97469315787808197,-3.0685279232762674,-0.22516859414961618,-3.1910492594438891,0.1954281688266668,-2.7724488788191874,-1.2368571667694861,0.74615453559803413,-1.8631757166428364,0.4685665016117278,-1.7485717631027173,0.56687878732758468,-2.3491869997335248,-0.93845640535000752,1.3732160382592422,-0.24649520385033383,-2.0864271614625061,-0.99144626159779992,1.1925503622625917,-2.458670077520611,1.3918932187406703,1.4117938123366611,-2.2329996508525269,1.1201672411006531,-2.2220703461274249,0.67849657811463093,-1.2530754687542442,1.0525577641977029,-2.1042688385066923,0.67467540550970606,-2.2603217266034941,0.65715396948768012,-1.2947479332471556,1.2730179919484348,0.21636622391866628,-1.7888570118713016,0.80832755201659701,-2.2041617409074514,0.75106590711654686,-2.6340674889967306,0.65759488406585287,-1.8750589328765566,-0.69603238115348054,1.1268288340452535,-2.8857203786571946,-0.25977579762214253,0.79594629922739857,-1.6952583525628726,0.32768808894480833,-1.8565581071969219,0.95488327441946241,0.86049660008599127,0.6539269419391972,-1.1236443697244081,1.3607748350201823,-1.9217217424041171,0.90377354650598107,0.96847637483219851,-1.2493954487939842,1.4530732955877601,0.73766947890189694,1.6615860817186623,0.69238083493171665,1.5658964806588269,0.37355187567841192,1.4398074218758103,1.4664170861856882,1.8647463188059892,1.9565468038741278,2.0308471589007606,2.204573920233114,1.9459384966357565,2.1061183296051023,1.9633904226147576,1.8970316107656402,1.7182631543834528,2.2091688062719799,1.9514605446377244,2.0166376225206379,2.0814417779497911,-1.5474003496264632,-0.022563180313040627,2.507165847660457,-1.6760348049622975,1.7529596051362328,2.2838495561832515,2.139568996263614,2.2460763934889569,2.3137079091860291,0.9261495936163936,-1.722001708739475,1.137363168119347,2.3874248525307551,1.7457841395040516,2.3134303722744036,2.4221716956291321,2.2471369496453106,2.317390474325205],"y":[-0.058944876495957588,-0.15214430716697319,-0.24358909274367735,-0.70837354722083568,-0.83060127463525657,-1.0327146549254675,0.48050650673006051,0.41794918827064931,0.35663575630952926,-0.10022137640170536,0.6260123302116013,-0.81682072695332419,-0.32806292199758824,0.39817078461571825,-0.45945711828136648,-0.34523034530210972,-0.38401411244066064,-0.71834876312194695,-0.7217875327827562,-0.77583080752246825,-0.82396948471953502,-0.88022066653719366,-0.17160946501229479,-0.26237712486562048,-1.2601960503267136,-1.5829168525177755,1.2014424549370659,1.0871364729661859,0.28723370888742034,0.21865011970489234,0.21100636347691068,-0.18025177216834321,-0.20901900722091799,-0.39989057591729771,0.30922847920266966,0.071957391994559666,-0.58435604441659039,-0.69519837708093069,0.22715514696874109,-0.071598492857983809,-0.32886833788233572,-0.48889671264156781,0.30422771052530118,0.38844025289809514,0.31833649103062822,0.74413211823825132,1.2385709717137658,0.27811101603391553,-1.0493236183382264,-1.619071778500822,-1.5633360109993633,-1.3019479709856037,-1.4162539529564837,-0.38645059409951676,-0.52361777246457275,-0.64217020713079975,-0.75647618910167991,-0.56810874187626925,-0.68501675657369321,-1.1906379246019432,-0.62720396891982921,0.61468110192893854,-2.5237111071067222,-2.5922946962892501,-2.60061557824061,0.55805360214363375,0.76386281035073977,0.79412857002563364,-0.40879192449791568,-0.47737551368044384,-0.48569639563180378,-0.58932626368543761,-0.74950637172669055,1.8373991193874559,1.7688155302049278,1.9740788794814159,-0.92913735867603664,-0.99772094785856491,1.3502968612580282,1.4272534399214361,-0.1774843871488252,-0.35205307635087324,-0.11325188529580782,-0.6316518039832012,-0.98884765105866357,0.40164997624686721,0.28734399427598706,0.86710475303132462,0.90345553913836485,1.0644831169755593,1.7022472018359658,-1.9873090759173941,-2.025761311484338,-2.0642135470512821,1.8068254624209688,0.40899020849603823,0.23320167390654317,0.96259498016588818,0.84828899819500814,-1.3755762603009607,-2.2270418401944423,0.65530085965354623,0.031856878062014274,1.3377185568331138,1.55913910806709,-0.17362512761122884,0.57585884451687275,1.1264947769679952,1.0597146983644301,0.94540871639354995,1.7771815727889444,2.0155444981638171,0.21364836728881587,0.39824792410787729,0.19478599055810308,-0.38480049356986507,-0.52923782915632911,0.043713548707072829,0.022922334197765008,-1.0980905295536889,-1.235257707918745,-0.96039163261033955,-0.44906320322068355,-1.9092926980994893,-1.4508587015433645,-1.1926274294954153,0.39129995545569163,-0.15261396251371692,-0.63089089847213298,0.30143908487281862,0.53009279492094152,-0.03630483542726775,0.015376416764400557,-0.34400508625906606,-2.1649127635461651,-0.15828782789967966,0.3952959806168036,0.77315228113741974,0.74550914098385701,0.53393434107035731,0.44715745720059596,-1.4210438116947937,1.4670591435400508,-0.14556134814471955,-0.23700613372142362,0.15868306235779361,0.45633012492323649,0.39533538184092054,0.30389059626421655,-0.70837354722083568,-0.83060127463525657,-1.0327146549254675,0.50032207537037821,0.45164666325282676,0.37197103873489989,0.45371575734996439,-0.45510653031135428,-0.24513095029378562,-0.51044608200990049,-0.3691693048136625,-0.61215274548142862,0.2902395881431048,0.76181724522444327,-1.231937501740636,-0.6700031908997216,-0.16391891360234698,-1.0263594341370785,0.3994534193919268,0.15197846613541999,1.0687124707023201,0.85186288911349228,-0.94408127116400131,-1.0583872531348815,-0.099688731789328772,-0.046827388419565685,0.179514511133402,0.82361117938602268,0.57022045558861367,0.79586790219549219,2.2628773624666345,-0.016226586848994778,-0.1211342226720642,-0.61538656811460957,-0.79003172844505221,-0.57722496466068463,0.045995471591765889,0.22645294723474743,-1.4843565594803119,0.86873605129007991,1.1716262103458361,-1.9250632438114603,1.346774547042604,-1.5595173065823664,1.0107962496656413,-0.85515236454990062,-0.27492911491448929,1.2654614560706472,-0.85329302451588851,1.7303533766655896,2.1137518213191253,0.6134310948677586,0.58894808705167878,3.6309770554977279,0.61089755813792257,0.82476501222847309,-0.068331727718373203,0.96773644273228709,6.0017134806562904,0.28457462109749787,-1.0650407875995944,0.30530529502727854,0.51135987223235235,0.11715749330088866,1.5600802890721468,-0.11912628862258079,0.79303409832092775,1.3691318036715296,-1.0038156694751839,0.27063394999890183,-0.97364960126141464,0.14723944579909831,1.6304870440384807,-1.1719295353129657,-1.5081784843277881,-0.082809771537882826,0.6317621521129122,1.5991880476001306,0.30385119504009955,-0.80505258664938051,-0.66452274820011503,0.023134275197589732,1.0165852745016939,-1.5122556494121409,-1.5396013830651807,-1.2813701110172317,0.31678058411546572,-0.088933929357744898,0.26758776819237695,0.41903284772025517,1.0138038144492387,-1.0331869430227618,-1.5426709165876629,-1.7555606347166579,-0.36410292921680465,-0.2182937320201882,-0.71670299747240129,0.2445171953547528,0.50715821906108371,0.64613968458409554,0.1015621184357294,-0.027115057320471696,-0.36759537600897602,-0.82324369244979323,0.60257347676724993,1.0256546110448062,-0.94028321603788134,1.0256546110448062,0.26668003613736485,0.080805558371843472,-0.01063922720486065,-0.16478641078762654,0.5049471125638243,-0.54907256286263351,-0.73994413155901317,-1.1938032036345794,-1.8558203897462024,-1.5600617720215402,0.19005696005679298,-0.46997069964773219,-0.57839549044214589,-0.90366986282538775,-0.8404051791552376,-0.85916777033788017,0.71490652222751661,0.2288702242445407,0.79425388355561133,-0.26875036243942202,-0.096019380136988505,1.0366286913176104,-2.6816506716795403,0.13493384025774224,-0.16911469076838784,-0.26055947634509186,-0.2917415546906279,0.51746954146482993,0.85177643297283778,0.72215615280690104,2.3487901321218079,-0.062705763359505784,-0.63993027914537448,0.41704732092427083,0.70236981169765345,1.5455183117142288,2.12057955299273,2.6956407942712319,-0.13373971213932051,-0.18793472016105317,-0.90259518599233957,-1.6649618125801424,-1.5800068003027381,-1.2212355393021281,-0.04003760114347088,-0.42094651226591018,-0.91982407934178589,0.41934219777764015,0.64650981706945743,-1.296736803447728,-1.7118733484712045,-0.57821124171050231,-0.36872121984903333,-0.033987198776734368,0.26214394739004687,2.3219874458301204,-0.67369995158404028,-0.50580025927980987,-0.091171706773290229,0.95698718192182486,-0.48415239995899412,-0.62131957832405027,-0.28845273512786385,-0.47932430382424351,0.3850911190849382,0.24792394071988211,-0.64195581961902537,-0.56189906098282094,-0.41426161519923704,0.44939022105709686,-0.437454477381027,0.26579727223257782,0.57165420086401575,0.28135584904796052,0.11534905881469411,0.70251092376111779,1.2739996577283275,1.2296315163867322,-0.44241131075765505,1.2759242428043154,-1.0435059067598349,-0.19276366176228438,-0.13689409956164231,1.0258810038253123,-0.44843233774777824,-0.23345600120843918,1.7097958159922466,2.5233929332669005,0.76457321771320619,-0.03170650044794654,-0.45656101868564242,0.99456073964174241,-0.045449313984938226,-0.18261649234999436,0.55125402915029087,0.45980924357358688,0.36836445799688283,0.80063272615584336,0.75626458481424808,0.46325773010467941,1.8580387083713432,-0.9472831170911985,0.19629306395612214,0.98879154988811535,-0.85195610029184277,1.2568054767643442,1.1653606911876402,1.060958047025292,0.84736368344672364,1.2052181028096869,1.1137733172329829,-0.57012614535726269,-0.97278430439108821,-1.3496423352448756,0.17158985637056878,0.17820008971531234,0.23681141762154465,-0.58657854087312378,-0.63394581722125165,-0.5063299147118685,0.36290024842937579,-0.16724762312138425,0.52850756566140267,-0.26237368966247016,-0.19930784640606647,-0.3176048271484323,-0.055955444419132978,-0.42931790983962281,-1.224853096146338,-0.073576142981137571,0.22063756558555805,2.0281266155068742,3.3986541070753997,0.33647072521735721,1.0246630464798874,-0.7970513887688998,-0.61435061536944191,1.3222510418514191,-0.41227616761654423,-1.3837446455713747,-1.6952354270811958,0.035932912277909318,-0.68559773245442657,0.38173954828319573,0.56136405201630868,-1.1214313233172577,-0.85988349658977437,-0.91821056784262045,-0.8487900125942246,-0.35936883684435561,-1.4663368907711889,-0.81717091027662436,-1.0267545102782438,-1.2370195459061324,-0.17415357230108641,-0.55265283365112639,-0.42613498213298107,1.8285779225684344,1.8776622836209653,2.3543221480433383,-0.56335458392299143,0.14556081572319704,-1.5733453492006519,1.4054909662787176,0.21903191067457614,-0.33273998466020194,-0.16622919824815011,1.5813651255109309,-0.35340913243447264,-1.0818635148681242,1.1673632697799654,1.6544007593940748,0.62535475749232639,0.25238142336389024,-0.42161320880851005,-0.69448263409389244,0.33749513916573387,-0.24211735725165476,-0.42487572176506594,0.16418467626585959,0.17564089616217288,0.15169134396123179,-1.0568308084341294,0.3845985165058452,1.0585883135088456,2.2127119704800475,1.0138138328275585,-0.87748399976382685,-0.9605560720480022,-0.21692485959035365,-1.001872566139878,0.61873401288987784,0.15158084134921479,0.76584578703064754,0.049264141677585416,-1.3124026717472062,-0.024649298696681754,2.432950620124779,2.1950427445097369,-1.2078803430996472,-0.89441064420273741,-0.20044539689807583,-0.26080167969242779,-0.56404782759136207,0.094280417330778521,-0.032938322745852719,-0.24026450421858453,-0.18313720734525041,-0.28280929931013049,-0.14179943324837499,0.041175582566836039,-0.21182864206435326,0.015759710955447048,0.41161482827284623,0.59634570899139372,-0.80474571919695903,-1.7313046458484063,-0.46719205564344302,-1.3311639198601075,-0.46719205564344302,-1.3311639198601075,-0.46719205564344302,-1.3311639198601075,0.34561774102342546,0.98930437561850104,0.18796848551683232,-0.11084294986366403,-0.38219829979658632,-1.1388695901024655,-1.4694538636664563,1.7356781002418085,1.9218676394278473,2.5427024898725348,-0.77872519907660842,-1.7224765485285791,-0.34630007999766521,-0.25538056655679198,0.98618784430809858,0.79918448148323273,1.277026846720005,1.4174937703297708,-0.64483960301228782,-0.43328354953526221,-0.099605437782567155,1.608071555097655,0.26838942309490599,0.71869053972443897,1.1752024899216036,-0.31560597314537381,0.057073890378098964,1.2751646614417149,-0.56698959283591199,-0.16652460911945094,-1.0558203173087859,0.1404678337959491,-1.0084003338968139,-1.0781014646047182,-0.56256886194874878,-0.58400226822664258,-0.20693292168340804,0.4239091589850596,-0.34613258193029944,-0.35819575250979546,0.6592530309223773,1.7392783354191679,0.76511107794757793,1.6574884075787593,-0.9599331357760098,1.0742517444254713,2.1395089756448735,1.7035620205160418,1.9546620875740106,-0.79145504979759917,-1.5711860973164384,0.024394367052539622,0.27193502942927517,-1.0399661996130758,-1.8160442816382958,-0.77042846061261272,-1.3502897237232103,0.039205593782895676,0.16025662347451095,0.38058584227033071,-0.2578711011383169,-0.38930882160892766,0.4855221773846658,-0.062538443599458357,-1.1489274988970897,-0.076050034123825688,-0.14463362330635368,-0.33550519200273343,-0.46892077183663827,-0.51328891317823355,-1.3033631901799931,-0.23620050749887178,2.2612250975458728,0.75631686796640851,0.90968691465021556,0.21899893523281883,0.22067859354354316,0.76751319910519022,-0.50292118194313895,-1.6347490234982223,2.2566505592134534,2.837298532671904,0.93475860087734797,0.92327266268127328,0.3969533877975856,-0.53030660962552001,0.54697553753233541,0.33964935605960367,0.17001883667065157,0.19605912018640603,0.58136821817832229,-0.44718128678641267,-0.8558905589148833,0.24146893514787496,0.28007296414960298,-0.067973141969100356,-0.11916749898592593,0.84258448512121142,-1.3107042014978327,1.4483823900171275,-2.9477216451831949,1.2401609055722445,-0.40750742562647208,-1.4429299855326265,1.1828841195437894,0.59334991440938478,0.86911435062124964,0.23628599885002863,0.6941522004939501,1.4319749408669031,0.023691475816750657,0.14624535097059388,0.44751057716898252,0.78933660770283132,-0.4301366904421759,-0.062976137934661933,0.35025851544650138,0.25881372986979723,-0.81027120686499121,-0.057657923960127255,-1.5211219447182762,0.58734486840936473,0.76170890824802018,1.179151729834484,-0.62373530740654326,-0.76145630398697473,-1.2668905715718461,-0.95771735850664574,-1.4713428190158706,-1.7931087450552621,-0.39505432906502863,0.11918636871368692,-0.44424942378293081,-0.7346226177753985,-1.4766895035270482,0.17195947074758025,0.74146331026110579,-1.3681232117533038,-0.63455652678240215,-1.420258273461406,-0.081222987480629089,-0.1687728366210412,-0.29037142651324072,-0.14431074509438041,-0.24525956185276343,0.53925246963627271,0.55239331965273131,-0.8890522605700808,-0.46261822384805584,-0.97372063501810735,1.6424134585244785,2.5399142045698975,2.083010899393861,0.84898155806298425,0.7768530148922731,0.26887787455591167,0.046980511400326538,0.29205996579172772,0.31469445548616637,0.43931677859885215,1.1905504242550942,0.60024811098548525,0.87331392747576586,0.32621366170353167,-0.0009079688331891945,-1.0977094181955245,-1.8425524789297947,0.69359991709581748,0.92507029854668554,0.04276636185834401,0.18426988993804908,-0.042474014515203218,-1.213010373192867,-1.3414203309684036,2.5479954648244068,-0.030632778173185885,-0.12884903472825615,-0.24442820630319395,0.11432779460242332,0.28746667718840413,0.60642653007332392,0.46627199519464813,0.76442653202861066,1.3799854159004259,3.5316088533868681,-0.54862347891451224,-1.4409970245430577,0.3272222240813365,0.44141752605424334,-0.10856879437601646,-0.89685603291342142,-1.24764529637106,0.70076650948400199,0.12590204418570539,0.097436100771920775,-0.17910255586027485,-0.67957171796779181,-0.42869985532023808,0.32912684000753539,-0.15713643799594168,0.55663663124388985,-0.12237710622761369,1.3810361556093849,0.051039986145102023,-0.077407929635942632,0.98507104422325964,-1.0212181951889396,-1.2411208244538161,-2.0275511656005309,-0.28507085209714916,-0.97770877577902993,-0.33228862094464917,0.42008335509463346,2.8976467380079507,0.75796423179879935,1.8265175632677551,0.74031873584783392,1.593286457957382,-0.09561184964566069,0.94843854113589265,0.79785794869675541,0.8725094598766403,-1.2403960974279544,-2.0635508236882831,0.14937859903750539,0.74497214623878916,0.2495928139415626,-0.28190930905595396,0.91176424205728379,-0.48705100810190366,0.35115938763530719,0.55645312836651595,-0.85326270576285768,2.3769240704240699,1.1562430115766178,1.2384273761985896,3.4104043234026578,0.94620620475044748,0.061481723876579811,1.7967111710050603,-0.47350844725568592,-0.12127431449759002,-0.59631763089127732,0.32109409883846807,1.2563858187012535,0.39911374582632492,0.40009142163511663,0.54852317820030083,-1.6243583277787659,1.425001915502446,-3.6225732530621721,-1.6001095375081582,0.64406332317842241,0.25077190524784376,0.38890753483810131,-0.32856737065969144,-1.9804937381811847,4.5605451341337018,-2.2449627122401026,-0.31177423045941827,-0.22029153086521619,0.26110985362971006,-0.5938889538804849,-0.77569016922712797,-0.99037358771929185,-1.0600420546670515,-1.3612665205803236,-2.1220162596534542,0.8416385472792135,2.034933357125857,-0.4472094871774886,-0.37843938996199122,1.07650832174772,-0.40770769414454699,1.2433190739218662,0.25590610089801169,-0.52352122261061285,-0.96628066408631286,1.2476316298790295,0.59818131597100299,0.14216515182097583,0.2976282525275234,0.20848113364966156,0.60300619041066716,0.68220710624398639,-1.8375554334707949,0.4652576442339591,0.88372573262170195,2.000171955668065,1.2823798916116438,-0.21133451076590146,0.90942111642214851,0.757785497530438,1.0897909524661751,-0.79833495979475844,-0.63364015907379601,-1.8453809817031941,-0.30625797189268622,-0.71485330445110729,0.011762216418801376,-0.022723066152449286,0.63320319366467415,1.1518574949811211,-0.46502030760045465,-0.80727468520140611,-0.010388064946854155,-0.024071301551246115,0.74260794670234398,-0.59575216497051686,-0.82863835054646529,-0.060010474784233769,0.19503994249423548,1.2259517343103308,-0.10256419859614771,0.70236280106003879,-0.27586825276087179,2.7987743987414029,0.16821846659187203,-0.11830312013901237,0.33063365017937496,1.519891212930027,0.19220940310660931,-0.78208276306032332,1.7118595040036115,1.3693838912225791,-1.3714814571638807,-1.0897640365732157,0.44703568554238066,1.0206945838225407,0.16197392541097522,0.58505125761407795,0.52074518641158518,0.94382251861468791,-0.28186606464916703,-1.2768319213476234,-1.2937771518143846,-1.9401829948991371,-0.17057093425127279,0.45688738626307845,1.8016142183986565,-0.23847078792325196,-0.94278746253116463,0.18962384427038292,-0.31015782760453575,-0.52121343115894336,-1.4429688453736811,0.3052082074913739,0.21986184666006897,0.23419649584183383,-0.12118918097158826,-0.078462723770455906,-0.28289715388878139,0.27725076722564113,0.49923011788020172,0.70458425353268439,1.452892557081592,0.010115934337160183,-0.3019956491599774,-0.93190104265699558,-1.0588127368830533,-0.94134888512985382,-0.65938111044963121,-1.0144595681754649,0.22778544398507938,0.43305573460257041,0.17961143445687025,0.40548996507190538,0.6003904927911079,-0.75069417710081687,1.1839274222462892,1.6499241552958899,2.5180135287759824,0.022291228236029387,-0.24480274752332828,0.14969176078601953,-0.30798868729058071,0.69211009287583836,-1.0123850596910613,-2.1625107038480844,0.36149192559884025,0.17484113746099017,-0.92066788270920552,-1.2861360480904451,-0.71735652299583041,-0.69559115181149933,-0.58932626368543761,-0.74950637172669055,1.0481277096462311,-0.42410593160948329,-0.78445793568665356,0.88773125281018983,0.36794661184280941,-1.3426525234131521,-1.5579588097741535,-0.082255804472784189,-0.30403300780329828,-0.30190923365748074,-1.7395971929631582,-1.5633360109993633,0.16129634735941994,-0.78780550795754778,-0.55316749496216533,0.53047455970763169,0.10674262366993105,-1.6309065030974383,1.545542640430706,-1.1064074058702562,-0.78573876825340483,0.84420995925151365,0.99798745948259981,-0.49005911587325585,0.46911789913710994,0.38142931848362022,-0.055850820285963637,2.0090527820238098,-1.1461390661912401,0.19778512556463568,1.6019421664866875,-0.15253912339601422,0.54769490740974236,1.8224020764093538,1.0823937712489007,-0.066885838508641868,1.1557636132818767,-2.5130486152642675,0.0104462199579107,-0.80729305583283195,0.13287872626691863,-1.6168930603645288,1.8169404144295009,-1.2075628056723706,-1.8899904608107039,0.95761739435740423,0.0026016440044914321,0.38841185414343649,0.26727221902033688,1.0716848060895905,-0.58757766216684038,-0.64309556718312799,-1.3749823274331912,-1.1254352408470125,-0.15964467845393501,1.201740622161789,-0.46502030760045465,-0.0068723990632451552,0.14370597678111685,0.89402133466980693,0.80473766425423943,-0.33769910191203639,-0.80363512625302103,-0.55095345012687691],"text":["bulbasaur","ivysaur","venusaur","charmander","charmeleon","charizard","squirtle","wartortle","blastoise","caterpie","metapod","butterfree","weedle","kakuna","beedrill","pidgey","pidgeotto","pidgeot","rattata","raticate","spearow","fearow","ekans","arbok","pikachu","raichu","sandshrew","sandslash","nidoran-f","nidorina","nidoqueen","nidoran-m","nidorino","nidoking","clefairy","clefable","vulpix","ninetales","jigglypuff","wigglytuff","zubat","golbat","oddish","gloom","vileplume","paras","parasect","venonat","venomoth","diglett","dugtrio","meowth","persian","psyduck","golduck","mankey","primeape","growlithe","arcanine","poliwag","poliwhirl","poliwrath","abra","kadabra","alakazam","machop","machoke","machamp","bellsprout","weepinbell","victreebel","tentacool","tentacruel","geodude","graveler","golem","ponyta","rapidash","slowpoke","slowbro","magnemite","magneton","farfetchd","doduo","dodrio","seel","dewgong","grimer","muk","shellder","cloyster","gastly","haunter","gengar","onix","drowzee","hypno","krabby","kingler","voltorb","electrode","exeggcute","exeggutor","cubone","marowak","hitmonlee","hitmonchan","lickitung","koffing","weezing","rhyhorn","rhydon","chansey","tangela","kangaskhan","horsea","seadra","goldeen","seaking","staryu","starmie","mr-mime","scyther","jynx","electabuzz","magmar","pinsir","tauros","magikarp","gyarados","lapras","ditto","eevee","vaporeon","jolteon","flareon","porygon","omanyte","omastar","kabuto","kabutops","aerodactyl","snorlax","dratini","dragonair","dragonite","chikorita","bayleef","meganium","cyndaquil","quilava","typhlosion","totodile","croconaw","feraligatr","sentret","furret","hoothoot","noctowl","ledyba","ledian","spinarak","ariados","crobat","chinchou","lanturn","pichu","cleffa","igglybuff","togepi","togetic","natu","xatu","mareep","flaaffy","ampharos","bellossom","marill","azumarill","sudowoodo","politoed","hoppip","skiploom","jumpluff","aipom","sunkern","sunflora","yanma","wooper","quagsire","espeon","umbreon","murkrow","slowking","misdreavus","unown","wobbuffet","girafarig","pineco","forretress","dunsparce","gligar","steelix","snubbull","granbull","qwilfish","scizor","shuckle","heracross","sneasel","teddiursa","ursaring","slugma","magcargo","swinub","piloswine","corsola","remoraid","octillery","delibird","mantine","skarmory","houndour","houndoom","kingdra","phanpy","donphan","porygon2","stantler","smeargle","tyrogue","hitmontop","smoochum","elekid","magby","miltank","blissey","larvitar","pupitar","tyranitar","treecko","grovyle","sceptile","torchic","combusken","blaziken","mudkip","marshtomp","swampert","poochyena","mightyena","zigzagoon","linoone","wurmple","silcoon","beautifly","cascoon","dustox","lotad","lombre","ludicolo","seedot","nuzleaf","shiftry","taillow","swellow","wingull","pelipper","ralts","kirlia","gardevoir","surskit","masquerain","shroomish","breloom","slakoth","vigoroth","slaking","nincada","ninjask","shedinja","whismur","loudred","exploud","makuhita","hariyama","azurill","nosepass","skitty","delcatty","sableye","mawile","aron","lairon","aggron","meditite","medicham","electrike","manectric","plusle","minun","volbeat","illumise","roselia","gulpin","swalot","carvanha","sharpedo","wailmer","wailord","numel","camerupt","torkoal","spoink","grumpig","spinda","trapinch","vibrava","flygon","cacnea","cacturne","swablu","altaria","zangoose","seviper","lunatone","solrock","barboach","whiscash","corphish","crawdaunt","baltoy","claydol","lileep","cradily","anorith","armaldo","feebas","milotic","castform","kecleon","shuppet","banette","duskull","dusclops","tropius","chimecho","absol","wynaut","snorunt","glalie","spheal","sealeo","walrein","clamperl","huntail","gorebyss","relicanth","luvdisc","bagon","shelgon","salamence","beldum","metang","metagross","turtwig","grotle","torterra","chimchar","monferno","infernape","piplup","prinplup","empoleon","starly","staravia","staraptor","bidoof","bibarel","kricketot","kricketune","shinx","luxio","luxray","budew","roserade","cranidos","rampardos","shieldon","bastiodon","burmy","wormadam-plant","mothim","combee","vespiquen","pachirisu","buizel","floatzel","cherubi","cherrim","shellos","gastrodon","ambipom","drifloon","drifblim","buneary","lopunny","mismagius","honchkrow","glameow","purugly","chingling","stunky","skuntank","bronzor","bronzong","bonsly","mime-jr","happiny","chatot","spiritomb","gible","gabite","garchomp","munchlax","riolu","lucario","hippopotas","hippowdon","skorupi","drapion","croagunk","toxicroak","carnivine","finneon","lumineon","mantyke","snover","abomasnow","weavile","magnezone","lickilicky","rhyperior","tangrowth","electivire","magmortar","togekiss","yanmega","leafeon","glaceon","gliscor","mamoswine","porygon-z","gallade","probopass","dusknoir","froslass","rotom","snivy","servine","serperior","tepig","pignite","emboar","oshawott","dewott","samurott","patrat","watchog","lillipup","herdier","stoutland","purrloin","liepard","pansage","simisage","pansear","simisear","panpour","simipour","munna","musharna","pidove","tranquill","unfezant","blitzle","zebstrika","roggenrola","boldore","gigalith","woobat","swoobat","drilbur","excadrill","audino","timburr","gurdurr","conkeldurr","tympole","palpitoad","seismitoad","throh","sawk","sewaddle","swadloon","leavanny","venipede","whirlipede","scolipede","cottonee","whimsicott","petilil","lilligant","basculin-red-striped","sandile","krokorok","krookodile","darumaka","darmanitan-standard","maractus","dwebble","crustle","scraggy","scrafty","sigilyph","yamask","cofagrigus","tirtouga","carracosta","archen","archeops","trubbish","garbodor","zorua","zoroark","minccino","cinccino","gothita","gothorita","gothitelle","solosis","duosion","reuniclus","ducklett","swanna","vanillite","vanillish","vanilluxe","deerling","sawsbuck","emolga","karrablast","escavalier","foongus","amoonguss","frillish-male","jellicent-male","alomomola","joltik","galvantula","ferroseed","ferrothorn","klink","klang","klinklang","tynamo","eelektrik","eelektross","elgyem","beheeyem","litwick","lampent","chandelure","axew","fraxure","haxorus","cubchoo","beartic","cryogonal","shelmet","accelgor","stunfisk","mienfoo","mienshao","druddigon","golett","golurk","pawniard","bisharp","bouffalant","rufflet","braviary","vullaby","mandibuzz","heatmor","durant","deino","zweilous","hydreigon","larvesta","volcarona","chespin","quilladin","chesnaught","fennekin","braixen","delphox","froakie","frogadier","greninja","bunnelby","diggersby","fletchling","fletchinder","talonflame","scatterbug","spewpa","vivillon","litleo","pyroar-male","flabebe","floette","florges","skiddo","gogoat","pancham","pangoro","furfrou","espurr","meowstic-male","honedge","doublade","aegislash-shield","spritzee","aromatisse","swirlix","slurpuff","inkay","malamar","binacle","barbaracle","skrelp","dragalge","clauncher","clawitzer","helioptile","heliolisk","tyrunt","tyrantrum","amaura","aurorus","sylveon","hawlucha","dedenne","carbink","goomy","sliggoo","goodra","klefki","phantump","trevenant","pumpkaboo-average","gourgeist-average","bergmite","avalugg","noibat","noivern","rowlet","dartrix","decidueye","litten","torracat","incineroar","popplio","brionne","primarina","pikipek","trumbeak","toucannon","yungoos","gumshoos","grubbin","charjabug","vikavolt","crabrawler","crabominable","oricorio-baile","cutiefly","ribombee","rockruff","lycanroc-midday","wishiwashi-solo","mareanie","toxapex","mudbray","mudsdale","dewpider","araquanid","fomantis","lurantis","morelull","shiinotic","salandit","salazzle","stufful","bewear","bounsweet","steenee","tsareena","comfey","oranguru","passimian","wimpod","golisopod","sandygast","palossand","pyukumuku","minior-red-meteor","komala","turtonator","togedemaru","mimikyu-disguised","bruxish","drampa","dhelmise","jangmo-o","hakamo-o","kommo-o","nihilego","buzzwole","pheromosa","xurkitree","celesteela","kartana","guzzlord","poipole","naganadel","stakataka","blacephalon","grookey","thwackey","rillaboom","scorbunny","raboot","cinderace","sobble","drizzile","inteleon","skwovet","greedent","rookidee","corvisquire","corviknight","blipbug","dottler","orbeetle","nickit","thievul","gossifleur","eldegoss","wooloo","dubwool","chewtle","drednaw","yamper","boltund","rolycoly","carkol","coalossal","applin","flapple","appletun","silicobra","sandaconda","cramorant","arrokuda","barraskewda","toxel","toxtricity-amped","sizzlipede","centiskorch","clobbopus","grapploct","sinistea","polteageist","hatenna","hattrem","hatterene","impidimp","morgrem","grimmsnarl","obstagoon","perrserker","cursola","sirfetchd","mr-rime","runerigus","milcery","alcremie","falinks","pincurchin","snom","frosmoth","stonjourner","eiscue-ice","indeedee-male","morpeko-full-belly","cufant","copperajah","dracozolt","arctozolt","dracovish","arctovish","duraludon","dreepy","drakloak","dragapult","wyrdeer","kleavor","ursaluna","basculegion-male","sneasler","overqwil","sprigatito","floragato","meowscarada","fuecoco","crocalor","skeledirge","quaxly","quaxwell","quaquaval","lechonk","oinkologne-male","tarountula","spidops","nymble","lokix","pawmi","pawmo","pawmot","tandemaus","maushold-family-of-four","fidough","dachsbun","smoliv","dolliv","arboliva","squawkabilly-green-plumage","nacli","naclstack","garganacl","charcadet","armarouge","ceruledge","tadbulb","bellibolt","wattrel","kilowattrel","maschiff","mabosstiff","shroodle","grafaiai","bramblin","brambleghast","toedscool","toedscruel","klawf","capsakid","scovillain","rellor","rabsca","flittle","espathra","tinkatink","tinkatuff","tinkaton","wiglett","wugtrio","bombirdier","finizen","palafin-zero","varoom","revavroom","cyclizar","orthworm","glimmet","glimmora","greavard","houndstone","flamigo","cetoddle","cetitan","veluza","dondozo","tatsugiri-curly","annihilape","clodsire","farigiraf","dudunsparce-two-segment","kingambit","great-tusk","scream-tail","brute-bonnet","flutter-mane","slither-wing","sandy-shocks","iron-treads","iron-bundle","iron-hands","iron-jugulis","iron-moth","iron-thorns","frigibax","arctibax","baxcalibur","gimmighoul","gholdengo","roaring-moon","iron-valiant","walking-wake","iron-leaves","dipplin","poltchageist","sinistcha","archaludon","hydrapple","gouging-fire","raging-bolt","iron-boulder","iron-crown"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(97,156,255,1)","opacity":0.59999999999999998,"size":5.6692913385826778,"symbol":"circle","line":{"width":1.8897637795275593,"color":"rgba(97,156,255,1)"}},"hoveron":"points","name":"regular","legendgroup":"regular","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":23.305936073059364,"r":7.3059360730593621,"b":37.260273972602747,"l":37.260273972602747},"plot_bgcolor":"rgba(235,235,235,1)","paper_bgcolor":"rgba(255,255,255,1)","font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-4.0335026791067072,4.5619502921041395],"tickmode":"array","ticktext":["-4","-2","0","2","4"],"tickvals":[-4,-2,0,2,4],"categoryorder":"array","categoryarray":["-4","-2","0","2","4"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.6529680365296811,"tickwidth":0.66417600664176002,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.68949771689498},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(255,255,255,1)","gridwidth":0.66417600664176002,"zeroline":false,"anchor":"y","title":{"text":"PC1","font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-4.5779766411943079,6.5055082483634621],"tickmode":"array","ticktext":["-4","-2","0","2","4","6"],"tickvals":[-4,-2,0,2,4,6],"categoryorder":"array","categoryarray":["-4","-2","0","2","4","6"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.6529680365296811,"tickwidth":0.66417600664176002,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.68949771689498},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(255,255,255,1)","gridwidth":0.66417600664176002,"zeroline":false,"anchor":"x","title":{"text":"PC2","font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724}},"hoverformat":".2f"},"shapes":[],"showlegend":true,"legend":{"bgcolor":"rgba(255,255,255,1)","bordercolor":"transparent","borderwidth":1.8897637795275593,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.68949771689498},"title":{"text":"status","font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724}}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"ef1f751086cb":{"x":{},"y":{},"colour":{},"text":{},"type":"scatter"}},"cur_data":"ef1f751086cb","visdat":{"ef1f751086cb":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+</section>
+<section id="reading-that-picture" class="level1">
+<h1>Reading That Picture</h1>
+<div class="columns">
+<div class="column" style="width:58%;">
+<ul>
+<li>Every dot is one Pokémon, on <strong>two invented axes</strong>
+<ul>
+<li><strong>left ↔︎ right</strong> = weak ↔︎ strong <em>(PC1, 44.1%)</em></li>
+<li><strong>up ↔︎ down</strong> = something else <em>(PC2, 18.4%)</em></li>
+</ul></li>
+<li>Legendaries and mythicals pile up on the <strong>right</strong></li>
+<li><strong>Hover</strong> to check:
+<ul>
+<li>Magikarp on the far left</li>
+<li>Mewtwo on the far right</li>
+<li>who is that one <strong>way</strong> up at the top?</li>
+</ul></li>
+<li><code>text = name</code> is not a real ggplot aesthetic — <code>ggplotly()</code> picks it up for the hover</li>
+</ul>
+</div><div class="column" style="width:42%;">
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>🎯 Close dots = similar Pokémon</strong></p>
+<p>Two dots near each other have <strong>similar stat profiles overall</strong> — the all-six-at-once question we could not answer with 15 scatterplots.</p>
+<p>And this one plot holds <strong>62.5%</strong> of the six columns.</p>
+</div>
+</div>
 </div>
 </div>
 </section>
@@ -1243,16 +1563,16 @@ Note
 <div class="column" style="width:58%;">
 <p><strong>We have:</strong></p>
 <ul>
-<li>Two axes holding 61% of six columns</li>
-<li>PC1 identified as “overall power”, checked against Magikarp and Mewtwo</li>
+<li>two axes holding 62.5% of six columns</li>
+<li>PC1 = <strong>“overall power”</strong>, checked against Magikarp and the legendaries</li>
+<li>a picture you can hover over</li>
 </ul>
 <p><strong>We do not have:</strong></p>
 <ul>
-<li>Any idea what <strong>PC2</strong> means</li>
-<li>A <strong>picture</strong> — we have not plotted a single Pokémon yet</li>
-<li>Any way to see the original six stats <strong>on</strong> that picture</li>
+<li>any idea what <strong>PC2</strong> means</li>
+<li>a way to see the six original stats <strong>on</strong> the picture</li>
 </ul>
-<p>All three are next class.</p>
+<p>Both are next class.</p>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -1265,8 +1585,8 @@ Tip
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>🎯 A hint about PC2</strong></p>
-<p>Look back at the loadings. In PC2, <code>defense</code> is <strong>+0.59</strong> and <code>speed</code> is <strong>−0.54</strong>.</p>
-<p>A big positive and a big negative on the same axis means PC2 is a <strong>trade-off</strong>, not a total.</p>
+<p>In PC2, <code>defense</code> is <strong>+0.58</strong> and <code>speed</code> is <strong>−0.70</strong>.</p>
+<p>A big positive and a big negative on the same axis means a <strong>trade-off</strong>, not a total.</p>
 <p>Which trade-off? Next class.</p>
 </div>
 </div>
@@ -1277,9 +1597,16 @@ Tip
 <h1>Your Homework</h1>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p>Do today again on <strong>all 1,025 Pokémon</strong> instead of the original 151.</p>
-<p><code>data/pokemon_1025.csv</code> has the identical columns, so the homework is mostly <strong>changing one filename</strong> and re-reading your output.</p>
-<p>The real question: <strong>does PC1 still mean the same thing?</strong> Twenty-five years of new Pokémon, nine generations — or is “overall power” just a quirk of the first 151?</p>
+<ul>
+<li>Same analysis, on <strong>only the original 151</strong> (Generation I)</li>
+<li>One line is new — a <code>filter()</code> right after you read the file</li>
+<li>The question: <strong>does Gen 1 alone tell the same story?</strong>
+<ul>
+<li>does PC1 still mean overall power?</li>
+<li>how much does it hold — more or less than 44%?</li>
+<li>what changes when there are only <strong>4</strong> legendaries?</li>
+</ul></li>
+</ul>
 </div><div class="column" style="width:42%;">
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -1291,9 +1618,12 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>📂 What you will do</strong></p>
-<p>The whole chunk-1-to-4 sequence on the bigger file, then compare your percentages and your top/bottom lists to today’s.</p>
-<p>All the code is in the homework file. Most of the marks are for <strong>reading</strong> what comes out.</p>
+<p><strong>📂 How it works</strong></p>
+<ul>
+<li>The questions are at the <strong>top</strong> of the homework file</li>
+<li>Helper code is written along the way</li>
+<li>Where it says <code>YOUR CODE</code>, copy the matching section from today’s script</li>
+</ul>
 </div>
 </div>
 </div>
@@ -1302,15 +1632,15 @@ Note
 <section id="recap" class="level1">
 <h1>Recap</h1>
 <ul>
-<li>PCA is <strong>not a test</strong> — no p-value, no assumptions, nothing to reject</li>
-<li>It exists because <strong>six columns cannot be plotted</strong>, and pairs cannot answer “who is similar to whom”</li>
-<li>It works because the columns are <strong>correlated</strong> — correlation is redundancy</li>
-<li>Think <strong>shadows</strong>: a lower-dimensional view, taken from the most informative angle</li>
-<li><strong>Always <code>scale. = TRUE</code></strong>, or the column with the biggest numbers wins by default</li>
-<li><code>prcomp()</code> is one line; <strong>reading it</strong> is the work</li>
-<li><strong>PC1 = 39.6%, PC2 = 21.5%, together 61.1%</strong> of everything in six columns</li>
-<li>The <strong>scree plot</strong> shows where to stop; there is no rule, only judgement</li>
-<li><strong>Validate by looking at the ends.</strong> Magikarp at one end, Mewtwo at the other ✅</li>
+<li>PCA is <strong>not a test</strong> — no p-value, nothing to reject</li>
+<li>Six columns <strong>cannot be plotted</strong>; three in 3-D already need rotating</li>
+<li>PCA works <strong>because</strong> the columns are correlated — <strong>do not drop</strong> them</li>
+<li><strong>PC1</strong> = the direction of most spread; <strong>PC2</strong> = most of what is left, at right angles</li>
+<li>Think <strong>shadows</strong>: the most informative angle on a cloud you cannot see</li>
+<li><strong>Always <code>scale. = TRUE</code></strong></li>
+<li><strong>PC1 = 44.1%, PC2 = 18.4%, together 62.5%</strong></li>
+<li>The <strong>scree plot</strong> shows where to stop — judgement, not a rule</li>
+<li><strong>Validate by looking at the ends</strong> — Magikarp at one end, the legendaries at the other ✅</li>
 </ul>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -1323,7 +1653,7 @@ Note
 </div>
 <div class="callout-body-container callout-body">
 <p><strong>✅ Next</strong></p>
-<p>Open the activity and run it. Next class: what PC2 means, and the picture. 🔴</p>
+<p>Open the activity and type it in. Next class: what PC2 means, and the biplot. 🔴</p>
 </div>
 </div>
 

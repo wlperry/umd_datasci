@@ -1,182 +1,153 @@
 # ==========================================================
-# Activity 27 - HOMEWORK: all 1,025 Pokemon
+# Activity 27 - HOMEWORK: does Gen 1 tell the same story?
 # Name:
 # Date:
 #
 # Save as scripts/27_pca_homework.R
-#
 # *** THIS IS THE FILE YOU TURN IN. ***
 #
-# In class we ran a PCA on the original 151 Pokemon. Here you
-# run the identical analysis on ALL 1,025 - nine
-# generations, twenty-five years of new designs.
+# In class you ran a PCA on all 1,025 Pokemon. The original
+# game had only 151 (Generation I). If you only had those
+# 151, would PCA have found the same axes?
 #
-# THE QUESTION: does PC1 still mean the same thing? Or was
-# "overall power" just a quirk of the first 151?
+# HOW THIS FILE WORKS
+# 1. The QUESTIONS are right below. Answer each one in the
+#    # ANSWER: box, as # comments.
+# 2. The CODE is below the questions, in numbered sections.
+#    The section numbers match your in-class script.
+# 3. HELPER CODE is written where something is new.
+# 4. Where it says YOUR CODE, copy the same-numbered section
+#    from your in-class scripts/27_pca.R. Same code - only
+#    the data changed.
 #
-# ----------------------------------------------------------
-# HOW THIS ONE WORKS - READ THIS
-#
-# THE CODE IS ALREADY WRITTEN AND ALREADY RUNS. You do not
-# have to write any code at all. Press Ctrl/Cmd + Shift +
-# Enter and the whole thing executes.
-#
-# Your job is to READ THE OUTPUT and answer the questions in
-# the ANSWERS block below. Almost all of the marks are for
-# interpretation, not for typing.
-#
-# The only code you write is in the OPTIONAL section at the
-# very bottom, and that is one line.
+# Class numbers, for comparing (all 1,025 Pokemon):
+#   PC1 44.1%, PC2 18.4%, PC1 + PC2 62.5%
+#   mean PC1: legendary 2.38 (n = 71), regular -0.24
 # ==========================================================
 
 
 # ==========================================================
-# ANSWERS - every graded question, in one place
+# QUESTIONS
 # ==========================================================
 
-# H-Q1. (section 2) How many Pokemon are in this file, and
-#       how many of them are legendary? Compare both numbers
-#       to class (151 Pokemon, 4 legendary).
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# H-Q1. (section 5) Which pair of stats has the strongest
+#       correlation in Gen 1? Is it the same pair as for
+#       all 1,025 (defense & sp_defense, 0.50)?
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# H-Q2. (section 8) What % does PC1 hold in Gen 1? PC2?
+#       PC1 + PC2? Is PC1 bigger or smaller than in class?
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# H-Q3. (section 9) Looking at your scree plot, how many
+#       PCs would you keep, and why?
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# H-Q4. (section 10) Are all six PC1 loadings the same
+#       sign? Is PC1 still an "overall power" axis?
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# H-Q5. (section 11) Name the top 3 and bottom 3 Pokemon on
+#       PC1. Do they make sense as strongest and weakest?
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# H-Q6. (section 12) Give the mean PC1 for legendaries and
+#       how many there are. In class there were 71. Which
+#       gap do you trust more, and why?
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# H-Q7. (section 13) Hover over your plot. Pick ONE Pokemon
+#       whose position surprised you. Where is it, and what
+#       in its stats explains it? (Look it up in pokemon.)
+# ANSWER:
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# H-Q8. Three or four sentences: what you did, how much PC1
+#       and PC2 hold, what PC1 means and your evidence
+#       (name real Pokemon). Does Gen 1 tell the same story
+#       as all 1,025? No p-values - nothing was tested.
 # ANSWER:
 #
 #
-# H-Q2. (section 3) Look at the correlation matrix. Name the
-#       pair of stats with the STRONGEST positive
-#       relationship, and give the number. Is it the same
-#       pair that was strongest in class?
-# ANSWER:
-#
-#
-# H-Q3. (section 5) From summary(): what percentage of the
-#       variance does PC1 explain? PC2? What is the
-#       cumulative percentage for PC1 + PC2?
-#       In class these were 39.6%, 21.5% and 61.1%.
-# ANSWER:
-#
-#
-# H-Q4. (section 5) Is PC1 capturing MORE or LESS of the
-#       variance than it did with 151 Pokemon? Suggest one
-#       reason why adding 874 more Pokemon might change it
-#       in that direction.
-# ANSWER:
-#
-#
-# H-Q5. (section 6) Look at your scree plot. Where is the
-#       elbow? How many components would you keep, and what
-#       cumulative percentage does that give you?
-# ANSWER:
-#
-#
-# H-Q6. (section 7) Look at the PC1 column of the loadings.
-#       Are all six numbers the same sign? What does that
-#       tell you PC1 is measuring?
-# ANSWER:
-#
-#
-# H-Q7. (section 7) Look at the PC2 column. Which stat has
-#       the LARGEST POSITIVE loading, and which has the
-#       LARGEST NEGATIVE one? (Write both names and both
-#       numbers - you will need this next class.)
-# ANSWER:
-#
-#
-# H-Q8. (section 9) Write down the top six Pokemon by PC1
-#       and the bottom six. Do you recognise any of them?
-#       Does the pattern match class, where the top was all
-#       legendaries and the bottom was Magikarp and friends?
-# ANSWER:
-#
-#
-# H-Q9. (section 10) Give the mean PC1 for legendary and
-#       non-legendary Pokemon, and both sample sizes. In
-#       class the gap was 3.00 versus -0.08 but with only
-#       n = 4 legendaries. Is the gap bigger or smaller
-#       here - and which version do you trust more, and why?
-# ANSWER:
-#
-#
-# H-Q10. Four or five sentences, written as a short results
-#        paragraph. Say what you did, report PC1 and PC2
-#        variance explained, state what you think each axis
-#        measures, and give your evidence for PC1 - naming
-#        actual Pokemon. Finish with one sentence on whether
-#        the 151 result held up.
-# ANSWER:
-#
-#
-# H-Q11. (OPTIONAL section 11) After adding height and
-#        weight, what percentage does PC1 explain now, and
-#        do height and weight load positively or negatively
-#        on it? One sentence on whether adding them helped.
-# ANSWER:
-#
-#
-#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 
 # ==========================================================
-# CODE - already written. Just run it.
+# CODE
 # ==========================================================
 
-# ---- 1 Libraries -----------------------------------------
+# ---- 1 Libraries [HELPER CODE] ---------------------------
 library(tidyverse)
+library(plotly)
 
 invisible(NULL)
 
 
-# ---- 2 Read the BIG file ---------------------------------
-# The only real difference from class: pokemon_1025.csv
-# instead of pokemon_151.csv. Identical columns.
+# ---- 2 Read the data, keep only Generation I [HELPER CODE]
+# Same file as class. The filter() line is the only new
+# thing in this whole homework.
+pokemon <- read_csv("data/pokemon_1025.csv") %>%
+  mutate(status = case_when(
+    is_legendary ~ "legendary",
+    is_mythical  ~ "mythical",
+    TRUE         ~ "regular")) %>%
+  filter(generation == "generation-i")
 
-pokemon <- read_csv("data/pokemon_1025.csv")
+pokemon %>% count(status)
 
-dim(pokemon)
-
-pokemon %>% count(is_legendary)
-
-# -> H-Q1
-
-invisible(NULL)
-
-
-# ---- 3 The six stats, and do they move together? ---------
-
-poke_stats <- pokemon %>%
-  select(hp, attack, defense, sp_attack, sp_defense, speed)
-
-poke_stats %>%
-  cor() %>%
-  round(2)
-
-# Ignore the 1.00 diagonal. Look for the biggest off-diagonal
-# number.
-#
-# -> H-Q2
+# Should be 151 Pokemon. Because the data is now called
+# pokemon again, ALL of your class code works unchanged.
 
 invisible(NULL)
 
 
-# ---- 4 Run the PCA ---------------------------------------
-# scale. = TRUE, exactly as in class. Mind the full stop.
-
-poke_pca <- prcomp(poke_stats, center = TRUE, scale. = TRUE)
-
-invisible(NULL)
+# ---- 4 The six stats -------------------------------------
+# YOUR CODE (copy section 4 from class):
 
 
-# ---- 5 Variance explained --------------------------------
-
-summary(poke_pca)
-
-# Read the "Proportion of Variance" and "Cumulative
-# Proportion" rows.
-#
-# -> H-Q3 and H-Q4
 
 invisible(NULL)
 
 
-# ---- 6 Scree plot ----------------------------------------
+# ---- 5 Correlation table ---------------------------------
+# YOUR CODE (copy section 5 from class):  -> H-Q1
 
+
+
+invisible(NULL)
+
+
+# ---- 8 Run the PCA, and summary() ------------------------
+# YOUR CODE (copy section 8 from class):  -> H-Q2
+
+
+
+invisible(NULL)
+
+
+# ---- 9 Scree plot ----------------------------------------
+# [HELPER CODE] percent of variance for each PC
 var_df <- tibble(
   PC      = paste0("PC", 1:6),
   percent = round(100 * poke_pca$sdev^2 / sum(poke_pca$sdev^2), 1)
@@ -184,100 +155,47 @@ var_df <- tibble(
 
 var_df
 
-ggplot(var_df, aes(x = PC, y = percent)) +
-  geom_col() +
-  geom_text(aes(label = percent), vjust = -0.4)
+# YOUR CODE - the ggplot() bar chart from class:  -> H-Q3
 
-# Look for the elbow - where the bars flatten out.
-#
-# -> H-Q5
+
 
 invisible(NULL)
 
 
-# ---- 7 The loadings - what the axes are made of ----------
+# ---- 10 Loadings -----------------------------------------
+# YOUR CODE (copy section 10 from class):  -> H-Q4
 
-round(poke_pca$rotation[, 1:2], 2)
 
-# PC1 column: are all six the same sign?
-# PC2 column: find the biggest positive and biggest negative.
-#
-# -> H-Q6 and H-Q7
 
 invisible(NULL)
 
 
-# ---- 8 Glue the scores back on ---------------------------
-
-poke_scores <- pokemon %>%
-  mutate(PC1 = poke_pca$x[, 1],
-         PC2 = poke_pca$x[, 2])
-
-invisible(NULL)
+# ---- 11 Scores, top and bottom of PC1 --------------------
+# YOUR CODE (copy section 11 from class):  -> H-Q5
 
 
-# ---- 9 The ends of PC1 -----------------------------------
-
-poke_scores %>%
-  arrange(desc(PC1)) %>%
-  select(name, is_legendary, PC1) %>%
-  head(6)
-
-poke_scores %>%
-  arrange(PC1) %>%
-  select(name, PC1) %>%
-  head(6)
-
-# -> H-Q8
 
 invisible(NULL)
 
 
-# ---- 10 Legendary versus the rest ------------------------
+# ---- 12 Mean PC1 for each status -------------------------
+# YOUR CODE (copy section 12 from class):  -> H-Q6
 
-poke_scores %>%
-  group_by(is_legendary) %>%
-  summarise(n = n(),
-            mean_PC1 = round(mean(PC1), 2))
 
-# -> H-Q9, and then write H-Q10
 
 invisible(NULL)
 
 
-# ==========================================================
-# OPTIONAL - add body size to the PCA
-#
-# So far the PCA has only seen the six battle stats. The
-# file also has height_m and weight_kg - real physical
-# measurements.
-#
-# Add them and see what happens. This is ONE line of code:
-# copy the select() from section 3 and add the two columns
-# to it. Everything below it already works.
-# ==========================================================
+# ---- 13 The hover plot -----------------------------------
+# YOUR CODE (copy section 13 from class):  -> H-Q7
 
-# ---- 11 Eight columns instead of six ---------------------
-# -> then answer H-Q11.
 
-# YOUR CODE - copy section 3's select() and add
-#             height_m and weight_kg:
-#
-# poke_stats_big <- pokemon %>%
-#   select(hp, attack, defense, sp_attack, sp_defense, speed,
-#          height_m, weight_kg)
-
-# These three lines already work once the line above runs:
-#
-# poke_pca_big <- prcomp(poke_stats_big, center = TRUE, scale. = TRUE)
-# summary(poke_pca_big)
-# round(poke_pca_big$rotation[, 1:2], 2)
 
 invisible(NULL)
 
 
 # ==========================================================
 # Before you hand in: Session > Restart R, then run the
-# whole file top to bottom. It must run clean, and your
-# scree plot must draw.
+# whole file top to bottom. It must run clean, and both
+# plots must draw.
 # ==========================================================

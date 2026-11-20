@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bill Perry">
-<meta name="dcterms.date" content="2026-11-17">
-<meta name="description" content="Hands-on companion to the first PCA lecture, written for students with no previous statistics. Why six correlated columns cannot be plotted, the shadow analogy, why scaling comes first, running prcomp(), reading variance explained, drawing a scree plot, and validating PC1 by checking which Pokemon sit at each end of it. Homework repeats everything on all 1,025 Pokemon.">
+<meta name="dcterms.date" content="2026-11-20">
+<meta name="description" content="Hands-on companion to the first PCA lecture, written for students with no previous statistics, on all 1,025 Pokemon. A rotating 3-D plot of three stats, the correlation table and why correlated columns are kept, where PC1 comes from, scaling, running prcomp(), variance explained, a scree plot, checking PC1 against who sits at each end, and a hover-to-name plot of the scores. Homework repeats it on Generation I only.">
 
 <title>Activity 27 — PCA I: Many Measurements, Few Axes – UMD DAta Science Biology</title>
 <style>
@@ -150,7 +150,7 @@ window.Quarto = {
 
 <link rel="stylesheet" href="../../css/main.css">
 <meta property="og:title" content="Activity 27 — PCA I: Many Measurements, Few Axes – UMD DAta Science Biology">
-<meta property="og:description" content="Hands-on companion to the first PCA lecture, written for students with no previous statistics. Why six correlated columns cannot be plotted, the shadow analogy, why scaling comes first, running prcomp(), reading variance explained, drawing a scree plot, and validating PC1 by checking which Pokemon sit at each end of it. Homework repeats everything on all 1,025 Pokemon.">
+<meta property="og:description" content="Hands-on companion to the first PCA lecture, written for students with no previous statistics, on all 1,025 Pokemon. A rotating 3-D plot of three stats, the correlation table and why correlated columns are kept, where PC1 comes from, scaling, running prcomp(), variance explained, a scree plot, checking PC1 against who sits at each end, and a hover-to-name plot of the scores. Homework repeats it on Generation I only.">
 <meta property="og:site_name" content="UMD DAta Science Biology">
 </head>
 
@@ -447,13 +447,14 @@ window.Quarto = {
     <div class="quarto-category">multivariate</div>
     <div class="quarto-category">prcomp</div>
     <div class="quarto-category">ggplot</div>
+    <div class="quarto-category">plotly</div>
     <div class="quarto-category">pokemon</div>
   </div>
   </div>
 
 <div>
   <div class="description">
-    <p>Hands-on companion to the first PCA lecture, written for students with no previous statistics. Why six correlated columns cannot be plotted, the shadow analogy, why scaling comes first, running prcomp(), reading variance explained, drawing a scree plot, and validating PC1 by checking which Pokemon sit at each end of it. Homework repeats everything on all 1,025 Pokemon.</p>
+    <p>Hands-on companion to the first PCA lecture, written for students with no previous statistics, on all 1,025 Pokemon. A rotating 3-D plot of three stats, the correlation table and why correlated columns are kept, where PC1 comes from, scaling, running prcomp(), variance explained, a scree plot, checking PC1 against who sits at each end, and a hover-to-name plot of the scores. Homework repeats it on Generation I only.</p>
   </div>
 </div>
 
@@ -470,7 +471,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 17, 2026</p>
+      <p class="date">November 20, 2026</p>
     </div>
   </div>
   
@@ -487,27 +488,14 @@ window.Quarto = {
 <section id="todays-objectives" class="level3">
 <h3 class="anchored" data-anchor-id="todays-objectives">Today’s Objectives</h3>
 <ol type="1">
-<li>See <strong>why</strong> six columns cannot be looked at directly</li>
-<li>Notice the six stats are <strong>correlated</strong> — and why that is what makes PCA possible</li>
-<li>Understand what PCA does, <strong>in words, not algebra</strong></li>
+<li><strong>See</strong> the data in 3-D, and why six columns cannot be drawn</li>
+<li>Notice the six stats are <strong>correlated</strong> — and why that is what makes PCA work</li>
+<li>Understand <strong>where a principal component comes from</strong>, in words</li>
 <li>Know why you must <strong>scale</strong> before you run it</li>
 <li>Run it — one line, <code>prcomp()</code></li>
 <li>Read <strong>variance explained</strong>, and draw a <strong>scree plot</strong></li>
-<li><strong>Validate PC1</strong> by looking at who sits at each end</li>
+<li><strong>Check PC1</strong> by looking at who sits at each end — and hover to find them</li>
 </ol>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>📦 Nothing to install 🎉
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><code>prcomp()</code> is built into R. You only need <code>tidyverse</code>, which you have had since week 1.</p>
-</div>
-</div>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -519,13 +507,30 @@ window.Quarto = {
 </div>
 <div class="callout-body-container callout-body">
 <ul>
-<li><strong>In-class skeleton:</strong> <a href="scripts/27_pca_skeleton.R"><code>27_pca_skeleton.R</code></a> → save it as <code>scripts/27_pca.R</code>. <strong>Every line of code is already written.</strong></li>
-<li><strong>Homework skeleton:</strong> <a href="scripts/27_pca_homework.R"><code>27_pca_homework.R</code></a> → save it under that same name. <strong>This one is what you turn in</strong>, and its code is already written too.</li>
-<li><strong>Data</strong> — both go in your <code>data/</code> folder:
+<li><strong>In-class skeleton:</strong> <a href="scripts/27_pca_skeleton.R"><code>27_pca_skeleton.R</code></a> → save it as <code>scripts/27_pca.R</code></li>
+<li><strong>Homework:</strong> <a href="scripts/27_pca_homework.R"><code>27_pca_homework.R</code></a> → save it under that same name. <strong>This is what you turn in.</strong></li>
+<li><strong>Data:</strong> <a href="data/pokemon_1025.csv"><code>pokemon_1025.csv</code></a> → your <code>data/</code> folder. Class and homework both use it.</li>
+<li><strong>Packages:</strong> <code>tidyverse</code> and <code>plotly</code> — both already installed from earlier weeks.</li>
+</ul>
+</div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>How today works
+</div>
+</div>
+<div class="callout-body-container callout-body">
 <ul>
-<li><a href="data/pokemon_151.csv"><code>pokemon_151.csv</code></a> — today, in class</li>
-<li><a href="data/pokemon_1025.csv"><code>pokemon_1025.csv</code></a> — the homework</li>
-</ul></li>
+<li>The skeleton has a <strong>numbered section for every Part</strong> below, and almost nothing else.</li>
+<li><strong>▶ Type this</strong> — type the code into that section yourself, then run it. The code is short on purpose.</li>
+<li><strong>▶ Already in your skeleton</strong> — a few long or unfamiliar blocks are written for you. Just run them.</li>
+<li>The explanations live <strong>here</strong>, on this page, not in the script.</li>
+<li><strong>💭 Think</strong> lines are for talking over with your neighbour. Nothing to write down; nothing graded.</li>
+<li>You do <strong>not</strong> turn in <code>scripts/27_pca.R</code>. You turn in the <strong>homework</strong>.</li>
 </ul>
 </div>
 </div>
@@ -539,25 +544,8 @@ window.Quarto = {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>PCA is <strong>not a test</strong>. There is no null hypothesis, no p-value, no assumptions to check. Nothing passes and nothing fails.</p>
-<p>For nine weeks “did it work?” has meant “is p small?”. Today you judge your result by whether you can <strong>explain what the axes mean</strong>. That is a harder standard, not an easier one.</p>
-</div>
-</div>
-<div class="callout callout-style-default callout-important callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Important</span>What you hand in
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<ul>
-<li><strong>Today is a run-it-and-read-it day.</strong> Every line is written for you, here and in the skeleton. You do <strong>not</strong> turn in <code>scripts/27_pca.R</code>.</li>
-<li>The <strong>Q</strong> boxes are <strong>things to think about</strong>. Not graded.</li>
-<li><strong>You turn in <code>scripts/27_pca_homework.R</code></strong> — all 1,025 Pokémon. Its code is written too; the marks are for <strong>reading the output</strong>.</li>
-</ul>
+<p>PCA is <strong>not a test</strong>. No null hypothesis, no p-value, no assumptions to check. Nothing passes and nothing fails.</p>
+<p>You judge the result by whether you can <strong>explain what the axes mean</strong>.</p>
 </div>
 </div>
 <hr>
@@ -566,9 +554,7 @@ window.Quarto = {
 <section id="part-1-why-pokémon" class="level1">
 <h1>Part 1 · Why Pokémon</h1>
 <p>Because you can <strong>check the answer</strong>.</p>
-<p>PCA will hand back new axes that it invented, and you have to decide whether they mean anything. That is nearly impossible to judge on data you do not already know well.</p>
-<p>But if an axis puts <strong>Magikarp</strong> at one end and <strong>Mewtwo</strong> at the other, you know <em>exactly</em> what it found.</p>
-<p>The method is the same one used on gene expression, soil chemistry and skull measurements. Only the checking is easier.</p>
+<p>PCA hands back new axes that it invented, and you have to decide whether they mean anything. That is nearly impossible on data you do not know. But if an axis puts <strong>Magikarp</strong> at one end and <strong>Mewtwo</strong> at the other, you know <em>exactly</em> what it found.</p>
 <p>The six stats we will use:</p>
 <table class="caption-top table">
 <colgroup>
@@ -608,60 +594,94 @@ window.Quarto = {
 </tr>
 </tbody>
 </table>
-<p>They are game-design numbers, but they behave exactly like six measurements taken off an animal — length, mass, wingspan. Treat them that way.</p>
+<p>Game-design numbers, but they behave exactly like six measurements off an animal — length, mass, wingspan. Treat them that way.</p>
 <hr>
 </section>
-<section id="part-2-read-it-in" class="level1">
-<h1>Part 2 · Read it in</h1>
-<p><strong>▶ Run this:</strong></p>
+<section id="part-2-read-it-in-and-mark-the-legendaries" class="level1">
+<h1>Part 2 · Read it in, and mark the legendaries</h1>
+<p><strong>▶ Already in your skeleton (section 2) — just run it:</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>pokemon <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/pokemon_151.csv"</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(pokemon)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>pokemon <span class="sc">%&gt;%</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, hp, attack, defense, sp_attack, sp_defense, speed) <span class="sc">%&gt;%</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>151 rows, 15 columns. Six of those columns are the battle stats, and those six are the only ones PCA will see.</p>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(plotly)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>pokemon <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/pokemon_1025.csv"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">status =</span> <span class="fu">case_when</span>(</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    is_legendary <span class="sc">~</span> <span class="st">"legendary"</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    is_mythical  <span class="sc">~</span> <span class="st">"mythical"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span>         <span class="sc">~</span> <span class="st">"regular"</span>))</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>pokemon <span class="sc">%&gt;%</span> <span class="fu">count</span>(status)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><strong>1,025 rows</strong>, one per Pokémon: <strong>71</strong> legendary, <strong>23</strong> mythical, <strong>931</strong> regular</li>
+<li><code>status</code> squeezes two TRUE/FALSE columns into <strong>one</strong> column we can colour by</li>
+<li><code>case_when()</code> reads top to bottom — the first line that matches wins, and <code>TRUE ~</code> catches everything left</li>
+<li>PCA will <strong>never</strong> see <code>status</code>. We only use it to colour the results afterwards</li>
+</ul>
 <hr>
 </section>
-<section id="part-3-six-columns-is-too-many-to-plot" class="level1">
-<h1>Part 3 · Six columns is too many to plot</h1>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="ot">&lt;-</span> pokemon <span class="sc">%&gt;%</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(hp, attack, defense, sp_attack, sp_defense, speed)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(poke_stats)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>151 rows, 6 columns. Numbers only — no names, no types. PCA cannot handle text, so the names have to come out.</p>
+<section id="part-3-three-stats-in-3-d" class="level1">
+<h1>Part 3 · Three stats in 3-D</h1>
+<p><strong>▶ Already in your skeleton (section 3) — just run it:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_ly</span>(pokemon, <span class="at">x =</span> <span class="sc">~</span>attack, <span class="at">y =</span> <span class="sc">~</span>defense, <span class="at">z =</span> <span class="sc">~</span>speed,</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>        <span class="at">color =</span> <span class="sc">~</span>status, <span class="at">text =</span> <span class="sc">~</span>name,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"firebrick"</span>, <span class="st">"darkorange"</span>, <span class="st">"grey60"</span>),</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">type =</span> <span class="st">"scatter3d"</span>, <span class="at">mode =</span> <span class="st">"markers"</span>, <span class="at">marker =</span> <span class="fu">list</span>(<span class="at">size =</span> <span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The plot opens in the <strong>Viewer</strong> pane. Every dot is one Pokémon, placed by three of its stats.</p>
+<ul>
+<li><strong>Click and drag</strong> to rotate it. From some angles the cloud is a shapeless blob; from others it is long and spread out. <strong>Same data, different amount you can see.</strong></li>
+<li><strong>Hover</strong> over a dot to see its name. The red and orange ones (legendary, mythical) sit out at the <strong>big</strong> end.</li>
+<li><code>plot_ly()</code> uses <code>~column</code> where ggplot uses <code>aes(column)</code>. That is the only new idea here.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>✅ Hold on to this
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Turning the cloud to find the angle with the <strong>most spread</strong> is exactly what PCA does.</p>
+<p>But this plot shows only <strong>3 of the 6 stats</strong>. <code>hp</code>, <code>sp_attack</code> and <code>sp_defense</code> are missing, and there is no way to add them — <strong>there is no six-dimensional plot.</strong> Drawing all the pairs instead takes 15 scatterplots, and “which Pokémon are similar?” is a question about all six numbers <em>at once</em>.</p>
+<p>PCA does the rotating for us, in six dimensions.</p>
+</div>
+</div>
+<p>💭 <strong>Think:</strong> Find an angle where the cloud looks most spread out. Which direction does the long side of the cloud run — towards Pokémon that are high on everything, or something else?</p>
+<hr>
+</section>
+<section id="part-4-pull-the-six-stats-into-their-own-table" class="level1">
+<h1>Part 4 · Pull the six stats into their own table</h1>
+<p><strong>▶ Type this (section 4):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="ot">&lt;-</span> pokemon <span class="sc">%&gt;%</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(hp, attack, defense, sp_attack, sp_defense, speed)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(poke_stats)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><strong>1,025 rows, 6 columns.</strong> Numbers only — no names, no <code>status</code>. PCA cannot handle text</li>
+<li>The rows are in the <strong>same order</strong> as <code>pokemon</code>. That is what lets us glue results back onto the names in Part 11</li>
+</ul>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Warning</span>⚠️ The rows must stay in the same order
+<span class="screen-reader-only">Warning</span>⚠️ Never sort one and not the other
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><code>poke_stats</code> is in the <strong>same row order</strong> as <code>pokemon</code>. That is what lets us glue the results back onto the names in Part 9.</p>
-<p><strong>Never sort one and not the other.</strong> Nothing will warn you, and every name will be attached to the wrong Pokémon.</p>
+<p>If you <code>arrange()</code> <code>pokemon</code> but not <code>poke_stats</code>, nothing will warn you — and every name will be attached to the wrong Pokémon.</p>
 </div>
 </div>
-<p>Now the actual problem. One measurement is a histogram. Two is a scatterplot. Three is an awkward 3-D plot nobody can read.</p>
-<p><strong>Six is nothing.</strong> There is no six-dimensional plot, and there never will be.</p>
-<p>You could draw all the pairs instead — but six columns make <strong>15 separate scatterplots</strong>, and no one can hold 15 plots in their head at once.</p>
-<p>✏️ <strong>Q1:</strong> “Which Pokémon are similar to each other?” is a question about all six numbers <strong>at the same time</strong>. Explain why looking at two stats at a time cannot answer it.</p>
 <hr>
 </section>
-<section id="part-4-do-the-stats-move-together" class="level1">
-<h1>Part 4 · Do the stats move together?</h1>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="sc">%&gt;%</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(<span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>A <strong>correlation matrix</strong> — every column against every column. Values run from −1 to +1: <code>+1</code> perfectly together, <code>0</code> no relationship, <code>−1</code> perfectly opposite.</p>
-<p>The diagonal is all <code>1.00</code> — each column against itself. Ignore it. The interesting ones:</p>
+<section id="part-5-do-the-stats-move-together" class="level1">
+<h1>Part 5 · Do the stats move together?</h1>
+<p><strong>▶ Type this (section 5):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="sc">%&gt;%</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">round</span>(<span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A <strong>correlation matrix</strong> — every column against every column. <code>+1</code> = perfectly together, <code>0</code> = no relationship, <code>−1</code> = perfectly opposite. The diagonal is all <code>1.00</code> (each column against itself) — ignore it.</p>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 42%">
@@ -677,65 +697,72 @@ window.Quarto = {
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>sp_attack</code> &amp; <code>sp_defense</code></td>
-<td><strong>0.53</strong></td>
+<td><code>defense</code> &amp; <code>sp_defense</code></td>
+<td><strong>0.50</strong></td>
 <td>move together</td>
 </tr>
 <tr class="even">
-<td><code>hp</code> &amp; <code>sp_defense</code></td>
+<td><code>sp_attack</code> &amp; <code>sp_defense</code></td>
 <td><strong>0.49</strong></td>
 <td>move together</td>
 </tr>
 <tr class="odd">
-<td><code>attack</code> &amp; <code>defense</code></td>
+<td><code>hp</code> &amp; <code>attack</code></td>
 <td><strong>0.48</strong></td>
 <td>move together</td>
 </tr>
 <tr class="even">
 <td><code>speed</code> &amp; <code>defense</code></td>
-<td><strong>−0.05</strong></td>
+<td><strong>0.01</strong></td>
 <td>nothing at all</td>
 </tr>
 </tbody>
 </table>
-<p>So the six columns are <strong>not</strong> six independent facts. They overlap — knowing one tells you something about the others.</p>
+<p>So the six columns are <strong>not</strong> six independent facts. They overlap. <strong>Correlation is redundancy, and PCA’s whole job is to squeeze the redundancy out.</strong></p>
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Important</span>✅ This is what makes PCA work
+<span class="screen-reader-only">Important</span>✅ “Don’t I need to drop the correlated ones?” — No
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>Correlation is redundancy</strong>, and PCA’s whole job is to squeeze the redundancy out.</p>
-<p>If all six columns were completely unrelated, PCA would have nothing to do: six axes in, six equally useless axes out.</p>
+<p>That rule comes from <strong>regression</strong>, where two correlated predictors fight over the same slope.</p>
+<p>In PCA, correlation is the <strong>fuel</strong>. Correlated stats simply land on the <strong>same new axis</strong> — that <em>is</em> the squeezing. In fact, with <code>scale. = TRUE</code>, PCA is built directly <strong>from this correlation table</strong>.</p>
+<p>The one real caution: do not put the <strong>same thing in twice</strong> — say, a “total stats” column next to the six stats it was added up from. Here the biggest r is 0.50, nowhere near a duplicate.</p>
 </div>
 </div>
-<p>✏️ <strong>Q2:</strong> <code>speed</code> and <code>defense</code> are at −0.05 — essentially unrelated. Can you think of a reason the game might have been designed that way?</p>
+<p>💭 <strong>Think:</strong> <code>speed</code> and <code>defense</code> are at 0.01 — completely unrelated. Why might the game designers have wanted that?</p>
 <hr>
 </section>
-<section id="part-5-what-pca-actually-does" class="level1">
-<h1>Part 5 · What PCA actually does</h1>
+<section id="part-6-where-a-principal-component-comes-from" class="level1">
+<h1>Part 6 · Where a principal component comes from</h1>
+<p>No code in this Part. Read it, then look back at your 3-D plot.</p>
+<section id="with-two-stats" class="level3">
+<h3 class="anchored" data-anchor-id="with-two-stats">With two stats</h3>
+<p>Picture a scatterplot of <code>attack</code> against <code>defense</code> (r = 0.47). Because they are correlated, the cloud of points is <strong>stretched along a diagonal</strong>, like a rugby ball.</p>
+<ul>
+<li><strong>PC1</strong> is the line running along the <strong>longest</strong> stretch of the cloud. For these two stats it holds <strong>73%</strong> of the spread.</li>
+<li><strong>PC2</strong> is at <strong>right angles</strong> to PC1 and holds what is left (27%).</li>
+<li>The stronger the correlation, the longer and thinner the cloud, and the more PC1 holds.</li>
+</ul>
+</section>
+<section id="with-six-stats" class="level3">
+<h3 class="anchored" data-anchor-id="with-six-stats">With six stats</h3>
+<p>Exactly the same, just in six dimensions we cannot picture:</p>
+<ul>
+<li><strong>PC1</strong> = the direction through the 6-D cloud with the <strong>most spread</strong></li>
+<li><strong>PC2</strong> = the most spread <strong>left over</strong>, at right angles to PC1</li>
+<li><strong>PC3</strong> = the next leftover, and so on — six columns in, six PCs out, <strong>in order of usefulness</strong></li>
+</ul>
+<p>Each PC is a <strong>blend</strong> of the old columns:</p>
+<p><span class="math display">\[\text{PC1} = a_1\,\text{hp} + a_2\,\text{attack} + a_3\,\text{defense} + \ldots\]</span></p>
+</section>
 <section id="the-shadow-analogy" class="level3">
 <h3 class="anchored" data-anchor-id="the-shadow-analogy">The shadow analogy 🔦</h3>
-<p>Hold your hand up in front of a lamp and look at the shadow on the wall.</p>
-<p>Your hand is <strong>3-D</strong>. The shadow is <strong>2-D</strong>. You have lost a dimension — but you can still tell it is a hand.</p>
-<p>Now <strong>rotate</strong> your hand. Some angles give a shadow you recognise instantly. Others give a shapeless blob. <strong>Same hand, same wall, different amount of information kept.</strong></p>
-<p>That is PCA. Your data is a cloud of 151 points in <strong>6-D</strong> space. PCA finds the angle that casts the <strong>most informative shadow</strong> — the one where the points stay as spread out as possible — then tells you what that shadow is made of.</p>
-</section>
-<section id="said-without-the-analogy" class="level3">
-<h3 class="anchored" data-anchor-id="said-without-the-analogy">Said without the analogy</h3>
-<p>PCA builds <strong>new measurements</strong> by blending the old ones:</p>
-<p><span class="math display">\[\text{PC1} = a_1\,\text{hp} + a_2\,\text{attack} + a_3\,\text{defense} + \ldots\]</span></p>
-<p>It chooses the weights so that:</p>
-<ul>
-<li><strong>PC1</strong> captures as much of the spread between Pokémon as any single blend can</li>
-<li><strong>PC2</strong> captures as much of what is <strong>left over</strong> as possible, at right angles to PC1</li>
-<li><strong>PC3</strong> takes the next-biggest leftover, and so on</li>
-</ul>
-<p>Six columns in, six PCs out — but in <strong>order of usefulness</strong>.</p>
+<p>Hold your hand in front of a lamp. Your hand is 3-D, the shadow is 2-D — but you can still tell it is a hand. <strong>Rotate</strong> your hand and some angles give a shadow you recognise instantly; others give a blob. PCA finds the angle that casts the <strong>most informative shadow</strong> of the cloud — the one you were hunting for in Part 3.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -746,22 +773,22 @@ window.Quarto = {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>Loading</strong> — how much an original stat contributes to a PC. <em>What the axis is made of.</em></p>
+<p><strong>Loading</strong> — how much an original stat contributes to a PC (the <span class="math inline">\(a\)</span>’s). <em>What the axis is made of.</em></p>
 <p><strong>Score</strong> — where one Pokémon sits along that PC. <em>Its new measurement.</em></p>
 <p>Loadings describe the <strong>axis</strong>; scores describe the <strong>Pokémon</strong>.</p>
 </div>
 </div>
-<p>✏️ <strong>Q3:</strong> PC2 is built from what PC1 left behind. Why does that guarantee PC2 explains less variance than PC1?</p>
+<p>💭 <strong>Think:</strong> PC2 is built from what PC1 left behind. Why does that mean PC2 can never hold more than PC1?</p>
 <hr>
 </section>
 </section>
-<section id="part-6-first-you-must-scale" class="level1">
-<h1>Part 6 · First you must scale</h1>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="sc">%&gt;%</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), <span class="sc">~</span> <span class="fu">round</span>(<span class="fu">sd</span>(.x), <span class="dv">1</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>That is the standard deviation of each stat — how spread out each column is in its own raw points. <strong>They are not equal.</strong></p>
-<p>PCA chases <strong>spread</strong>. Hand it unscaled columns and it will decide the most important thing in your data is whichever column happens to use the <strong>biggest numbers</strong>.</p>
+<section id="part-7-first-you-must-scale" class="level1">
+<h1>Part 7 · First you must scale</h1>
+<p><strong>▶ Type this (section 7):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>poke_stats <span class="sc">%&gt;%</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), <span class="sc">~</span> <span class="fu">sd</span>(.x)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>That is the standard deviation of each stat — how spread out each column is in its own raw points. For Pokémon they are similar (about 27 to 30), because the game designers used one scale for everything. <strong>Real data almost never is.</strong></p>
+<p>PCA chases <strong>spread</strong>. Hand it unscaled columns and the column with the <strong>biggest numbers</strong> wins by default.</p>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -772,36 +799,20 @@ window.Quarto = {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Imagine measuring animals in <strong>grams</strong> and <strong>kilometres</strong>.</p>
-<p>Body mass in grams runs into the thousands. Home range in km might be 0.4.</p>
-<p>Unscaled, PC1 would be <strong>entirely mass</strong> — and would tell you nothing except which unit you happened to type.</p>
+<p>Measure animals in <strong>grams</strong> and <strong>kilometres</strong>. Body mass runs into the thousands; home range might be 0.4. Unscaled, PC1 would be <strong>entirely mass</strong> — and would tell you nothing except which unit you typed.</p>
 </div>
 </div>
-<p>The fix is one argument. <code>scale. = TRUE</code> converts every column to <strong>standard deviations from its own mean</strong> first. Afterwards every column has mean <strong>0</strong> and standard deviation <strong>1</strong>, so all six compete fairly and the units cancel out completely.</p>
-<div class="callout callout-style-default callout-important callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Important</span>⚠️ Mind the full stop
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>The argument is <strong><code>scale.</code></strong> — with a dot — because <code>scale</code> was already an R function:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">prcomp</span>(poke_stats, <span class="at">scale. =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Leave the dot off and you get an error. <strong>Almost always use <code>scale. = TRUE</code>.</strong></p>
-</div>
-</div>
+<p>The fix is one argument, <code>scale. = TRUE</code>. It turns every column into <strong>standard deviations from its own mean</strong>, so every column has mean 0 and sd 1 and all six compete fairly.</p>
+<p>The argument is <strong><code>scale.</code> — with a full stop</strong> — because <code>scale</code> was already an R function. Leave the dot off and you get an error.</p>
 <hr>
 </section>
-<section id="part-7-run-it-and-read-it" class="level1">
-<h1>Part 7 · Run it, and read it</h1>
-<p><strong>▶ Run this:</strong></p>
+<section id="part-8-run-it" class="level1">
+<h1>Part 8 · Run it</h1>
+<p><strong>▶ Type this (section 8):</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>poke_pca <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(poke_stats, <span class="at">center =</span> <span class="cn">TRUE</span>, <span class="at">scale. =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(poke_pca)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Nothing prints from the first line — that is correct. <code>prcomp()</code> stores the result. <strong>That one line is the entire analysis.</strong> Everything from here is <em>reading</em> it, which is the part that takes judgement.</p>
+<p>Nothing prints from the first line — that is correct; the result is stored in <code>poke_pca</code>. <strong>That one line is the entire analysis.</strong> Everything after it is <em>reading</em> it.</p>
 <p>From <code>summary()</code>, ignore the first row and read these two:</p>
 <table class="caption-top table">
 <colgroup>
@@ -821,15 +832,15 @@ window.Quarto = {
 <tbody>
 <tr class="odd">
 <td><code>Proportion of Variance</code></td>
-<td><strong>39.6%</strong></td>
-<td><strong>21.5%</strong></td>
-<td>16.5%</td>
+<td><strong>44.1%</strong></td>
+<td><strong>18.4%</strong></td>
+<td>14.7%</td>
 </tr>
 <tr class="even">
 <td><code>Cumulative Proportion</code></td>
-<td>39.6%</td>
-<td><strong>61.1%</strong></td>
-<td>77.6%</td>
+<td>44.1%</td>
+<td><strong>62.5%</strong></td>
+<td>77.2%</td>
 </tr>
 </tbody>
 </table>
@@ -843,51 +854,30 @@ window.Quarto = {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>Two invented axes carry 61% of everything in six columns.</strong></p>
-<p>So a flat scatterplot of PC1 against PC2 — which we draw next class — shows about <strong>three-fifths of the whole dataset</strong>.</p>
+<p><strong>Two invented axes carry 62.5% of everything in six columns.</strong> One flat scatterplot of PC1 against PC2 shows nearly two-thirds of the whole dataset.</p>
 </div>
 </div>
-<section id="variance-explained-in-plain-words" class="level3">
-<h3 class="anchored" data-anchor-id="variance-explained-in-plain-words">“Variance explained”, in plain words</h3>
-<p><strong>Variance</strong> here just means <em>how spread out things are</em>. Total variance is every way these 151 Pokémon differ from each other across all six stats.</p>
-<p>PC1 captures 39.6% of that. Meaning: throw away all six stats, keep <strong>only</strong> each Pokémon’s PC1 score, and you still have about <strong>40%</strong> of the information about how they differ. One number instead of six.</p>
-<div class="callout callout-style-default callout-warning callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Warning</span>⚠️ It is not 39.6% of the Pokémon
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>And it is not 39.6% accuracy.</p>
-<p>It is 39.6% of the <strong>total variation</strong> — of the differences between them. If every Pokémon had identical stats there would be no variance at all, and PCA would have nothing to find.</p>
-</div>
-</div>
-<p>✏️ <strong>Q4:</strong> The cumulative proportion for all six PCs is always exactly 100%. Why must that be true?</p>
+<p><strong>Variance</strong> just means <em>how spread out things are</em>. PC1 holding 44.1% means: throw away all six stats, keep <strong>only</strong> each Pokémon’s PC1 score, and you still have 44% of how they differ. One number instead of six. It is <strong>not</strong> 44% of the Pokémon, and not 44% accuracy.</p>
+<p>💭 <strong>Think:</strong> The cumulative total for all six PCs is always exactly 100%. Why must that be true?</p>
 <hr>
 </section>
-</section>
-<section id="part-8-the-scree-plot" class="level1">
-<h1>Part 8 · The scree plot</h1>
-<p><strong>▶ Run this:</strong></p>
+<section id="part-9-the-scree-plot" class="level1">
+<h1>Part 9 · The scree plot</h1>
+<p><strong>▶ The first block is already in your skeleton (section 9). Type the <code>ggplot()</code> under it:</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>var_df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">PC      =</span> <span class="fu">paste0</span>(<span class="st">"PC"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>),</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">percent =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> poke_pca<span class="sc">$</span>sdev<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> <span class="fu">sum</span>(poke_pca<span class="sc">$</span>sdev<span class="sc">^</span><span class="dv">2</span>), <span class="dv">1</span>)</span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>var_df</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(var_df, <span class="fu">aes</span>(<span class="at">x =</span> PC, <span class="at">y =</span> percent)) <span class="sc">+</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>() <span class="sc">+</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> percent), <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>var_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(var_df, <span class="fu">aes</span>(<span class="at">x =</span> PC, <span class="at">y =</span> percent)) <span class="sc">+</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>() <span class="sc">+</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> percent), <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
-<li><code>poke_pca$sdev</code> is each PC’s standard deviation — square it for variance, divide by the total for a share, times 100 for a percent</li>
-<li>Same numbers <code>summary()</code> printed, but now in a <strong>data frame</strong>, which is what lets us plot them</li>
+<li><code>var_df</code> is the same percentages <code>summary()</code> printed, but in a <strong>data frame</strong> — which is what lets ggplot draw them</li>
+<li>A <strong>scree plot</strong> is variance explained per axis, in order. (“Scree” is the rubble at the foot of a cliff — the shape the bars make.)</li>
+<li>Look for the <strong>elbow</strong>, where the bars stop dropping steeply. Here PC1 towers over the rest, then PC2 onwards step down gently. <strong>Keep two</strong> — and know you are holding 62.5%</li>
 </ul>
-<p>A <strong>scree plot</strong> is variance explained per axis, in order. (“Scree” is the loose rubble at the foot of a cliff — the shape the bars make.)</p>
-<p>You are looking for the <strong>elbow</strong>: where the bars stop dropping steeply and flatten into rubble. Here PC1 and PC2 stand up; from PC3 on they settle down and get similar. So the honest answer is <strong>keep two</strong>, and know you are holding 61%.</p>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -898,47 +888,49 @@ window.Quarto = {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Nothing tells you where the elbow is, and people argue about it constantly. Rough guides:</p>
-<ul>
-<li>Keep PCs until the cumulative total passes ~70–80%</li>
-<li>Keep the ones <strong>before</strong> the flat part</li>
-<li>Keep the ones you can <strong>interpret</strong></li>
-</ul>
-<p>That last one is the most useful.</p>
+<p>Rough guides: keep PCs until the cumulative total passes ~70–80%; keep the ones <strong>before</strong> the flat part; keep the ones you can <strong>interpret</strong>. That last one is the most useful.</p>
 </div>
 </div>
-<p>✏️ <strong>Q5:</strong> If the scree plot were completely flat — all six bars at 16.7% — what would that tell you about the six stats? Would PCA have helped at all?</p>
+<p>💭 <strong>Think:</strong> If all six bars were the same height (16.7% each), what would that say about the six stats? Would PCA have helped?</p>
 <hr>
 </section>
-<section id="part-9-does-pc1-mean-anything" class="level1">
-<h1>Part 9 · Does PC1 mean anything?</h1>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(poke_pca<span class="sc">$</span>rotation[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Those are the <strong>loadings</strong> — how much each original stat contributes to each PC.</p>
-<p><strong>Look at the PC1 column: every single number is positive</strong> (0.28 to 0.54). So a Pokémon scores high on PC1 by being high on <strong>all six stats at once</strong>.</p>
-<p><strong>PC1 is an “overall power” axis.</strong></p>
-<p>Now glance at PC2 — it has <strong>minus signs</strong>. A big positive and a big negative on the same axis means PC2 is a <strong>trade-off</strong>, not a total. We take it apart next class.</p>
-<p><strong>▶ Then run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="ot">&lt;-</span> pokemon <span class="sc">%&gt;%</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">PC1 =</span> poke_pca<span class="sc">$</span>x[, <span class="dv">1</span>],</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">PC2 =</span> poke_pca<span class="sc">$</span>x[, <span class="dv">2</span>])</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(PC1)) <span class="sc">%&gt;%</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, is_legendary, PC1) <span class="sc">%&gt;%</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">6</span>)</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(PC1) <span class="sc">%&gt;%</span></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, PC1) <span class="sc">%&gt;%</span></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><code>poke_pca$x</code> holds the <strong>scores</strong> — one row per Pokémon, same row order as the data we put in, which is why <code>mutate()</code> can glue them straight on. Scores are in <strong>standard deviations</strong>, so 0 is average and they run roughly −3 to +3. A negative score is not bad; it just means below average on that axis.</p>
-<section id="and-here-is-the-whole-validation" class="level3">
-<h3 class="anchored" data-anchor-id="and-here-is-the-whole-validation">And here is the whole validation 🎣</h3>
+<section id="part-10-what-is-pc1-made-of" class="level1">
+<h1>Part 10 · What is PC1 made of?</h1>
+<p><strong>▶ Type this (section 10):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(poke_pca<span class="sc">$</span>rotation[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The <strong>loadings</strong> — one row per stat, one column per PC.</p>
+<ul>
+<li><strong>Every number in the PC1 column is positive</strong> (0.31 to 0.44). A Pokémon scores high on PC1 by being high on <strong>all six stats at once</strong>. <strong>PC1 is an “overall power” axis.</strong></li>
+<li>PC2 has <strong>minus signs</strong>: <code>defense</code> <strong>+0.58</strong>, <code>speed</code> <strong>−0.70</strong>. A big plus and a big minus on one axis means a <strong>trade-off</strong>, not a total. That is next class.</li>
+</ul>
+<hr>
+</section>
+<section id="part-11-glue-the-scores-back-on-and-look-at-the-ends" class="level1">
+<h1>Part 11 · Glue the scores back on, and look at the ends</h1>
+<p><strong>▶ Type this (section 11):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="ot">&lt;-</span> pokemon <span class="sc">%&gt;%</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">PC1 =</span> poke_pca<span class="sc">$</span>x[, <span class="dv">1</span>],</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">PC2 =</span> poke_pca<span class="sc">$</span>x[, <span class="dv">2</span>])</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(PC1)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, status, PC1) <span class="sc">%&gt;%</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">6</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(PC1) <span class="sc">%&gt;%</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, status, PC1) <span class="sc">%&gt;%</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>poke_pca$x</code> holds the <strong>scores</strong> — one row per Pokémon, in the same order as the data, so <code>mutate()</code> glues them straight on</li>
+<li>Scores are in <strong>standard deviations</strong>: 0 is average. A negative score is not “bad”, just below average</li>
+</ul>
+<section id="this-is-the-whole-validation" class="level3">
+<h3 class="anchored" data-anchor-id="this-is-the-whole-validation">This is the whole validation 🎣</h3>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 25%">
-<col style="width: 75%">
+<col style="width: 20%">
+<col style="width: 80%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -949,103 +941,115 @@ window.Quarto = {
 <tbody>
 <tr class="odd">
 <td><strong>Top</strong></td>
-<td>Mewtwo, Dragonite, Mew, Articuno, Zapdos, Moltres</td>
+<td>Arceus, Ho-Oh, Giratina, Lunala, Eternatus, Reshiram — every one legendary or mythical</td>
 </tr>
 <tr class="even">
 <td><strong>Bottom</strong></td>
-<td><strong>Magikarp</strong>, Caterpie, Weedle, Metapod, Kakuna, Zubat</td>
+<td>Wishiwashi, Blipbug, Sunkern, <strong>Magikarp</strong>, Snom, Weedle</td>
 </tr>
 </tbody>
 </table>
-<p>The top is <strong>every legendary in the game</strong>, plus the two strongest non-legendaries. The bottom is the famously useless ones.</p>
-<p>Nobody told PCA which Pokémon were strong. There is <strong>no “power” column in the file</strong>. It was handed six columns of numbers and it sorted them by overall strength on its own.</p>
+<p>Nobody told PCA which Pokémon were strong. There is <strong>no “power” column in the file.</strong> It was handed six columns of numbers and sorted them by overall strength on its own.</p>
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Important</span>✅ Why this matters well beyond Pokémon
+<span class="screen-reader-only">Important</span>✅ The check you run on every PCA
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>This is the check you run on <strong>every</strong> PCA, on any data.</p>
-<p>You cannot test whether an axis is “real” — there is no p-value for that. But you <em>can</em> look at what sits at each end and ask whether it lines up with something you already know.</p>
-<p>If it does, the axis is measuring something. If it does not, be very careful what you claim.</p>
+<p>You cannot test whether an axis is “real” — there is no p-value for that. But you <em>can</em> look at what sits at each end and ask whether it lines up with something you already know. If it does not, be very careful what you claim.</p>
 </div>
 </div>
 <hr>
 </section>
 </section>
-<section id="part-10-put-a-number-on-it" class="level1">
-<h1>Part 10 · Put a number on it</h1>
-<p><strong>▶ Run this:</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(is_legendary) <span class="sc">%&gt;%</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(),</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">mean_PC1 =</span> <span class="fu">round</span>(<span class="fu">mean</span>(PC1), <span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The four legendaries average <strong>PC1 = 3.00</strong>. Everyone else averages <strong>−0.08</strong>.</p>
-<p>Scores are in standard deviations, so the legendaries sit about <strong>three standard deviations</strong> above the crowd — on an axis built without ever being told they existed.</p>
-<p>✏️ <strong>Q6:</strong> Note <code>n = 4</code>. Four Pokémon is not much to hang a claim on. Your homework repeats this with 71 legendaries — what do you expect to happen to the gap?</p>
+<section id="part-12-put-a-number-on-it" class="level1">
+<h1>Part 12 · Put a number on it</h1>
+<p><strong>▶ Type this (section 12):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>poke_scores <span class="sc">%&gt;%</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(status) <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">mean_PC1 =</span> <span class="fu">mean</span>(PC1))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 20%">
+<col style="width: 40%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>status</th>
+<th>n</th>
+<th>mean PC1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>legendary</td>
+<td>71</td>
+<td><strong>2.38</strong></td>
+</tr>
+<tr class="even">
+<td>mythical</td>
+<td>23</td>
+<td><strong>2.25</strong></td>
+</tr>
+<tr class="odd">
+<td>regular</td>
+<td>931</td>
+<td>−0.24</td>
+</tr>
+</tbody>
+</table>
+<p>The rare ones sit about <strong>2.5 standard deviations</strong> above the crowd — on an axis that was built without ever being told they existed.</p>
+<hr>
+</section>
+<section id="part-13-the-picture-hover-to-find-them" class="level1">
+<h1>Part 13 · The picture — hover to find them</h1>
+<p><strong>▶ Type this (section 13):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>pca_plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(poke_scores,</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">aes</span>(<span class="at">x =</span> PC1, <span class="at">y =</span> PC2, <span class="at">color =</span> status, <span class="at">text =</span> name)) <span class="sc">+</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplotly</span>(pca_plot, <span class="at">tooltip =</span> <span class="st">"text"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li>Every dot is one Pokémon on the <strong>two invented axes</strong>. Left ↔︎ right is weak ↔︎ strong (PC1, 44.1%). Up ↔︎ down is something else (PC2, 18.4%)</li>
+<li><code>text = name</code> is not a real ggplot aesthetic — ggplot ignores it, <code>ggplotly()</code> picks it up, and <code>tooltip = "text"</code> shows <strong>only</strong> the name</li>
+<li>ggplot may warn about <code>text</code> — that warning is expected</li>
+<li>Two dots close together = two Pokémon with <strong>similar stats overall</strong> — the all-six-at-once question we could not answer in Part 3</li>
+</ul>
+<p>💭 <strong>Think:</strong> Hover to find Magikarp, Mewtwo and Pikachu. Then find the dot <strong>way up at the top</strong>, on its own. Look up its stats in <code>pokemon</code> — what is weird about it? (That is a clue to PC2.)</p>
 <hr>
 </section>
 <section id="where-we-got-to-and-what-is-missing" class="level1">
 <h1>Where we got to, and what is missing</h1>
-<p><strong>We have:</strong> two axes holding 61% of six columns, and PC1 identified as “overall power” — checked against Magikarp and Mewtwo.</p>
-<p><strong>We do not have:</strong></p>
-<ul>
-<li>Any idea what <strong>PC2</strong> means</li>
-<li>A <strong>picture</strong> — we have not plotted a single Pokémon yet</li>
-<li>Any way to see the original six stats <strong>on</strong> that picture</li>
-</ul>
-<p>All three are next class.</p>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>🎯 A hint about PC2
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Look back at the loadings. In PC2, <code>defense</code> is <strong>+0.59</strong> and <code>speed</code> is <strong>−0.54</strong>.</p>
-<p>A big positive and a big negative on the same axis means a <strong>trade-off</strong>. Which one?</p>
-</div>
-</div>
+<p><strong>We have:</strong> two axes holding 62.5% of six columns; PC1 = “overall power”, checked against Magikarp and the legendaries; a picture you can hover over.</p>
+<p><strong>We do not have:</strong> any idea what <strong>PC2</strong> means, or a way to see the six original stats <strong>on</strong> the picture. Both are next class.</p>
 <hr>
 </section>
-<section id="extension-homework-all-1025-pokémon" class="level1">
-<h1>Extension (homework) — all 1,025 Pokémon</h1>
+<section id="homework-does-gen-1-tell-the-same-story" class="level1">
+<h1>Homework — does Gen 1 tell the same story?</h1>
 <p><strong>This is what you turn in:</strong> <code>scripts/27_pca_homework.R</code></p>
-<p>Do today again on <strong>all 1,025 Pokémon</strong> instead of the original 151 — nine generations, twenty-five years of new designs.</p>
-<p><code>data/pokemon_1025.csv</code> has the identical columns, so the analysis is mostly <strong>changing one filename</strong>.</p>
-<p>The real question: <strong>does PC1 still mean the same thing?</strong> Or was “overall power” just a quirk of the first 151?</p>
+<p>The original game had <strong>151</strong> Pokémon (Generation I). Today you used all 1,025 from nine generations. The homework asks: <strong>if you only had the first 151, would PCA have found the same axes?</strong></p>
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Important</span>The code is already written
+<span class="screen-reader-only">Important</span>How the homework file works
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Open the file and press <strong>Ctrl/Cmd + Shift + Enter</strong>. The whole thing runs.</p>
-<p>Your job is to <strong>read the output</strong> and answer the questions. Almost all of the marks are for interpretation, not for typing. The only code you write is one line in the optional section at the bottom, where you add <code>height_m</code> and <code>weight_kg</code> to the PCA and see what changes.</p>
-</div>
-</div>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>📖 Where the data came from
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Both files were built from <strong>PokéAPI</strong> (<code>pokeapi.co</code>), a free, open API with no account needed. The download script is not part of this module — you are handed the finished CSVs — but the trail is on the record, the same way it was for the possums and the wētā.</p>
+<ul>
+<li><strong>The questions are at the top</strong>, with answer boxes. Answer in <code>#</code> comments.</li>
+<li>Below them, the code runs top to bottom in numbered sections.</li>
+<li><strong>Helper code is written for you</strong> where something is new — the main one is a single <code>filter()</code> that keeps only Generation I.</li>
+<li>Where it says <strong><code>YOUR CODE</code></strong>, copy the matching section from today’s <code>scripts/27_pca.R</code>. It is the same code; only the data changed.</li>
+</ul>
 </div>
 </div>
 <div class="callout callout-style-default callout-important callout-titled">
@@ -1058,7 +1062,20 @@ window.Quarto = {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>Session &gt; Restart R</strong>, then run the whole file top to bottom. It must run clean, and your scree plot must draw.</p>
+<p><strong>Session &gt; Restart R</strong>, then run the whole file top to bottom. It must run clean, and your scree plot and hover plot must draw.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>📖 Where the data came from
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Built from <strong>PokéAPI</strong> (<code>pokeapi.co</code>), a free, open API with no account needed. You are handed the finished CSV; the download script is kept with the course materials.</p>
 </div>
 </div>
 
